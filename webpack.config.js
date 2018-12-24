@@ -27,6 +27,8 @@ module.exports = (env, argv) => {
     },
     devServer: {
       contentBase: './dist',
+      host: '0.0.0.0',
+      disableHostCheck: true,
       port: isProduction ? 80 : 8080,
     },
     plugins: [
