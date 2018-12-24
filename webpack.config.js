@@ -1,30 +1,51 @@
 const webpack = require('webpack');
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-const config = {
-  entry: './src/app.jsx',
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js'
-  },
-  module: {
-    rules: [
-      {
-        test: /\.(js|jsx)$/,
-        use: 'babel-loader',
-        exclude: /node_modules/
+module.exports = (env, argv) => {
+  const isProduction = argv.mode === 'production';
+  const config = {
+    entry: './src/app.jsx',
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      filename: '[name].[hash].js'
+    },
+    module: {
+      rules: [
+        {
+          test: /\.(js|jsx)$/,
+          use: 'babel-loader',
+          exclude: /node_modules/
+        }
+      ]
+    },
+    resolve: {
+      extensions: [
+        '.js',
+        '.jsx'
+      ]
+    },
+    devServer: {
+      contentBase: './dist',
+      port: isProduction ? 80 : 8080,
+    },
+    plugins: [
+      new HtmlWebpackPlugin({
+        template: 'src/index.html',
+      })
+    ],
+    optimization: {
+      runtimeChunk: 'single',
+      splitChunks: {
+        cacheGroups: {
+          vendor: {
+            test: /[\\\/]node_modules[\\\/]/,
+            name: 'vendors',
+            chunks: 'all'
+          }
+        }
       }
-    ]
-  },
-  resolve: {
-    extensions: [
-      '.js',
-      '.jsx'
-    ]
-  },
-  devServer: {
-    contentBase: './dist'
+    }
   }
+  return config;
 }
-
-module.exports = config;
