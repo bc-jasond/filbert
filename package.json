@@ -1,7 +1,7 @@
 {
   "name": "dubaniewicz-site",
   "version": "0.0.1",
-  "description": "Jason Dubaniewicz | thoughts & tutorials on web development",
+  "description": "Jason Dubaniewicz | thoughts & tutorials on web development, life",
   "main": "index.html",
   "repository": "https://github.com/bc-jasond/dubaniewicz-site.git",
   "author": "Jason Dubaniewicz <jason@dubaniewi.cz>",
@@ -25,6 +25,7 @@
     "@babel/preset-react": "^7.0.0",
     "babel-loader": "^8.0.4",
     "html-webpack-plugin": "^3.2.0",
+    "styled-components": "^4.1.3",
     "webpack": "^4.28.2",
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.14"
