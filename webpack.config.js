@@ -16,7 +16,20 @@ module.exports = (env, argv) => {
           test: /\.(js|jsx)$/,
           use: 'babel-loader',
           exclude: /node_modules/
-        }
+        },
+        {
+          test: /\.(woff|otf)$/,
+          use: [
+            {
+              loader: 'file-loader',
+              options: {
+                name: '[name].[ext]',
+                outputPath: 'fonts/',
+              }
+            }
+          ],
+          exclude: /node_modules/,
+        },
       ]
     },
     resolve: {

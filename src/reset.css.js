@@ -1,5 +1,7 @@
 import { createGlobalStyle } from 'styled-components';
 
+import { contentSerif } from './base.css';
+
 export default createGlobalStyle`
 /* http://meyerweb.com/eric/tools/css/reset/ 
    v2.0 | 20110126
@@ -24,6 +26,10 @@ time, mark, audio, video {
 	border: 0;
 	font-size: 100%;
 	font: inherit;
+	font-family: ${contentSerif}, serif;
+	/* looks a lot more suavecito with smoothing */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 	vertical-align: baseline;
 }
 /* HTML5 display-role reset for older browsers */
