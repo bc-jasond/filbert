@@ -12,14 +12,61 @@ import CssBase, {
   italicSerif,
 } from './base.css';
 
-const Header = styled.header``;
-const Article = styled.article``;
-const Footer = styled.footer``;
-
+const Header = styled.header`
+  position: fixed;
+  display: block;
+  z-index: 500;
+  width: 100%;
+  background: rgba(255,255,255,.97);
+  letter-spacing: 0;
+  font-weight: 400;
+  font-style: normal;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  top: 0;
+`;
+const HeaderContentContainer = styled.div`
+  position: relative;
+  // max-width: 1032px;
+  height: 65px;
+  padding-left: 20px;
+  padding-right: 20px;
+  margin: 0 auto;
+  justify-content: space-between;
+  display: flex;
+  align-items: center;
+`;
+const HeaderLogoSpan = styled.span`
+  font-family: ${monospaced}, monospaced;
+  font-size: 24px;
+  color: rgba(0,0,0,.54);
+`;
+const HeaderSpacer = styled.div`
+  z-index: 100;
+  position: relative;
+  height: 65px;
+`;
+const Article = styled.article`
+  max-width: 740px;
+  padding: 0 20px 80px 20px;
+  width: 100%;
+  margin: 0 auto;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  position: relative;
+`;
+const Footer = styled.footer`
+  font-family: ${monospaced}, monospaced;
+  background: rgba(0,0,0,.05);
+  padding: 20px;
+  text-align: center;
+  color: rgba(0,0,0,.54);
+`;
 const H1 = styled.h1`
   font-family: ${titleSerif}, serif;
   font-size: 42px;
   line-height: 1.25;
+  margin-bottom: 24px;
 `;
 const SomeContent = styled.section`
   font-family: ${contentSerif}, serif;
@@ -50,15 +97,20 @@ const SomeItalicText = styled.div`
 const App = () => (
   <React.Fragment>
     <Header>
-      Header
+      <HeaderContentContainer>
+        <HeaderLogoSpan>
+          dubaniewi.cz
+        </HeaderLogoSpan>
+      </HeaderContentContainer>
     </Header>
+    <HeaderSpacer />
     <Article>
       <H1>Hello World!!</H1>
       <SomeContent>
         <P>
           Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
           activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
-          banh mi cred selvage green juice four dollar toast.
+          banh mi cred selvage green juice four dollar toast. [2/4] 🚚 Fetching packages…
         </P>
         <P>
           <SomeItalicText>
@@ -76,7 +128,7 @@ const App = () => (
       </SomeContent>
     </Article>
     <Footer>
-      Footer
+      🚚 1/4/2019
     </Footer>
     <CssReset />
     <CssBase />

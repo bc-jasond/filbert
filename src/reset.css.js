@@ -24,6 +24,7 @@ time, mark, audio, video {
 	margin: 0;
 	padding: 0;
 	border: 0;
+	color: rgba(0, 0, 0, 0.84);
 	font-size: 100%;
 	font: inherit;
 	font-family: ${contentSerif}, serif;
@@ -36,6 +37,9 @@ time, mark, audio, video {
 article, aside, details, figcaption, figure, 
 footer, header, hgroup, menu, nav, section {
 	display: block;
+}
+html {
+  background: rgba(0,0,0,.05);
 }
 body {
 	line-height: 1;
