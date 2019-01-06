@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import { hot } from 'react-hot-loader';
 
 import styled from 'styled-components';
@@ -73,11 +72,22 @@ const SomeContent = styled.section`
   font-size: 21px;
   line-height: 1.58;
   letter-spacing: -.01em;
+  margin-bottom: 40px;
+`;
+const Spacer = styled(SomeContent)`
+  line-height: 0;
+  &::after {
+    content: '\\00a0';
+    display: block;
+    margin: 0 auto;
+    border-bottom: 1px solid rgba(0,0,0,.24);
+    width: 88px;
+  }
 `;
 const P = styled.p`
   margin-bottom: 16px;
 `;
-const SomeCode = styled.div`
+const SomeCode = styled.code`
   display: inline-block;
   font-family: ${monospaced}, monospace;
   font-size: 18px;
@@ -85,11 +95,11 @@ const SomeCode = styled.div`
   padding: 0 4px;
   margin: 0 2px;
 `;
-const SomeSiteInfo = styled.div`
+const SomeSiteInfo = styled.span`
   display: inline-block;
   font-family: ${sansSerif}, sans-serif;
 `;
-const SomeItalicText = styled.div`
+const SomeItalicText = styled.span`
   display: inline-block;
   font-family: ${italicSerif}, sans-serif;
 `;
@@ -126,6 +136,27 @@ const App = () => (
           <SomeSiteInfo>Here's some site info here</SomeSiteInfo>
         </P>
       </SomeContent>
+      <Spacer/>
+      <SomeContent>
+        <P>
+          Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
+          activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
+          banh mi cred selvage green juice four dollar toast. [2/4] 🚚 Fetching packages…
+        </P>
+        <P>
+          <SomeItalicText>
+            Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
+            activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
+            banh mi cred selvage green juice four dollar toast.
+          </SomeItalicText>
+        </P>
+        <P>
+          <SomeCode>() => 'source code with === ligatures';</SomeCode>
+        </P>
+        <P>
+          <SomeSiteInfo>Here's some site info here</SomeSiteInfo>
+        </P>
+      </SomeContent>
     </Article>
     <Footer>
       🚚 1/4/2019
@@ -135,9 +166,5 @@ const App = () => (
   </React.Fragment>
 );
 
-const AppWithHot = hot(module)(App);
-
-ReactDOM.render(
-  <AppWithHot />,
-  document.getElementById('app'),
-);
+export default App;
+export const AppWithHot = hot(module)(App);
