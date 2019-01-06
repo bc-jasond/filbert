@@ -76,7 +76,7 @@ const App = () => (
     </Header>
     <HeaderSpacer />
     <Article>
-      <H1>Hello World!!</H1>
+      <H1>Hello World!</H1>
       <ContentSection>
         <P>
           Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
