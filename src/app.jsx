@@ -3,13 +3,16 @@ import { hot } from 'react-hot-loader';
 
 import styled from 'styled-components';
 import CssReset from './reset.css';
-import CssBase, {
-  titleSerif,
-  contentSerif,
-  monospaced,
-  sansSerif,
-  italicSerif,
-} from './base.css';
+import CssBase, { monospaced } from './common/fonts.css';
+import {
+  H1,
+  ContentSection,
+  SpacerSection,
+  P,
+  ItalicText,
+  SourceCode,
+  SiteInfo,
+} from './common/shared-styled-components';
 
 const Header = styled.header`
   position: fixed;
@@ -61,48 +64,6 @@ const Footer = styled.footer`
   text-align: center;
   color: rgba(0,0,0,.54);
 `;
-const H1 = styled.h1`
-  font-family: ${titleSerif}, serif;
-  font-size: 42px;
-  line-height: 1.25;
-  margin-bottom: 24px;
-`;
-const SomeContent = styled.section`
-  font-family: ${contentSerif}, serif;
-  font-size: 21px;
-  line-height: 1.58;
-  letter-spacing: -.01em;
-  margin-bottom: 40px;
-`;
-const Spacer = styled(SomeContent)`
-  line-height: 0;
-  &::after {
-    content: '\\00a0';
-    display: block;
-    margin: 0 auto;
-    border-bottom: 1px solid rgba(0,0,0,.24);
-    width: 88px;
-  }
-`;
-const P = styled.p`
-  margin-bottom: 16px;
-`;
-const SomeCode = styled.code`
-  display: inline-block;
-  font-family: ${monospaced}, monospace;
-  font-size: 18px;
-  background: rgba(0,0,0,.05);
-  padding: 0 4px;
-  margin: 0 2px;
-`;
-const SomeSiteInfo = styled.span`
-  display: inline-block;
-  font-family: ${sansSerif}, sans-serif;
-`;
-const SomeItalicText = styled.span`
-  display: inline-block;
-  font-family: ${italicSerif}, sans-serif;
-`;
 
 const App = () => (
   <React.Fragment>
@@ -116,47 +77,47 @@ const App = () => (
     <HeaderSpacer />
     <Article>
       <H1>Hello World!!</H1>
-      <SomeContent>
+      <ContentSection>
         <P>
           Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
           activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
           banh mi cred selvage green juice four dollar toast. [2/4] 🚚 Fetching packages…
         </P>
         <P>
-          <SomeItalicText>
+          <ItalicText>
             Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
             activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
             banh mi cred selvage green juice four dollar toast.
-          </SomeItalicText>
+          </ItalicText>
         </P>
         <P>
-          <SomeCode>() => 'source code with === ligatures';</SomeCode>
+          <SourceCode>() => 'source code with === ligatures';</SourceCode>
         </P>
         <P>
-          <SomeSiteInfo>Here's some site info here</SomeSiteInfo>
+          <SiteInfo>Here's some site info here</SiteInfo>
         </P>
-      </SomeContent>
-      <Spacer/>
-      <SomeContent>
+      </ContentSection>
+      <SpacerSection/>
+      <ContentSection>
         <P>
           Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
           activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
           banh mi cred selvage green juice four dollar toast. [2/4] 🚚 Fetching packages…
         </P>
         <P>
-          <SomeItalicText>
+          <ItalicText>
             Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
             activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
             banh mi cred selvage green juice four dollar toast.
-          </SomeItalicText>
+          </ItalicText>
         </P>
         <P>
-          <SomeCode>() => 'source code with === ligatures';</SomeCode>
+          <SourceCode>() => 'source code with === ligatures';</SourceCode>
         </P>
         <P>
-          <SomeSiteInfo>Here's some site info here</SomeSiteInfo>
+          <SiteInfo>Here's some site info here</SiteInfo>
         </P>
-      </SomeContent>
+      </ContentSection>
     </Article>
     <Footer>
       🚚 1/4/2019

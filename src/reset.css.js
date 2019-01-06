@@ -1,6 +1,11 @@
 import { createGlobalStyle } from 'styled-components';
 
-import { contentSerif } from './base.css';
+import { contentSerif } from './common/fonts.css';
+
+import {
+  darkGrey,
+  lightGrey,
+} from './common/css';
 
 export default createGlobalStyle`
 /* http://meyerweb.com/eric/tools/css/reset/ 
@@ -24,7 +29,7 @@ time, mark, audio, video {
 	margin: 0;
 	padding: 0;
 	border: 0;
-	color: rgba(0, 0, 0, 0.84);
+	color: ${darkGrey};
 	font-size: 100%;
 	font: inherit;
 	font-family: ${contentSerif}, serif;
@@ -39,7 +44,7 @@ footer, header, hgroup, menu, nav, section {
 	display: block;
 }
 html {
-  background: rgba(0,0,0,.05);
+  background: ${lightGrey};
 }
 body {
 	line-height: 1;

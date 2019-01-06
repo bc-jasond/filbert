@@ -1,10 +1,10 @@
 import { createGlobalStyle } from 'styled-components';
 
-import Charter from '../assets/fonts/charter-regular-webfont.woff';
-import CharterBold from '../assets/fonts/charter-bold-webfont.woff';
-import CharterItalic from '../assets/fonts/charter-italic-webfont.woff';
-import Kievit from '../assets/fonts/kievit-ot-book.woff';
-import FiraCode from '../assets/fonts/fira-code-regular.woff';
+import Charter from '../../assets/fonts/charter-regular-webfont.woff';
+import CharterBold from '../../assets/fonts/charter-bold-webfont.woff';
+import CharterItalic from '../../assets/fonts/charter-italic-webfont.woff';
+import Kievit from '../../assets/fonts/kievit-ot-book.woff';
+import FiraCode from '../../assets/fonts/fira-code-regular.woff';
 
 export const titleSerif = 'dubaniewicz-title-serif';
 export const contentSerif = 'dubaniewicz-content-serif';
