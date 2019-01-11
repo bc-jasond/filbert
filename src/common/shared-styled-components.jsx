@@ -41,12 +41,17 @@ export const SpacerSection = styled(ContentSection)`
 export const P = styled.p`
   margin-bottom: 32px;
 `;
+export const Pre = styled.pre``;
 export const CodeSection = styled(ContentSection)`
   font-family: ${monospaced}, monospace;
-  font-size: 18px;
+  font-size: 16px;
+  letter-spacing: -.03em;
+  word-spacing: -.2em;
+  line-height: 1.75;
   background: rgba(0,0,0,.05);
   padding: 20px;
-  ${P} {
+  overflow-x: scroll;
+  ${Pre} {
     font: inherit;
     margin: 0;  
   }
