@@ -248,35 +248,25 @@ const App = () => (
           <Li>sans serif <A href="https://practicaltypography.com/charter.html">'Charter'</A></Li>
           <Li><Code>(iLike) => 'source code with === ligatures';</Code>so <A href="https://github.com/tonsky/FiraCode">'Fira Mono'</A> for my code please</Li>
         </Ol>
-        <P>💡Remember: in your browser developer tools there's a  fonts tab to verify loaded fonts (it's a sub-tab under the Inspector in Firefox)</P>
-
-        webpack-dev-server was not loading fonts because my config was missing a loader. I added a loader + options style config to file-loader to specify a /fonts/ dir as outputPath.
-        Facepalm: a typo in a @font-face declaration can prevent the browser from loading a font! I forgot a closing <Code>(</Code> in a <Code>{'url(${importName}  '}</Code> statement… lost an hour there 🤦
-        I have a basic layout now but, I'm going to add a couple more cleanup items
-        use a css.js to house reusable CSS constants
-        use a shared-styled.jsx to house a base set of styled components -although styled-components makes for easy duplication of commonly used elements. I want to standardize my UI with a style guide https://www.toptal.com/designers/ui/ui-styleguide-better-ux. This essentially decouples design development from individual page development; improving UX consistency and code maintainability. Just 'pick from the catalog' when laying out pages.
-
-        Tweaking sections - adding and styling a pseudo element in styled-components thanks worc on github and Adrift on Stack Overflow
+        <P>💡Remember: in your browser developer tools there's a fonts tab to verify loaded fonts (it's a sub-tab under the Inspector in Firefox)</P>
+        <P>webpack-dev-server was not loading fonts because my config was missing a loader. I added a loader + options style config to file-loader to specify a /fonts/ dir as outputPath.</P>
+        <P>Facepalm: a typo in a @font-face declaration can prevent the browser from loading a font! I forgot a closing <Code>(</Code> in a <Code>{'url(${importName}  '}</Code> statement… lost an hour there 🤦</P>
+        <P>I have a basic layout now but, I'm going to add a couple more cleanup items</P>
+        <Ol>
+          <Li>use a css.js to house reusable CSS constants</Li>
+          <Li>use a shared-styled.jsx to house a base set of styled components -although styled-components makes for easy duplication of commonly used elements. I want to <A href="https://www.toptal.com/designers/ui/ui-styleguide-better-ux">standardize my UI with a style guide.</A> This essentially decouples design development from individual page development; improving UX consistency and code maintainability. Just 'pick from the catalog' when laying out pages and ignore custom designs that arent in the style guide (hehe, sorry designers).</Li>
+        </Ol>
+        <P>Tweaking sections - adding and styling a pseudo element in styled-components thanks <A href="https://github.com/styled-components/styled-components/issues/388#issuecomment-397132040">worc on github</A> and <A href="https://stackoverflow.com/a/20858630">Adrift on Stack Overflow</A></P>
       </ContentSection>
+        <CodeSection>
+          <P>const SomeElement = styled.div`</P>
+          <P>  &::after {'{'}</P>
+          <P>  display: block; // width/height won't work without this because Pseudo elements default to display: inline;</P>
+          <P>  content: '\\00a0'; // won't render without content</P>
+          <P>{'}`;'}</P>
+        </CodeSection>
       <ContentSection>
-        <P>
-          Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
-          activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
-          banh mi cred selvage green juice four dollar toast. [2/4] 🚚 Fetching packages…
-        </P>
-        <P>
-          <ItalicText>
-            Crucifix adaptogen bespoke, health goth taiyaki tacos blue bottle yuccie you probably haven't heard of them
-            activated charcoal plaid, four loko banjo wolf street art shaman live-edge. VHS disrupt jianbing PBR&B blog
-            banh mi cred selvage green juice four dollar toast.
-          </ItalicText>
-        </P>
-        <P>
-
-        </P>
-        <P>
-          <SiteInfo>Here's some site info here</SiteInfo>
-        </P>
+        <P>There's more to do and more detail to fill in but, I'm out of time. Remember: if you're not embarrassed then you <A href="https://twitter.com/reidhoffman/status/847142924240379904?lang=en">shipped too late.</A></P>
       </ContentSection>
     </Article>
     <Footer>
