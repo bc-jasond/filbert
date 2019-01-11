@@ -38,18 +38,20 @@ export const SpacerSection = styled(ContentSection)`
     width: 88px;
   }
 `;
+export const P = styled.p`
+  margin-bottom: 32px;
+`;
 export const CodeSection = styled(ContentSection)`
   font-family: ${monospaced}, monospace;
   font-size: 18px;
   background: rgba(0,0,0,.05);
-  padding: 0 4px;
-  margin: 0 2px;
-`;
-export const P = styled.p`
-  margin-bottom: 32px;
+  padding: 20px;
+  ${P} {
+    font: inherit;
+    margin: 0;  
+  }
 `;
 export const Ol = styled.ol`
-  margin-top: 38px;
   margin-bottom: 38px;
   counter-reset: post;
   padding: 0;
@@ -74,7 +76,16 @@ export const Li = styled.li`
     text-align: right;
   }
 `;
-export const SourceCode = styled.code`
+export const A = styled.a`
+  text-decoration: none;
+  background-repeat: repeat-x;
+  background-image: linear-gradient(to right,rgba(0,0,0,.84) 100%,rgba(0,0,0,0) 0);
+  background-image: linear-gradient(to right,currentColor 100%,currentColor 0);
+  background-size: 1px 1px;
+  background-position: 0 1.05em;
+  background-position: 0 calc(1em + 1px);
+`;
+export const Code = styled.code`
   display: inline-block;
   font-family: ${monospaced}, monospace;
   font-size: 18px;
