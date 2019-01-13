@@ -18,7 +18,7 @@ module.exports = (env, argv) => {
           exclude: /node_modules/
         },
         {
-          test: /\.(woff|otf)$/,
+          test: /\.woff$/,
           use: [
             {
               loader: 'file-loader',
@@ -42,6 +42,23 @@ module.exports = (env, argv) => {
       contentBase: './dist',
       host: '0.0.0.0',
       disableHostCheck: true,
+      historyApiFallback: {
+        verbose: true,
+        rewrites: [
+          {
+            from: /\.woff$/,
+            to: context => '/fonts/' + context.parsedUrl.pathname.split('/').pop(),
+          },
+          {
+            from: /\.js$/,
+            to: context => '/' + context.parsedUrl.pathname.split('/').pop(),
+          },
+          {
+            from: /\//,
+            to: '/index.html',
+          },
+        ],
+      },
       port: isProduction ? 80 : 8080,
     },
     plugins: [
