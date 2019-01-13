@@ -112,7 +112,7 @@ export default () => (
       <Ol>
         <Li>Header placeholder</Li>
         <Li>Content of first blog post (this one)</Li>
-        <Li>Stolen from Medium (and
+        <Li>Layout (Stolen from Medium and
           essentially <A href="https://github.com/twbs/bootstrap/blob/793b83fda84da33e07adfab467a68dc649565401/scss/mixins/_breakpoints.scss#L5">Bootstrap's
             xs size</A>): I'm going to put all content sections (text,
           images, code blocks, three-dot-spacer, etc.) inside <Code>display: block;</Code> containers. This is
@@ -121,7 +121,7 @@ export default () => (
           padding, <Code>margin-bottom</Code> for spacing in one direction, <Code>max-width</Code> for desktop. Done.
           Basically, no horizontal layout = no responsive layout issues & no edge cases
           (except, maybe flex layout fallbacks for older browsers if I go there).</Li>
-        <Li>Medium provides some nice layout constraints: no nesting indents, bullets, pretty awesome.</Li>
+        <Li>Medium provides some nice layout 'opinions' (constraints): no nesting indents, bullets, pretty awesome IMO.</Li>
         <Li>Footer placeholder</Li>
       </Ol>
     </ContentSection>
@@ -172,17 +172,16 @@ export default () => (
           smoothing</A> CSS rules - looks great!</Li>
         <Li>serif <A href="https://github.com/lcdvirgo/bootstrap/tree/master/assets/fonts/%5BFontFont%5D%20Kievit">'Kievit'</A></Li>
         <Li>sans serif <A href="https://practicaltypography.com/charter.html">'Charter'</A></Li>
-        <Li><Code>(iLike) => 'source code with === ligatures';</Code>so <A href="https://github.com/tonsky/FiraCode">'Fira
+        <Li>Not from Medium but great - <Code>(iLike) => 'source code with === ligatures';</Code>so <A href="https://github.com/tonsky/FiraCode">'Fira
           Mono'</A> for my code please</Li>
       </Ol>
       <P>💡Remember: in your browser developer tools there's a fonts tab to verify loaded fonts (it's a sub-tab under
         the Inspector in Firefox)</P>
       <P><Code>webpack-dev-server</Code> was not loading fonts because my config was missing a loader. I added
         a <A href="https://github.com/bc-jasond/dubaniewicz-site/commit/b228decb7e76668d5375123b7d6d368ff85784a8#diff-11e9f7f953edc64ba14b0cc350ae7b9dR21">loader
-          + options</A> style config to file-loader to specify a /fonts/ dir as <Code>outputPath</Code></P>
-      <P>🤦Facepalm: a typo in a <Code>@font-face</Code> declaration can prevent the browser from loading a font! I
-        forgot a
-        closing <Code>(</Code> in a statement… lost an hour there</P>
+          + options</A> style config to <Code>file-loader</Code> to specify a <Code>/fonts/</Code> dir as <Code>outputPath</Code></P>
+      <P>🤦Facepalm: a typo in a <Code>@font-face</Code> declaration can prevent the browser from loading a font! Can you spot the typo?...<Code>{'url(${importName}'}</Code> I
+        forgot a closing <Code>)</Code> in the <Code>url()</Code> statement… lost an hour there :)</P>
       <P>I have a basic layout now but, I'm going to add a couple more cleanup items</P>
       <Ol>
         <Li>use a <Code>css.js</Code> to house reusable CSS constants</Li>
