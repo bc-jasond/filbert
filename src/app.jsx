@@ -1,79 +1,39 @@
 import React from 'react';
 import { hot } from 'react-hot-loader';
 
-import styled from 'styled-components';
+import {
+  BrowserRouter,
+  Switch,
+  Route,
+  Redirect,
+} from 'react-router-dom';
+
 import CssReset from './reset.css';
-import CssBase, { monospaced } from './common/fonts.css';
+import CssBase from './common/fonts.css';
 
+import About from './pages/about';
+import Page404 from './pages/404';
+
+import withLayout from './pages/layout';
 import PostHelloWorld from './pages/post-hello-world';
+import PostReactRouter from './pages/post-react-router';
 
-const Header = styled.header`
-  position: fixed;
-  display: block;
-  z-index: 500;
-  width: 100%;
-  background: rgba(255,255,255,.97);
-  letter-spacing: 0;
-  font-weight: 400;
-  font-style: normal;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
-  top: 0;
-`;
-const HeaderContentContainer = styled.div`
-  position: relative;
-  // max-width: 1032px;
-  height: 65px;
-  padding-left: 20px;
-  padding-right: 20px;
-  margin: 0 auto;
-  justify-content: space-between;
-  display: flex;
-  align-items: center;
-`;
-const HeaderLogoSpan = styled.span`
-  font-family: ${monospaced}, monospaced;
-  font-size: 24px;
-  color: rgba(0,0,0,.54);
-`;
-const HeaderSpacer = styled.div`
-  z-index: 100;
-  position: relative;
-  height: 65px;
-`;
-const Article = styled.article`
-  max-width: 740px;
-  padding: 0 20px 80px 20px;
-  width: 100%;
-  margin: 0 auto;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
-  position: relative;
-`;
-const Footer = styled.footer`
-  font-family: ${monospaced}, monospaced;
-  background: rgba(0,0,0,.05);
-  padding: 20px;
-  text-align: center;
-  color: rgba(0,0,0,.54);
-`;
+const PostHelloWorldWithLayout = withLayout(PostHelloWorld);
+const PostReactRouterWithLayout = withLayout(PostReactRouter);
+// note About page uses the current blog post layout
+const AboutWithLayout = withLayout(About);
 
 const App = () => (
   <React.Fragment>
-    <Header>
-      <HeaderContentContainer>
-        <HeaderLogoSpan>
-          dubaniewi.cz
-        </HeaderLogoSpan>
-      </HeaderContentContainer>
-    </Header>
-    <HeaderSpacer />
-    <Article>
-      <PostHelloWorld />
-    </Article>
-    <Footer>
-      🚚 1/4/2019
-    </Footer>
+    <BrowserRouter>
+      <Switch>
+        <Redirect push exact from="/" to="/posts/hello-world" />
+        <Route path="/about" component={AboutWithLayout} />
+        <Route path="/posts/hello-world" component={PostHelloWorldWithLayout} />
+        <Route path="/posts/react-router" component={PostReactRouterWithLayout} />
+        <Route component={Page404} />
+      </Switch>
+    </BrowserRouter>
     <CssReset />
     <CssBase />
   </React.Fragment>

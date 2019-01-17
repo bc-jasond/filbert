@@ -42,6 +42,7 @@ module.exports = (env, argv) => {
       contentBase: './dist',
       host: '0.0.0.0',
       disableHostCheck: true,
+      watchContentBase: true,
       historyApiFallback: {
         verbose: true,
         rewrites: [
