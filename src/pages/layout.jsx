@@ -56,7 +56,7 @@ const Footer = styled.footer`
   color: rgba(0,0,0,.54);
 `;
 
-export default WrappedComponent => props => (
+export default props => (
   <React.Fragment>
     <Header>
       <HeaderContentContainer>
@@ -65,7 +65,7 @@ export default WrappedComponent => props => (
     </Header>
     <HeaderSpacer />
     <Article>
-      <WrappedComponent {...props} />
+      {props.children}
     </Article>
     <Footer>
       🚚 1/4/2019

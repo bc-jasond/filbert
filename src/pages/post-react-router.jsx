@@ -15,6 +15,9 @@ import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
 import Page404 from './404';
 import CssReset from '../reset.css';
 import CssBase from '../common/fonts.css';
+import PageLayout from './layout';
+import About from './about';
+import PostHelloWorld from './post-hello-world';
 
 export default () => (
   <React.Fragment>
@@ -22,12 +25,12 @@ export default () => (
     <SpacerSection/>
     <H2>Pass Routing Responsibilies up to the Browser (React Router)</H2>
     <ContentSection>
-      <P>In order to shipped my first blog post, I put all the content directly into <Code>app.jsx</Code>.  This essentially gives me only one route `/`</P>
-      <P>Note: if you go to <Code>http://dubaniewi.cz/some/other/route</Code> right now you'll see <Code>Cannot GET /some/other/route</Code>. This response is coming from Express via the <Code>webpack-dev-server</Code> (notice the <Code>X-Powered-By: Express</Code> response header).  In a single-page app (SPA) we'll want to pass routing responsibilities up to the browser so we can use React Router or any other javascript routing library that uses the <A href="https://developer.mozilla.org/en-US/docs/Web/API/History">HTML5 History API</A>.</P>
+      <P>In order to ship <A href="/posts/hello-world">my first blog post</A>, I put all the content directly into <Code>app.jsx</Code>.  This essentially gives me only one route: <Code>/</Code></P>
+      <P>Note: if you go to <Code>http://dubaniewi.cz/some/other/route</Code> right now you'll see <Code>Cannot GET /some/other/route</Code>. This response is coming from Express via the <Code>webpack-dev-server</Code> (notice the <Code>X-Powered-By: Express</Code> response header).  In a single-page app (SPA) we'll want to pass routing responsibilities up to the browser so we can use <A href="https://reacttraining.com/react-router/web/guides/quick-start">React Router</A> or any other javascript routing library that uses the <A href="https://developer.mozilla.org/en-US/docs/Web/API/History">HTML5 History API</A>.</P>
       <P>Fortunately, this makes for a pretty easy <Code>devServer</Code> config.  Also, it will be a pretty easy <Code>nginx</Code> config later on.</P>
       <P>In <Code>webpack.config.js</Code> we just need to add the following line to the existing <Code>devServer</Code> config: <Code>historyApiFallback: true</Code></P>
       <P>💡Remember: changes to <Code>webpack.config.js</Code> require a restart of the <Code>webpack-dev-server</Code>; they won't be detected</P>
-      <P>(there are more options available <A href="https://webpack.js.org/configuration/dev-server/#devserver-historyapifallback">link to documentation</A>)</P>
+      <P>(there are more <Code>devServer</Code> options available <A href="https://webpack.js.org/configuration/dev-server/#devserver-historyapifallback">link to documentation</A>)</P>
     </ContentSection>
     <CodeSection>
       <Pre>module.exports = (env, argv) => {'{'}</Pre>
@@ -47,7 +50,7 @@ export default () => (
       <Pre>{'}'}</Pre>
     </CodeSection>
     <ContentSection>
-      <P>You can confirm your configuration by looking for <Code>ℹ ｢wds｣: 404s will fallback to /index.html</Code> in the logs of <Code>yarn start</Code></P>
+      <P>You can confirm your cconfiguration by looking for <Code>ℹ ｢wds｣: 404s will fallback to /index.html</Code> in the logs of <Code>yarn start</Code></P>
     </ContentSection>
     <CodeSection>
       <Pre>jd@local ~/dev/dubaniewicz-site (post-react-router)*$ yarn start</Pre>
@@ -61,7 +64,7 @@ export default () => (
       <Pre>Version: webpack 4.28.2</Pre>
     </CodeSection>
     <ContentSection>
-      <P>But it still doesn't work. Now I'm getting 404s for the webpack bundles: <Code>Loading failed for the {'<script>'} with source “http://localhost:8080/some/other/main.da8d74963faaef9b955b.js”.</Code>.  Looks like zero-configuration didn't work for us today and we'll need to add a <Code>rewrites</Code> section</P>
+      <P>But it still doesn't work. Now I'm getting 404s for the webpack bundles: <Code>Loading failed for the {'<script>'} with source “http://localhost:8080/some/other/main.da8d74963faaef9b955b.js”</Code>  Looks like zero-configuration didn't work for us today and we'll need to add a <Code>rewrites</Code> section</P>
       <P>If you run <Code>yarn build-prod</Code>, you'll see there are currently three types of files: <Code>*.html</Code>, <Code>*.woff</Code>, and <Code>*.js</Code>.  It makes sense to have routing rules for each type of file (and images, too)</P>
       <P>The <A href="https://github.com/bripkens/connect-history-api-fallback">node connect library that <Code>webpack-dev-server</Code> uses</A> allows a <Code>function</Code> to be passed as a <Code>to</Code> parameter of a rewrite object.  This has access to the request and the parsedUrl.  We'll use the <Code>parsedUrl</Code> to get the filename and then do a manual rewrite.</P>
       <P>Once we have <A href="https://github.com/bc-jasond/dubaniewicz-site/commit/e53622f3f63b0e97e19299f49fdafef368688032">rewrites for JS, fonts and, a default</A> for all other routes - we can successfully load our SPA and then handle additional routing with React Router</P>
@@ -94,8 +97,15 @@ export default () => (
     </ContentSection>
     <H2>Using a HOC Layout Component</H2>
     <ContentSection>
-      <P>Motivation: Error: can't use <Code>{'<Link>'}</Code> outside of a <Code>{'<Router>'}</Code></P>
-      <P>If you're used to thinking about 'instances' of classes having state and a set of responsibilites and just sharing references to those around, then you'll have an adjustment in your mental model to make in order to have fun with React.  Instead of having many instances of classes that have responsiblities and sharing references, React uses the decorator (composition) pattern: give ONE component all of the functionality it needs by decorating it with 'mixins'.  This leads to ONE state and removes the need for references to other components for communication.  Getting rid of those references greatly reduces asynchronous operation headaches - but, it comes at a cost: more layers of abstraction.  Which is arguably harder to reason about.  I'm still trying to find the balance with this trade-off.</P>
+      <P>Motivation: Error: can't use <Code>{'<Link>'}</Code> outside of a <Code>{'<Router>'}</Code>.  I wanted to put <Code>{'<Route>s'}</Code> inside my styled <Code>{'<Article'}></Code> component because I had a basic layout with a header and footer that I didn't want to cut-n-paste into each page.  But, I also wanted to put a link to <Code>/</Code> in the <Code>{'<Header>'}</Code> logo.  Error.  <Code>{'<Link>'}</Code> takes props passed down from <Code>{'<Router>'}</Code>.  Hmm, so how do I share markup down to child components?</P>
+      <P>So far, I know of three ways to do it:</P>
+      <Ol>
+        <Li><Code>props.children</Code> - or just any old <Code>props</Code>. Render some markup, then inside of a container(s) render the props like: <Code>{'{props.children}'}</Code> or <Code>{'{props.someOtherPropName}'}</Code>.  Here's an explanation <A href="https://reactjs.org/docs/composition-vs-inheritance.html">from the React documentation</A></Li>
+        <Li><A href="https://reactjs.org/docs/higher-order-components.html">Higher Order Components</A> (HOCs for short) - or Components that 'wrap' other components and add (decorate) functionality by passing props to the inner component.  As an exercise, we'll use this pattern next. </Li>
+        <Li><A href="https://reactjs.org/docs/render-props.html">Render Props</A> - a component that takes it's <Code>render()</Code> function as a <Code>prop</Code> instead of defining it's own.  This is arguably the most confusing pattern to the newcomer because each component with a Render prop creates another <A href="https://en.wikipedia.org/wiki/Indirection">Layer of Indirection (or abstraction)</A>.  But, it's a powerful patter that I'll explore after HOCs</Li>
+      </Ol>
+      <P>Right now, there's no state to share just some markup.  This is easily achieved with the first pattern of passing child components as <Code>props</Code>.  So, that's what we'll do!  In the beginning, all of your problems will come from overusing code-sharing concepts like HOCs and Render props.  So, if you can stick to props and <A href="https://reactjs.org/docs/thinking-in-react.html#step-3-identify-the-minimal-but-complete-representation-of-ui-state">follow this exercise to identify 'The Minimal (but complete) Representation of state'</A> you can avoid problems created by solving problems that you don't have.</P>
+      <P>If you're used to an Imperative mental model of programming like me, React, Functional Programming and the Declarative model will take some time to get used to.  I believe that Imperative programming is easier to think about because it's more direct and less abstract.  But, be that as it may, React is not designed around the Imperative programming model and so let's not fight it.  The new concepts can be introduced slowly while still getting things done.  <Code>props</Code> and <A href="https://reactjs.org/docs/handling-events.html">Event Handlers</A> will take us far.  The biggest trade-off will probably be writing more 'boilerplate' code than one might like.  That code is easy to reason about and if it stays consistent it will be easy to refactor with slick composition later on.</P>
       <P>Here's what <Code>App</Code> JSX looks like now:</P>
     </ContentSection>
     <CodeSection>
@@ -104,9 +114,30 @@ export default () => (
       <Pre>{'    <BrowserRouter>'}</Pre>
       <Pre>{'      <Switch>'}</Pre>
       <Pre>{'        <Redirect push exact from="/" to="/posts/hello-world" />'}</Pre>
-      <Pre>{'        <Route path="/about" component={AboutWithLayout} />'}</Pre>
-      <Pre>{'        <Route path="/posts/hello-world" component={PostHelloWorldWithLayout} />'}</Pre>
-      <Pre>{'        <Route path="/posts/react-router" component={PostReactRouterWithLayout} />'}</Pre>
+      <Pre>{'        <Route'}</Pre>
+      <Pre>{'          path="/about"'}</Pre>
+      <Pre>{'          render={() => ('}</Pre>
+      <Pre>{'            <PageLayout>'}</Pre>
+      <Pre>{'              <About />'}</Pre>
+      <Pre>{'            </PageLayout>'}</Pre>
+      <Pre>{'          )}'}</Pre>
+      <Pre>{'        />'}</Pre>
+      <Pre>{'        <Route'}</Pre>
+      <Pre>{'          path="/posts/hello-world"'}</Pre>
+      <Pre>{'          render={() => ('}</Pre>
+      <Pre>{'            <PageLayout>'}</Pre>
+      <Pre>{'              <PostHelloWorld />'}</Pre>
+      <Pre>{'            </PageLayout>'}</Pre>
+      <Pre>{'          )}'}</Pre>
+      <Pre>{'        />'}</Pre>
+      <Pre>{'        <Route'}</Pre>
+      <Pre>{'          path="/posts/react-router"'}</Pre>
+      <Pre>{'          render={() => ('}</Pre>
+      <Pre>{'            <PageLayout>'}</Pre>
+      <Pre>{'              <PostReactRouter />'}</Pre>
+      <Pre>{'            </PageLayout>'}</Pre>
+      <Pre>{'          )}'}</Pre>
+      <Pre>{'        />'}</Pre>
       <Pre>{'        <Route component={Page404} />'}</Pre>
       <Pre>{'      </Switch>'}</Pre>
       <Pre>{'    </BrowserRouter>'}</Pre>
@@ -115,6 +146,11 @@ export default () => (
       <Pre>{'  </React.Fragment>'}</Pre>
       <Pre>{');'}</Pre>
     </CodeSection>
-
+    <ContentSection>
+      <P>Hey, looks like React Router uses Render props... yep, those are render props up there.  <A href="https://github.com/ReactTraining/react-router/blob/3d233bf0b6dd5bf68d9bac9c94273ae25646b207/packages/react-router/modules/Route.js#L113">here's a link to the source if you're interested</A></P>
+      <P>💡Remember: Woah!  I just noticed that Hot Module Reloading wasn't working.  I thought it was related to the new React Router implementation or my <Code>webpack.config.js</Code> but, a quick search yielded this gem of wisdom:</P>
+      <P><Code>{'<base href="/" /> <!-- this was missing in the <head> of my index.html!!!-->'}</Code></P>
+      <P>Thanks a lot <A href="https://github.com/lekhnath">lekhnath</A> for posting <A href="https://github.com/gaearon/react-hot-loader/issues/620#issuecomment-321729281">this in an issue on github</A></P>
+    </ContentSection>
   </React.Fragment>
 );

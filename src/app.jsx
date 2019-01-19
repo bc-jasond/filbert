@@ -14,23 +14,40 @@ import CssBase from './common/fonts.css';
 import About from './pages/about';
 import Page404 from './pages/404';
 
-import withLayout from './pages/layout';
+import PageLayout from './pages/layout';
 import PostHelloWorld from './pages/post-hello-world';
 import PostReactRouter from './pages/post-react-router';
-
-const PostHelloWorldWithLayout = withLayout(PostHelloWorld);
-const PostReactRouterWithLayout = withLayout(PostReactRouter);
-// note About page uses the current blog post layout
-const AboutWithLayout = withLayout(About);
 
 const App = () => (
   <React.Fragment>
     <BrowserRouter>
       <Switch>
         <Redirect push exact from="/" to="/posts/hello-world" />
-        <Route path="/about" component={AboutWithLayout} />
-        <Route path="/posts/hello-world" component={PostHelloWorldWithLayout} />
-        <Route path="/posts/react-router" component={PostReactRouterWithLayout} />
+        <Route
+          path="/about"
+          render={() => (
+            // NOTE: About page uses the current blog post layout
+            <PageLayout>
+              <About />
+            </PageLayout>
+          )}
+        />
+        <Route
+          path="/posts/hello-world"
+          render={() => (
+            <PageLayout>
+              <PostHelloWorld />
+            </PageLayout>
+          )}
+        />
+        <Route
+          path="/posts/react-router"
+          render={() => (
+            <PageLayout>
+              <PostReactRouter />
+            </PageLayout>
+          )}
+        />
         <Route component={Page404} />
       </Switch>
     </BrowserRouter>
