@@ -1,15 +1,19 @@
 import React from 'react';
 import {
   A,
-  Code, CodeSection,
+  Code,
+  CodeSection,
   ContentSection,
   H1,
   H2,
   ItalicText,
   Li,
+  LinkStyled,
   Ol,
-  P, Pre, SiteInfo,
-  SpacerSection
+  P,
+  Pre,
+  SiteInfo,
+  SpacerSection,
 } from '../common/shared-styled-components';
 
 export default () => (
@@ -211,6 +215,11 @@ export default () => (
         you <A href="https://twitter.com/reidhoffman/status/847142924240379904?lang=en">shipped too
           late.</A></ItalicText></P>
       <P><SiteInfo>Thanks for reading</SiteInfo></P>
+    </ContentSection>
+    <ContentSection>
+      <H2>
+        <LinkStyled to="/posts/react-router">Next Post: Intro to React Router</LinkStyled>
+      </H2>
     </ContentSection>
   </React.Fragment>
 );
