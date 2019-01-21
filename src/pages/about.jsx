@@ -6,7 +6,7 @@ export default () => (
     <H1>{'<Motivation>'}</H1>
     <ContentSection>
       <H2>Who?</H2>
-      <P>Hi. I'm a software engineer living in the Bay Area. Recently I've been frontend focused but, I
+      <P>Hi. I'm a software engineer living in the Bay Area. Professionally, I've been frontend focused but, I
         love working on APIs, databases, networking and linux, too. I'm also interested in woodworking, build /
         remodel
         projects, biking, classic literature, personal development, songwriting, singing, starting bands &
@@ -22,9 +22,9 @@ export default () => (
         produce writing topics.</P>
       <H2>Why?</H2>
       <P>I decided that I'm not allowing myself to 'just copy and paste from Stack Overflow' anymore. I'm good at it. In
-        fact, I'm f'in great at it and I've made a successful career out of it. But, it's not doing it for me anymore.
-        You mean now I have to RTFM? Yes. It's not deeply satisfying; kind-of knowing how things work. A few years ago I
-        took the first step in learning JavaScript and that has been great but, now it's time to go further. I want
+        fact, I'm f'in great at it and I've made a successful career out of it (that's a joke). But, it's not doing it for me anymore.
+        It's not deeply satisfying; only kind-of knowing how things work. A few years ago I
+        took the first step in 'really' learning JavaScript and that has been great but, now it's time to go further. I want
         to <A href="http://www.catb.org/jargon/html/story-of-mel.html">be like Mel</A>. Going deep is a habit, a way of
         life and I'm signing myself up for it.</P>
       <P>Building this app and writing about it is how I'm going to show up to 'do the reps', build this new habit and
@@ -38,7 +38,7 @@ export default () => (
       <P>Most of the time architecture is the <ItalicText>wrong thing</ItalicText> to be working on since it's hard to
         quantify a business value. "if it ain't broke don't fix it." On larger projects there can be a lot of fear and
         uncertainty around changing code critical to the build system or core architecture. It has become 'special code'
-        and the authors 'special engineers' sanctified by the organization. This puts event more scrutiny on any
+        and the authors 'special engineers' sanctified by the organization. This puts even more scrutiny on any
         changes. Changing that code is risky and often requires a blind 'break and fix' approach that you can only test
         so much on a local environment.</P>
       <P>But, <A href="https://en.wikipedia.org/wiki/Tragedy_of_the_commons">tragedy of the commons</A> is a thing in

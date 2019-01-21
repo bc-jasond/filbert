@@ -1,6 +1,7 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import { Link } from 'react-router-dom';
 import { contentSerif, italicSerif, monospaced, sansSerif, titleSerif } from './fonts.css';
-import { grey } from "./css";
+import { darkGrey, grey } from "./css";
 
 export const H1 = styled.h1`
   font-family: ${titleSerif}, serif;
@@ -81,14 +82,21 @@ export const Li = styled.li`
     text-align: right;
   }
 `;
-export const A = styled.a`
+const linkMixin = css`
+  font: inherit;
   text-decoration: none;
   background-repeat: repeat-x;
-  background-image: linear-gradient(to right,rgba(0,0,0,.84) 100%,rgba(0,0,0,0) 0);
+  background-image: linear-gradient(to right,${darkGrey} 100%,rgba(0,0,0,0) 0);
   background-image: linear-gradient(to right,currentColor 100%,currentColor 0);
   background-size: 1px 1px;
   background-position: 0 1.05em;
   background-position: 0 calc(1em + 1px);
+`;
+export const A = styled.a`
+ ${linkMixin}
+`;
+export const LinkStyled = styled(Link)`
+ ${linkMixin}
 `;
 export const Code = styled.code`
   display: inline-block;

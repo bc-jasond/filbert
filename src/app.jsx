@@ -15,6 +15,7 @@ import About from './pages/about';
 import Page404 from './pages/404';
 
 import PageLayout from './pages/layout';
+import PostList from './pages/posts';
 import PostHelloWorld from './pages/post-hello-world';
 import PostReactRouter from './pages/post-react-router';
 
@@ -22,13 +23,21 @@ const App = () => (
   <React.Fragment>
     <BrowserRouter>
       <Switch>
-        <Redirect push exact from="/" to="/posts/hello-world" />
+        <Redirect push exact from="/" to="/posts/react-router" />
         <Route
           path="/about"
           render={() => (
             // NOTE: About page uses the current blog post layout
             <PageLayout>
               <About />
+            </PageLayout>
+          )}
+        />
+        <Route
+          exact path="/posts"
+          render={() => (
+            <PageLayout>
+              <PostList />
             </PageLayout>
           )}
         />

@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
-import { monospaced } from '../common/fonts.css';
+import { monospaced, italicSerif } from '../common/fonts.css';
 
 const Header = styled.header`
   position: fixed;
@@ -33,6 +33,13 @@ const LinkStyled = styled(Link)`
   font-size: 24px;
   color: rgba(0,0,0,.54);
   text-decoration: none;
+  &:hover {
+    font-size: 28px;
+  }
+`;
+const LinkStyledAbout = styled(LinkStyled)`
+  font-family: ${italicSerif}, sans-serif;
+  margin-right: 10px;
 `;
 const HeaderSpacer = styled.div`
   z-index: 100;
@@ -61,6 +68,7 @@ export default props => (
     <Header>
       <HeaderContentContainer>
         <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+        <LinkStyledAbout to="/about">i</LinkStyledAbout>
       </HeaderContentContainer>
     </Header>
     <HeaderSpacer />
