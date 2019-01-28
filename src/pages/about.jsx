@@ -24,7 +24,7 @@ export default () => (
       <P>I decided that I'm not allowing myself to 'just copy and paste from Stack Overflow' anymore. I'm good at it. In
         fact, I'm f'in great at it and I've made a successful career out of it (that's a joke). But, it's not doing it for me anymore.
         It's not deeply satisfying; only kind-of knowing how things work. A few years ago I
-        took the first step in 'really' learning JavaScript and that has been great but, now it's time to go further. I want
+        took the first step in <A href="https://github.com/getify/You-Dont-Know-JS">'really'</A> <A href="https://www.crockford.com/javascript/index.html">learning</A> <A href="https://brendaneich.com/">JavaScript</A> and that has been great but, now it's time to go further. I want
         to <A href="http://www.catb.org/jargon/html/story-of-mel.html">be like Mel</A>. Going deep is a habit, a way of
         life and I'm signing myself up for it.</P>
       <P>Building this app and writing about it is how I'm going to show up to 'do the reps', build this new habit and

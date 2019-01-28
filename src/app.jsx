@@ -18,12 +18,13 @@ import PageLayout from './pages/layout';
 import PostList from './pages/posts';
 import PostHelloWorld from './pages/post-hello-world';
 import PostReactRouter from './pages/post-react-router';
+import PostNginx from './pages/post-nginx';
 
 const App = () => (
   <React.Fragment>
     <BrowserRouter>
       <Switch>
-        <Redirect push exact from="/" to="/posts/react-router" />
+        <Redirect push exact from="/" to="/posts/nginx" />
         <Route
           path="/about"
           render={() => (
@@ -54,6 +55,14 @@ const App = () => (
           render={() => (
             <PageLayout>
               <PostReactRouter />
+            </PageLayout>
+          )}
+        />
+        <Route
+          path="/posts/nginx"
+          render={() => (
+            <PageLayout>
+              <PostNginx />
             </PageLayout>
           )}
         />

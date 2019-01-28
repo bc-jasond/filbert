@@ -46,12 +46,13 @@ export const Pre = styled.pre``;
 export const CodeSection = styled(ContentSection)`
   font-family: ${monospaced}, monospace;
   font-size: 16px;
+  max-height: 350px;
   letter-spacing: -.03em;
   word-spacing: -.2em;
   line-height: 1.75;
   background: rgba(0,0,0,.05);
   padding: 20px;
-  overflow-x: scroll;
+  overflow: auto;
   ${Pre} {
     font: inherit;
     margin: 0;  
@@ -111,6 +112,5 @@ export const SiteInfo = styled.span`
   font-family: ${sansSerif}, sans-serif;
 `;
 export const ItalicText = styled.span`
-  display: inline-block;
   font-family: ${italicSerif}, sans-serif;
 `;
