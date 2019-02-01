@@ -17,9 +17,9 @@ import {
 
 export default () => (
   <React.Fragment>
-    <H1>Basic nginx configuration for Single Page Apps</H1>
+    <H1>Installing <Code>nginx</Code> on Ubuntu in AWS</H1>
     <SpacerSection />
-    <H2>Pass Routing Responsibilies up to the Browser (React Router) - Part 2 - Now with moar <Code>nginx</Code>™</H2>
+    <H2>Pass Routing Responsibilies up to the Browser (React Router) - Part 2 - replace <Code>webpack-dev-server</Code>with <Code>nginx</Code></H2>
     <ContentSection>
       <P>Building on the <LinkStyled to="/posts/react-router">last post about React Router</LinkStyled> and the rewrite configuration we used for <Code>webpack-dev-server</Code> we'll now move to using a webserver better suited for production: <A href="http://nginx.org/en/docs/">nginx</A></P>
       <P>Ok, is <Code>nginx</Code> installed on my AWS box?</P>
@@ -29,33 +29,33 @@ export default () => (
       <Pre>$</Pre>
     </CodeSection>
     <ContentSection>
-      <P>That means no.</P>
+      <P>That means no. K, we gotta do that first...</P>
     </ContentSection>
     <SpacerSection />
-    <H2>Step 1a: Installing <Code>nginx</Code> on Ubuntu on an AWS EC2</H2>
+    <H2>Installing <Code>nginx</Code> on Ubuntu on an AWS EC2</H2>
     <ContentSection>
       <P>Ok, let's install it.  How?  I'm using Ubuntu on AWS, how do I get version information? <Code>lsb_release -a</Code></P>
     </ContentSection>
     <CodeSection>
-      <Pre>ubuntu@ip-172-30-1-128:~$ lsb_release -a</Pre>
+      <Pre>$ lsb_release -a</Pre>
       <Pre>No LSB modules are available.</Pre>
       <Pre>Distributor ID:	Ubuntu</Pre>
       <Pre>Description:	Ubuntu 18.04.1 LTS</Pre>
       <Pre>Release:	18.04</Pre>
       <Pre>Codename:	bionic</Pre>
-      <Pre>ubuntu@ip-172-30-1-128:~$</Pre>
+      <Pre>$</Pre>
     </CodeSection>
     <ContentSection>
-      <P>Great, what's the best way to install stuff in Ubuntu?  If you said, "compile from source" then we should hang out sometime.  But, not today because I want to get this post done.</P>
-      <P>In addition to hand-built <A href="https://help.ubuntu.com/lts/serverguide/package-management.html.en">we have some options</A>.  Ubuntu is a flavor of <A href="https://www.debian.org/">Debian</A> and so <Code>dpkg</Code> would be the basic local only package management tool.  Run a <Code>dpkg -l</Code> to see what's installed on your system.  I don't see <Code>nginx</Code> in that list and I don't have a <Code>nginx.deb</Code> lying around so, I'd like to use a tool that can consult repositories on the interwebs.</P>
+      <P>Great, what's the best way to install stuff in Ubuntu?  If you said, "compile from source" then we should hang out.  Not today because I want to get this post done but, seriously, let's get coffee.</P>
+      <P>In addition to hand-built <A href="https://help.ubuntu.com/lts/serverguide/package-management.html.en">we have some options</A>.  Ubuntu is a flavor of <A href="https://www.debian.org/">Debian</A> and so <Code>dpkg</Code> is the local-only package management tool.  Run a <Code>dpkg -l</Code> to see what's installed on your system.  I don't see <Code>nginx</Code> in that list and I don't have a <Code>nginx.deb</Code> lying around so, I'd like to use a tool that can consult package repositories on the interwebs.</P>
       <P>I could download the current stable version <Code>1.14.2</Code> <A href="http://nginx.org/en/download.html">here</A> but, if it had dependencies, I'd have to go download those too.</P>
-      <P><Code>apt</Code> it is.  The <Code>apt</Code> command is a <ItalicText>"powerful command-line tool, which works with Ubuntu's Advanced Packaging Tool (APT)"</ItalicText>.  Since, I like to consider myself both advanced and powerful - this is the tool for me!</P>
+      <P><Code>apt</Code> it is.  The <Code>apt</Code> command is a <ItalicText>"powerful command-line tool, which works with Ubuntu's Advanced Packaging Tool (APT)"</ItalicText>.  Since I like to consider myself both advanced and powerful - this is the tool for me!</P>
       <P><Code>apt help</Code> will show you the 'most used commands' and a <Code>man apt</Code> will take you to the <A href="https://linux.die.net/man/8/apt">man pages</A></P>
       <P><Code>apt search nginx</Code> will list many packages.  If you're like me, you'll be intrigued by the <Code>nginx-light</Code> package as it seems to meet all current needs of this application.  I'm going to resist temptation and just install the 'virtual' package <Code>nginx</Code> which will first look for <Code>nginx-core</Code></P>
-      <P>Running <Code>sudo apt update</Code> produced a <Code>yarn</Code>:</P>
+      <P>Running <Code>sudo apt update</Code> produced a <Code>yarn</Code> error:</P>
     </ContentSection>
     <CodeSection>
-      <Pre>ubuntu@ip-172-30-1-128:~$ sudo apt update</Pre>
+      <Pre>$ sudo apt update</Pre>
       <Pre>Get:1 https://dl.yarnpkg.com/debian stable InRelease [13.3 kB]</Pre>
       <Pre>Hit:2 http://us-west-1.ec2.archive.ubuntu.com/ubuntu bionic InRelease</Pre>
       <Pre>Get:3 http://us-west-1.ec2.archive.ubuntu.com/ubuntu bionic-updates InRelease [88.7 kB]</Pre>
@@ -73,11 +73,11 @@ export default () => (
       <Pre>W: Some index files failed to download. They have been ignored, or old ones used instead.</Pre>
     </CodeSection>
     <ContentSection>
-      <P>Huh?  What does <Code>yarn</Code> have to do with <Code>apt</Code>?  Somewhere in my past I must have copy/pasted something from some random blog post like this one...</P>
+      <P>Huh?  What does <Code>yarn</Code> have to do with <Code>apt</Code>?  Somewhere in my past I must have copy/pasted some code from a random blog post like this one...</P>
       <P>If I do a <Code>cat /etc/apt/sources.list</Code> I see a bunch of ubuntu repo urls, but it also informs me of this:</P>
     </ContentSection>
     <CodeSection>
-      <Pre>ubuntu@ip-172-30-1-128:~$ cat /etc/apt/sources.list</Pre>
+      <Pre>$ cat /etc/apt/sources.list</Pre>
       <Pre>## Note, this file is written by cloud-init on first boot of an instance</Pre>
       <Pre>## modifications made here will not survive a re-bundle.</Pre>
       <Pre>## if you wish to make changes you can:</Pre>
@@ -87,25 +87,25 @@ export default () => (
       <Pre>## c.) make changes to template file /etc/cloud/templates/sources.list.tmpl</Pre>
     </CodeSection>
     <ContentSection>
-      <P>A quick <Code>ls</Code> and <Code>cat</Code> reveals...</P>
+      <P>Item <Code>b.)</Code> looks interesting.  A quick <Code>ls</Code> and <Code>cat</Code> reveals...</P>
     </ContentSection>
     <CodeSection>
-      <Pre>ubuntu@ip-172-30-1-128:~$ ls /etc/apt/sources.list.d/</Pre>
+      <Pre>$ ls /etc/apt/sources.list.d/</Pre>
       <Pre>yarn.list</Pre>
-      <Pre>ubuntu@ip-172-30-1-128:~$ cat /etc/apt/sources.list.d/yarn.list</Pre>
+      <Pre>$ cat /etc/apt/sources.list.d/yarn.list</Pre>
       <Pre>deb https://dl.yarnpkg.com/debian/ stable main</Pre>
     </CodeSection>
     <ContentSection>
-      <P>A ha. looks like we'll consult the yarn repo everytime we do anything with <Code>apt</Code>.  Good to know.  Oh yeah, I feel like I <A href="https://github.com/yarnpkg/yarn/issues/4453#issuecomment-329463752">solved this</A> locally already</P>
-      <P>Now the <Code>sudo apt update</Code> has finished without complaining but, looks like we're still behind at version <Code>1.14.0</Code>  I'm not super concerned with the <A href="http://nginx.org/en/CHANGES-1.14">updates between <Code>1.14.0</Code> and <Code>1.14.2</Code></A> but, I don't like being behind either.  Let's <A href="http://nginx.org/en/linux_packages.html#stable">add the nginx ubuntu package repo</A> to our source lists.</P>
+      <P>A ha. looks like we'll consult the yarn repo everytime we do anything with <Code>apt</Code>.  Good to know.  Oh yeah, I feel like this <A href="https://github.com/yarnpkg/yarn/issues/4453#issuecomment-329463752">looks familiar</A> from my local environment.</P>
+      <P>Now the <Code>sudo apt update</Code> has finished without complaining but, looks like we're still behind at version <Code>1.14.0</Code>.  I'm not super concerned with the <A href="http://nginx.org/en/CHANGES-1.14">updates between <Code>1.14.0</Code> and <Code>1.14.2</Code></A> but, I don't like being behind either.  Let's <A href="http://nginx.org/en/linux_packages.html#stable">add the nginx ubuntu package repo</A> to our source lists.</P>
       <P>First, I'll add a <Code>nginx.list</Code> file to the <Code>/etc/apt/sources.list.d</Code> directory and then add the signing key</P>
     </ContentSection>
     <CodeSection>
-      <Pre>ubuntu@ip-172-30-1-128:~$ sudo vi /etc/apt/sources.list.d/nginx.list</Pre>
-      <Pre>ubuntu@ip-172-30-1-128:~$ cat /etc/apt/sources.list.d/nginx.list</Pre>
+      <Pre>$ sudo vi /etc/apt/sources.list.d/nginx.list</Pre>
+      <Pre>$ cat /etc/apt/sources.list.d/nginx.list</Pre>
       <Pre>deb http://nginx.org/packages/ubuntu/ bionic nginx</Pre>
       <Pre>deb-src http://nginx.org/packages/ubuntu/ bionic nginx</Pre>
-      <Pre>ubuntu@ip-172-30-1-128:~$ curl -sS http://nginx.org/keys/nginx_signing.key | sudo apt-key add -</Pre>
+      <Pre>$ curl -sS http://nginx.org/keys/nginx_signing.key | sudo apt-key add -</Pre>
       <Pre>OK</Pre>
     </CodeSection>
     <ContentSection>
@@ -113,7 +113,7 @@ export default () => (
       <P>Run a <Code>sudo apt install nginx</Code> and confirm with <Code>dpkg -l | grep nginx</Code></P>
     </ContentSection>
     <CodeSection>
-      <Pre>ubuntu@ip-172-30-1-128:~$ sudo apt install nginx</Pre>
+      <Pre>$ sudo apt install nginx</Pre>
       <Pre>Reading package lists... Done</Pre>
       <Pre>Building dependency tree</Pre>
       <Pre>Reading state information... Done</Pre>
@@ -152,7 +152,7 @@ export default () => (
       <Pre>Processing triggers for systemd (237-3ubuntu10.11) ...</Pre>
       <Pre>Processing triggers for man-db (2.8.3-2) ...</Pre>
       <Pre>Processing triggers for ureadahead (0.100.0-20) ...</Pre>
-      <Pre>ubuntu@ip-172-30-1-128:~$ dpkg -l | grep nginx</Pre>
+      <Pre>$ dpkg -l | grep nginx</Pre>
       <Pre>ii  nginx                          1.14.2-1~bionic                   amd64        high performance web server</Pre>
     </CodeSection>
     <ContentSection>
@@ -163,10 +163,10 @@ export default () => (
       </Ol>
     </ContentSection>
     <CodeSection>
-      <Pre>ubuntu@ip-172-30-1-128:~$ sudo service nginx start</Pre>
+      <Pre>$ sudo service nginx start</Pre>
       <Pre>Job for nginx.service failed because the control process exited with error code.</Pre>
       <Pre>See "systemctl status nginx.service" and "journalctl -xe" for details.</Pre>
-      <Pre>ubuntu@ip-172-30-1-128:~$ systemctl status nginx.service</Pre>
+      <Pre>$ systemctl status nginx.service</Pre>
       <Pre>● nginx.service - nginx - high performance web server</Pre>
       <Pre>Loaded: loaded (/lib/systemd/system/nginx.service; enabled; vendor preset: enabled)</Pre>
       <Pre>Active: failed (Result: exit-code) since Sun 2019-01-27 23:23:58 UTC; 5h 21min ago</Pre>
@@ -186,28 +186,23 @@ export default () => (
     </CodeSection>
     <ContentSection>
       <P>Oh yeah, forgot to shutdown the <Code>webpack-dev-server</Code> which is still running as a background process attached to port 80</P>
-      <P>Running a <Code>sudo kill -9 $(sudo ps -A | grep node | cut -f2 -d' ')</Code> should do the trick... There were three processes named <Code>node</Code> - I'm assuming one for main and 2 child processes.  Here's <A href="https://medium.com/@NorbertdeLangen/communicating-between-nodejs-processes-4e68be42b917">an interesting article about creating child processes in <Code>node</Code> and communicating between them using <Code>ipc</Code></A></P>
-      <P>Let's try <Code>sudo service nginx start</Code> again... Get the prompt back after a short wait.  In linux no news is good news.  <Code>tail -f /var/log/nginx/access.log</Code> and visit <A href="http://dubaniewi.cz">http://dubaniewi.cz</A> and we should see an entry and get the default welcome.html...</P>
+      <P>Running a <Code>sudo kill -9 $(sudo ps -A | grep node | cut -f2 -d' ')</Code> should do the trick... There were three processes named <Code>node</Code> - I'm assuming one for the main <Code>webpack-dev-server</Code> and 2 child processes for change detection & rebuilding bundles for hot reloading.  Here's <A href="https://medium.com/@NorbertdeLangen/communicating-between-nodejs-processes-4e68be42b917">an interesting article about creating child processes in <Code>node</Code> and communicating between them using <Code>ipc</Code></A>.  If you're really interested in IPC then <A href="https://www.amazon.com/UNIX-Network-Programming-Interprocess-Communications/dp/0132974290">Steven's Unix Network Programming Volume 2</A> is a great resource.</P>
+      <P>Let's try <Code>sudo service nginx start</Code> again... Get the prompt back after a short wait.  In linux no news is good news.  <Code>tail -f /var/log/nginx/access.log</Code> and visit <A href="http://dubaniewi.cz">http://dubaniewi.cz</A> and we should see a log entry and get the default welcome.html...</P>
     </ContentSection>
     <CodeSection>
-      <Pre>ubuntu@ip-172-30-1-128:~$ sudo service nginx start</Pre>
-      <Pre>ubuntu@ip-172-30-1-128:~$ tail -f /var/log/nginx/</Pre>
+      <Pre>$ sudo service nginx start</Pre>
+      <Pre>$ tail -f /var/log/nginx/</Pre>
       <Pre>access.log  error.log</Pre>
-      <Pre>ubuntu@ip-172-30-1-128:~$ tail -f /var/log/nginx/access.log</Pre>
+      <Pre>$ tail -f /var/log/nginx/access.log</Pre>
       <Pre>108.233.248.51 - - [28/Jan/2019:06:12:42 +0000] "GET / HTTP/1.1" 200 612 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:64.0) Gecko/20100101 Firefox/64.0" "-"</Pre>
       <Pre>108.233.248.51 - - [28/Jan/2019:06:12:56 +0000] "GET / HTTP/1.1" 200 612 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:64.0) Gecko/20100101 Firefox/64.0" "-"</Pre>
     </CodeSection>
     <ContentSection>
-      <P>Ok, we're in business.  Now on to configuring <Code>nginx</Code> to serve our <Code>webpack</Code></P>
-    </ContentSection>
-    <SpacerSection />
-    <H2>Step 1b: Doing the thing this article was originally intended to be about - a basic <Code>nginx</Code> config for a SPA with HTML5 routing</H2>
-    <ContentSection>
-      <P></P>
+      <P>Ok, we're in business.  Now on to configuring <Code>nginx</Code> to serve our <Code>webpack</Code> bundled application</P>
     </ContentSection>
     <ContentSection>
-      <P><SiteInfo>That's about enough for right now.  TODO TODO TODO</SiteInfo></P>
-      <P>💡Remember: <ItalicText><A href="">// TODO: Some awesome quote here.</A></ItalicText></P>
+      <P><SiteInfo>That's about enough for right now.  We learned a little more about installing stuff in Ubuntu and <Code>nginx</Code> packages.</SiteInfo></P>
+      <P>💡Remember: <ItalicText>This process of digging up the details and learning how things work leads down many side streets and to many dead ends, but is fundamental (I think) to understanding something new. <A href="http://www.kohala.com/start/rstevensfaq.html">-W Richard Stevens on "Why did you write UNIX Network Programming?"</A></ItalicText></P>
       <P><SiteInfo>Thanks for reading</SiteInfo></P>
     </ContentSection>
     <ContentSection>

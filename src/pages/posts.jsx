@@ -5,7 +5,7 @@ import { LinkStyled, H2, Code } from '../common/shared-styled-components';
 export default () => (
   <React.Fragment>
     <H2>
-      <LinkStyled to="/posts/nginx">Replacing <Code>webpack-dev-server</Code> with <Code>nginx</Code> in Production</LinkStyled>
+      <LinkStyled to="/posts/nginx">Installing <Code>nginx</Code> on Ubuntu in AWS</LinkStyled>
     </H2>
     <H2>
       <LinkStyled to="/posts/react-router">Intro to React Router</LinkStyled>

@@ -163,7 +163,7 @@ export default () => (
     </ContentSection>
     <ContentSection>
       <H2>
-        <LinkStyled to="/posts/nginx">Next Post: Replacing <Code>webpack-dev-server</Code> with <Code>nginx</Code> in Production</LinkStyled>
+        <LinkStyled to="/posts/nginx">Next Post: Installing <Code>nginx</Code> on Ubuntu in AWS</LinkStyled>
       </H2>
     </ContentSection>
   </React.Fragment>
