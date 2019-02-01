@@ -161,5 +161,10 @@ export default () => (
       <P>💡Remember: <ItalicText><A href="https://blog.cleancoder.com/uncle-bob/2015/08/06/LetTheMagicDie.html">Before you commit to a framework, make sure you could write it.</A></ItalicText></P>
       <P><SiteInfo>Thanks for reading</SiteInfo></P>
     </ContentSection>
+    <ContentSection>
+      <H2>
+        <LinkStyled to="/posts/nginx">Next Post: Installing <Code>nginx</Code> on Ubuntu in AWS</LinkStyled>
+      </H2>
+    </ContentSection>
   </React.Fragment>
 );
