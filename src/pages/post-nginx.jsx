@@ -17,9 +17,9 @@ import {
 
 export default () => (
   <React.Fragment>
-    <H1>Installing <Code>nginx</Code> on Ubuntu in AWS</H1>
+    <H1>Installing Nginx on Ubuntu in AWS</H1>
     <SpacerSection />
-    <H2>Pass Routing Responsibilies up to the Browser (React Router) - Part 2 - replace <Code>webpack-dev-server</Code>with <Code>nginx</Code></H2>
+    <H2>Pass Routing Responsibilies up to the Browser (React Router) - Part 2 - installing <Code>nginx</Code></H2>
     <ContentSection>
       <P>Building on the <LinkStyled to="/posts/react-router">last post about React Router</LinkStyled> and the rewrite configuration we used for <Code>webpack-dev-server</Code> we'll now move to using a webserver better suited for production: <A href="http://nginx.org/en/docs/">nginx</A></P>
       <P>Ok, is <Code>nginx</Code> installed on my AWS box?</P>
@@ -207,7 +207,7 @@ export default () => (
     </ContentSection>
     <ContentSection>
       <H2>
-        <LinkStyled to="/posts">Back to all Posts</LinkStyled>
+        <LinkStyled to="/posts/nginx-first-config">Next Post: Basic Nginx config for a React app with React Router</LinkStyled>
       </H2>
     </ContentSection>
   </React.Fragment>
