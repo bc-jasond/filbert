@@ -60,7 +60,7 @@ module.exports = (env, argv) => {
           },
         ],
       },
-      port: isProduction ? 80 : 8080,
+      port: 8080,
     },
     plugins: [
       new HtmlWebpackPlugin({
