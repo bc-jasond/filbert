@@ -44,7 +44,7 @@ const App = () => (
           )}
         />
         <Route
-          path="/posts/hello-world"
+          exact path="/posts/hello-world"
           render={() => (
             <PageLayout>
               <PostHelloWorld />
@@ -52,7 +52,7 @@ const App = () => (
           )}
         />
         <Route
-          path="/posts/react-router"
+          exact path="/posts/react-router"
           render={() => (
             <PageLayout>
               <PostReactRouter />
@@ -60,7 +60,7 @@ const App = () => (
           )}
         />
         <Route
-          path="/posts/nginx"
+          exact path="/posts/nginx"
           render={() => (
             <PageLayout>
               <PostNginx />
@@ -68,7 +68,7 @@ const App = () => (
           )}
         />
         <Route
-          path="/posts/nginx-first-config"
+          exact path="/posts/nginx-first-config"
           render={() => (
             <PageLayout>
               <PostNginxFirstConfig />
