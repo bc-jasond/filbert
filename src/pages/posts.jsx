@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LinkStyled, H2, Code, H1 } from '../common/shared-styled-components';
+import { LinkStyled, H2 } from '../common/shared-styled-components';
 
 export default () => (
   <React.Fragment>
