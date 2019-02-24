@@ -114,3 +114,6 @@ export const SiteInfo = styled.span`
 export const ItalicText = styled.span`
   font-family: ${italicSerif}, sans-serif;
 `;
+export const StrikeText = styled.span`
+  text-decoration: line-through;
+`;

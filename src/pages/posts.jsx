@@ -4,7 +4,9 @@ import { LinkStyled, H2 } from '../common/shared-styled-components';
 
 export default () => (
   <React.Fragment>
-
+    <H2>
+      <LinkStyled to="/posts/display-images">Images - What's the Web without 'em?</LinkStyled>
+    </H2>
     <H2>
       <LinkStyled to="/posts/nginx-first-config">Basic Nginx config for a React app with React Router</LinkStyled>
     </H2>

@@ -129,7 +129,7 @@ export default () => (
     </ContentSection>
     <ContentSection>
       <H2>
-        <LinkStyled to="/posts">Back to all Posts</LinkStyled>
+        <LinkStyled to="/posts/display-images">Next Post: Images - What's the Web without 'em?</LinkStyled>
       </H2>
     </ContentSection>
   </React.Fragment>
