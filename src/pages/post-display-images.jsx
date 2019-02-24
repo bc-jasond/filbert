@@ -66,6 +66,17 @@ export default () => (
       <Pre>{'</div>'}</Pre>
     </CodeSection>
     <ContentSection>
+      <P>First thing I noticed is the use of the <Code>{'<figure>'}</Code> and <Code>{'<figcaption>'}</Code> tags. 👏 for using semantic tags, it's not everyday you get to you use them you know?  The second thing I notice, and especially when using <A href="https://css-tricks.com/throttling-the-network/">throttling in the network tab</A>, is the use of a grey placeholder the same size as the image.  Using placeholders definitely provides a better UX - the page won't jump around as the assets load.</P>
+      <P>Medium does image resizing, fingerprinting and probably initial (small) + deferred (full-size) image swaps.  My image is pretty small at <Code>140k</Code> but, I'd imagine above a certain threshold they'll load a preview image.  I'm going to punt on that for now.</P>
+      <P>It's interesting to see how they use the CDN path to route to assets by size <Code>/max/1000</Code>🧐  Go directly to their CDN base route for a fun time <A href="https://cdn-images-1.medium.com/">https://cdn-images-1.medium.com/</A></P>
+      <P>The image has it's original dimensions as <Code>data-</Code> attributes on the <Code>{'<img>'}</Code> tag.  These can be used to scale the <Code>aspectRatioPlaceholder</Code> container before the asset loads.  The 'Outset Center' layout option comes with a <Code>max-width: 1000px;</Code> constraint.  Use that to find a scale factor <Code>2404 / 1000 = 2.404</Code> and then find our new height <Code>Math.ceil(1622 / 2.404) = 675</Code></P>
+    </ContentSection>
+    <SpacerSection />
+    <H2>Where should I put these images?</H2>
+    <ContentSection>
+      <P><Code>S3</Code> right?  Sure, I could do that</P>
+    </ContentSection>
+    <ContentSection>
       <P><SiteInfo>Today we got an image to display. This is big, people.  Almost as big as the quote below.  Next, I think it's time to start thinking about how to CRUD these blog posts: modelling the data, rendering the model, storing the data, serving the data, routing to posts, an admin view, aaaaand looks like there's plenty to write about for a while... 🤔</SiteInfo></P>
       <P>💡Remember: <ItalicText>This project is experimental and of course comes without any warranty whatsoever. However, it could start a revolution in information access. <A href="https://groups.google.com/forum/#!topic/comp.sys.next.announce/avWAjISncfw">-Tim Berners-Lee</A> from "WorldWideWeb wide-area hypertext app available" (19 August 1991), the announcement of the first WWW hypertext browser on the Usenet newsgroup comp.sys.next.announce.</ItalicText></P>
       <P><SiteInfo>Thanks for reading</SiteInfo></P>

@@ -117,3 +117,19 @@ export const ItalicText = styled.span`
 export const StrikeText = styled.span`
   text-decoration: line-through;
 `;
+export const Figure = styled.figure`
+  padding: 5px 0;
+  position: relative;
+`;
+export const FigureCaption = styled.figcaption`
+  --x-height-multiplier: 0.342;
+  --baseline-multiplier: 0.22;
+  font-family: ${sansSerif}, sans-serif;
+  font-weight: 300;
+  font-style: normal;
+  font-feature-settings: "liga" on,"lnum" on;
+  font-size: 16px;
+  line-height: 1.4;
+  color: rgba(0,0,0,.68);
+  letter-spacing: 0;
+`;
