@@ -10,7 +10,7 @@ const sectionWidthMixin = css`
 export const H1 = styled.h1`
   ${sectionWidthMixin}
   font-family: ${titleSerif}, serif;
-  font-size: 42px;
+  font-size: 46px;
   line-height: 1.25;
   margin-bottom: 24px;
 `;
@@ -24,7 +24,7 @@ export const H2 = styled.h2`
   font-family: ${sansSerif},sans-serif;
   letter-spacing: -.02em;
   font-style: normal;
-  font-size: 26px;
+  font-size: 32px;
   line-height: 1.22;
   letter-spacing: -.012em;
 `;
@@ -42,7 +42,7 @@ export const SpacerSection = styled(ContentSection)`
     text-align: center;
     display: block;
     margin: 0 auto;
-    width: 388px;
+    width: 266px;
   }
 `;
 export const ImageSection = styled(ContentSection)`

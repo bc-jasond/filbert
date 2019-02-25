@@ -186,7 +186,8 @@ export default () => (
     </CodeSection>
     <ContentSection>
       <P>Oh yeah, forgot to shutdown the <Code>webpack-dev-server</Code> which is still running as a background process attached to port 80</P>
-      <P>Running a <Code>sudo kill -9 $(sudo ps -A | grep node | cut -f2 -d' ')</Code> should do the trick... There were three processes named <Code>node</Code> - I'm assuming one for the main <Code>webpack-dev-server</Code> and 2 child processes for change detection & rebuilding bundles for hot reloading.  Here's <A href="https://medium.com/@NorbertdeLangen/communicating-between-nodejs-processes-4e68be42b917">an interesting article about creating child processes in <Code>node</Code> and communicating between them using <Code>ipc</Code></A>.  If you're really interested in IPC then <A href="https://www.amazon.com/UNIX-Network-Programming-Interprocess-Communications/dp/0132974290">Steven's Unix Network Programming Volume 2</A> is a great resource.</P>
+      <P>Running a <Code>sudo kill -9 $(sudo ps -A | grep node | cut -f2 -d' ')</Code> should do the trick... There were three processes named <Code>node</Code> - I'm assuming one for the main <Code>webpack-dev-server</Code> and 2 child processes for change detection & rebuilding bundles for hot reloading.</P>
+      <P>🐎 Tangent: Here's <A href="https://medium.com/@NorbertdeLangen/communicating-between-nodejs-processes-4e68be42b917">an interesting article about creating child processes in <Code>node</Code> and communicating between them using <Code>ipc</Code></A>.  If you're really interested in IPC then <A href="https://www.amazon.com/UNIX-Network-Programming-Interprocess-Communications/dp/0132974290">Steven's Unix Network Programming Volume 2</A> is a great resource.</P>
       <P>Let's try <Code>sudo service nginx start</Code> again... Get the prompt back after a short wait.  In linux no news is good news.  <Code>tail -f /var/log/nginx/access.log</Code> and visit <A href="http://dubaniewi.cz">http://dubaniewi.cz</A> and we should see a log entry and get the default welcome.html...</P>
     </ContentSection>
     <CodeSection>
@@ -202,7 +203,7 @@ export default () => (
     </ContentSection>
     <ContentSection>
       <P><SiteInfo>That's about enough for right now.  We learned a little more about installing stuff in Ubuntu and <Code>nginx</Code> packages.</SiteInfo></P>
-      <P>💡Remember: <ItalicText>This process of digging up the details and learning how things work leads down many side streets and to many dead ends, but is fundamental (I think) to understanding something new. <A href="http://www.kohala.com/start/rstevensfaq.html">-W Richard Stevens on "Why did you write UNIX Network Programming?"</A></ItalicText></P>
+      <P>💡 Remember: <ItalicText>This process of digging up the details and learning how things work leads down many side streets and to many dead ends, but is fundamental (I think) to understanding something new. <A href="http://www.kohala.com/start/rstevensfaq.html">-W Richard Stevens on "Why did you write UNIX Network Programming?"</A></ItalicText></P>
       <P><SiteInfo>Thanks for reading</SiteInfo></P>
     </ContentSection>
     <ContentSection>
