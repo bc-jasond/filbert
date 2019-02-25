@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import {
   A,
   LinkStyled,
@@ -14,7 +13,8 @@ import {
   P,
   Pre,
   SpacerSection,
-  ItalicText, SiteInfo,
+  ItalicText,
+  SiteInfo,
   StrikeText,
   Figure,
   FigureCaption,
@@ -39,7 +39,7 @@ export default () => (
         <Li><SiteInfo>Outset Center</SiteInfo> (image is wider than text, no left/right spacing in tablet view and smaller)</Li>
         <Li><SiteInfo>Fill Width</SiteInfo> (image goes 100% width of the viewport all the time)</Li>
       </Ol>
-      <P>If I had to pick only one of those layout options because <StrikeText>I'm lazy</StrikeText> I'm highly motivated to ship - it would be <SiteInfo>Outset Center</SiteInfo>.  Ok, let's do it.</P>
+      <P>If I had to pick only one of those layout options because <StrikeText>I'm lazy</StrikeText> I'm <ItalicText>highly motivated</ItalicText> to ship - it would be <SiteInfo>Outset Center</SiteInfo>.  Ok, let's do it.</P>
       <P>The Medium markup looks like this (starting from a <Code>.section-inner</Code> node AKA a row of content):</P>
     </ContentSection>
     <CodeSection>
@@ -136,10 +136,8 @@ export default () => (
       <P>💡Remember: <ItalicText>This project is experimental and of course comes without any warranty whatsoever. However, it could start a revolution in information access. <A href="https://groups.google.com/forum/#!topic/comp.sys.next.announce/avWAjISncfw">-Tim Berners-Lee</A> from "WorldWideWeb wide-area hypertext app available" (19 August 1991), the announcement of the first WWW hypertext browser on the Usenet newsgroup comp.sys.next.announce.</ItalicText></P>
       <P><SiteInfo>Thanks for reading</SiteInfo></P>
     </ContentSection>
-    <ContentSection>
-      <H2>
-        <LinkStyled to="/posts">Back to all Posts</LinkStyled>
-      </H2>
-    </ContentSection>
+    <H2>
+      <LinkStyled to="/posts">Back to all Posts</LinkStyled>
+    </H2>
   </React.Fragment>
 )

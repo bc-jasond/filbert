@@ -13,7 +13,8 @@ import {
   P,
   Pre,
   SpacerSection,
-  ItalicText, SiteInfo,
+  ItalicText,
+  SiteInfo,
 } from '../common/shared-styled-components';
 
 export default () => (
