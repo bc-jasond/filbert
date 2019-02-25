@@ -3,13 +3,19 @@ import { Link } from 'react-router-dom';
 import { contentSerif, italicSerif, monospaced, sansSerif, titleSerif } from './fonts.css';
 import { darkGrey, grey } from "./css";
 
+const sectionWidthMixin = css`
+  max-width: 740px;
+  margin: 0 auto;
+`;
 export const H1 = styled.h1`
+  ${sectionWidthMixin}
   font-family: ${titleSerif}, serif;
-  font-size: 42px;
+  font-size: 46px;
   line-height: 1.25;
   margin-bottom: 24px;
 `;
 export const H2 = styled.h2`
+ ${sectionWidthMixin}
   margin-top: 30px;
   margin-bottom: 8px;
   font-weight: 600;
@@ -18,26 +24,30 @@ export const H2 = styled.h2`
   font-family: ${sansSerif},sans-serif;
   letter-spacing: -.02em;
   font-style: normal;
-  font-size: 26px;
+  font-size: 32px;
   line-height: 1.22;
   letter-spacing: -.012em;
 `;
 export const ContentSection = styled.section`
+  ${sectionWidthMixin}
   font-family: ${contentSerif}, serif;
   font-size: 21px;
   line-height: 1.58;
   letter-spacing: -.01em;
-  margin-bottom: 40px;
+  margin-bottom: 52px;
 `;
 export const SpacerSection = styled(ContentSection)`
-  line-height: 0;
   &::after {
-    content: '\\00a0';
+    content: '✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏';
+    text-align: center;
     display: block;
     margin: 0 auto;
-    border-bottom: 1px solid ${grey};
-    width: 88px;
+    width: 266px;
   }
+`;
+export const ImageSection = styled(ContentSection)`
+  max-width: 1000px;
+  margin: 0 auto 52px;
 `;
 export const P = styled.p`
   margin-bottom: 32px;
@@ -113,4 +123,45 @@ export const SiteInfo = styled.span`
 `;
 export const ItalicText = styled.span`
   font-family: ${italicSerif}, sans-serif;
+`;
+export const StrikeText = styled.span`
+  text-decoration: line-through;
+`;
+export const Figure = styled.figure`
+  padding: 5px 0;
+  position: relative;
+`;
+export const FigureCaption = styled.figcaption`
+  font-family: ${sansSerif}, sans-serif;
+  font-weight: 300;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1.4;
+  color: rgba(0,0,0,.68);
+  letter-spacing: 0;
+  text-align: center;
+  margin: 10px auto 0;
+`;
+export const ImagePlaceholderContainer = styled.div`
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  ${p => `
+    max-width: ${p.w}px;
+    max-height: ${p.h}px;
+  `}
+`;
+export const ImagePlaceholderFill = styled.div`
+  ${p => `padding-bottom: ${(p.h / p.w) * 100}%;`}
+`;
+export const Img = styled.img`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  display: block;
+  max-width: 100%;
+  border: 0;
 `;

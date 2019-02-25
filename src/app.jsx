@@ -20,12 +20,13 @@ import PostHelloWorld from './pages/post-hello-world';
 import PostReactRouter from './pages/post-react-router';
 import PostNginx from './pages/post-nginx';
 import PostNginxFirstConfig from './pages/post-nginx-first-config';
+import PostDisplayImages from './pages/post-display-images';
 
 const App = () => (
   <React.Fragment>
     <BrowserRouter>
       <Switch>
-        <Redirect push exact from="/" to="/posts/nginx-first-config" />
+        <Redirect push exact from="/" to="/posts/display-images" />
         <Route
           path="/about"
           render={() => (
@@ -72,6 +73,14 @@ const App = () => (
           render={() => (
             <PageLayout>
               <PostNginxFirstConfig />
+            </PageLayout>
+          )}
+        />
+        <Route
+          exact path="/posts/display-images"
+          render={() => (
+            <PageLayout>
+              <PostDisplayImages />
             </PageLayout>
           )}
         />

@@ -33,6 +33,7 @@ const LinkStyled = styled(Link)`
   font-size: 24px;
   color: rgba(0,0,0,.54);
   text-decoration: none;
+  transition: font-size 0.125s;
   &:hover {
     font-size: 28px;
   }
@@ -40,6 +41,7 @@ const LinkStyled = styled(Link)`
 const LinkStyledAbout = styled(LinkStyled)`
   font-family: ${italicSerif}, sans-serif;
   margin-right: 10px;
+  transition: font-size 0.175s;
 `;
 const HeaderSpacer = styled.div`
   z-index: 100;
@@ -47,7 +49,6 @@ const HeaderSpacer = styled.div`
   height: 65px;
 `;
 const Article = styled.article`
-  max-width: 740px;
   padding: 0 20px 80px 20px;
   width: 100%;
   margin: 0 auto;
