@@ -120,7 +120,7 @@ export default () => (
       <Pre>{'`;'}</Pre>
     </CodeSection>
     <ContentSection>
-      <P>I'm sure I'll have to tweak this implementation further to make it reusable but, it's going to work for now.</P>
+      <P>Layout looks good.  Currently images are blocking and on slow connections we don't get the nice <SiteInfo>text + placeholders</SiteInfo> initial view.  That will have to follow in another post.  Also, I'm sure I'll have to tweak this implementation further to make it a fully reusable component.</P>
     </ContentSection>
     <ImageSection>
       <Figure>
