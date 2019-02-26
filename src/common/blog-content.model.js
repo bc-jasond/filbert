@@ -1,16 +1,126 @@
-export const BlogPost = {
-  id: '', // int or hash
-  canonical: '', // permalink, human readable
-  title: '',
-  sections: [],
-  tags: [], // right?
+import React from 'react';
+import {
+  NODE_TYPE_SECTION_H1,
+  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_TEXT } from './constants';
+import {
+  H1,
+  H2,
+  SpacerSection,
+} from './shared-styled-components';
+
+class BlogPostNode {
+  constructor(type, childNodes = [], content = '', id = '') {
+    this.type = type;
+    this.childNodes = childNodes;
+    this.content = content;
+    this.id = id;
+  }
 }
 
-export const BlogPostNode = {
-  id: '', // might not need this for a 'save the whole document on every change' first version but, why not?
-  type: '',
-  childNodes: [],
-  content: '',
+export class NodeText extends BlogPostNode {
+  constructor(content) {
+    super(NODE_TYPE_TEXT, [], content);
+  }
+
+  render() {
+    return this.content;
+  }
+}
+
+export class NodeSpacer extends BlogPostNode {
+  constructor() {
+    super(NODE_TYPE_SECTION_SPACER);
+  }
+
+  render() {
+    return (<SpacerSection />)
+  }
+}
+
+export class NodeH1 extends BlogPostNode {
+  constructor(childNodes) {
+    super(NODE_TYPE_SECTION_H1, childNodes);
+  }
+
+  render() {
+    return (<H1>{this.childNodes.map(node => node.render())}</H1>)
+  }
+}
+
+export class NodeH2 extends BlogPostNode {
+  constructor(childNodes) {
+    super(NODE_TYPE_SECTION_H2, childNodes);
+  }
+
+  render() {
+    return (<H2>{this.childNodes.map(node => node.render())}</H2>)
+  }
+}
+
+export class BlogPost {
+  constructor(canonical, sections = [], id = '', tags = []) {
+    this.canonical = canonical; // permalink, human readable
+    this.sections = sections; // [ BlogPostNode, ]
+    this.id = id; // int or hash
+    this.tags = tags; // for later?
+  }
+
+  toJson() {
+    // recursively write out a React Component tree to JSON for storage
+  }
+
+  render() {
+    return (
+      <React.Fragment>
+        {this.sections.map(node => node.render())}
+      </React.Fragment>
+    );
+  }
+}
+
+export function nodeFromJson(data) {
+  const {
+    type,
+    childNodes,
+    content,
+  } = data;
+  // create the new node
+  let newNode;
+  switch (type) {
+    case NODE_TYPE_TEXT:
+      newNode = new NodeText(content);
+      break;
+    case NODE_TYPE_SECTION_H1:
+      newNode = new NodeH1();
+      break;
+    case NODE_TYPE_SECTION_H2:
+      newNode = new NodeH2();
+      break;
+    case NODE_TYPE_SECTION_SPACER:
+      newNode = new NodeSpacer();
+      break;
+    default:
+      throw new Error(`Unknown Node Type: ${data.type}`);
+  }
+  // recursively add child nodes, if present
+  if (childNodes) {
+    newNode.childNodes = childNodes.map(node => nodeFromJson(node))
+  }
+  return newNode;
+}
+
+export default function fromJson(data) {
+  // recursively build up a React Component tree
+  const {
+    canonical,
+    sections,
+  } = data;
+  return new BlogPost(
+    canonical,
+    sections.map(section => nodeFromJson(section)),
+  );
 }
 
 // opinionated section nodes - can't have children
@@ -48,26 +158,3 @@ export const PostLink = {
 // export const Tangent = {} // horse emoji
 // export const Shrug = {} // shrug emoji
 
-// sections for layout - can only be children of the root node 'blogContent'
-export const NODE_TYPE_SECTION_H1 = 'h1';
-export const NODE_TYPE_SECTION_H2 = 'h2';
-export const NODE_TYPE_SECTION_SPACER = 'spacer';
-export const NODE_TYPE_SECTION_CONTENT = 'content';
-// opinionated sections - have fixed format, can't have children
-export const NODE_TYPE_SECTION_CODE = 'code';
-export const NODE_TYPE_SECTION_IMAGE = 'image';
-export const NODE_TYPE_SECTION_QUOTE = 'quote';
-export const NODE_TYPE_SECTION_POSTLINK = 'postlink';
-
-// nodes for content - must have a parent node of a section type
-export const NODE_TYPE_TEXT = 'text';  // the #text or DOM nodeType 3
-export const NODE_TYPE_P = 'p';
-export const NODE_TYPE_PRE = 'pre';
-export const NODE_TYPE_OL = 'ol';
-export const NODE_TYPE_LI = 'li';
-export const NODE_TYPE_A = 'a';
-export const NODE_TYPE_LINK = 'link';
-export const NODE_TYPE_CODE = 'code';
-export const NODE_TYPE_SITEINFO = 'siteinfo';
-export const NODE_TYPE_ITALIC = 'italic';
-export const NODE_TYPE_STRIKE = 'strike';

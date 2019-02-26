@@ -22,6 +22,8 @@ import PostNginx from './pages/post-nginx';
 import PostNginxFirstConfig from './pages/post-nginx-first-config';
 import PostDisplayImages from './pages/post-display-images';
 
+import PageLayoutTest from './pages/layout-test';
+
 const App = () => (
   <React.Fragment>
     <BrowserRouter>
@@ -82,6 +84,12 @@ const App = () => (
             <PageLayout>
               <PostDisplayImages />
             </PageLayout>
+          )}
+        />
+        <Route
+          exact path="/posts/test"
+          render={() => (
+            <PageLayoutTest />
           )}
         />
         <Route component={Page404} />
