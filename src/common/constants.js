@@ -4,7 +4,7 @@ export const NODE_TYPE_SECTION_H2 = 'h2';
 export const NODE_TYPE_SECTION_SPACER = 'spacer';
 export const NODE_TYPE_SECTION_CONTENT = 'content';
 // opinionated sections - have fixed format, can't have children
-export const NODE_TYPE_SECTION_CODE = 'code';
+export const NODE_TYPE_SECTION_CODE = 'codesection';
 export const NODE_TYPE_SECTION_IMAGE = 'image';
 export const NODE_TYPE_SECTION_QUOTE = 'quote';
 export const NODE_TYPE_SECTION_POSTLINK = 'postlink';

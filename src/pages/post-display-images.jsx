@@ -29,7 +29,7 @@ export default () => (
     <SpacerSection />
     <H2>How does Medium do it?</H2>
     <ContentSection>
-      <P>Now that we've got a <LinkStyled to="/posts/nginx">proper webserver in place</LinkStyled> it's time to display some images.  So far, I've only implemented the 'Add a new part' from Medium's ⨁ menu.  Since that's just a line it was pretty straightforward lol.</P>
+      <P>Now that we've got a <LinkStyled to="/posts/nginx-first-config">proper webserver in place</LinkStyled> it's time to display some images.  So far, I've only implemented the 'Add a new part' from Medium's ⨁ menu.  Since that's just a line it was pretty straightforward lol.</P>
       <P>The most complex thing to implement from that menu is the <SiteInfo>Embed</SiteInfo> type, by far.  There's a lot going on in the background to go from a url to a small, seamless content rich 'widget'.  Embeds will definitely merit several blog posts on their own.</P>
       <P>For now, we'll get images displaying and that will suffice for a first version of layout for my technical writing endeavors.</P>
       <P>Medium gives you 4 image layout options:</P>
@@ -133,7 +133,11 @@ export default () => (
     </ImageSection>
     <ContentSection>
       <P><SiteInfo>Today we got an image to display. This is big, people.  Almost as big as the quote below.  Next, I think it's time to start thinking about how to CRUD these blog posts: modelling the data, rendering the model, storing the data, serving the data, routing to posts, an admin view, aaaaand looks like there's plenty to write about for a while... 🤔</SiteInfo></P>
-      <P>💡Remember: <ItalicText>This project is experimental and of course comes without any warranty whatsoever. However, it could start a revolution in information access. <A href="https://groups.google.com/forum/#!topic/comp.sys.next.announce/avWAjISncfw">-Tim Berners-Lee</A> from "WorldWideWeb wide-area hypertext app available" (19 August 1991), the announcement of the first WWW hypertext browser on the Usenet newsgroup comp.sys.next.announce.</ItalicText></P>
+    </ContentSection>
+    <ContentSection>
+      <P>💡Remember: <ItalicText>This project is experimental and of course comes without any warranty whatsoever. However, it could start a revolution in information access. <A href="https://groups.google.com/forum/#!topic/comp.sys.next.announce/avWAjISncfw">-Tim Berners-Lee from "WorldWideWeb wide-area hypertext app available" (19 August 1991)</A>, the announcement of the first WWW hypertext browser on the Usenet newsgroup comp.sys.next.announce.</ItalicText></P>
+    </ContentSection>
+    <ContentSection>
       <P><SiteInfo>Thanks for reading</SiteInfo></P>
     </ContentSection>
     <H2>
