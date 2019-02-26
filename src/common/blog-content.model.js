@@ -11,11 +11,14 @@ import {
   NODE_TYPE_SECTION_CODE,
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2, NODE_TYPE_SECTION_IMAGE, NODE_TYPE_SECTION_QUOTE,
+  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_SECTION_IMAGE,
+  NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_SECTION_POSTLINK,
   NODE_TYPE_SITEINFO,
   NODE_TYPE_STRIKE,
-  NODE_TYPE_TEXT, NODE_TYPE_SECTION_POSTLINK
+  NODE_TYPE_TEXT,
 } from './constants';
 import {
   H1,
@@ -301,7 +304,7 @@ export class BlogPost {
   }
 }
 
-export function nodeFromJson(data) {
+function getNodeFromJson(data) {
   const {
     type,
     childNodes,
@@ -320,74 +323,61 @@ export function nodeFromJson(data) {
     // for postlink
     to,
   } = data;
-  // create the new node
-  let newNode;
   switch (type) {
     case NODE_TYPE_TEXT:
-      newNode = new NodeText(content);
-      break;
+      return new NodeText(content);
     case NODE_TYPE_CODE:
-      newNode = new NodeCode(content);
-      break;
+      return new NodeCode(content);
     case NODE_TYPE_SECTION_H1:
-      newNode = new NodeH1();
-      break;
+      return new NodeH1();
     case NODE_TYPE_SECTION_H2:
-      newNode = new NodeH2();
-      break;
+      return new NodeH2();
     case NODE_TYPE_SECTION_SPACER:
-      newNode = new NodeSpacer();
-      break;
+      return new NodeSpacer();
     case NODE_TYPE_SECTION_CONTENT:
-      newNode = new NodeContent();
-      break;
+      return new NodeContent();
     case NODE_TYPE_SECTION_CODE:
-      newNode = new NodeCodeSection(lines);
-      break;
+      return new NodeCodeSection(lines);
     case NODE_TYPE_SECTION_IMAGE:
-      newNode = new NodeImage(width, height, url, caption);
-      break;
+      return new NodeImage(width, height, url, caption);
     case NODE_TYPE_SECTION_QUOTE:
-      newNode = new NodeQuote(quote, author, url, context);
-      break;
+      return new NodeQuote(quote, author, url, context);
     case NODE_TYPE_SECTION_POSTLINK:
-      newNode = new NodePostLink(to, content);
-      break;
+      return new NodePostLink(to, content);
     case NODE_TYPE_P:
-      newNode = new NodeP();
-      break;
+      return new NodeP();
     case NODE_TYPE_OL:
-      newNode = new NodeOl();
-      break;
+      return new NodeOl();
     case NODE_TYPE_LI:
-      newNode = new NodeLi();
-      break;
+      return new NodeLi();
     case NODE_TYPE_LINK:
-      newNode = new NodeLink([], content);
-      break;
+      return new NodeLink([], content);
     case NODE_TYPE_A:
-      newNode = new NodeA([], content);
-      break;
+      return new NodeA([], content);
     case NODE_TYPE_SITEINFO:
-      newNode = new NodeSiteInfo();
-      break;
+      return new NodeSiteInfo();
     case NODE_TYPE_STRIKE:
-      newNode = new NodeStrike();
-      break;
+      return new NodeStrike();
     case NODE_TYPE_ITALIC:
-      newNode = new NodeItalic();
-      break;
+      return new NodeItalic();
     default:
       throw new Error(`nodeFromJson: Parse Error: ¯\\_(ツ)_/¯ Unknown Node Type: ${data.type}`);
   }
-  // recursively add child nodes, if present
+}
+
+export function nodeFromJson(data) {
+  const { childNodes } = data;
+  // create the new node from raw data
+  const newNode = getNodeFromJson(data);
+  // recursively create / add child nodes from raw data, if present
   if (childNodes) {
     newNode.childNodes = childNodes.map(node => nodeFromJson(node))
   }
+  // return that guy
   return newNode;
 }
 
-export default function fromJson(data) {
+export default function blogPostFromJson(data) {
   // recursively build up a React Component tree
   const {
     canonical,
