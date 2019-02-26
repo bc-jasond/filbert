@@ -1,3 +1,4 @@
+export const NODE_TYPE_ROOT = 'root';
 // sections for layout - can only be children of the root node 'blogContent'
 export const NODE_TYPE_SECTION_H1 = 'h1';
 export const NODE_TYPE_SECTION_H2 = 'h2';
@@ -12,7 +13,7 @@ export const NODE_TYPE_SECTION_POSTLINK = 'postlink';
 // nodes for content - must have a parent node of a section type
 export const NODE_TYPE_TEXT = 'text';  // the #text or DOM nodeType 3
 export const NODE_TYPE_P = 'p';
-export const NODE_TYPE_PRE = 'pre';
+// export const NODE_TYPE_PRE = 'pre';
 export const NODE_TYPE_OL = 'ol';
 export const NODE_TYPE_LI = 'li';
 export const NODE_TYPE_A = 'a';

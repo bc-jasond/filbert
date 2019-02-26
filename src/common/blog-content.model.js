@@ -19,6 +19,7 @@ import {
   NODE_TYPE_SITEINFO,
   NODE_TYPE_STRIKE,
   NODE_TYPE_TEXT,
+  NODE_TYPE_ROOT,
 } from './constants';
 import {
   H1,
@@ -50,6 +51,28 @@ class BlogPostNode {
     this.childNodes = childNodes;
     this.content = content;
     this.id = id;
+  }
+
+  toJson() {
+    const raw = {...this};
+    raw.childNodes = raw.childNodes.map(child => child.toJson());
+    return raw;
+  }
+}
+
+export class BlogPost extends BlogPostNode {
+  constructor(canonical, id = '', tags = []) {
+    super(NODE_TYPE_ROOT, [], '', id);
+    this.canonical = canonical; // permalink, human readable
+    this.tags = tags; // for later?
+  }
+
+  render() {
+    return (
+      <React.Fragment>
+        {this.childNodes.map(node => node.render())}
+      </React.Fragment>
+    );
   }
 }
 
@@ -283,31 +306,10 @@ export class NodeItalic extends BlogPostNode {
   }
 }
 
-export class BlogPost {
-  constructor(canonical, sections = [], id = '', tags = []) {
-    this.canonical = canonical; // permalink, human readable
-    this.sections = sections; // [ BlogPostNode, ]
-    this.id = id; // int or hash
-    this.tags = tags; // for later?
-  }
-
-  toJson() {
-    // recursively write out a React Component tree to JSON for storage
-  }
-
-  render() {
-    return (
-      <React.Fragment>
-        {this.sections.map(node => node.render())}
-      </React.Fragment>
-    );
-  }
-}
-
 function getNodeFromJson(data) {
   const {
+    id,
     type,
-    childNodes,
     content,
     // for code section
     lines,
@@ -322,8 +324,13 @@ function getNodeFromJson(data) {
     context,
     // for postlink
     to,
+    // for root
+    canonical,
+    tags,
   } = data;
   switch (type) {
+    case NODE_TYPE_ROOT:
+      return new BlogPost(canonical, [], id, tags);
     case NODE_TYPE_TEXT:
       return new NodeText(content);
     case NODE_TYPE_CODE:
@@ -365,7 +372,7 @@ function getNodeFromJson(data) {
   }
 }
 
-export function nodeFromJson(data) {
+export default function nodeFromJson(data) {
   const { childNodes } = data;
   // create the new node from raw data
   const newNode = getNodeFromJson(data);
@@ -375,18 +382,6 @@ export function nodeFromJson(data) {
   }
   // return that guy
   return newNode;
-}
-
-export default function blogPostFromJson(data) {
-  // recursively build up a React Component tree
-  const {
-    canonical,
-    sections,
-  } = data;
-  return new BlogPost(
-    canonical,
-    sections.map(section => nodeFromJson(section)),
-  );
 }
 
 // opinionated section nodes - can't have children

@@ -68,20 +68,23 @@ const Footer = styled.footer`
   color: rgba(0,0,0,.54);
 `;
 
-export default props => (
-  <React.Fragment>
-    <Header>
-      <HeaderContentContainer>
-        <LinkStyled to="/">dubaniewi.cz</LinkStyled>
-        <LinkStyledAbout to="/about">i</LinkStyledAbout>
-      </HeaderContentContainer>
-    </Header>
-    <HeaderSpacer />
-    <Article>
-      {blogPostFromJson(testData).render()}
-    </Article>
-    <Footer>
-      🚚 1/4/2019
-    </Footer>
-  </React.Fragment>
-);
+export default props => {
+  const testRaw = blogPostFromJson(testData).toJson();
+  return (
+    <React.Fragment>
+      <Header>
+        <HeaderContentContainer>
+          <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+          <LinkStyledAbout to="/about">i</LinkStyledAbout>
+        </HeaderContentContainer>
+      </Header>
+      <HeaderSpacer />
+      <Article>
+        {blogPostFromJson(testData).render()}
+      </Article>
+      <Footer>
+        🚚 1/4/2019
+      </Footer>
+    </React.Fragment>
+  );
+}

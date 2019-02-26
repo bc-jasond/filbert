@@ -17,11 +17,13 @@ import {
   NODE_TYPE_SITEINFO,
   NODE_TYPE_ITALIC,
   NODE_TYPE_STRIKE,
+  NODE_TYPE_ROOT,
 } from '../common/constants';
 
 export default {
+  type: NODE_TYPE_ROOT,
   canonical: 'display-images',
-  sections: [
+  childNodes: [
     {
       type: NODE_TYPE_SECTION_H1,
       childNodes: [
