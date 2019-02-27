@@ -14,7 +14,6 @@ import CssBase from './common/fonts.css';
 import Page404 from './pages/404';
 import PageLayout from './pages/layout';
 
-import PostNginxFirstConfig from './pages/post-nginx-first-config';
 import PostDisplayImages from './pages/post-display-images';
 
 import PageLayoutTest from './pages/layout-test';
@@ -25,8 +24,9 @@ import postsData from './data/posts.data';
 import postHelloWorldData from './data/post-hello-world.data';
 import postReactRouterData from './data/post-react-router.data';
 import postNginxData from './data/post-nginx.data';
+import postNginxFirstConfigData from './data/post-nginx-first-config.data';
 
-const testData = postNginxData;
+const testData = postNginxFirstConfigData;
 
 async function getPostData(key) {
 
@@ -71,9 +71,7 @@ const App = () => (
         <Route
           exact path="/posts/nginx-first-config"
           render={() => (
-            <PageLayout>
-              <PostNginxFirstConfig />
-            </PageLayout>
+            <PageLayoutTest blogPostContent={blogPostFromJson(postNginxFirstConfigData)} />
           )}
         />
         <Route
