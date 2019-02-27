@@ -1940,6 +1940,6 @@ export default {
   ],
   "content": "",
   "id": "",
-  "canonical": "display-images",
+  "canonical": "hello-world",
   "tags": []
 }

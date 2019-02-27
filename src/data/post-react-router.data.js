@@ -1889,6 +1889,6 @@ export default {
   ],
   "content": "",
   "id": "",
-  "canonical": "display-images",
+  "canonical": "react-router",
   "tags": []
 }

@@ -104,6 +104,6 @@ export default {
   ],
   "content": "",
   "id": "",
-  "canonical": "display-images",
+  "canonical": "posts",
   "tags": []
 }
