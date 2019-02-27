@@ -13,7 +13,6 @@ import CssBase from './common/fonts.css';
 
 import Page404 from './pages/404';
 import PageLayout from './pages/layout';
-import PostList from './pages/posts';
 
 import PostReactRouter from './pages/post-react-router';
 import PostNginx from './pages/post-nginx';
@@ -24,6 +23,7 @@ import PageLayoutTest from './pages/layout-test';
 import blogPostFromJson from './common/blog-content.model';
 
 import aboutData from './data/about.data';
+import postsData from './data/posts.data';
 import postHelloWorldData from './data/post-hello-world.data';
 
 const testData = postHelloWorldData;
@@ -47,9 +47,7 @@ const App = () => (
         <Route
           exact path="/posts"
           render={() => (
-            <PageLayout>
-              <PostList />
-            </PageLayout>
+            <PageLayoutTest blogPostContent={blogPostFromJson(postsData)} />
           )}
         />
         <Route
