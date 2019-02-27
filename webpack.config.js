@@ -38,6 +38,7 @@ module.exports = (env, argv) => {
         '.jsx'
       ]
     },
+    devtool: 'inline-source-map',
     devServer: {
       contentBase: './dist',
       host: '0.0.0.0',
