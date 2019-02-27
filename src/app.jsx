@@ -14,7 +14,6 @@ import CssBase from './common/fonts.css';
 import Page404 from './pages/404';
 import PageLayout from './pages/layout';
 
-import PostReactRouter from './pages/post-react-router';
 import PostNginx from './pages/post-nginx';
 import PostNginxFirstConfig from './pages/post-nginx-first-config';
 import PostDisplayImages from './pages/post-display-images';
@@ -25,8 +24,9 @@ import blogPostFromJson from './common/blog-content.model';
 import aboutData from './data/about.data';
 import postsData from './data/posts.data';
 import postHelloWorldData from './data/post-hello-world.data';
+import postReactRouterData from './data/post-react-router.data';
 
-const testData = postHelloWorldData;
+const testData = postReactRouterData;
 
 async function getPostData(key) {
 
@@ -59,9 +59,7 @@ const App = () => (
         <Route
           exact path="/posts/react-router"
           render={() => (
-            <PageLayout>
-              <PostReactRouter />
-            </PageLayout>
+            <PageLayoutTest blogPostContent={blogPostFromJson(postReactRouterData)} />
           )}
         />
         <Route

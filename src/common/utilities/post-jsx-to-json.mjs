@@ -134,7 +134,7 @@ function getComponentFromToken(token, head) {
   // throw new Error(`JSX Parse Error: ¯\\_(ツ)_/¯ Unknown Token Type: ${token}`);
 }
 
-fs.readFile('./src/pages/posts.jsx', (err, data) => {
+fs.readFile('./src/pages/post-react-router.jsx', (err, data) => {
   if (err) throw err;
   let oneLine = data.toString().split('\n').join('');
   oneLine = trimLine(oneLine);
