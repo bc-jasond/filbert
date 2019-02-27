@@ -65,6 +65,9 @@ export class BlogPost extends BlogPostNode {
     super(NODE_TYPE_ROOT, [], '', id);
     this.canonical = canonical; // permalink, human readable
     this.tags = tags; // for later?
+    this.publishedDate;
+    this.author;
+    this.tenant;
   }
 
   render() {

@@ -1,4 +1,11 @@
-
+/**
+ * DON'T USE!! COPIED from parent directory.
+ * I needed to use the *.mjs extension and remove 'native' JSX in order to use the node v11 experimental ESM support.
+ * It worked, enough.
+ * This is left here for reference and will probably soon become out of sync,
+ * in the future for isometric or universal modules like this one (that could be used for server rendering)
+ * I should support the *.mjs in webpack and look into a string representation for JSX or use babel in nodejs
+ */
 import {
   NODE_TYPE_CODE,
   NODE_TYPE_ITALIC,

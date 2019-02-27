@@ -4,6 +4,11 @@ import { Link } from 'react-router-dom';
 
 import { monospaced, italicSerif } from '../common/fonts.css';
 
+import Page404 from './404';
+
+import pageContentFromJson from '../common/blog-content.model';
+import * as postData from '../data';
+
 const Header = styled.header`
   position: fixed;
   display: block;
@@ -64,20 +69,31 @@ const Footer = styled.footer`
   color: rgba(0,0,0,.54);
 `;
 
-export default ({ blogPostContent }) => (
-  <React.Fragment>
-    <Header>
-      <HeaderContentContainer>
-        <LinkStyled to="/">dubaniewi.cz</LinkStyled>
-        <LinkStyledAbout to="/about">i</LinkStyledAbout>
-      </HeaderContentContainer>
-    </Header>
-    <HeaderSpacer />
-    <Article>
-      {blogPostContent.render()}
-    </Article>
-    <Footer>
-      🚚 1/4/2019
-    </Footer>
-  </React.Fragment>
-);
+export default ({ match }) => {
+  function getPageContentById(id) {
+    const values = Object.values(postData);
+    const data = values.reduce((acc, current) => acc || (current.canonical === id ? current : null), null);
+    if (!data) return;
+    return pageContentFromJson(data);
+  }
+  const pageContentData = getPageContentById(match.params.id);
+  return !pageContentData
+    ? (<Page404 />)
+    : (
+      <React.Fragment>
+        <Header>
+          <HeaderContentContainer>
+            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <LinkStyledAbout to="/about">i</LinkStyledAbout>
+          </HeaderContentContainer>
+        </Header>
+        <HeaderSpacer />
+        <Article>
+          {pageContentData.render()}
+        </Article>
+        <Footer>
+          🚚 1/4/2019
+        </Footer>
+      </React.Fragment>
+    );
+}
