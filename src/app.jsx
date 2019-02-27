@@ -12,11 +12,8 @@ import CssReset from './reset.css';
 import CssBase from './common/fonts.css';
 
 import Page404 from './pages/404';
+
 import PageLayout from './pages/layout';
-
-import PostDisplayImages from './pages/post-display-images';
-
-import PageLayoutTest from './pages/layout-test';
 import blogPostFromJson from './common/blog-content.model';
 
 import aboutData from './data/about.data';
@@ -25,12 +22,7 @@ import postHelloWorldData from './data/post-hello-world.data';
 import postReactRouterData from './data/post-react-router.data';
 import postNginxData from './data/post-nginx.data';
 import postNginxFirstConfigData from './data/post-nginx-first-config.data';
-
-const testData = postNginxFirstConfigData;
-
-async function getPostData(key) {
-
-}
+import postDisplayImagesData from './data/post-display-images.data';
 
 const App = () => (
   <React.Fragment>
@@ -41,51 +33,43 @@ const App = () => (
           path="/about"
           render={() => (
             // NOTE: About page uses the current blog post layout
-            <PageLayoutTest blogPostContent={blogPostFromJson(aboutData)} />
+            <PageLayout blogPostContent={blogPostFromJson(aboutData)} />
           )}
         />
         <Route
           exact path="/posts"
           render={() => (
-            <PageLayoutTest blogPostContent={blogPostFromJson(postsData)} />
+            <PageLayout blogPostContent={blogPostFromJson(postsData)} />
           )}
         />
         <Route
           exact path="/posts/hello-world"
           render={() => (
-            <PageLayoutTest blogPostContent={blogPostFromJson(postHelloWorldData)} />
+            <PageLayout blogPostContent={blogPostFromJson(postHelloWorldData)} />
           )}
         />
         <Route
           exact path="/posts/react-router"
           render={() => (
-            <PageLayoutTest blogPostContent={blogPostFromJson(postReactRouterData)} />
+            <PageLayout blogPostContent={blogPostFromJson(postReactRouterData)} />
           )}
         />
         <Route
           exact path="/posts/nginx"
           render={() => (
-            <PageLayoutTest blogPostContent={blogPostFromJson(postNginxData)} />
+            <PageLayout blogPostContent={blogPostFromJson(postNginxData)} />
           )}
         />
         <Route
           exact path="/posts/nginx-first-config"
           render={() => (
-            <PageLayoutTest blogPostContent={blogPostFromJson(postNginxFirstConfigData)} />
+            <PageLayout blogPostContent={blogPostFromJson(postNginxFirstConfigData)} />
           )}
         />
         <Route
           exact path="/posts/display-images"
           render={() => (
-            <PageLayout>
-              <PostDisplayImages />
-            </PageLayout>
-          )}
-        />
-        <Route
-          exact path="/posts/test"
-          render={() => (
-            <PageLayoutTest blogPostContent={blogPostFromJson(testData)} />
+            <PageLayout blogPostContent={blogPostFromJson(postDisplayImagesData)} />
           )}
         />
         <Route component={Page404} />

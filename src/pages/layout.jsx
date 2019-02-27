@@ -64,7 +64,7 @@ const Footer = styled.footer`
   color: rgba(0,0,0,.54);
 `;
 
-export default props => (
+export default ({ blogPostContent }) => (
   <React.Fragment>
     <Header>
       <HeaderContentContainer>
@@ -74,7 +74,7 @@ export default props => (
     </Header>
     <HeaderSpacer />
     <Article>
-      {props.children}
+      {blogPostContent.render()}
     </Article>
     <Footer>
       🚚 1/4/2019

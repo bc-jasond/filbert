@@ -424,9 +424,20 @@ export default {
               "type": "li",
               "childNodes": [
                 {
+                  "type": "italic",
+                  "childNodes": [
+                    {
+                      "type": "text",
+                      "childNodes": [],
+                      "content": "\"Simple things should be simple, complex things should be possible.\"",
+                      "id": ""
+                    }
+                  ]
+                },
+                {
                   "type": "text",
                   "childNodes": [],
-                  "content": "I love ",
+                  "content": " -",
                   "id": ""
                 },
                 {
@@ -435,7 +446,7 @@ export default {
                     {
                       "type": "text",
                       "childNodes": [],
-                      "content": "Alan Kay's quotes too",
+                      "content": "Alan Kay",
                       "id": ""
                     }
                   ],
@@ -445,9 +456,26 @@ export default {
                 {
                   "type": "text",
                   "childNodes": [],
-                  "content": " (find-in-page:          Egyptian pyramids - yep, still relevant)",
+                  "content": " (Also, find-in-page: ",
                   "id": ""
-                }
+                },
+                {
+                  "type": "siteinfo",
+                  "childNodes": [
+                    {
+                      "type": "text",
+                      "childNodes": [],
+                      "content": "egyptian pyramids",
+                      "id": ""
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "childNodes": [],
+                  "content": " - yep, still relevant)",
+                  "id": ""
+                },
               ],
               "content": "",
               "id": ""
