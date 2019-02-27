@@ -5,6 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
   const config = {
+    mode: isProduction ? 'production' : 'dev',
     entry: './src/index.jsx',
     output: {
       path: path.resolve(__dirname, 'dist'),
@@ -38,7 +39,7 @@ module.exports = (env, argv) => {
         '.jsx'
       ]
     },
-    devtool: 'inline-source-map',
+    devtool: isProduction ? '' : 'inline-source-map',
     devServer: {
       contentBase: './dist',
       host: '0.0.0.0',
