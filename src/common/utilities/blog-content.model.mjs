@@ -19,7 +19,7 @@ import {
   NODE_TYPE_STRIKE,
   NODE_TYPE_TEXT,
   NODE_TYPE_ROOT,
-} from '../constants';
+} from './constants';
 
 
 class BlogPostNode {

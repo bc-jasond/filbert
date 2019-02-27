@@ -4,10 +4,6 @@ import { Link } from 'react-router-dom';
 
 import { monospaced, italicSerif } from '../common/fonts.css';
 
-import blogPostFromJson from '../common/blog-content.model';
-
-import testData from './data.test';
-
 const Header = styled.header`
   position: fixed;
   display: block;
@@ -68,23 +64,20 @@ const Footer = styled.footer`
   color: rgba(0,0,0,.54);
 `;
 
-export default props => {
-  const testRaw = blogPostFromJson(testData).toJson();
-  return (
-    <React.Fragment>
-      <Header>
-        <HeaderContentContainer>
-          <LinkStyled to="/">dubaniewi.cz</LinkStyled>
-          <LinkStyledAbout to="/about">i</LinkStyledAbout>
-        </HeaderContentContainer>
-      </Header>
-      <HeaderSpacer />
-      <Article>
-        {blogPostFromJson(testData).render()}
-      </Article>
-      <Footer>
-        🚚 1/4/2019
-      </Footer>
-    </React.Fragment>
-  );
-}
+export default ({ blogPostContent }) => (
+  <React.Fragment>
+    <Header>
+      <HeaderContentContainer>
+        <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+        <LinkStyledAbout to="/about">i</LinkStyledAbout>
+      </HeaderContentContainer>
+    </Header>
+    <HeaderSpacer />
+    <Article>
+      {blogPostContent.render()}
+    </Article>
+    <Footer>
+      🚚 1/4/2019
+    </Footer>
+  </React.Fragment>
+);

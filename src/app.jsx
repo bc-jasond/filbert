@@ -11,11 +11,10 @@ import {
 import CssReset from './reset.css';
 import CssBase from './common/fonts.css';
 
-import About from './pages/about';
 import Page404 from './pages/404';
-
 import PageLayout from './pages/layout';
 import PostList from './pages/posts';
+
 import PostHelloWorld from './pages/post-hello-world';
 import PostReactRouter from './pages/post-react-router';
 import PostNginx from './pages/post-nginx';
@@ -23,6 +22,14 @@ import PostNginxFirstConfig from './pages/post-nginx-first-config';
 import PostDisplayImages from './pages/post-display-images';
 
 import PageLayoutTest from './pages/layout-test';
+import blogPostFromJson from './common/blog-content.model';
+import aboutData from './data/about.data';
+
+const testData = {};
+
+async function getPostData(key) {
+
+}
 
 const App = () => (
   <React.Fragment>
@@ -33,9 +40,7 @@ const App = () => (
           path="/about"
           render={() => (
             // NOTE: About page uses the current blog post layout
-            <PageLayout>
-              <About />
-            </PageLayout>
+            <PageLayoutTest blogPostContent={blogPostFromJson(aboutData)} />
           )}
         />
         <Route
@@ -89,7 +94,7 @@ const App = () => (
         <Route
           exact path="/posts/test"
           render={() => (
-            <PageLayoutTest />
+            <PageLayoutTest blogPostContent={blogPostFromJson(testData)} />
           )}
         />
         <Route component={Page404} />
