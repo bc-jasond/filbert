@@ -514,9 +514,16 @@ export default {
                   "id": ""
                 },
                 {
-                  "type": "code",
-                  "childNodes": [],
-                  "content": "Uncle          Bob",
+                  "type": "a",
+                  "childNodes": [
+                    {
+                      "type": "text",
+                      "childNodes": [],
+                      "content": "Uncle Bob",
+                      "id": ""
+                    }
+                  ],
+                  "content": "https://blog.cleancoder.com/uncle-bob/2017/10/04/CodeIsNotTheAnswer.html",
                   "id": ""
                 }
               ],
