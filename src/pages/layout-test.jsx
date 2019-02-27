@@ -6,7 +6,7 @@ import { monospaced, italicSerif } from '../common/fonts.css';
 
 import blogPostFromJson from '../common/blog-content.model';
 
-import testData from './post-display-images.data';
+import testData from './data.test';
 
 const Header = styled.header`
   position: fixed;
