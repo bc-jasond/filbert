@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import { monospaced } from '../common/fonts.css';
+
 import {
   NODE_TYPE_TEXT,
   NODE_TYPE_CODE,
@@ -189,13 +191,24 @@ class Node extends React.Component {
   }
 }
 
+const JsonContainer = styled.div`
+  font-family: ${monospaced};
+  font-size: 12px;
+  display: ${p => p.show ? 'static' : 'none' };
+  position: absolute;
+  top: 100px;
+  left: 0;
+  margin: 24px;
+`;
 const EditorContainer = styled.div`
+  display: ${p => p.hide ? 'none' : 'static' };
   padding: 24px;
 `;
 const BlogPostActions = styled.div`
   position: fixed;
   right: 0;
   padding: 32px;
+  z-index: 1;
 `;
 
 export default class Editor extends React.Component {
@@ -204,6 +217,7 @@ export default class Editor extends React.Component {
 
     const currentPostData = JSON.parse(localStorage.getItem(NEW_POST_ID));
     this.state = {
+      showJson: false,
       blogPost: currentPostData ? blogPostFromJson(currentPostData) : new BlogPost(NEW_POST_ID),
     };
   }
@@ -214,17 +228,36 @@ export default class Editor extends React.Component {
   
   render() {
     const {
+      showJson,
       blogPost
     } = this.state;
     
     return (
       <React.Fragment>
         <BlogPostActions>
+          <Button onClick={() => {
+            if (!showJson) {
+              window.getSelection().selectAllChildren(window.document.getElementById('json-container'));
+            }
+            this.setState({showJson: !showJson});
+          }}>JSON</Button>
           <Button onClick={this.save}>Save</Button>
-          <Button>New</Button>
-          <Button>Restore</Button>
+          <Button onClick={() => {
+            if (confirm('New Post?')) {
+              localStorage.setItem(`${NEW_POST_ID}.BAK`, localStorage.getItem(NEW_POST_ID));
+              localStorage.removeItem(NEW_POST_ID);
+              window.location.reload(true);
+            }
+          }}>New</Button>
+          <Button onClick={() => {
+            if (confirm('Restore?')) {
+              localStorage.setItem(NEW_POST_ID, localStorage.getItem(`${NEW_POST_ID}.BAK`));
+              window.location.reload(true);
+            }
+          }}>Restore</Button>
         </BlogPostActions>
-        <EditorContainer>
+        <JsonContainer id="json-container" show={showJson}>{JSON.stringify(blogPost)}</JsonContainer>
+        <EditorContainer hide={showJson}>
           <Node node={blogPost} root={this} />
         </EditorContainer>
       </React.Fragment>
