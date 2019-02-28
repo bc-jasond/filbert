@@ -11,6 +11,7 @@ import {
   NODE_TYPE_SECTION_IMAGE,
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_POSTLINK,
+  NEW_POST_ID,
 } from '../common/constants';
 import blogPostFromJson, {
   BlogPost,
@@ -32,95 +33,183 @@ const Input = styled.input``;
 const Textarea = styled.textarea`
   width: 100%
 `;
-const Button = styled.button``;
+const Button = styled.button`
+  cursor: pointer;
+  min-height: 36px;
+  margin: 8px;
+`;
 
-const InputGroup = ({ name, value }) => (
+const InputGroup = ({ name, value, cb }) => (
   <InputContainer>
     <Label htmlFor={name}>{name}</Label>
-    <Input name={name} value={value} />
+    <Input name={name} value={value} onChange={(e) => {
+      cb(e.currentTarget.value)
+    }}/>
   </InputContainer>
 )
 
-const TextareaGroup = ({ name, value }) => (
+const TextareaGroup = ({ name, value, cb }) => (
   <InputContainer>
     <Label htmlFor={name}>{name}</Label>
-    <Textarea name={name} value={value} />
+    <Textarea name={name} value={value} onChange={(e) => {
+      cb(e.currentTarget.value)
+    }}/>
   </InputContainer>
 )
 
 
-const Node = ({ node }) => {
-  function shouldShowContent() {
+class Node extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      node: props.node,
+    };
+    this.debounce;
+  }
+  
+  shouldShowContent() {
     return [
       NODE_TYPE_TEXT,
       NODE_TYPE_CODE,
       NODE_TYPE_LINK,
       NODE_TYPE_A
-    ].includes(node.type);
+    ].includes(this.state.node.type);
   }
   
-  return (
-    <React.Fragment>
-      <Fieldset>
-        <Legend>{node.type} (id: {node.id}, child count: {node.childNodes.length})</Legend>
-        <InputGroup name="id" value={node.id} />
-        <InputGroup name="type" value={node.type} />
-        {shouldShowContent() && (
-          <TextareaGroup name="content" value={node.content} />
-        )}
-        {node.type === NODE_TYPE_ROOT && (
-          <React.Fragment>
-            <InputGroup name="canonical" value={node.canonical} />
-            <InputGroup name="tags" value={node.tags} />
-            <InputGroup name="publishedDate" value={node.publishedDate} />
-            <InputGroup name="author" value={node.author} />
-          </React.Fragment>
-        )}
-        {node.type === NODE_TYPE_SECTION_CODE && (
-          <InputGroup name="lines" value={node.lines} />
-        )}
-        {node.type === NODE_TYPE_SECTION_IMAGE && (
-          <React.Fragment>
-            <InputGroup name="width" value={node.width} />
-            <InputGroup name="height" value={node.height} />
-            <InputGroup name="url" value={node.url} />
-            <InputGroup name="caption" value={node.caption} />
-          </React.Fragment>
-        )}
-        {node.type === NODE_TYPE_SECTION_QUOTE && (
-          <React.Fragment>
-            <InputGroup name="quote" value={node.quote} />
-            <InputGroup name="author" value={node.author} />
-            <InputGroup name="url" value={node.url} />
-            <InputGroup name="context" value={node.context} />
-          </React.Fragment>
-        )}
-        {node.type === NODE_TYPE_SECTION_POSTLINK && (
-          <InputGroup name="to" value={node.to} />
-        )}
-        <InputContainer>
-          <Button>Move Up</Button>
-          <Button>Move Down</Button>
-          <Button>➕ Add a Child</Button>
-        </InputContainer>
-      </Fieldset>
-      {node.childNodes.map(node => (<Node node={node} />))}
-    </React.Fragment>
-  );
+  setAndSave = () => {
+    const { root } = this.props;
+    const { node, debounce } = this.state;
+  
+    clearTimeout(debounce);
+    this.setState({
+      node,
+      debounce: setTimeout(() => {
+          root.save();
+        }, 1000)
+    });
+  }
+  
+  render() {
+    const { root } = this.props;
+    const { node } = this.state;
+    
+    return (
+      <React.Fragment>
+        <Fieldset>
+          <Legend>{node.type} (id: {node.id}, child count: {node.childNodes.length})</Legend>
+          <InputGroup name="id" value={node.id} cb={() => {}} />
+          <InputGroup name="type" value={node.type} cb={() => {}} />
+          {this.shouldShowContent() && (
+            <TextareaGroup name="content" value={node.content} cb={(newValue) => {
+              node.content = newValue;
+              this.setAndSave();
+            }} />
+          )}
+          {node.type === NODE_TYPE_ROOT && (
+            <React.Fragment>
+              <InputGroup name="canonical" value={node.canonical} cb={(newValue) => {
+                node.canonical = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="tags" value={node.tags} cb={(newValue) => {
+                node.tags = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="publishedDate" value={node.publishedDate} cb={(newValue) => {
+                node.publishedDate = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="author" value={node.author} cb={(newValue) => {
+                node.author = newValue;
+                this.setAndSave();
+              }} />
+            </React.Fragment>
+          )}
+          {node.type === NODE_TYPE_SECTION_CODE && (
+            <InputGroup name="lines" value={node.lines} cb={(newValue) => {
+              node.lines = newValue;
+              this.setAndSave();
+            }} />
+          )}
+          {node.type === NODE_TYPE_SECTION_IMAGE && (
+            <React.Fragment>
+              <InputGroup name="width" value={node.width} cb={(newValue) => {
+                node.width = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="height" value={node.height} cb={(newValue) => {
+                node.height = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="url" value={node.url} cb={(newValue) => {
+                node.url = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="caption" value={node.caption} cb={(newValue) => {
+                node.caption = newValue;
+                this.setAndSave();
+              }} />
+            </React.Fragment>
+          )}
+          {node.type === NODE_TYPE_SECTION_QUOTE && (
+            <React.Fragment>
+              <InputGroup name="quote" value={node.quote} cb={(newValue) => {
+                node.quote = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="author" value={node.author} cb={(newValue) => {
+                node.author = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="url" value={node.url} cb={(newValue) => {
+                node.url = newValue;
+                this.setAndSave();
+              }} />
+              <InputGroup name="context" value={node.context} cb={(newValue) => {
+                node.context = newValue;
+                this.setAndSave();
+              }} />
+            </React.Fragment>
+          )}
+          {node.type === NODE_TYPE_SECTION_POSTLINK && (
+            <InputGroup name="to" value={node.to} cb={(newValue) => {
+              node.to = newValue;
+              this.setAndSave();
+            }} />
+          )}
+          <InputContainer>
+            <Button>Move Up</Button>
+            <Button>Move Down</Button>
+            <Button>➕ Add a Child</Button>
+          </InputContainer>
+        </Fieldset>
+        {node.childNodes.map(node => (<Node node={node} root={root} />))}
+      </React.Fragment>
+    );
+  }
 }
 
 const EditorContainer = styled.div`
   padding: 24px;
 `;
+const BlogPostActions = styled.div`
+  position: fixed;
+  right: 0;
+  padding: 32px;
+`;
 
 export default class Editor extends React.Component {
   constructor(props) {
     super(props);
-    const newPostId = 'dubaniewicz-new-post';
-    const currentPostData = JSON.parse(localStorage.getItem(newPostId));
+
+    const currentPostData = JSON.parse(localStorage.getItem(NEW_POST_ID));
     this.state = {
-      blogPost: currentPostData ? blogPostFromJson(currentPostData) : new BlogPost(newPostId),
+      blogPost: currentPostData ? blogPostFromJson(currentPostData) : new BlogPost(NEW_POST_ID),
     };
+  }
+  
+  save = () => {
+    localStorage.setItem(NEW_POST_ID, JSON.stringify(this.state.blogPost))
   }
   
   render() {
@@ -129,9 +218,16 @@ export default class Editor extends React.Component {
     } = this.state;
     
     return (
-      <EditorContainer>
-        <Node node={blogPost} />
-      </EditorContainer>
+      <React.Fragment>
+        <BlogPostActions>
+          <Button onClick={this.save}>Save</Button>
+          <Button>New</Button>
+          <Button>Restore</Button>
+        </BlogPostActions>
+        <EditorContainer>
+          <Node node={blogPost} root={this} />
+        </EditorContainer>
+      </React.Fragment>
     );
   }
 }
