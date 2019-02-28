@@ -475,7 +475,7 @@ export default {
                   "childNodes": [],
                   "content": " - yep, still relevant)",
                   "id": ""
-                },
+                }
               ],
               "content": "",
               "id": ""
