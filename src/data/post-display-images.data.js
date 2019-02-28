@@ -1204,7 +1204,7 @@ export default {
       "context": ", the announcement of the first WWW hypertext browser on the Usenet newsgroup comp.sys.next.announce."
     },
     {
-      "type": 'postlink',
+      "type": "postlink",
       "to": "",
       "content": ""
     }
