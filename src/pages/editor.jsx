@@ -45,8 +45,9 @@ const InputGroup = ({ name, value, cb }) => (
   <InputContainer>
     <Label htmlFor={name}>{name}</Label>
     <Input name={name} value={value} onChange={(e) => {
+      if (!cb) return;
       cb(e.currentTarget.value)
-    }}/>
+    }} />
   </InputContainer>
 )
 
@@ -54,8 +55,9 @@ const TextareaGroup = ({ name, value, cb }) => (
   <InputContainer>
     <Label htmlFor={name}>{name}</Label>
     <Textarea name={name} value={value} onChange={(e) => {
+      if (!cb) return;
       cb(e.currentTarget.value)
-    }}/>
+    }} />
   </InputContainer>
 )
 
@@ -63,10 +65,13 @@ const TextareaGroup = ({ name, value, cb }) => (
 class Node extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      node: props.node,
-    };
+    
     this.debounce;
+  }
+  
+  // TODO: once I have ids I can remove this and only keep state in the root node, instead of every node
+  static getDerivedStateFromProps(props, state) {
+    return {...state, ...props};
   }
   
   shouldShowContent() {
@@ -81,13 +86,13 @@ class Node extends React.Component {
   setAndSave = () => {
     const { root } = this.props;
     const { node, debounce } = this.state;
-  
+    
     clearTimeout(debounce);
     this.setState({
       node,
       debounce: setTimeout(() => {
-          root.save();
-        }, 1000)
+        root.save();
+      }, 1000)
     });
   }
   
@@ -99,8 +104,8 @@ class Node extends React.Component {
       <React.Fragment>
         <Fieldset>
           <Legend>{node.type} (id: {node.id}, child count: {node.childNodes.length})</Legend>
-          <InputGroup name="id" value={node.id} cb={() => {}} />
-          <InputGroup name="type" value={node.type} cb={() => {}} />
+          <InputGroup name="id" value={node.id} readOnly />
+          <InputGroup name="type" value={node.type} readOnly />
           {this.shouldShowContent() && (
             <TextareaGroup name="content" value={node.content} cb={(newValue) => {
               node.content = newValue;
@@ -183,9 +188,10 @@ class Node extends React.Component {
             <Button>Move Up</Button>
             <Button>Move Down</Button>
             <Button>➕ Add a Child</Button>
+            <Button>🗑 Delete</Button>
           </InputContainer>
         </Fieldset>
-        {node.childNodes.map(node => (<Node node={node} root={root} />))}
+        {node.childNodes.map((node, index) => (<Node key={index} node={node} root={root} />))}
       </React.Fragment>
     );
   }
@@ -194,14 +200,14 @@ class Node extends React.Component {
 const JsonContainer = styled.div`
   font-family: ${monospaced};
   font-size: 12px;
-  display: ${p => p.show ? 'static' : 'none' };
+  display: ${p => p.show ? 'static' : 'none'};
   position: absolute;
   top: 100px;
   left: 0;
   margin: 24px;
 `;
 const EditorContainer = styled.div`
-  display: ${p => p.hide ? 'none' : 'static' };
+  display: ${p => p.hide ? 'none' : 'static'};
   padding: 24px;
 `;
 const BlogPostActions = styled.div`
@@ -214,7 +220,7 @@ const BlogPostActions = styled.div`
 export default class Editor extends React.Component {
   constructor(props) {
     super(props);
-
+    
     const currentPostData = JSON.parse(localStorage.getItem(NEW_POST_ID));
     this.state = {
       showJson: false,
@@ -239,20 +245,21 @@ export default class Editor extends React.Component {
             if (!showJson) {
               window.getSelection().selectAllChildren(window.document.getElementById('json-container'));
             }
-            this.setState({showJson: !showJson});
+            this.setState({ showJson: !showJson });
           }}>JSON</Button>
           <Button onClick={this.save}>Save</Button>
           <Button onClick={() => {
             if (confirm('New Post?')) {
               localStorage.setItem(`${NEW_POST_ID}.BAK`, localStorage.getItem(NEW_POST_ID));
               localStorage.removeItem(NEW_POST_ID);
-              window.location.reload(true);
+              this.setState({ blogPost: new BlogPost(NEW_POST_ID) })
             }
           }}>New</Button>
           <Button onClick={() => {
             if (confirm('Restore?')) {
               localStorage.setItem(NEW_POST_ID, localStorage.getItem(`${NEW_POST_ID}.BAK`));
-              window.location.reload(true);
+              const data = JSON.parse(localStorage.getItem(NEW_POST_ID));
+              this.setState({ blogPost: blogPostFromJson(data) })
             }
           }}>Restore</Button>
         </BlogPostActions>

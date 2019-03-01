@@ -6,7 +6,7 @@ import { monospaced, italicSerif } from '../common/fonts.css';
 
 import Page404 from './404';
 
-import pageContentFromJson from '../common/blog-content.model';
+import pageContentFromJson, { BlogPost } from '../common/blog-content.model';
 import * as postData from '../data';
 import { NEW_POST_ID } from '../common/constants';
 
@@ -76,6 +76,14 @@ const ContentContainer = ({ pageContent }) => (
   </Article>
 )
 
+function getPageFromLocalStorage() {
+  try {
+    return pageContentFromJson(JSON.parse(localStorage.getItem(NEW_POST_ID)));
+  } catch(err) {
+    return new BlogPost(NEW_POST_ID);
+  }
+}
+
 export default class Layout extends React.Component {
   constructor(props) {
     super(props);
@@ -88,9 +96,9 @@ export default class Layout extends React.Component {
       }
     } = props;
     if (id === 'preview') {
-      this.state = { pageContent: pageContentFromJson(JSON.parse(localStorage.getItem(NEW_POST_ID))) };
+      this.state = { pageContent: getPageFromLocalStorage() };
       setInterval(() => {
-        this.setState({ pageContent: pageContentFromJson(JSON.parse(localStorage.getItem(NEW_POST_ID))) })
+        this.setState({ pageContent: getPageFromLocalStorage() })
       }, 1000);
     } else {
       const values = Object.values(postData);
