@@ -202,7 +202,11 @@ class Node extends React.Component {
             <Button>Move Up</Button>
             <Button>Move Down</Button>
             <Button onClick={() => this.setState({showAdd: !showAdd})}>➕ Add a Child</Button>
-            <Button>🗑 Delete</Button>
+            <Button onClick={() => {
+              if (confirm('Delete?')) {
+                root.delete(node);
+              }
+            }}>🗑 Delete</Button>
           </InputContainer>
           <AddChildContainer show={showAdd}>
             <InputGroup name="type" value={newNodeType} cb={(newValue) => this.setState({newNodeType: newValue})}/>
@@ -249,6 +253,26 @@ export default class Editor extends React.Component {
       showJson: false,
       blogPost: currentPostData ? blogPostFromJson(currentPostData) : new BlogPost(NEW_POST_ID),
     };
+  }
+  
+  delete = (node) => {
+    const nodeStack = [this.state.blogPost];
+    let didDelete = false;
+    
+    while (nodeStack.length) {
+      const current = nodeStack.pop();
+      if (current.deleteChildNode(node)) {
+        didDelete = true;
+        break;
+      } else if (current.childNodes.length) {
+        nodeStack.push(...current.childNodes);
+      }
+    }
+    
+    if (didDelete) {
+      this.save();
+      this.setState({blogPost: this.state.blogPost});
+    }
   }
   
   save = () => {

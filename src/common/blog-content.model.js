@@ -52,6 +52,15 @@ class BlogPostNode {
     this.content = content;
     this.id = id;
   }
+  
+  deleteChildNode(node) {
+    const idx = this.childNodes.indexOf(node);
+    if (idx > -1) {
+      this.childNodes.splice(idx, 1);
+      return true;
+    }
+    return false;
+  }
 
   toJson() {
     const raw = {...this};
