@@ -309,7 +309,7 @@ export class NodeItalic extends BlogPostNode {
   }
 }
 
-function getNodeFromJson(data) {
+export function getNodeFromJson(data) {
   const {
     id,
     type,

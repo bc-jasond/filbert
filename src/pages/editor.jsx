@@ -17,6 +17,7 @@ import {
 } from '../common/constants';
 import blogPostFromJson, {
   BlogPost,
+  getNodeFromJson,
 } from '../common/blog-content.model';
 
 const Fieldset = styled.fieldset`
@@ -39,6 +40,9 @@ const Button = styled.button`
   cursor: pointer;
   min-height: 36px;
   margin: 8px;
+`;
+const AddChildContainer = styled.div`
+  display: ${p => p.show ? 'static' : 'none'};
 `;
 
 const InputGroup = ({ name, value, cb }) => (
@@ -67,6 +71,11 @@ class Node extends React.Component {
     super(props);
     
     this.debounce;
+    this.state = {
+      showAdd: false,
+      newNodeType: '',
+      newNodePosition: 0,
+    }
   }
   
   // TODO: once I have ids I can remove this and only keep state in the root node, instead of every node
@@ -98,7 +107,12 @@ class Node extends React.Component {
   
   render() {
     const { root } = this.props;
-    const { node } = this.state;
+    const {
+      node,
+      showAdd,
+      newNodeType,
+      newNodePosition,
+    } = this.state;
     
     return (
       <React.Fragment>
@@ -187,9 +201,18 @@ class Node extends React.Component {
           <InputContainer>
             <Button>Move Up</Button>
             <Button>Move Down</Button>
-            <Button>➕ Add a Child</Button>
+            <Button onClick={() => this.setState({showAdd: !showAdd})}>➕ Add a Child</Button>
             <Button>🗑 Delete</Button>
           </InputContainer>
+          <AddChildContainer show={showAdd}>
+            <InputGroup name="type" value={newNodeType} cb={(newValue) => this.setState({newNodeType: newValue})}/>
+            <InputGroup name="position" value={newNodePosition} cb={(newValue) => this.setState({newNodePosition: newValue})}/>
+            <Button onClick={() => {
+              const newNode = getNodeFromJson({type: newNodeType});
+              node.childNodes.splice(newNodePosition, 0, newNode);
+              this.setAndSave();
+            }}>Add</Button>
+          </AddChildContainer>
         </Fieldset>
         {node.childNodes.map((node, index) => (<Node key={index} node={node} root={root} />))}
       </React.Fragment>
