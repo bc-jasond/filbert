@@ -6,8 +6,9 @@ import { monospaced, italicSerif } from '../common/fonts.css';
 
 import Page404 from './404';
 
-import pageContentFromJson from '../common/blog-content.model';
+import pageContentFromJson, { BlogPost } from '../common/blog-content.model';
 import * as postData from '../data';
+import { NEW_POST_ID } from '../common/constants';
 
 const Header = styled.header`
   position: fixed;
@@ -69,31 +70,61 @@ const Footer = styled.footer`
   color: rgba(0,0,0,.54);
 `;
 
-export default ({ match }) => {
-  function getPageContentById(id) {
-    const values = Object.values(postData);
-    const data = values.reduce((acc, current) => acc || (current.canonical === id ? current : null), null);
-    if (!data) return;
-    return pageContentFromJson(data);
+const ContentContainer = ({ pageContent }) => (
+  <Article>
+    {pageContent.render()}
+  </Article>
+)
+
+function getPageFromLocalStorage() {
+  try {
+    return pageContentFromJson(JSON.parse(localStorage.getItem(NEW_POST_ID)));
+  } catch(err) {
+    return new BlogPost(NEW_POST_ID);
   }
-  const pageContentData = getPageContentById(match.params.id);
-  return !pageContentData
-    ? (<Page404 />)
-    : (
-      <React.Fragment>
-        <Header>
-          <HeaderContentContainer>
-            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
-            <LinkStyledAbout to="/about">i</LinkStyledAbout>
-          </HeaderContentContainer>
-        </Header>
-        <HeaderSpacer />
-        <Article>
-          {pageContentData.render()}
-        </Article>
-        <Footer>
-          🚚 1/4/2019
-        </Footer>
-      </React.Fragment>
-    );
+}
+
+export default class Layout extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    const {
+      match: {
+        params: {
+          id
+        }
+      }
+    } = props;
+    if (id === 'preview') {
+      this.state = { pageContent: getPageFromLocalStorage() };
+      setInterval(() => {
+        this.setState({ pageContent: getPageFromLocalStorage() })
+      }, 1000);
+    } else {
+      const values = Object.values(postData);
+      const data = values.reduce((acc, current) => acc || (current.canonical === id ? current : null), null);
+      this.state = { pageContent: data ? pageContentFromJson(data) : data };
+    }
+  }
+  
+  render() {
+    const { pageContent } = this.state;
+    return !pageContent
+      ? (<Page404 />)
+      : (
+        <React.Fragment>
+          <Header>
+            <HeaderContentContainer>
+              <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+              <LinkStyledAbout to="/about">i</LinkStyledAbout>
+            </HeaderContentContainer>
+          </Header>
+          <HeaderSpacer />
+          <ContentContainer pageContent={pageContent} />
+          <Footer>
+            🚚 1/4/2019
+          </Footer>
+        </React.Fragment>
+      );
+  }
 }

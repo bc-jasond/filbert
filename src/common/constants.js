@@ -22,3 +22,6 @@ export const NODE_TYPE_CODE = 'code';
 export const NODE_TYPE_SITEINFO = 'siteinfo';
 export const NODE_TYPE_ITALIC = 'italic';
 export const NODE_TYPE_STRIKE = 'strike';
+
+// EDITOR
+export const NEW_POST_ID = 'dubaniewicz-new-post';

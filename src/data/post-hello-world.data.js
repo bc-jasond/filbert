@@ -1927,15 +1927,15 @@ export default {
     {
       "type": "quote",
       "childNodes": [],
-      "quote": 'If you\'re not embarrassed, then you shipped too late. ',
-      "url": 'https://twitter.com/reidhoffman/status/847142924240379904?lang=en',
-      "author": '-Reid Hoffman',
-      "context": '',
+      "quote": "If you're not embarrassed, then you shipped too late. ",
+      "url": "https://twitter.com/reidhoffman/status/847142924240379904?lang=en",
+      "author": "-Reid Hoffman",
+      "context": ""
     },
     {
-      "type": 'postlink',
-      "to": '/posts/react-router',
-      "content": 'Intro to React Router'
+      "type": "postlink",
+      "to": "/posts/react-router",
+      "content": "Intro to React Router"
     }
   ],
   "content": "",

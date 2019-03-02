@@ -1131,12 +1131,12 @@ export default {
       "quote": "The real problem is that programmers have spent far too much time worrying about efficiency in the wrong places and at the wrong times; premature optimization is the root of all evil (or at least most of it) in programming. ",
       "url": "https://dl.acm.org/citation.cfm?id=361612",
       "author": "-Donald Knuth",
-      "context": " from \"Computer programming as an art\" p. 671 of CACM Dec 1974",
+      "context": " from \"Computer programming as an art\" p. 671 of CACM Dec 1974"
     },
     {
-      "type": 'postlink',
+      "type": "postlink",
       "to": "/posts/display-images",
-      "content": "Images - What's the Web without 'em?",
+      "content": "Images - What's the Web without 'em?"
     }
   ],
   "content": "",

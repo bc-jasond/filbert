@@ -1532,12 +1532,12 @@ export default {
       "quote": "This process of digging up the details and learning how things work leads down many side streets and to many dead ends, but is fundamental (I think) to understanding something new. ",
       "url": "http://www.kohala.com/start/rstevensfaq.html",
       "author": "-W Richard Stevens on \"Why did you write UNIX Network Programming?\"",
-      "context": "",
+      "context": ""
     },
     {
-      "type": 'postlink',
+      "type": "postlink",
       "to": "/posts/nginx-first-config",
-      "content": "Basic Nginx config for a React app with React Router",
+      "content": "Basic Nginx config for a React app with React Router"
     }
   ],
   "content": "",

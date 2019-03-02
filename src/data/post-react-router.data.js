@@ -1,5 +1,3 @@
-import { CodeSection } from '../common/shared-styled-components';
-
 export default {
   "type": "root",
   "childNodes": [
@@ -451,7 +449,7 @@ export default {
             {
               "type": "code",
               "childNodes": [],
-              "content": "Loading failed for the <script> with source \“http://localhost:8080/some/other/main.da8d74963faaef9b955b.js\”",
+              "content": "Loading failed for the <script> with source \u201Chttp:\\/\\/localhost:8080\\/some\\/other\\/main.da8d74963faaef9b955b.js\u201D",
               "id": ""
             },
             {
@@ -1688,42 +1686,7 @@ export default {
     {
       "type": "codesection",
       "lines": [
-      'const App = () => (',
-      '  <React.Fragment>',
-      '    <BrowserRouter>',
-      '      <Switch>',
-      '        <Redirect push exact from="/" to="/posts/hello-world" />',
-      '        <Route',
-      '          path="/about"',
-      '          render={() => (',
-      '            <PageLayout>',
-      '              <About />',
-      '            </PageLayout>',
-      '          )}',
-      '        />',
-      '        <Route',
-      '          path="/posts/hello-world"',
-      '          render={() => (',
-      '            <PageLayout>',
-      '              <PostHelloWorld />',
-      '            </PageLayout>',
-      '          )}',
-      '        />',
-      '        <Route',
-      '          path="/posts/react-router"',
-      '          render={() => (',
-      '            <PageLayout>',
-      '              <PostReactRouter />',
-      '            </PageLayout>',
-      '          )}',
-      '        />',
-      '        <Route component={Page404} />',
-      '      </Switch>',
-      '    </BrowserRouter>',
-      '    <CssReset />',
-      '    <CssBase />',
-      '  </React.Fragment>',
-      ');',
+      "const App = () => (\"\r\n  <React.Fragment>\r\n    <BrowserRouter>\r\n      <Switch>\r\n        <Redirect push exact from=\"\/\" to=\"\/posts\/hello-world\" \/>\r\n        <Route\r\n          path=\"\/about\"\r\n          render={() => (\r\n            <PageLayout>\r\n              <About \/>\r\n            <\/PageLayout>\r\n          )}\r\n        \/>\r\n        <Route\r\n          path=\"\/posts\/hello-world\"\r\n          render={() => (\r\n            <PageLayout>\r\n              <PostHelloWorld \/>\r\n            <\/PageLayout>\r\n          )}\r\n        \/>\r\n        <Route\r\n          path=\"\/posts\/react-router\"\r\n          render={() => (\r\n            <PageLayout>\r\n              <PostReactRouter \/>\r\n            <\/PageLayout>\r\n          )}\r\n        \/>\r\n        <Route component={Page404} \/>\r\n      <\/Switch>\r\n    <\/BrowserRouter>\r\n    <CssReset \/>\r\n    <CssBase \/>\r\n  <\/React.Fragment>\r\n);"
       ]
     },
     {
@@ -1879,12 +1842,12 @@ export default {
       "quote": "Before you commit to a framework, make sure you could write it. ",
       "url": "https://blog.cleancoder.com/uncle-bob/2015/08/06/LetTheMagicDie.html",
       "author": "-Uncle Bob",
-      "context": "",
+      "context": ""
     },
     {
-      "type": 'postlink',
-      "to": '/posts/nginx',
-      "content": 'Installing Nginx on Ubuntu in AWS'
+      "type": "postlink",
+      "to": "/posts/nginx",
+      "content": "Installing Nginx on Ubuntu in AWS"
     }
   ],
   "content": "",
