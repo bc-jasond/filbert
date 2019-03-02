@@ -17,15 +17,20 @@ import {
 } from '../common/constants';
 import blogPostFromJson, {
   BlogPost,
-  getNodeFromJson,
+  getNode,
 } from '../common/blog-content.model';
 
 const Fieldset = styled.fieldset`
   margin-bottom: 8px;
   padding: 16px;
   border: 1px solid grey;
+  // margin-left: ${p => p.isLeaf ? '16px' : '0'};
 `;
 const Legend = styled.legend``;
+const H3 = styled.h3`
+  display: inline-block;
+  font-size: 24px;
+`;
 const InputContainer = styled.div`
   margin-bottom: 8px;
 `;
@@ -40,47 +45,68 @@ const Button = styled.button`
   cursor: pointer;
   min-height: 36px;
   margin: 8px;
+  visibility: ${p => p.hide ? 'hidden' : 'visible'}
 `;
 const AddChildContainer = styled.div`
   display: ${p => p.show ? 'static' : 'none'};
 `;
 
-const InputGroup = ({ name, value, cb }) => (
-  <InputContainer>
-    <Label htmlFor={name}>{name}</Label>
-    <Input name={name} value={value} onChange={(e) => {
-      if (!cb) return;
-      cb(e.currentTarget.value)
-    }} />
-  </InputContainer>
-)
+const withDebounce = WrappedComponent =>
+  class DebouncedGroup extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {
+        timer: null,
+        value: props.value,
+      }
+    }
+    
+    handleChange = (e) => {
+      const { cb, noDebounce } = this.props;
+      this.setState({ value: e.currentTarget.value })
+      if (noDebounce) {
+        cb(e.currentTarget.value);
+        return;
+      }
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => {
+        if (!cb) return;
+        cb(this.state.value)
+      }, 1000);
+    }
+    
+    render() {
+      const { name, component } = this.props;
+      const { value } = this.state;
+      return (
+        <InputContainer>
+          <Label htmlFor={name}>{name}</Label>
+          <WrappedComponent name={name} value={value} onChange={this.handleChange} />
+        </InputContainer>
+      )
+    }
+  }
 
-const TextareaGroup = ({ name, value, cb }) => (
-  <InputContainer>
-    <Label htmlFor={name}>{name}</Label>
-    <Textarea name={name} value={value} onChange={(e) => {
-      if (!cb) return;
-      cb(e.currentTarget.value)
-    }} />
-  </InputContainer>
-)
 
+const InputGroup = withDebounce(Input);
+const TextareaGroup = withDebounce(Textarea);
 
 class Node extends React.Component {
   constructor(props) {
     super(props);
     
-    this.debounce;
     this.state = {
       showAdd: false,
+      showAddSibling: false,
       newNodeType: '',
       newNodePosition: 0,
+      newSiblingNodeType: '',
     }
   }
   
   // TODO: once I have ids I can remove this and only keep state in the root node, instead of every node
   static getDerivedStateFromProps(props, state) {
-    return {...state, ...props};
+    return { ...state, ...props };
   }
   
   shouldShowContent() {
@@ -94,32 +120,33 @@ class Node extends React.Component {
   
   setAndSave = () => {
     const { root } = this.props;
-    const { node, debounce } = this.state;
+    const { node } = this.state;
     
-    clearTimeout(debounce);
-    this.setState({
-      node,
-      debounce: setTimeout(() => {
-        root.save();
-      }, 1000)
-    });
+    this.setState({ node });
+    root.save();
   }
   
   render() {
-    const { root } = this.props;
+    const {
+      root,
+      parentSave,
+    } = this.props;
     const {
       node,
       showAdd,
+      showAddSibling,
       newNodeType,
       newNodePosition,
+      newSiblingNodeType,
     } = this.state;
     
     return (
       <React.Fragment>
-        <Fieldset>
-          <Legend>{node.type} (id: {node.id}, child count: {node.childNodes.length})</Legend>
-          <InputGroup name="id" value={node.id} readOnly />
-          <InputGroup name="type" value={node.type} readOnly />
+        <Fieldset isLeaf={!node.canHaveChildren()}>
+          <Legend><H3>{node.type}</H3> (id: {node.id}, child count: {node.childNodes.length},
+            parent: {node.parent && node.parent.type})</Legend>
+          {/*<InputGroup name="id" value={node.id} readOnly />*/}
+          
           {this.shouldShowContent() && (
             <TextareaGroup name="content" value={node.content} cb={(newValue) => {
               node.content = newValue;
@@ -201,24 +228,55 @@ class Node extends React.Component {
           <InputContainer>
             <Button>Move Up</Button>
             <Button>Move Down</Button>
-            <Button onClick={() => this.setState({showAdd: !showAdd})}>➕ Add a Child</Button>
+            <Button hide={!node.canHaveChildren()} onClick={() => this.setState({ showAdd: !showAdd })}>➕ Add a
+              Child</Button>
+            <Button hide={node.type === NODE_TYPE_ROOT}
+                    onClick={() => this.setState({ showAddSibling: !showAddSibling })}>➕ Add a Sibling</Button>
             <Button onClick={() => {
               if (confirm('Delete?')) {
                 root.delete(node);
               }
             }}>🗑 Delete</Button>
           </InputContainer>
-          <AddChildContainer show={showAdd}>
-            <InputGroup name="type" value={newNodeType} cb={(newValue) => this.setState({newNodeType: newValue})}/>
-            <InputGroup name="position" value={newNodePosition} cb={(newValue) => this.setState({newNodePosition: newValue})}/>
+          <AddChildContainer show={node.canHaveChildren() && showAdd}>
+            <InputGroup name="child type" value={newNodeType} noDebounce
+                        cb={(newValue) => this.setState({ newNodeType: newValue })} />
+            <InputGroup name="position" value={newNodePosition} noDebounce
+                        cb={(newValue) => this.setState({ newNodePosition: newValue })} />
             <Button onClick={() => {
-              const newNode = getNodeFromJson({type: newNodeType});
+              const newNode = getNode({ type: newNodeType }, node);
+              node.childNodes.splice(0, 0, newNode);
+              this.setAndSave();
+            }}>Beginning</Button>
+            <Button onClick={() => {
+              const newNode = getNode({ type: newNodeType }, node);
+              node.childNodes.splice(-1, 0, newNode);
+              this.setAndSave();
+            }}>End</Button>
+            <Button onClick={() => {
+              const newNode = getNode({ type: newNodeType }, node);
               node.childNodes.splice(newNodePosition, 0, newNode);
               this.setAndSave();
-            }}>Add</Button>
+            }}>Add to Position</Button>
+          </AddChildContainer>
+          <AddChildContainer show={node.type !== NODE_TYPE_ROOT && showAddSibling}>
+            <InputGroup name="sibling type" value={newSiblingNodeType} noDebounce
+                        cb={(newValue) => this.setState({ newSiblingNodeType: newValue })} />
+            <Button onClick={() => {
+              const newNode = getNode({ type: newSiblingNodeType }, node.parent);
+              const idx = node.parent.childNodes.indexOf(node);
+              node.parent.childNodes.splice(idx, 0, newNode);
+              parentSave();
+            }}>Before</Button>
+            <Button onClick={() => {
+              const newNode = getNode({ type: newSiblingNodeType }, node.parent);
+              const idx = node.parent.childNodes.indexOf(node);
+              node.parent.childNodes.splice(idx + 1, 0, newNode);
+              parentSave();
+            }}>After</Button>
           </AddChildContainer>
         </Fieldset>
-        {node.childNodes.map((node, index) => (<Node key={index} node={node} root={root} />))}
+        {node.childNodes.map((node, index) => (<Node key={index} node={node} root={root} parentSave={this.setAndSave} />))}
       </React.Fragment>
     );
   }
@@ -271,7 +329,7 @@ export default class Editor extends React.Component {
     
     if (didDelete) {
       this.save();
-      this.setState({blogPost: this.state.blogPost});
+      this.setState({ blogPost: this.state.blogPost });
     }
   }
   
