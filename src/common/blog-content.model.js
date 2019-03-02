@@ -46,11 +46,24 @@ import {
 } from './shared-styled-components';
 
 class BlogPostNode {
-  constructor(type, childNodes = [], content = '', id = '') {
+  constructor(type, parent, childNodes = [], content = '', id = '') {
     this.type = type;
+    this.parent = parent;
     this.childNodes = childNodes;
     this.content = content;
     this.id = id;
+  }
+  
+  canHaveChildren() {
+    return ![
+      NODE_TYPE_CODE,
+      NODE_TYPE_SECTION_CODE,
+      NODE_TYPE_SECTION_IMAGE,
+      NODE_TYPE_SECTION_QUOTE,
+      NODE_TYPE_SECTION_SPACER,
+      NODE_TYPE_SECTION_POSTLINK,
+      NODE_TYPE_TEXT,
+    ].includes(this.type)
   }
   
   deleteChildNode(node) {
@@ -61,24 +74,25 @@ class BlogPostNode {
     }
     return false;
   }
-
-  toJson() {
-    const raw = {...this};
-    raw.childNodes = raw.childNodes.map(child => child.toJson());
+  
+  toJSON() {
+    const raw = { ...this };
+    delete (raw.parent); // prevent circular reference issue
+    // raw.childNodes = raw.childNodes.map(child => child.toJson());
     return raw;
   }
 }
 
 export class BlogPost extends BlogPostNode {
   constructor(canonical, id = '', tags = []) {
-    super(NODE_TYPE_ROOT, [], '', id);
+    super(NODE_TYPE_ROOT, null, [], '', id);
     this.canonical = canonical; // permalink, human readable
     this.tags = tags; // for later?
     this.publishedDate;
     this.author;
     this.tenant;
   }
-
+  
   render() {
     return (
       <React.Fragment>
@@ -89,71 +103,71 @@ export class BlogPost extends BlogPostNode {
 }
 
 export class NodeText extends BlogPostNode {
-  constructor(content) {
-    super(NODE_TYPE_TEXT, [], content);
+  constructor(parent, content) {
+    super(NODE_TYPE_TEXT, parent, [], content);
   }
-
+  
   render() {
     return this.content;
   }
 }
 
 export class NodeCode extends BlogPostNode {
-  constructor(content) {
-    super(NODE_TYPE_CODE, [], content);
+  constructor(parent, content) {
+    super(NODE_TYPE_CODE, parent, [], content);
   }
-
+  
   render() {
     return (<Code>{this.content}</Code>)
   }
 }
 
 export class NodeSpacer extends BlogPostNode {
-  constructor() {
-    super(NODE_TYPE_SECTION_SPACER);
+  constructor(parent) {
+    super(NODE_TYPE_SECTION_SPACER, parent);
   }
-
+  
   render() {
     return (<SpacerSection />)
   }
 }
 
 export class NodeH1 extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_SECTION_H1, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_SECTION_H1, parent, childNodes);
   }
-
+  
   render() {
     return (<H1>{this.childNodes.map(node => node.render())}</H1>)
   }
 }
 
 export class NodeH2 extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_SECTION_H2, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_SECTION_H2, parent, childNodes);
   }
-
+  
   render() {
     return (<H2>{this.childNodes.map(node => node.render())}</H2>)
   }
 }
 
 export class NodeContent extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_SECTION_CONTENT, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_SECTION_CONTENT, parent, childNodes);
   }
-
+  
   render() {
     return (<ContentSection>{this.childNodes.map(node => node.render())}</ContentSection>)
   }
 }
 
 export class NodeCodeSection extends BlogPostNode {
-  constructor(lines) {
-    super(NODE_TYPE_SECTION_CODE);
+  constructor(parent, lines) {
+    super(NODE_TYPE_SECTION_CODE, parent);
     this.lines = lines;
   }
-
+  
   render() {
     return (
       <CodeSection>
@@ -164,14 +178,14 @@ export class NodeCodeSection extends BlogPostNode {
 }
 
 export class NodeImage extends BlogPostNode {
-  constructor(width, height, url, caption) {
-    super(NODE_TYPE_SECTION_IMAGE);
+  constructor(parent, width, height, url, caption) {
+    super(NODE_TYPE_SECTION_IMAGE, parent);
     this.width = width;
     this.height = height;
     this.url = url;
     this.caption = caption;
   }
-
+  
   render() {
     return (
       <ImageSection>
@@ -188,14 +202,14 @@ export class NodeImage extends BlogPostNode {
 }
 
 export class NodeQuote extends BlogPostNode {
-  constructor(quote, author, url, context) {
-    super(NODE_TYPE_SECTION_QUOTE);
+  constructor(parent, quote, author, url, context) {
+    super(NODE_TYPE_SECTION_QUOTE, parent);
     this.quote = quote;
     this.author = author;
     this.url = url;
     this.context = context;
   }
-
+  
   render() {
     return (
       <ContentSection>
@@ -207,12 +221,12 @@ export class NodeQuote extends BlogPostNode {
 }
 
 export class NodePostLink extends BlogPostNode {
-  constructor(to, content) {
-    super(NODE_TYPE_SECTION_POSTLINK);
+  constructor(parent, to, content) {
+    super(NODE_TYPE_SECTION_POSTLINK, parent);
     this.to = to;
     this.content = content;
   }
-
+  
   render() {
     const Centered = styled.div`
       text-align: center;
@@ -239,86 +253,86 @@ export class NodePostLink extends BlogPostNode {
 }
 
 export class NodeP extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_P, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_P, parent, childNodes);
   }
-
+  
   render() {
     return (<P>{this.childNodes.map(node => node.render())}</P>)
   }
 }
 
 export class NodeOl extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_OL, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_OL, parent, childNodes);
   }
-
+  
   render() {
     return (<Ol>{this.childNodes.map(node => node.render())}</Ol>)
   }
 }
 
 export class NodeLi extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_LI, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_LI, parent, childNodes);
   }
-
+  
   render() {
     return (<Li>{this.childNodes.map(node => node.render())}</Li>)
   }
 }
 
 export class NodeLink extends BlogPostNode {
-  constructor(childNodes, content) {
-    super(NODE_TYPE_LINK, childNodes, content);
+  constructor(parent, childNodes, content) {
+    super(NODE_TYPE_LINK, parent, childNodes, content);
   }
-
+  
   render() {
     return (<LinkStyled to={this.content}>{this.childNodes.map(node => node.render())}</LinkStyled>)
   }
 }
 
 export class NodeA extends BlogPostNode {
-  constructor(childNodes, content) {
-    super(NODE_TYPE_A, childNodes, content);
+  constructor(parent, childNodes, content) {
+    super(NODE_TYPE_A, parent, childNodes, content);
   }
-
+  
   render() {
     return (<A href={this.content}>{this.childNodes.map(node => node.render())}</A>)
   }
 }
 
 export class NodeSiteInfo extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_SITEINFO, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_SITEINFO, parent, childNodes);
   }
-
+  
   render() {
     return (<SiteInfo>{this.childNodes.map(node => node.render())}</SiteInfo>)
   }
 }
 
 export class NodeStrike extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_STRIKE, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_STRIKE, parent, childNodes);
   }
-
+  
   render() {
     return (<StrikeText>{this.childNodes.map(node => node.render())}</StrikeText>)
   }
 }
 
 export class NodeItalic extends BlogPostNode {
-  constructor(childNodes) {
-    super(NODE_TYPE_ITALIC, childNodes);
+  constructor(parent, childNodes) {
+    super(NODE_TYPE_ITALIC, parent, childNodes);
   }
-
+  
   render() {
     return (<ItalicText>{this.childNodes.map(node => node.render())}</ItalicText>)
   }
 }
 
-export function getNodeFromJson(data) {
+export function getNode(data, parent) {
   const {
     id,
     type,
@@ -344,53 +358,53 @@ export function getNodeFromJson(data) {
     case NODE_TYPE_ROOT:
       return new BlogPost(canonical, [], id, tags);
     case NODE_TYPE_TEXT:
-      return new NodeText(content);
+      return new NodeText(parent, content);
     case NODE_TYPE_CODE:
-      return new NodeCode(content);
+      return new NodeCode(parent, content);
     case NODE_TYPE_SECTION_H1:
-      return new NodeH1();
+      return new NodeH1(parent);
     case NODE_TYPE_SECTION_H2:
-      return new NodeH2();
+      return new NodeH2(parent);
     case NODE_TYPE_SECTION_SPACER:
-      return new NodeSpacer();
+      return new NodeSpacer(parent);
     case NODE_TYPE_SECTION_CONTENT:
-      return new NodeContent();
+      return new NodeContent(parent);
     case NODE_TYPE_SECTION_CODE:
-      return new NodeCodeSection(lines);
+      return new NodeCodeSection(parent, lines);
     case NODE_TYPE_SECTION_IMAGE:
-      return new NodeImage(width, height, url, caption);
+      return new NodeImage(parent, width, height, url, caption);
     case NODE_TYPE_SECTION_QUOTE:
-      return new NodeQuote(quote, author, url, context);
+      return new NodeQuote(parent, quote, author, url, context);
     case NODE_TYPE_SECTION_POSTLINK:
-      return new NodePostLink(to, content);
+      return new NodePostLink(parent, to, content);
     case NODE_TYPE_P:
-      return new NodeP();
+      return new NodeP(parent);
     case NODE_TYPE_OL:
-      return new NodeOl();
+      return new NodeOl(parent);
     case NODE_TYPE_LI:
-      return new NodeLi();
+      return new NodeLi(parent);
     case NODE_TYPE_LINK:
-      return new NodeLink([], content);
+      return new NodeLink(parent, [], content);
     case NODE_TYPE_A:
-      return new NodeA([], content);
+      return new NodeA(parent, [], content);
     case NODE_TYPE_SITEINFO:
-      return new NodeSiteInfo();
+      return new NodeSiteInfo(parent);
     case NODE_TYPE_STRIKE:
-      return new NodeStrike();
+      return new NodeStrike(parent);
     case NODE_TYPE_ITALIC:
-      return new NodeItalic();
+      return new NodeItalic(parent);
     default:
       throw new Error(`nodeFromJson: Parse Error: ¯\\_(ツ)_/¯ Unknown Node Type: ${data.type}`);
   }
 }
 
-export default function nodeFromJson(data) {
+export default function nodeFromJson(data, parent) {
   const { childNodes } = data;
   // create the new node from raw data
-  const newNode = getNodeFromJson(data);
+  const newNode = getNode(data, parent);
   // recursively create / add child nodes from raw data, if present
   if (childNodes) {
-    newNode.childNodes = childNodes.map(node => nodeFromJson(node))
+    newNode.childNodes = childNodes.map(node => nodeFromJson(node, newNode))
   }
   // return that guy
   return newNode;
