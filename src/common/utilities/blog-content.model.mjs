@@ -209,7 +209,7 @@ export class NodeItalic extends BlogPostNode {
 
 }
 
-function getNodeFromJson(data) {
+function getNode(data) {
   const {
     id,
     type,
@@ -278,7 +278,7 @@ function getNodeFromJson(data) {
 export default function nodeFromJson(data) {
   const { childNodes } = data;
   // create the new node from raw data
-  const newNode = getNodeFromJson(data);
+  const newNode = getNode(data);
   // recursively create / add child nodes from raw data, if present
   if (childNodes) {
     newNode.childNodes = childNodes.map(node => nodeFromJson(node))
