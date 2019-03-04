@@ -163,7 +163,7 @@ export class NodeContent extends BlogPostNode {
 }
 
 export class NodeCodeSection extends BlogPostNode {
-  constructor(parent, lines) {
+  constructor(parent, lines = []) {
     super(NODE_TYPE_SECTION_CODE, parent);
     this.lines = lines;
   }
@@ -398,6 +398,12 @@ export function getNode(data, parent) {
   }
 }
 
+/**
+ *
+ * @param object - from JSON
+ * @param parent BlogPostNode
+ * @returns BlogPostNode
+ */
 export default function nodeFromJson(data, parent) {
   const { childNodes } = data;
   // create the new node from raw data
