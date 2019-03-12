@@ -174,8 +174,8 @@ class Node extends React.Component {
             </React.Fragment>
           )}
           {node.type === NODE_TYPE_SECTION_CODE && (
-            <InputGroup name="lines" value={node.lines} cb={(newValue) => {
-              node.lines = newValue;
+            <TextareaGroup name="lines" value={node.lines} cb={(newValue) => {
+              node.lines = newValue.split('\n');
               this.setAndSave();
             }} />
           )}

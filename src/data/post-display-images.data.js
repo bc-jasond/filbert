@@ -1205,8 +1205,8 @@ export default {
     },
     {
       "type": "postlink",
-      "to": "",
-      "content": ""
+      "to": "blog-post-content-model",
+      "content": "A Data Model for Blog Post Content"
     }
   ],
   "content": "",
