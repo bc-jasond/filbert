@@ -87,7 +87,7 @@ function getPageFromLocalStorage() {
 export default class Layout extends React.Component {
   constructor(props) {
     super(props);
-    
+  
     const {
       match: {
         params: {
@@ -100,15 +100,28 @@ export default class Layout extends React.Component {
       setInterval(() => {
         this.setState({ pageContent: getPageFromLocalStorage() })
       }, 1000);
-    } else {
-      const values = Object.values(postData);
-      const data = values.reduce((acc, current) => acc || (current.canonical === id ? current : null), null);
-      this.state = { pageContent: data ? pageContentFromJson(data) : data };
     }
   }
   
+  
   render() {
-    const { pageContent } = this.state;
+    const {
+      match: {
+        params: {
+          id
+        }
+      }
+    } = this.props;
+    let pageContent;
+    
+    if (id === 'preview') {
+      pageContent = this.state.pageContent;
+    } else {
+      const values = Object.values(postData);
+      const data = values.reduce((acc, current) => acc || (current.canonical === id ? current : null), null);
+      pageContent = data ? pageContentFromJson(data) : data;
+    }
+    
     return !pageContent
       ? (<Page404 />)
       : (
