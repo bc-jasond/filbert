@@ -10,6 +10,26 @@ export default {
             {
               "type": "text",
               "childNodes": [],
+              "content": "A Data Model for Blog Post Content",
+              "id": ""
+            }
+          ],
+          "content": "/posts/blog-post-content-model",
+          "id": ""
+        }
+      ],
+      "content": "",
+      "id": ""
+    },
+    {
+      "type": "h2",
+      "childNodes": [
+        {
+          "type": "link",
+          "childNodes": [
+            {
+              "type": "text",
+              "childNodes": [],
               "content": "Images - What's the Web without 'em?",
               "id": ""
             }
