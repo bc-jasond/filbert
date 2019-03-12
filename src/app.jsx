@@ -19,7 +19,7 @@ const App = () => (
   <React.Fragment>
     <BrowserRouter>
       <Switch>
-        <Redirect push exact from="/" to="/posts/display-images" />
+        <Redirect push exact from="/" to="/posts/blog-post-content-model" />
         <Redirect push exact from="/about" to="/posts/about" />
         <Redirect push exact from="/posts" to="/posts/all" />
         <Route path="/posts/:id" component={PageLayout} />
