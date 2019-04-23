@@ -38,7 +38,7 @@ export const ContentSection = styled.section`
 `;
 export const SpacerSection = styled(ContentSection)`
   &::after {
-    content: '✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏';
+    content: '✎﹏﹏﹏﹏﹏﹏﹏﹏﹏';
     text-align: center;
     display: block;
     margin: 0 auto;

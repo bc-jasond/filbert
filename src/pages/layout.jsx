@@ -1,8 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import { darkGrey, grey } from '../common/css';
 
 import { monospaced, italicSerif } from '../common/fonts.css';
+import { A } from '../common/shared-styled-components';
+import GitHubSvg from '../../assets/github-mark.svg';
 
 import Page404 from './404';
 
@@ -69,12 +72,18 @@ const Footer = styled.footer`
   text-align: center;
   color: rgba(0,0,0,.54);
 `;
-
-const ContentContainer = ({ pageContent }) => (
-  <Article>
-    {pageContent.render()}
-  </Article>
-)
+const GitHubStyled = styled(GitHubSvg)`
+  display: block;
+  height: 32px;
+  margin: 0 auto;
+  margin-top: 20px;
+  transition: fill .375s;
+  fill: ${grey};
+  &:hover {
+    transition: fill .375s;
+    fill: ${darkGrey};
+  }
+`;
 
 function getPageFromLocalStorage() {
   try {
@@ -133,9 +142,12 @@ export default class Layout extends React.Component {
             </HeaderContentContainer>
           </Header>
           <HeaderSpacer />
-          <ContentContainer pageContent={pageContent} />
+          <Article>
+            {pageContent.render()}
+          </Article>
           <Footer>
             🚚 1/4/2019
+            <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
           </Footer>
         </React.Fragment>
       );
