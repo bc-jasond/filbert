@@ -247,7 +247,7 @@ export default {
             {
               "type": "a",
               "childNodes": [{ "type": "text", "childNodes": [], "content": "full commit here", "id": "" }],
-              "content": "http://fixme",
+              "content": "https://github.com/bc-jasond/dubaniewicz-site/pull/10/commits/f149aab0945705e076de045a3f640092077ae813",
               "id": ""
             },
             { "type": "text", "childNodes": [], "content": "):", "id": "" }
