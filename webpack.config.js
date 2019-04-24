@@ -31,6 +31,11 @@ module.exports = (env, argv) => {
           ],
           exclude: /node_modules/,
         },
+        {
+          test: /\.svg$/,
+          use: 'svg-react-loader',
+          exclude: /node_modules/,
+        },
       ]
     },
     resolve: {

@@ -10,6 +10,26 @@ export default {
             {
               "type": "text",
               "childNodes": [],
+              "content": "Using Wildcard Imports for Blog Post Data, add SVG Support",
+              "id": ""
+            }
+          ],
+          "content": "/posts/blog-post-wildcard-imports",
+          "id": ""
+        }
+      ],
+      "content": "",
+      "id": ""
+    },
+    {
+      "type": "h2",
+      "childNodes": [
+        {
+          "type": "link",
+          "childNodes": [
+            {
+              "type": "text",
+              "childNodes": [],
               "content": "A Data Model for Blog Post Content",
               "id": ""
             }
