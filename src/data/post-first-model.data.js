@@ -14,7 +14,7 @@ export default {
       "width": "1000",
       "height": "491",
       "url": "https://cdn-images-1.medium.com/max/1000/1*V5zAxYD_BTjZ6cRNd4_pOQ.jpeg",
-      "caption": "The branches and leaves of a big 'ol live oak"
+      "caption": "The branches and leaves of a big 'ol live oak tree"
     },
     {
       "type": "h2",

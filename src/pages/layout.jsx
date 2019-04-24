@@ -1,11 +1,11 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { Link } from 'react-router-dom';
 import { darkGrey, grey } from '../common/css';
 
 import { monospaced, italicSerif } from '../common/fonts.css';
-import { A } from '../common/shared-styled-components';
 import GitHubSvg from '../../assets/github-mark.svg';
+import LinkedInSvg from '../../assets/linkedin-logo.svg';
 
 import Page404 from './404';
 
@@ -72,11 +72,16 @@ const Footer = styled.footer`
   text-align: center;
   color: rgba(0,0,0,.54);
 `;
-const GitHubStyled = styled(GitHubSvg)`
+const SocialLinksContainer = styled.div`
+  display: flex;
+  justify-content: center;
+`;
+const A = styled.a``;
+const SocialIcon = css`
   display: block;
   height: 32px;
-  margin: 0 auto;
-  margin-top: 20px;
+  width: 34px;
+  margin: 20px 5px 0 5px;
   transition: fill .375s;
   fill: ${grey};
   &:hover {
@@ -84,11 +89,17 @@ const GitHubStyled = styled(GitHubSvg)`
     fill: ${darkGrey};
   }
 `;
+const GitHubStyled = styled(GitHubSvg)`
+  ${SocialIcon};
+`;
+const LinkedInStyled = styled(LinkedInSvg)`
+  ${SocialIcon};
+`;
 
 function getPageFromLocalStorage() {
   try {
     return pageContentFromJson(JSON.parse(localStorage.getItem(NEW_POST_ID)));
-  } catch(err) {
+  } catch (err) {
     return new BlogPost(NEW_POST_ID);
   }
 }
@@ -96,7 +107,7 @@ function getPageFromLocalStorage() {
 export default class Layout extends React.Component {
   constructor(props) {
     super(props);
-  
+    
     const {
       match: {
         params: {
@@ -147,7 +158,10 @@ export default class Layout extends React.Component {
           </Article>
           <Footer>
             🚚 1/4/2019
-            <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
+            <SocialLinksContainer>
+              <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
+              <A href="https://www.linkedin.com/in/jasondubaniewicz/"><LinkedInStyled /></A>
+            </SocialLinksContainer>
           </Footer>
         </React.Fragment>
       );
