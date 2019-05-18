@@ -1,0 +1,46 @@
+{
+  "type": "root",
+  "childNodes": [
+    {
+      "type": "h1",
+      "childNodes": [
+        {
+          "type": "text",
+          "childNodes": [],
+          "content": "Hey Buddy",
+          "id": ""
+        }
+      ],
+      "content": "",
+      "id": ""
+    },
+    {
+      "type": "image",
+      "childNodes": [],
+      "content": "",
+      "id": "",
+      "width": "400",
+      "height": "225",
+      "url": "https://cdn-images-1.medium.com/max/800/1*rD11mS59UYLRre-pv7G27w.gif",
+      "caption": "Lou Reed doin' some Coke"
+    },
+    {
+      "type": "spacer",
+      "childNodes": [],
+      "content": "",
+      "id": ""
+    },
+    {
+      "type": "quote",
+      "childNodes": [],
+      "quote": "The real problem is that programmers have spent far too much time worrying about efficiency in the wrong places and at the wrong times; premature optimization is the root of all evil (or at least most of it) in programming. ",
+      "url": "https://dl.acm.org/citation.cfm?id=361612",
+      "author": "-Donald Knuth",
+      "context": " from \"Computer programming as an art\" p. 671 of CACM Dec 1974"
+    }
+  ],
+  "content": "",
+  "id": "",
+  "canonical": "dubaniewicz-new-post",
+  "tags": []
+}
