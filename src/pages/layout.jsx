@@ -9,7 +9,7 @@ import LinkedInSvg from '../../assets/linkedin-logo.svg';
 
 import Page404 from './404';
 
-import pageContentFromJson, { BlogPost } from '../common/blog-content.model';
+import { getContentTree, BlogPost } from '../common/blog-content.model';
 import * as postData from '../data';
 import { NEW_POST_ID } from '../common/constants';
 
@@ -108,23 +108,12 @@ export default class Layout extends React.Component {
   constructor(props) {
     super(props);
     
-    const {
-      match: {
-        params: {
-          id
-        }
-      }
-    } = props;
-    if (id === 'preview') {
-      this.state = { pageContent: getPageFromLocalStorage() };
-      setInterval(() => {
-        this.setState({ pageContent: getPageFromLocalStorage() })
-      }, 1000);
+    this.state = {
+      pageContent: null,
     }
   }
   
-  
-  render() {
+  async componentDidMount() {
     const {
       match: {
         params: {
@@ -132,15 +121,25 @@ export default class Layout extends React.Component {
         }
       }
     } = this.props;
-    let pageContent;
-    
+  
     if (id === 'preview') {
-      pageContent = this.state.pageContent;
-    } else {
-      const values = Object.values(postData);
-      const data = values.reduce((acc, current) => acc || (current.canonical === id ? current : null), null);
-      pageContent = data ? pageContentFromJson(data) : data;
+      this.setState({ pageContent: getPageFromLocalStorage() });
+      setInterval(() => {
+        this.setState({ pageContent: getPageFromLocalStorage() })
+      }, 1000);
+      return;
     }
+    
+    // const values = Object.values(postData);
+    // const data = values.reduce((acc, current) => acc || (current.canonical === id ? current : null), null);
+    // pageContent = data ? pageContentFromJson(data) : data;
+    const response = await fetch(`http://localhost:3001/post/${id}`);
+    const { post, contentNodes } = await response.json();
+    this.setState({pageContent: getContentTree(contentNodes)})
+  }
+  
+  render() {
+    const { pageContent } = this.state;
     
     return !pageContent
       ? (<Page404 />)

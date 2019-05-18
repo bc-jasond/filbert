@@ -6,7 +6,10 @@ module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
   const config = {
     mode: isProduction ? 'production' : 'dev',
-    entry: './src/index.jsx',
+    entry: [
+      '@babel/polyfill',
+      './src/index.jsx',
+    ],
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].[hash].js'
