@@ -98,14 +98,14 @@ function flattenNodes(rootChildNodes, post_id) {
 }
 
 const dataFiles = [
-  require('./post-hello-world.data'),
-  require('./about.data'),
-  require('./post-react-router.data'),
-  require('./post-nginx-first-config.data'),
-  require('./post-nginx.data'),
-  require('./post-display-images.data'),
-  require('./post-first-model.data'),
-  require('./post-wildcard-imports-svg.data'),
+  require('./data.BAK/post-hello-world.data.json'),
+  require('./data.BAK/about.data.json'),
+  require('./data.BAK/post-react-router.data.json'),
+  require('./data.BAK/post-nginx-first-config.data.json'),
+  require('./data.BAK/post-nginx.data.json'),
+  require('./data.BAK/post-display-images.data.json'),
+  require('./data.BAK/post-first-model.data.json'),
+  require('./data.BAK/post-wildcard-imports-svg.data.json'),
 ];
 
 async function mang() {

@@ -153,7 +153,7 @@ class BlogPostNode {
       case NODE_TYPE_ITALIC:
         return (<ItalicText>{this.childNodes.map(node => node.render())}</ItalicText>);
       case NODE_TYPE_SECTION_POSTLINK: {
-        const { to, content } = this.meta;
+        const { to } = this.meta;
         const Centered = styled.div`
           text-align: center;
         `;
@@ -167,7 +167,7 @@ class BlogPostNode {
             </ContentSection>
             {to && (
               <H2>
-                Next Post: <LinkStyled to={to}>{content}</LinkStyled>
+                Next Post: <LinkStyled to={to}>{this.content}</LinkStyled>
               </H2>
             )}
             <H2>

@@ -22,8 +22,14 @@ const App = () => (
         <Redirect push exact from="/" to="/posts/blog-post-wildcard-imports" />
         <Redirect push exact from="/about" to="/posts/about" />
         <Redirect push exact from="/posts" to="/posts/all" />
-        <Route path="/posts/:id" component={PageLayout} />
-        <Route path="/editor" component={Editor}/>
+        <Route path="/posts/:id" render={(props) =>
+          (
+            // https://stackoverflow.com/a/49441836/1991322
+            // changing the 'key' prop will cause the component to unmount and therefore reload data for new blog post id
+            <PageLayout key={props.match.params.id} {...props} />
+          )}
+        />
+        <Route path="/editor" component={Editor} />
         <Route component={Page404} />
       </Switch>
     </BrowserRouter>

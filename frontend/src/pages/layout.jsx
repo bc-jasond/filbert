@@ -10,7 +10,6 @@ import LinkedInSvg from '../../assets/linkedin-logo.svg';
 import Page404 from './404';
 
 import { getContentTree, BlogPost } from '../common/blog-content.model';
-import * as postData from '../data';
 import { NEW_POST_ID } from '../common/constants';
 
 const Header = styled.header`
@@ -96,13 +95,6 @@ const LinkedInStyled = styled(LinkedInSvg)`
   ${SocialIcon};
 `;
 
-function getPageFromLocalStorage() {
-  try {
-    return pageContentFromJson(JSON.parse(localStorage.getItem(NEW_POST_ID)));
-  } catch (err) {
-    return new BlogPost(NEW_POST_ID);
-  }
-}
 
 export default class Layout extends React.Component {
   constructor(props) {
@@ -113,29 +105,14 @@ export default class Layout extends React.Component {
     }
   }
   
-  async componentDidMount() {
-    const {
-      match: {
-        params: {
-          id
-        }
-      }
-    } = this.props;
-  
-    if (id === 'preview') {
-      this.setState({ pageContent: getPageFromLocalStorage() });
-      setInterval(() => {
-        this.setState({ pageContent: getPageFromLocalStorage() })
-      }, 1000);
-      return;
-    }
-    
-    // const values = Object.values(postData);
-    // const data = values.reduce((acc, current) => acc || (current.canonical === id ? current : null), null);
-    // pageContent = data ? pageContentFromJson(data) : data;
-    const response = await fetch(`http://localhost:3001/post/${id}`);
+  async loadData() {
+    const response = await fetch(`http://localhost:3001/post/${this.props.match.params.id}`);
     const { post, contentNodes } = await response.json();
     this.setState({pageContent: getContentTree(contentNodes)})
+  }
+  
+  async componentDidMount() {
+    this.loadData();
   }
   
   render() {
