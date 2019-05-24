@@ -5,7 +5,7 @@ const cors = require('cors');
 
 const { getKnex } = require('./mysql');
 const { checkPassword } = require('./user');
-const { Safe } = require('./cipher');
+const { encrypt, decrypt } = require('./cipher');
 
 const app = express();
 
@@ -115,19 +115,19 @@ async function mang() {
     for (let i = 0; i < dataFiles.length; i++) {
       const data = dataFiles[i];
       const { canonical, childNodes: rootChildNodes } = data;
-  
+      
       const knex = await getKnex();
-  
+      
       const [newPostId] = await knex
         .insert({ user_id, canonical }, 'id')
         .into('post');
-  
+      
       const flattenedChildNodes = flattenNodes(rootChildNodes, newPostId);
-  
+      
       const inserts = await knex
         .insert(flattenedChildNodes)
         .into('content_node');
-  
+      
       console.log(inserts);
     }
     
@@ -144,7 +144,7 @@ async function main() {
     
     app.use(express.json());
     app.use(cors(/* TODO: whitelist *.dubaniewi.cz in PRODUCTION */))
-  
+    
     app.post('/login', async (req, res) => {
       const { username, password } = req.body;
       
@@ -158,9 +158,7 @@ async function main() {
         return;
       }
       
-      const safe = new Safe();
-      
-      res.send({ token: await safe.encrypt(user) });
+      res.send({ token: encrypt(user) });
     })
     
     /**
@@ -169,6 +167,26 @@ async function main() {
     app.use((req, res, next) => {
       // TODO: check auth token!
       next();
+    })
+    
+    app.get('/post', async (req, res) => {
+      // TODO: support 'published = NULL' and join on logged in user id
+      const posts = await knex('post')
+        .select(
+          'post.id',
+          'user_id',
+          'canonical',
+          'post.created',
+          'updated',
+          'published',
+          'post.deleted',
+          'username',
+        )
+        .innerJoin('user', 'post.user_id', 'user.id')
+        .whereNotNull('published')
+        .orderBy('published');
+      
+      res.send(posts);
     })
     
     app.get('/post/:id', async (req, res) => {

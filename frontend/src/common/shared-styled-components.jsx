@@ -28,6 +28,17 @@ export const H2 = styled.h2`
   line-height: 1.22;
   letter-spacing: -.012em;
 `;
+export const H3 = styled.h3`
+  text-overflow: ellipsis;
+  max-height: 56px;
+  overflow: hidden;
+  letter-spacing: -0.47px;
+  font-size: 25.2px;
+  line-height: 30px;
+  font-weight: 600;
+  font-style: normal;
+  font-family: ${sansSerif}, sans-serif;
+`;
 export const ContentSection = styled.section`
   ${sectionWidthMixin}
   font-family: ${contentSerif}, serif;

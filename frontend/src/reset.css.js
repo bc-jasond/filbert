@@ -37,6 +37,7 @@ time, mark, audio, video {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	vertical-align: baseline;
+	text-rendering: optimizeLegibility;
 }
 /* HTML5 display-role reset for older browsers */
 article, aside, details, figcaption, figure, 

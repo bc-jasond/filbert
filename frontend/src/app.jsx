@@ -14,6 +14,7 @@ import CssBase from './common/fonts.css';
 import Editor from './pages/editor';
 import Page404 from './pages/404';
 import PageLayout from './pages/layout';
+import ListAllPosts from './pages/list-all-posts';
 
 const App = () => (
   <React.Fragment>
@@ -21,7 +22,7 @@ const App = () => (
       <Switch>
         <Redirect push exact from="/" to="/posts/blog-post-wildcard-imports" />
         <Redirect push exact from="/about" to="/posts/about" />
-        <Redirect push exact from="/posts" to="/posts/all" />
+        <Route exact path="/posts" component={ListAllPosts} />
         <Route path="/posts/:id" render={(props) =>
           (
             // https://stackoverflow.com/a/49441836/1991322
