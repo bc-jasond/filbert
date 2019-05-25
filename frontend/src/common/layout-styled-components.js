@@ -50,12 +50,15 @@ export const HeaderSpacer = styled.div`
   height: 65px;
 `;
 export const Article = styled.article`
-  padding: 0 20px 80px 20px;
   width: 100%;
+  min-height: 80vh;
   margin: 0 auto;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
   position: relative;
+  @media (max-width: 800px) {
+    padding: 0 20px 80px 20px;
+  }
 `;
 export const Footer = styled.footer`
   font-family: ${monospaced}, monospaced;

@@ -6,16 +6,18 @@ import {
   A,
 } from '../common/layout-styled-components';
 
-import Loading from './loading';
-
 const PostRow = styled.div`
-  padding-top: 20px;
+  margin: 0 auto;
+  max-width: 768px;
+  padding: 20px 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  padding-bottom: 20px;
   word-wrap: break-word;
   word-break: break-word;
-  &:first-of-type {
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  &:last-of-type {
+    border: none;
+  }
+  @media (max-width: 768px) {
+    margin: 0;
   }
 `;
 const PostAbstractRow = styled.div`
@@ -81,28 +83,26 @@ export default class AllPosts extends React.Component {
   render() {
     const { posts } = this.state;
     
-    return !posts.length
-      ? (<Loading />)
-      : (
-        <React.Fragment>
-          {posts.map(post => (
-            <PostRow key={post.canonical}>
-              <StyledHeadingA href={`/posts/${post.canonical}`}>
-                {post.title}
-              </StyledHeadingA>
-              <PostAbstractRow>
-                <StyledA href={`/posts/${post.canonical}`}>
-                  {post.abstract}
-                </StyledA>
-              </PostAbstractRow>
-              <PostMetaRow>
-                <PostMetaContent>{post.published}</PostMetaContent>
-                <PostMetaContent>|</PostMetaContent>
-                <PostMetaContent>{post.username}</PostMetaContent>
-              </PostMetaRow>
-            </PostRow>
-          ))}
-        </React.Fragment>
-      );
+    return (
+      <React.Fragment>
+        {posts.map(post => (
+          <PostRow key={post.canonical}>
+            <StyledHeadingA href={`/posts/${post.canonical}`}>
+              {post.title}
+            </StyledHeadingA>
+            <PostAbstractRow>
+              <StyledA href={`/posts/${post.canonical}`}>
+                {post.abstract}
+              </StyledA>
+            </PostAbstractRow>
+            <PostMetaRow>
+              <PostMetaContent>{post.published}</PostMetaContent>
+              <PostMetaContent>|</PostMetaContent>
+              <PostMetaContent>{post.username}</PostMetaContent>
+            </PostMetaRow>
+          </PostRow>
+        ))}
+      </React.Fragment>
+    );
   }
 }
