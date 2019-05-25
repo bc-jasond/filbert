@@ -3,22 +3,10 @@ import styled from 'styled-components';
 import { sansSerif } from '../common/fonts.css';
 
 import {
-  Header,
-  HeaderContentContainer,
-  LinkStyled,
-  LinkStyledAbout,
-  HeaderSpacer,
-  Article,
-  Footer,
-  SocialLinksContainer,
   A,
-  GitHubStyled,
-  LinkedInStyled,
 } from '../common/layout-styled-components';
 
-import Page404 from './404';
-
-import { getContentTree, BlogPost } from '../common/blog-content.model';
+import Loading from './loading';
 
 const PostRow = styled.div`
   padding-top: 20px;
@@ -93,16 +81,10 @@ export default class AllPosts extends React.Component {
   render() {
     const { posts } = this.state;
     
-    return posts.length && (
-      <React.Fragment>
-        <Header>
-          <HeaderContentContainer>
-            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
-            <LinkStyledAbout to="/about">i</LinkStyledAbout>
-          </HeaderContentContainer>
-        </Header>
-        <HeaderSpacer />
-        <Article>
+    return !posts.length
+      ? (<Loading />)
+      : (
+        <React.Fragment>
           {posts.map(post => (
             <PostRow key={post.canonical}>
               <StyledHeadingA href={`/posts/${post.canonical}`}>
@@ -120,15 +102,7 @@ export default class AllPosts extends React.Component {
               </PostMetaRow>
             </PostRow>
           ))}
-        </Article>
-        <Footer>
-          🚚 1/4/2019
-          <SocialLinksContainer>
-            <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
-            <A href="https://www.linkedin.com/in/jasondubaniewicz/"><LinkedInStyled /></A>
-          </SocialLinksContainer>
-        </Footer>
-      </React.Fragment>
-    );
+        </React.Fragment>
+      );
   }
 }

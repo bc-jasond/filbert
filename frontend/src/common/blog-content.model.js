@@ -110,7 +110,7 @@ class BlogPostNode {
         const { lines } = this.meta;
         return (
           <CodeSection>
-            {lines.map(line => (<Pre>{line}</Pre>))}
+            {lines.map((line, idx) => (<Pre key={idx}>{line}</Pre>))}
           </CodeSection>
         );
       case NODE_TYPE_SECTION_IMAGE: {
