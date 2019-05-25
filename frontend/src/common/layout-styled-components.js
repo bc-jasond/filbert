@@ -20,7 +20,6 @@ export const Header = styled.header`
 `;
 export const HeaderContentContainer = styled.div`
   position: relative;
-  // max-width: 1032px;
   height: 65px;
   padding-left: 20px;
   padding-right: 20px;

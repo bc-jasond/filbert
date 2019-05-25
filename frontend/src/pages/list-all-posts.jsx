@@ -1,11 +1,19 @@
 import React from 'react';
 import styled from 'styled-components';
 import { sansSerif } from '../common/fonts.css';
+import { grey, darkGrey } from '../common/css';
 
+import {
+  H2
+} from '../common/shared-styled-components';
 import {
   A,
 } from '../common/layout-styled-components';
 
+const StyledH2 = styled(H2)`
+  margin-left: 0;
+  margin-right: 0;
+`;
 const PostRow = styled.div`
   margin: 0 auto;
   max-width: 768px;
@@ -15,6 +23,7 @@ const PostRow = styled.div`
   word-break: break-word;
   &:last-of-type {
     border: none;
+    margin-bottom: 40px;
   }
   @media (max-width: 768px) {
     margin: 0;
@@ -34,7 +43,7 @@ const StyledA = styled(A)`
   max-height: 48px;
   font-size: 18.96px;
   line-height: 24px;
-  color: rgba(0, 0, 0, 0.54);
+  color: ${grey};
   letter-spacing: 0px;
 `;
 const PostMetaRow = styled.div`
@@ -43,7 +52,7 @@ const PostMetaRow = styled.div`
   margin-top: 8px;
 `;
 const PostMetaContent = styled.span`
-  color: rgba(0, 0, 0, 0.54);
+  color: ${grey};
   letter-spacing: 0px;
   font-size: 15.8px;
   line-height: 20px;
@@ -52,6 +61,14 @@ const PostMetaContent = styled.span`
   padding-left: 4px;
   &:first-of-type {
     padding-left: 0;
+  }
+`;
+const AuthorExpand = styled(PostMetaContent)`
+  transition: letter-spacing 0.125s, color 0.125s;
+  &:hover {
+    letter-spacing: 8px;
+    color: ${darkGrey};
+    cursor: pointer;
   }
 `;
 
@@ -85,6 +102,9 @@ export default class AllPosts extends React.Component {
     
     return (
       <React.Fragment>
+        <PostRow>
+          <StyledH2>Recent Articles</StyledH2>
+        </PostRow>
         {posts.map(post => (
           <PostRow key={post.canonical}>
             <StyledHeadingA href={`/posts/${post.canonical}`}>
@@ -98,7 +118,7 @@ export default class AllPosts extends React.Component {
             <PostMetaRow>
               <PostMetaContent>{post.published}</PostMetaContent>
               <PostMetaContent>|</PostMetaContent>
-              <PostMetaContent>{post.username}</PostMetaContent>
+              <AuthorExpand>{post.username}</AuthorExpand>
             </PostMetaRow>
           </PostRow>
         ))}
