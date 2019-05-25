@@ -37,7 +37,7 @@ const StyledHeadingA = styled(A)`
   max-height: 56px;
   letter-spacing: -0.47px;
   font-size: 25.2px;
-  line-height: 30px;
+  line-height: 28px;
   font-weight: 600;
 `;
 const StyledA = styled(A)`
@@ -65,13 +65,24 @@ const PostMetaContent = styled.span`
   }
 `;
 
-export default class Layout extends React.Component {
+export default class AllPosts extends React.Component {
   constructor(props) {
     super(props);
     
     this.state = {
-      posts: [0],
+      posts: [],
     }
+  }
+  
+  async componentDidMount() {
+    const response = await fetch(`http://localhost:3001/post`);
+    const posts = await response.json();
+    const postsFormatted = posts.map(post => {
+      const publishedDate = new Date(post.published);
+      post.published = publishedDate.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', day: 'numeric', month: 'long' });
+      return post;
+    })
+    this.setState({ posts: postsFormatted })
   }
   
   render() {
@@ -91,20 +102,18 @@ export default class Layout extends React.Component {
           <Article>
             {posts.map(post => (
               <PostRow>
-                <StyledHeadingA href="#">
-                  Go, Still Holding on, If Only
+                <StyledHeadingA href={`/posts/${post.canonical}`}>
+                  {post.title}
                 </StyledHeadingA>
                 <PostAbstractRow>
-                  <StyledA href="#">
-                    I’ve been having trouble with where my current situation is — I feel like ‘If only it were different, then I’d feel more at ease.’ I know…
+                  <StyledA href={`/posts/${post.canonical}`}>
+                    {post.abstract}
                   </StyledA>
                 </PostAbstractRow>
                 <PostMetaRow>
-                  <PostMetaContent>Monday, January 4th 2019</PostMetaContent>
-                  <PostMetaContent>·</PostMetaContent>
-                  <PostMetaContent>491 words</PostMetaContent>
-                  <PostMetaContent>·</PostMetaContent>
-                  <PostMetaContent>jason</PostMetaContent>
+                  <PostMetaContent>{post.published}</PostMetaContent>
+                  <PostMetaContent>|</PostMetaContent>
+                  <PostMetaContent>{post.username}</PostMetaContent>
                 </PostMetaRow>
               </PostRow>
             ))}

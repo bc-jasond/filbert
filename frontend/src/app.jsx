@@ -20,7 +20,7 @@ const App = () => (
   <React.Fragment>
     <BrowserRouter>
       <Switch>
-        <Redirect push exact from="/" to="/posts/blog-post-wildcard-imports" />
+        <Redirect push exact from="/" to="/posts" />
         <Redirect push exact from="/about" to="/posts/about" />
         <Route exact path="/posts" component={ListAllPosts} />
         <Route path="/posts/:id" render={(props) =>

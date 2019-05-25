@@ -34,7 +34,7 @@ export const H3 = styled.h3`
   overflow: hidden;
   letter-spacing: -0.47px;
   font-size: 25.2px;
-  line-height: 30px;
+  line-height: 28px;
   font-weight: 600;
   font-style: normal;
   font-family: ${sansSerif}, sans-serif;

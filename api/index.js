@@ -176,6 +176,8 @@ async function main() {
           'post.id',
           'user_id',
           'canonical',
+          'title',
+          'abstract',
           'post.created',
           'updated',
           'published',
@@ -184,7 +186,7 @@ async function main() {
         )
         .innerJoin('user', 'post.user_id', 'user.id')
         .whereNotNull('published')
-        .orderBy('published');
+        .orderBy('published', 'desc');
       
       res.send(posts);
     })
