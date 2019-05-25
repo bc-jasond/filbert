@@ -79,7 +79,12 @@ export default class AllPosts extends React.Component {
     const posts = await response.json();
     const postsFormatted = posts.map(post => {
       const publishedDate = new Date(post.published);
-      post.published = publishedDate.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', day: 'numeric', month: 'long' });
+      post.published = publishedDate.toLocaleDateString('en-us', {
+        weekday: 'long',
+        year: 'numeric',
+        day: 'numeric',
+        month: 'long'
+      });
       return post;
     })
     this.setState({ posts: postsFormatted })
@@ -88,44 +93,42 @@ export default class AllPosts extends React.Component {
   render() {
     const { posts } = this.state;
     
-    return !posts.length
-      ? (<Page404 />)
-      : (
-        <React.Fragment>
-          <Header>
-            <HeaderContentContainer>
-              <LinkStyled to="/">dubaniewi.cz</LinkStyled>
-              <LinkStyledAbout to="/about">i</LinkStyledAbout>
-            </HeaderContentContainer>
-          </Header>
-          <HeaderSpacer />
-          <Article>
-            {posts.map(post => (
-              <PostRow>
-                <StyledHeadingA href={`/posts/${post.canonical}`}>
-                  {post.title}
-                </StyledHeadingA>
-                <PostAbstractRow>
-                  <StyledA href={`/posts/${post.canonical}`}>
-                    {post.abstract}
-                  </StyledA>
-                </PostAbstractRow>
-                <PostMetaRow>
-                  <PostMetaContent>{post.published}</PostMetaContent>
-                  <PostMetaContent>|</PostMetaContent>
-                  <PostMetaContent>{post.username}</PostMetaContent>
-                </PostMetaRow>
-              </PostRow>
-            ))}
-          </Article>
-          <Footer>
-            🚚 1/4/2019
-            <SocialLinksContainer>
-              <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
-              <A href="https://www.linkedin.com/in/jasondubaniewicz/"><LinkedInStyled /></A>
-            </SocialLinksContainer>
-          </Footer>
-        </React.Fragment>
-      );
+    return posts.length && (
+      <React.Fragment>
+        <Header>
+          <HeaderContentContainer>
+            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <LinkStyledAbout to="/about">i</LinkStyledAbout>
+          </HeaderContentContainer>
+        </Header>
+        <HeaderSpacer />
+        <Article>
+          {posts.map(post => (
+            <PostRow key={post.canonical}>
+              <StyledHeadingA href={`/posts/${post.canonical}`}>
+                {post.title}
+              </StyledHeadingA>
+              <PostAbstractRow>
+                <StyledA href={`/posts/${post.canonical}`}>
+                  {post.abstract}
+                </StyledA>
+              </PostAbstractRow>
+              <PostMetaRow>
+                <PostMetaContent>{post.published}</PostMetaContent>
+                <PostMetaContent>|</PostMetaContent>
+                <PostMetaContent>{post.username}</PostMetaContent>
+              </PostMetaRow>
+            </PostRow>
+          ))}
+        </Article>
+        <Footer>
+          🚚 1/4/2019
+          <SocialLinksContainer>
+            <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
+            <A href="https://www.linkedin.com/in/jasondubaniewicz/"><LinkedInStyled /></A>
+          </SocialLinksContainer>
+        </Footer>
+      </React.Fragment>
+    );
   }
 }
