@@ -1097,13 +1097,6 @@ babel-plugin-syntax-jsx@^6.18.0:
   resolved "https://registry.yarnpkg.com/babel-plugin-syntax-jsx/-/babel-plugin-syntax-jsx-6.18.0.tgz#0af32a9a6e13ca7a3fd5069e62d7b0f58d0d8946"
   integrity sha1-CvMqmm4Tyno/1QaeYtew9Y0NiUY=
 
-babel-plugin-wildcard@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/babel-plugin-wildcard/-/babel-plugin-wildcard-5.0.0.tgz#71a8284d81f7530be2055fb47e0d388cb96a48ec"
-  integrity sha512-RhbEQV7HbqfreBW41R2ExJV4SdeG3pnno2gYqbucrrzhBub3/72524yNeQbPa0dyVJQwGS/DZ2X6MeiWSdErlQ==
-  dependencies:
-    rimraf "^2.6.2"
-
 balanced-match@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"

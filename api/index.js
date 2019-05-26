@@ -145,28 +145,29 @@ async function main() {
     app.use(express.json());
     app.use(cors(/* TODO: whitelist *.dubaniewi.cz in PRODUCTION */))
     
-    app.post('/login', async (req, res) => {
-      const { username, password } = req.body;
-      
-      const [user] = await knex('user')
-        .where('username', username);
-      
-      const passwordDoesMatch = await checkPassword(password, user.password);
-      
-      if (!passwordDoesMatch) {
-        res.status(401).send({ error: 'Invalid credentials' })
-        return;
+    app.post('/signin', async (req, res) => {
+      try {
+        const { username, password } = req.body;
+        const [user] = await knex('user')
+          .where('username', username);
+        
+        if (!user) {
+          res.status(401).send({ error: 'Invalid credentials' })
+          return;
+        }
+        
+        const passwordDoesMatch = await checkPassword(password, user.password);
+
+        if (!passwordDoesMatch) {
+          res.status(401).send({ error: 'Invalid credentials' })
+          return;
+        }
+
+        res.send({ token: encrypt(JSON.stringify(user)) });
+      } catch (err) {
+        console.log('Signin Error: ', err)
+        res.sendStatus(401)
       }
-      
-      res.send({ token: encrypt(user) });
-    })
-    
-    /**
-     * authenticated routes
-     */
-    app.use((req, res, next) => {
-      // TODO: check auth token!
-      next();
     })
     
     app.get('/post', async (req, res) => {
@@ -215,6 +216,14 @@ async function main() {
       }, {})
       
       res.send({ post, contentNodes });
+    })
+  
+    /**
+     * authenticated routes
+     */
+    app.use((req, res, next) => {
+      // TODO: check auth token!
+      next();
     })
     
     app.listen(3001)
