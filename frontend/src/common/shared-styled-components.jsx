@@ -99,7 +99,6 @@ export const Li = styled.li`
     content: counter(post) ".";
     position: absolute;
     display: inline-block;
-    box-sizing: border-box;
     width: 78px;
     margin-left: -78px;
     text-align: right;

@@ -25,3 +25,9 @@ export const NODE_TYPE_STRIKE = 'strike';
 
 // EDITOR
 export const NEW_POST_ID = 'dubaniewicz-new-post';
+
+// ENV
+export const API_URL = 'http://localhost:3001';
+
+// AUTH
+export const LOGIN_TOKEN = 'dubaniewicz-token';

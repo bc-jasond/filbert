@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { sansSerif } from '../common/fonts.css';
 import { grey, darkGrey } from '../common/css';
 
+import { apiGet } from '../common/fetch';
+
 import {
   H2
 } from '../common/shared-styled-components';
@@ -82,8 +84,7 @@ export default class AllPosts extends React.Component {
   }
   
   async componentDidMount() {
-    const response = await fetch(`http://localhost:3001/post`);
-    const posts = await response.json();
+    const posts = await apiGet('/post');
     const postsFormatted = posts.map(post => {
       const publishedDate = new Date(post.published);
       post.published = publishedDate.toLocaleDateString('en-us', {

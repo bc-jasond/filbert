@@ -1,4 +1,5 @@
 import React from 'react';
+import { apiGet } from '../common/fetch';
 
 import Page404 from './404';
 
@@ -16,8 +17,7 @@ export default class ViewPost extends React.Component {
   
   async componentDidMount() {
     try {
-      const response = await fetch(`http://localhost:3001/post/${this.props.postId}`);
-      const { post, contentNodes } = await response.json();
+      const { post, contentNodes } = await apiGet(`/post/${this.props.postId}`);
       this.setState({ pageContent: getContentTree(contentNodes), shouldShow404: false })
     } catch (err) {
       console.log(err);

@@ -1,8 +1,10 @@
 import * as React from 'react';
-import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import styled, { css } from 'styled-components';
+import { Link, Redirect } from 'react-router-dom';
+import { LOGIN_TOKEN } from '../common/constants';
 
-import { blue, darkBlue, grey, mediumGrey } from '../common/css';
+import { blue, darkBlue, grey, mediumGrey, error, success } from '../common/css';
+import { apiPost } from '../common/fetch';
 import { monospaced, sansSerif } from '../common/fonts.css';
 
 import {
@@ -53,10 +55,29 @@ const Input = styled.input`
   border-radius: 2px;
   border: 1px solid ${grey};
   padding: 2px 8px;
+  ${p => p.error && css`
+    border-color: ${error};
+  `}
 `;
 const Label = styled.label`
   margin-bottom: 4px;
   font-family: ${sansSerif};
+  ${p => p.error && css`
+    color: ${error};
+  `}
+`;
+const MessageContainer = styled.div`
+  min-height: 36px;
+  text-align: center;
+  font-family: ${monospaced};
+`;
+const SuccessMessage = styled.span`
+  font-family: inherit;
+  color: ${success};
+`;
+const ErrorMessage = styled.span`
+  font-family: inherit;
+  color: ${error};
 `;
 const Button = styled.button`
   display: block;
@@ -95,28 +116,77 @@ const StyledA = styled(A)`
   // color: ${blue};
 `;
 
-export default () => (
-  <Container>
-    <SignInForm>
-      <StyledLinkStyled to="/">dubaniewi.cz</StyledLinkStyled>
-      <H1>Sign In</H1>
-      <H3>Want an account? <StyledA href="javascript:alert('Coming soon!')">Click here</StyledA></H3>
-      <InputContainer>
-        <Label htmlFor="username">Username</Label>
-        <Input name="username" />
-      </InputContainer>
-      <InputContainer>
-        <Label htmlFor="password">Password</Label>
-        <Input name="password" type="password" />
-      </InputContainer>
-      <Button type="submit">
-        <ButtonSpan>Sign In</ButtonSpan>
-      </Button>
-      <LinkStyled2 to="/">
-        <CancelButton>
-          <ButtonSpan>Cancel</ButtonSpan>
-        </CancelButton>
-      </LinkStyled2>
-    </SignInForm>
-  </Container>
-);
+
+export default class SignIn extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      username: '',
+      password: '',
+      error: null,
+      success: null,
+      shouldRedirect: false,
+    }
+  }
+  
+  updateUsername = (event) => {
+    this.setState({ username: event.target.value, error: null })
+  }
+  updatePassword = (event) => {
+    this.setState({ password: event.target.value, error: null })
+  }
+  
+  doLogin = async (event) => {
+    event.preventDefault();
+    try {
+      const { username, password } = this.state;
+      const { token } = await apiPost('/signin', { username, password });
+      localStorage.setItem(LOGIN_TOKEN, token);
+      this.setState({ success: 'All set 👍' })
+      setTimeout(() => {
+        this.setState({ shouldRedirect: true });
+      }, 500)
+    } catch (error) {
+      console.error('Login Error: ', error);
+      this.setState({ error })
+    }
+  }
+  
+  render() {
+    const { error, success, shouldRedirect } = this.state;
+    if (shouldRedirect) {
+      return (<Redirect push to="/" />);
+    }
+    return (
+      <Container>
+        <SignInForm onSubmit={this.doLogin}>
+          <StyledLinkStyled to="/">dubaniewi.cz</StyledLinkStyled>
+          <H1>Sign In</H1>
+          <H3>Want an account? <StyledA href="javascript:alert('Coming soon!')">Click here</StyledA></H3>
+          <InputContainer>
+            <Label htmlFor="username" error={error}>Username</Label>
+            <Input name="username" type="text" value={this.state.username} onChange={this.updateUsername}
+                   error={error} />
+          </InputContainer>
+          <InputContainer>
+            <Label htmlFor="password" error={error}>Password</Label>
+            <Input name="password" type="password" value={this.state.password} onChange={this.updatePassword}
+                   error={error} />
+          </InputContainer>
+          <MessageContainer>
+            {error && (<ErrorMessage>Try again. 👮</ErrorMessage>)}
+            {success && (<SuccessMessage>{success}</SuccessMessage>)}
+          </MessageContainer>
+          <Button type="submit">
+            <ButtonSpan>Sign In</ButtonSpan>
+          </Button>
+          <LinkStyled2 to="/">
+            <CancelButton>
+              <ButtonSpan>Cancel</ButtonSpan>
+            </CancelButton>
+          </LinkStyled2>
+        </SignInForm>
+      </Container>
+    );
+  }
+}

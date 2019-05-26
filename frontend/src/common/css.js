@@ -5,3 +5,5 @@ export const darkGrey = 'rgba(0,0,0,.84)';
 export const lightBlue = '#A0CFE1';
 export const blue = '#79bbd5';
 export const darkBlue = '#52a8c9';
+export const error = '#cc0000';
+export const success = '#5CB85C';

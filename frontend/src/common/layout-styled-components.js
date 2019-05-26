@@ -14,8 +14,6 @@ export const Header = styled.header`
   letter-spacing: 0;
   font-weight: 400;
   font-style: normal;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
   top: 0;
 `;
 export const HeaderContentContainer = styled.div`
@@ -63,8 +61,6 @@ export const Article = styled.article`
   width: 100%;
   min-height: 80vh;
   margin: 0 auto;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
   position: relative;
   @media (max-width: 800px) {
     padding: 0 20px 80px 20px;
