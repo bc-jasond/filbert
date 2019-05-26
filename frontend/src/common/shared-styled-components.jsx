@@ -31,6 +31,7 @@ export const H2 = styled.h2`
 export const H3 = styled.h3`
   text-overflow: ellipsis;
   max-height: 56px;
+  margin-bottom: 8px;
   overflow: hidden;
   letter-spacing: -0.47px;
   font-size: 25.2px;

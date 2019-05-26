@@ -3,7 +3,7 @@ import styled, { css } from 'styled-components';
 import GitHubSvg from '../../assets/github-mark.svg';
 import LinkedInSvg from '../../assets/linkedin-logo.svg';
 import { darkGrey, grey, lightBlue } from './css';
-import { italicSerif, monospaced, sansSerif } from './fonts.css';
+import { monospaced, sansSerif } from './fonts.css';
 
 export const Header = styled.header`
   position: fixed;
@@ -39,19 +39,20 @@ export const LinkStyled = styled(Link)`
   }
 `;
 export const LinkStyledSignIn = styled(LinkStyled)`
-  right: 64px;
-  font-size: 16px;
-  padding: 8px 16px;
-  border-radius: 2px;
+  right: 68px;
+  font-size: 18px;
+  padding: 14px 18px;
+  border-radius: 26px;
+  border: 1px solid transparent;
   transition: background-color 0.125s, color 0.125s;
   &:hover {
-    font-size: 16px;
+    font-size: 18px;
     color: white;
     background-color: ${lightBlue};
   }
 `;
 export const LinkStyledAbout = styled(LinkStyledSignIn)`
-  right: 16px;
+  right: 18px;
 `;
 export const HeaderSpacer = styled.div`
   z-index: 100;

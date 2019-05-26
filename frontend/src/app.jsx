@@ -18,6 +18,7 @@ import Page404 from './pages/404';
 import PageLayout from './pages/layout';
 import ListAllPosts from './pages/list-all-posts';
 import ViewPost from './pages/view-post';
+import SignIn from './pages/signin';
 
 const App = () => (
   <React.Fragment>
@@ -25,6 +26,7 @@ const App = () => (
       <Switch>
         <Redirect push exact from="/" to="/posts" />
         <Redirect push exact from="/about" to="/posts/about" />
+        <Route exact path="/signin" component={SignIn} />
         <Route exact path="/posts" render={() => (
           <PageLayout>
             <ListAllPosts />
