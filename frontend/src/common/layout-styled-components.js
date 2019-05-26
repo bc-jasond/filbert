@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import GitHubSvg from '../../assets/github-mark.svg';
 import LinkedInSvg from '../../assets/linkedin-logo.svg';
-import { darkGrey, grey } from './css';
+import { darkGrey, grey, lightBlue } from './css';
 import { italicSerif, monospaced, sansSerif } from './fonts.css';
 
 export const Header = styled.header`
@@ -24,24 +24,34 @@ export const HeaderContentContainer = styled.div`
   padding-left: 20px;
   padding-right: 20px;
   margin: 0 auto;
-  justify-content: space-between;
   display: flex;
   align-items: center;
 `;
 export const LinkStyled = styled(Link)`
+  position: absolute;
   font-family: ${monospaced}, monospaced;
   font-size: 24px;
-  color: rgba(0,0,0,.54);
+  color: ${grey};
   text-decoration: none;
   transition: font-size 0.125s;
   &:hover {
     font-size: 28px;
   }
 `;
-export const LinkStyledAbout = styled(LinkStyled)`
-  font-family: ${italicSerif}, sans-serif;
-  margin-right: 10px;
-  transition: font-size 0.175s;
+export const LinkStyledSignIn = styled(LinkStyled)`
+  right: 64px;
+  font-size: 16px;
+  padding: 8px 16px;
+  border-radius: 2px;
+  transition: background-color 0.125s, color 0.125s;
+  &:hover {
+    font-size: 16px;
+    color: white;
+    background-color: ${lightBlue};
+  }
+`;
+export const LinkStyledAbout = styled(LinkStyledSignIn)`
+  right: 16px;
 `;
 export const HeaderSpacer = styled.div`
   z-index: 100;

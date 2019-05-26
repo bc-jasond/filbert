@@ -4,6 +4,7 @@ import {
   Header,
   HeaderContentContainer,
   LinkStyled,
+  LinkStyledSignIn,
   LinkStyledAbout,
   HeaderSpacer,
   Article,
@@ -19,6 +20,7 @@ export default (props) => (
     <Header>
       <HeaderContentContainer>
         <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+        <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
         <LinkStyledAbout to="/about">i</LinkStyledAbout>
       </HeaderContentContainer>
     </Header>
