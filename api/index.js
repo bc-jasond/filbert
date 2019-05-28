@@ -163,7 +163,13 @@ async function main() {
           return;
         }
 
-        res.send({ token: encrypt(JSON.stringify(user)) });
+        res.send({
+          token: encrypt(JSON.stringify(user)),
+          session: {
+            username: user.username,
+            userId: user.id,
+          },
+        });
       } catch (err) {
         console.log('Signin Error: ', err)
         res.sendStatus(401)
