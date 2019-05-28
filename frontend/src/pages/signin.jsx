@@ -1,10 +1,10 @@
 import * as React from 'react';
 import styled, { css } from 'styled-components';
 import { Link, Redirect } from 'react-router-dom';
-import { LOGIN_TOKEN } from '../common/constants';
+
+import { signin } from '../common/session';
 
 import { blue, darkBlue, grey, mediumGrey, error, success } from '../common/css';
-import { apiPost } from '../common/fetch';
 import { monospaced, sansSerif } from '../common/fonts.css';
 
 import {
@@ -140,8 +140,7 @@ export default class SignIn extends React.Component {
     event.preventDefault();
     try {
       const { username, password } = this.state;
-      const { token } = await apiPost('/signin', { username, password });
-      localStorage.setItem(LOGIN_TOKEN, token);
+      await signin(username, password);
       this.setState({ success: 'All set 👍' })
       setTimeout(() => {
         this.setState({ shouldRedirect: true });

@@ -25,8 +25,14 @@ export const HeaderContentContainer = styled.div`
   display: flex;
   align-items: center;
 `;
-export const LinkStyled = styled(Link)`
+export const HeaderLinksContainer = styled.div`
   position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+export const LinkStyled = styled(Link)`
   font-family: ${monospaced}, monospaced;
   font-size: 24px;
   color: ${grey};
@@ -36,8 +42,11 @@ export const LinkStyled = styled(Link)`
     font-size: 28px;
   }
 `;
-export const LinkStyledSignIn = styled(LinkStyled)`
-  right: 68px;
+export const HeaderButtonMixin = css`
+  font-family: ${monospaced}, monospaced;
+  color: ${grey};
+  cursor: pointer;
+  text-decoration: none;
   font-size: 18px;
   padding: 14px 18px;
   border-radius: 26px;
@@ -49,8 +58,17 @@ export const LinkStyledSignIn = styled(LinkStyled)`
     background-color: ${lightBlue};
   }
 `;
-export const LinkStyledAbout = styled(LinkStyledSignIn)`
-  right: 18px;
+export const NewPost = styled(LinkStyled)`
+  ${HeaderButtonMixin};
+`;
+export const SignedInUser = styled.div`
+  ${HeaderButtonMixin};
+`;
+export const LinkStyledSignIn = styled(LinkStyled)`
+  ${HeaderButtonMixin};
+`;
+export const LinkStyledAbout = styled(LinkStyled)`
+  ${HeaderButtonMixin};
 `;
 export const HeaderSpacer = styled.div`
   z-index: 100;

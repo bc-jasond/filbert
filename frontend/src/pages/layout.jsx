@@ -1,10 +1,15 @@
 import React from 'react';
 
+import { getSession, getUserName, signout } from '../common/session';
+
 import {
   Header,
   HeaderContentContainer,
+  HeaderLinksContainer,
   LinkStyled,
   LinkStyledSignIn,
+  SignedInUser,
+  NewPost,
   LinkStyledAbout,
   HeaderSpacer,
   Article,
@@ -20,8 +25,23 @@ export default (props) => (
     <Header>
       <HeaderContentContainer>
         <LinkStyled to="/">dubaniewi.cz</LinkStyled>
-        <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
-        <LinkStyledAbout to="/about">i</LinkStyledAbout>
+        <HeaderLinksContainer>
+          {getSession()
+            ? (
+              <React.Fragment>
+                <NewPost to="/new">new post</NewPost>
+                <SignedInUser onClick={() => {
+                  if (confirm('Logout?')) {
+                    signout();
+                    // TODO: do something with state/props here
+                    window.location.reload();
+                  }
+                }}>{getUserName()}</SignedInUser>
+              </React.Fragment>
+            )
+            : (<LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>)}
+          <LinkStyledAbout to="/about">i</LinkStyledAbout>
+        </HeaderLinksContainer>
       </HeaderContentContainer>
     </Header>
     <HeaderSpacer />

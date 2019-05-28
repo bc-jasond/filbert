@@ -30,4 +30,5 @@ export const NEW_POST_ID = 'dubaniewicz-new-post';
 export const API_URL = 'http://localhost:3001';
 
 // AUTH
-export const LOGIN_TOKEN = 'dubaniewicz-token';
+export const AUTH_TOKEN_KEY = 'dubaniewicz-token';
+export const SESSION_KEY = 'dubaniewicz-session';
