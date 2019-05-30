@@ -29,7 +29,7 @@ export default (props) => (
           {getSession()
             ? (
               <React.Fragment>
-                <NewPost to="/new">new post</NewPost>
+                <NewPost to="/edit/new">new post</NewPost>
                 <SignedInUser onClick={() => {
                   if (confirm('Logout?')) {
                     signout();

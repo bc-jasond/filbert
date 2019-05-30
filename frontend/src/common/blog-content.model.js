@@ -45,7 +45,7 @@ import {
   ImageSection,
 } from './shared-styled-components';
 
-class BlogPostNode {
+export class BlogPostNode {
   constructor({ type, id, parent_id, post_id, content, meta }, parent = null) {
     this.type = type;
     this.id = id;
@@ -86,6 +86,29 @@ class BlogPostNode {
     return raw;
   }
   
+  ENTER_KEY = 13;
+  
+  handleKeyDown = evt => {
+    if (evt.keyCode === this.ENTER_KEY) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      const [textNode] = this.childNodes;
+      textNode.content = document.activeElement.innerHTML;
+      if (this.type === NODE_TYPE_P) {
+        const p = new BlogPostNode({type: NODE_TYPE_P}, this.parent);
+        this.parent.childNodes.push(p);
+      }
+      if (this.parent.type === NODE_TYPE_ROOT) {
+        // create a ContentSection
+        const content = new BlogPostNode({type: NODE_TYPE_SECTION_CONTENT}, this.parent);
+        const p = new BlogPostNode({type: NODE_TYPE_P}, content);
+        content.childNodes.push(p);
+        this.parent.childNodes.push(content);
+      }
+      console.log(this.childNodes, document.activeElement.innerHTML);
+    }
+  }
+  
   render() {
     switch (this.type) {
       case NODE_TYPE_ROOT:
@@ -101,7 +124,14 @@ class BlogPostNode {
       case NODE_TYPE_SECTION_SPACER:
         return (<SpacerSection />);
       case NODE_TYPE_SECTION_H1:
-        return (<H1>{this.childNodes.map(node => node.render())}</H1>);
+        return (
+          <H1
+            tabIndex="0"
+            contentEditable={true}
+            onKeyDown={this.handleKeyDown}>
+              {this.childNodes.map(node => node.render())}
+          </H1>
+        );
       case NODE_TYPE_SECTION_H2:
         return (<H2>{this.childNodes.map(node => node.render())}</H2>);
       case NODE_TYPE_SECTION_CONTENT:
@@ -137,7 +167,14 @@ class BlogPostNode {
         );
       }
       case NODE_TYPE_P:
-        return (<P>{this.childNodes.map(node => node.render())}</P>);
+        return (
+          <P
+            tabIndex="0"
+            contentEditable={true}
+            onKeyDown={this.handleKeyDown}>
+              {this.childNodes.map(node => node.render())}
+          </P>
+        );
       case NODE_TYPE_OL:
         return (<Ol>{this.childNodes.map(node => node.render())}</Ol>);
       case NODE_TYPE_LI:

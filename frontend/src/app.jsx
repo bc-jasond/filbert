@@ -18,6 +18,7 @@ import PageLayout from './pages/layout';
 import ListAllPosts from './pages/list-all-posts';
 import ViewPost from './pages/view-post';
 import SignIn from './pages/signin';
+import EditPost from './pages/edit';
 
 const App = () => (
   <React.Fragment>
@@ -37,6 +38,15 @@ const App = () => (
             // changing the 'key' prop will cause the component to unmount and therefore reload data for new blog post id
             <PageLayout key={props.match.params.id} {...props}>
               <ViewPost postId={props.match.params.id}/>
+            </PageLayout>
+          )}
+        />
+        <Route path="/edit/:id" render={(props) =>
+          (
+            // https://stackoverflow.com/a/49441836/1991322
+            // changing the 'key' prop will cause the component to unmount and therefore reload data for new blog post id
+            <PageLayout key={props.match.params.id} {...props}>
+              <EditPost postId={props.match.params.id}/>
             </PageLayout>
           )}
         />
