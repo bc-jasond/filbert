@@ -13,7 +13,6 @@ import CssReset from './reset.css';
 import CssBase from './common/fonts.css';
 import CssPace from './common/pace.css';
 
-import Editor from './pages/editor';
 import Page404 from './pages/404';
 import PageLayout from './pages/layout';
 import ListAllPosts from './pages/list-all-posts';
@@ -41,7 +40,6 @@ const App = () => (
             </PageLayout>
           )}
         />
-        <Route path="/editor" component={Editor} />
         <Route component={Page404} />
       </Switch>
     </BrowserRouter>
