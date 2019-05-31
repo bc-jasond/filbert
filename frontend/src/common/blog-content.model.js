@@ -45,10 +45,16 @@ import {
   ImageSection,
 } from './shared-styled-components';
 
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+    .toString(16)
+    .substring(1);
+}
+
 export class BlogPostNode {
   constructor({ type, id, parent_id, post_id, content, meta }, parent = null) {
     this.type = type;
-    this.id = id;
+    this.id = id || s4();
     this.parent_id = parent_id;
     this.post_id = post_id;
     this.content = content;
@@ -79,6 +85,20 @@ export class BlogPostNode {
     return false;
   }
   
+  findById(id) {
+    const queue = [this];
+    while (queue.length) {
+      const current = queue.pop();
+      if (current.id === id) {
+        return current;
+      }
+      if (current.childNodes.length) {
+        queue.unshift(...current.childNodes)
+      }
+    }
+    return null;
+  }
+  
   toJSON() {
     const raw = { ...this };
     delete (raw.parent); // prevent circular reference issue
@@ -86,36 +106,13 @@ export class BlogPostNode {
     return raw;
   }
   
-  ENTER_KEY = 13;
-  
-  handleKeyDown = evt => {
-    if (evt.keyCode === this.ENTER_KEY) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      const [textNode] = this.childNodes;
-      textNode.content = document.activeElement.innerHTML;
-      if (this.type === NODE_TYPE_P) {
-        const p = new BlogPostNode({type: NODE_TYPE_P}, this.parent);
-        this.parent.childNodes.push(p);
-      }
-      if (this.parent.type === NODE_TYPE_ROOT) {
-        // create a ContentSection
-        const content = new BlogPostNode({type: NODE_TYPE_SECTION_CONTENT}, this.parent);
-        const p = new BlogPostNode({type: NODE_TYPE_P}, content);
-        content.childNodes.push(p);
-        this.parent.childNodes.push(content);
-      }
-      console.log(this.childNodes, document.activeElement.innerHTML);
-    }
-  }
-  
   render() {
     switch (this.type) {
       case NODE_TYPE_ROOT:
         return (
-          <React.Fragment>
+          <div data-type="root" name={this.id}>
             {this.childNodes.map(node => node.render())}
-          </React.Fragment>
+          </div>
         );
       case NODE_TYPE_TEXT:
         return this.content;
@@ -125,17 +122,15 @@ export class BlogPostNode {
         return (<SpacerSection />);
       case NODE_TYPE_SECTION_H1:
         return (
-          <H1
-            tabIndex="0"
-            contentEditable={true}
-            onKeyDown={this.handleKeyDown}>
-              {this.childNodes.map(node => node.render())}
+          <H1 data-type="h1" name={this.id}>
+            Placeholder
+            {this.childNodes.map(node => node.render())}
           </H1>
         );
       case NODE_TYPE_SECTION_H2:
         return (<H2>{this.childNodes.map(node => node.render())}</H2>);
       case NODE_TYPE_SECTION_CONTENT:
-        return (<ContentSection>{this.childNodes.map(node => node.render())}</ContentSection>);
+        return (<ContentSection data-type="content" name={this.id}>{this.childNodes.map(node => node.render())}</ContentSection>);
       case NODE_TYPE_SECTION_CODE:
         const { lines } = this.meta;
         return (
@@ -168,11 +163,9 @@ export class BlogPostNode {
       }
       case NODE_TYPE_P:
         return (
-          <P
-            tabIndex="0"
-            contentEditable={true}
-            onKeyDown={this.handleKeyDown}>
-              {this.childNodes.map(node => node.render())}
+          <P data-type="p" name={this.id}>
+            &nbsp;
+            {this.childNodes.map(node => node.render())}
           </P>
         );
       case NODE_TYPE_OL:
