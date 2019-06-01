@@ -18,44 +18,88 @@ export default class EditPost extends React.Component {
     }
   }
   
+  setCaret(node) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    const range = document.createRange();
+    range.setEnd(node, 0);
+    range.collapse();
+    sel.addRange(range);
+  }
+  
+  getCaretNode() {
+    const sel = window.getSelection();
+    const range = sel.getRangeAt(0)
+    return range.endContainer.parentElement;
+  }
+  
   getNewPost() {
     const root = new BlogPostNode({type: NODE_TYPE_ROOT});
     const h1 = new BlogPostNode({type: NODE_TYPE_SECTION_H1}, root);
     const text = new BlogPostNode({type: NODE_TYPE_TEXT}, h1);
     h1.childNodes.push(text);
     root.childNodes.push(h1);
-    this.setState({root})
+    this.setState({root}, () => {
+      const [h1Node] = document.getElementsByName(h1.id);
+      this.setCaret(h1Node)
+    })
   }
   
   async componentDidMount() {
     this.getNewPost();
   }
   
-  ENTER_KEY = 13;
+  ZERO_LENGTH_CHAR = '\u200B';
   
-  handleKeyDown = evt => {
+  ENTER_KEY = 13;
+  BACKSPACE_KEY = 8;
+  UP_ARROW = 38;
+  DOWN_ARROW = 40;
+  LEFT_ARROW = 37;
+  RIGHT_ARROW = 39;
+  
+  handleBackspace = (evt) => {
+    if (evt.keyCode === this.BACKSPACE_KEY) {
+      const sel = window.getSelection();
+      const range = sel.getRangeAt(0);
+      if (range.startOffset === 0) {
+        // TODO: allow contenteditable to delete the current tag
+        evt.stopPropagation();
+        evt.preventDefault();
+      }
+    }
+  }
+  
+  handleEnter = (evt) => {
     const { root } = this.state;
     if (evt.keyCode === this.ENTER_KEY) {
       evt.stopPropagation();
       evt.preventDefault();
-      const sel = window.getSelection();
-      const range = sel.getRangeAt(0)
-      const activeElement = range.endContainer.parentElement;
+      const activeElement = this.getCaretNode();
       const nodeId = activeElement.getAttribute('name');
-      const content = activeElement.innerHTML;
       const activeType = activeElement.dataset.type;
       const activeParent = activeElement.parentElement;
       const parentId = activeParent.getAttribute('name');
+      
+      /**
+       * update model from DOM
+       */
+      const current = root.findById(nodeId);
+      const currentText = current.getTextNode();
+      currentText.content = activeElement.innerText;
+      // unset current innerText to avoid double-render
+      activeElement.innerText = '';
+      
+      /**
+       * insert a new element, default to P tag
+       */
       if (activeType === NODE_TYPE_P) {
         const parent = root.findById(parentId)
         const p = new BlogPostNode({type: NODE_TYPE_P});
         parent.childNodes.push(p);
         this.setState({root},() => {
           const [newP] = document.getElementsByName(p.id);
-          range.setEnd(newP, 0);
-          range.collapse();
-          sel.removeAllRanges();
-          sel.addRange(range);
+          this.setCaret(newP)
         });
       }
       if (activeType === NODE_TYPE_SECTION_H1) {
@@ -66,14 +110,19 @@ export default class EditPost extends React.Component {
         root.childNodes.push(content);
         this.setState({root}, () => {
           const [newP] = document.getElementsByName(p.id);
-          range.setEnd(newP, 0);
-          range.collapse();
-          sel.removeAllRanges();
-          sel.addRange(range);
+          this.setCaret(newP)
         })
       }
-      console.log(this.childNodes, document.activeElement.innerHTML);
     }
+  }
+  
+  handleArrows = (evt) => {}
+  
+  handleKeyDown = evt => {
+    console.log(evt.keyCode);
+    
+    this.handleBackspace(evt);
+    this.handleEnter(evt);
   }
   
   render() {

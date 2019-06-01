@@ -99,6 +99,20 @@ export class BlogPostNode {
     return null;
   }
   
+  getKey() {
+  
+  }
+  
+  getTextNode() {
+    if (!this.childNodes.length) {
+      const text = new BlogPostNode({type: NODE_TYPE_TEXT}, this);
+      this.childNodes.push(text);
+      return text;
+    }
+    // TODO: fix this - assume there's only one child and it's a text node
+    return this.childNodes[0];
+  }
+  
   toJSON() {
     const raw = { ...this };
     delete (raw.parent); // prevent circular reference issue
@@ -106,8 +120,15 @@ export class BlogPostNode {
     return raw;
   }
   
+  // TODO: this is a placeholder to be able to set the caret in an empty tag
+  ZERO_LENGTH_CHAR = '\u200B';
+  abudabi = 'hey, buddy';
+  
   render() {
     switch (this.type) {
+      /**
+       * SPECIAL TYPES
+       */
       case NODE_TYPE_ROOT:
         return (
           <div data-type="root" name={this.id}>
@@ -116,21 +137,25 @@ export class BlogPostNode {
         );
       case NODE_TYPE_TEXT:
         return this.content;
-      case NODE_TYPE_CODE:
-        return (<Code>{this.content}</Code>);
+      case NODE_TYPE_LI:
+        return (<Li>{this.childNodes.map(node => node.render())}</Li>);
+      /**
+       * SECTIONS
+       */
       case NODE_TYPE_SECTION_SPACER:
         return (<SpacerSection />);
       case NODE_TYPE_SECTION_H1:
         return (
           <H1 data-type="h1" name={this.id}>
-            Placeholder
+            {this.ZERO_LENGTH_CHAR}
             {this.childNodes.map(node => node.render())}
           </H1>
         );
       case NODE_TYPE_SECTION_H2:
         return (<H2>{this.childNodes.map(node => node.render())}</H2>);
       case NODE_TYPE_SECTION_CONTENT:
-        return (<ContentSection data-type="content" name={this.id}>{this.childNodes.map(node => node.render())}</ContentSection>);
+        return (<ContentSection data-type="content"
+                                name={this.id}>{this.childNodes.map(node => node.render())}</ContentSection>);
       case NODE_TYPE_SECTION_CODE:
         const { lines } = this.meta;
         return (
@@ -161,27 +186,6 @@ export class BlogPostNode {
           </ContentSection>
         );
       }
-      case NODE_TYPE_P:
-        return (
-          <P data-type="p" name={this.id}>
-            &nbsp;
-            {this.childNodes.map(node => node.render())}
-          </P>
-        );
-      case NODE_TYPE_OL:
-        return (<Ol>{this.childNodes.map(node => node.render())}</Ol>);
-      case NODE_TYPE_LI:
-        return (<Li>{this.childNodes.map(node => node.render())}</Li>);
-      case NODE_TYPE_LINK:
-        return (<LinkStyled to={this.content}>{this.childNodes.map(node => node.render())}</LinkStyled>);
-      case NODE_TYPE_A:
-        return (<A href={this.content}>{this.childNodes.map(node => node.render())}</A>);
-      case NODE_TYPE_SITEINFO:
-        return (<SiteInfo>{this.childNodes.map(node => node.render())}</SiteInfo>);
-      case NODE_TYPE_STRIKE:
-        return (<StrikeText>{this.childNodes.map(node => node.render())}</StrikeText>);
-      case NODE_TYPE_ITALIC:
-        return (<ItalicText>{this.childNodes.map(node => node.render())}</ItalicText>);
       case NODE_TYPE_SECTION_POSTLINK: {
         const { to } = this.meta;
         const Centered = styled.div`
@@ -206,6 +210,31 @@ export class BlogPostNode {
           </Centered>
         );
       }
+      /**
+       * FORMATTING TYPES
+       */
+      case NODE_TYPE_CODE:
+        return (<Code>{this.content}</Code>);
+      case NODE_TYPE_P:
+        return (
+          <P data-type="p" name={this.id}>
+            {this.ZERO_LENGTH_CHAR}
+            {this.childNodes.map(node => node.render())}
+          </P>
+        );
+      case NODE_TYPE_OL:
+        return (<Ol>{this.childNodes.map(node => node.render())}</Ol>);
+      case NODE_TYPE_LINK:
+        return (<LinkStyled to={this.content}>{this.childNodes.map(node => node.render())}</LinkStyled>);
+      case NODE_TYPE_A:
+        return (<A href={this.content}>{this.childNodes.map(node => node.render())}</A>);
+      case NODE_TYPE_SITEINFO:
+        return (<SiteInfo>{this.childNodes.map(node => node.render())}</SiteInfo>);
+      case NODE_TYPE_STRIKE:
+        return (<StrikeText>{this.childNodes.map(node => node.render())}</StrikeText>);
+      case NODE_TYPE_ITALIC:
+        return (<ItalicText>{this.childNodes.map(node => node.render())}</ItalicText>);
+      
     }
   }
 }
