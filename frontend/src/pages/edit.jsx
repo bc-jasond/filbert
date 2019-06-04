@@ -1,4 +1,6 @@
 import React from 'react';
+import { List, Map } from 'immutable';
+
 import {
   NODE_TYPE_P,
   NODE_TYPE_ROOT,
@@ -7,18 +9,26 @@ import {
   NODE_TYPE_TEXT
 } from '../common/constants';
 
-import { BlogPostNode } from '../common/blog-content.model';
+import ContentNode from '../common/content-node.component';
+
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+    .toString(16)
+    .substring(1);
+}
 
 export default class EditPost extends React.Component {
   constructor(props) {
     super(props);
     
     this.state = {
+      allNodesByParentId: Map(),
       root: null,
     }
   }
   
   setCaret(node) {
+    if (!node) return;
     const sel = window.getSelection();
     sel.removeAllRanges();
     const range = document.createRange();
@@ -33,13 +43,20 @@ export default class EditPost extends React.Component {
     return range.endContainer.parentElement;
   }
   
+  getMapWithId(obj) {
+    obj.id = obj.id || s4();
+    return Map(obj);
+  }
+  
   getNewPost() {
-    const root = new BlogPostNode({type: NODE_TYPE_ROOT});
-    const h1 = new BlogPostNode({type: NODE_TYPE_SECTION_H1}, root);
-    const text = new BlogPostNode({type: NODE_TYPE_TEXT}, h1);
-    h1.childNodes.push(text);
-    root.childNodes.push(h1);
-    this.setState({root}, () => {
+    const { allNodesByParentId } = this.state;
+    const root = this.getMapWithId({ type: NODE_TYPE_ROOT });
+    const h1 = this.getMapWithId({ type: NODE_TYPE_SECTION_H1 });
+    this.setState({
+      root,
+      allNodesByParentId: allNodesByParentId
+        .set(root.get('id'), List([h1]))
+    }, () => {
       const [h1Node] = document.getElementsByName(h1.id);
       this.setCaret(h1Node)
     })
@@ -48,6 +65,8 @@ export default class EditPost extends React.Component {
   async componentDidMount() {
     this.getNewPost();
   }
+  
+  timers = {};
   
   ZERO_LENGTH_CHAR = '\u200B';
   
@@ -70,8 +89,45 @@ export default class EditPost extends React.Component {
     }
   }
   
-  handleEnter = (evt) => {
-    const { root } = this.state;
+  getParentList(parentId) {
+    const {
+      allNodesByParentId,
+    } = this.state;
+    const siblings = allNodesByParentId.get(parentId, null);
+    if (!siblings) {
+    
+    }
+  }
+  
+  updateAllNodes(allNodesByParentId) {
+    return new Promise((resolve, reject) => {
+      this.setState({ allNodesByParentId }, resolve)
+    })
+  }
+  
+  
+  updateParentList(parentId, node = null, idx = -1) {
+    const { allNodesByParentId } = this.state;
+    const children = allNodesByParentId.get(parentId, List());
+    if (node === null && idx === -1) {
+      throw new Error('updateParentList - must provide either a node or an index');
+    }
+    if (node === null) {
+      // delete a node at idx
+      return this.updateAllNodes(allNodesByParentId.set(parentId, children.delete(idx)))
+    }
+    if (idx === -1) {
+      // push to end of list
+      return this.updateAllNodes(allNodesByParentId.set(parentId, children.push(node)))
+    }
+    return this.updateAllNodes(allNodesByParentId.set(parentId, children.insert(idx, node)));
+  }
+  
+  handleEnter = async (evt) => {
+    const {
+      root,
+      allNodesByParentId,
+    } = this.state;
     if (evt.keyCode === this.ENTER_KEY) {
       evt.stopPropagation();
       evt.preventDefault();
@@ -84,31 +140,45 @@ export default class EditPost extends React.Component {
       /**
        * update model from DOM
        */
-      const current = root.findById(nodeId);
-      const currentText = current.getTextNode();
-      currentText.content = activeElement.innerText;
-      // unset current innerText to avoid double-render
-      activeElement.innerText = '';
+      const siblings = allNodesByParentId
+        .get(parentId, List());
+      const current = siblings
+        .find(node => node.get('id') === nodeId);
+      const currentIdx = siblings.indexOf(current);
+      
+      // TODO: fix this - assume there's only one child and it's a text node
+      let textNode = allNodesByParentId
+        .get(current.get('id'), List())
+        .get(0, this.getMapWithId({ type: NODE_TYPE_TEXT }))
+        .set('content', activeElement.innerText);
+      
+      await this.updateParentList(current.get('id'), textNode);
       
       /**
        * insert a new element, default to P tag
        */
       if (activeType === NODE_TYPE_P) {
-        const parent = root.findById(parentId)
-        const p = new BlogPostNode({type: NODE_TYPE_P});
-        parent.childNodes.push(p);
-        this.setState({root},() => {
+        const p = this.getMapWithId({ type: NODE_TYPE_P });
+        const currentIdx = parent.childNodes.indexOf(current);
+        parent.childNodes = parent.childNodes.insert(currentIdx + 1, p);
+        this.setState({ root }, () => {
           const [newP] = document.getElementsByName(p.id);
           this.setCaret(newP)
         });
       }
       if (activeType === NODE_TYPE_SECTION_H1) {
-        // create a ContentSection
-        const content = new BlogPostNode({type: NODE_TYPE_SECTION_CONTENT}, this.parent);
-        const p = new BlogPostNode({type: NODE_TYPE_P}, content);
-        content.childNodes.push(p);
-        root.childNodes.push(content);
-        this.setState({root}, () => {
+        const nextSibling = siblings.get(currentIdx + 1, null);
+        const p = this.getMapWithId({ type: NODE_TYPE_P });
+        if (!nextSibling) {
+          // create a ContentSection
+          const content = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
+          await this.updateParentList(content.get('id'), p);
+          await this.updateParentList(root.get('id'), content);
+        } else {
+          // update existing ContentSection
+          await this.updateParentList(nextSibling.get('id'), p);
+        }
+        this.setState({ root: this.state.root, allNodesByParentId: this.state.allNodesByParentId }, () => {
           const [newP] = document.getElementsByName(p.id);
           this.setCaret(newP)
         })
@@ -119,8 +189,6 @@ export default class EditPost extends React.Component {
   handleArrows = (evt) => {}
   
   handleKeyDown = evt => {
-    console.log(evt.keyCode);
-    
     this.handleBackspace(evt);
     this.handleEnter(evt);
   }
@@ -128,11 +196,12 @@ export default class EditPost extends React.Component {
   render() {
     const {
       root,
+      allNodesByParentId,
     } = this.state;
     
     return !root ? null : (
-      <div id="edit-container" contentEditable={true} onKeyDown={this.handleKeyDown}>
-        {root.render()}
+      <div contentEditable={true} onKeyDown={this.handleKeyDown}>
+        <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
       </div>
     );
   }

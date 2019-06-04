@@ -1,4 +1,5 @@
 import React from 'react';
+import { List } from 'immutable';
 import styled from 'styled-components';
 import {
   NODE_TYPE_CODE,
@@ -51,6 +52,8 @@ function s4() {
     .substring(1);
 }
 
+// TODO: this is a placeholder to be able to set the caret in an empty tag
+
 export class BlogPostNode {
   constructor({ type, id, parent_id, post_id, content, meta }, parent = null) {
     this.type = type;
@@ -61,7 +64,7 @@ export class BlogPostNode {
     this.meta = meta;
     
     this.parent = parent;
-    this.childNodes = [];
+    this.childNodes = List();
   }
   
   canHaveChildren() {
@@ -76,10 +79,19 @@ export class BlogPostNode {
     ].includes(this.type)
   }
   
+  getNextSibling() {
+    if (!this.parent
+      || this.parent.childNodes.indexOf(this) === this.parent.childNodes.size - 1) {
+      return null;
+    }
+    const idx = this.parent.childNodes.indexOf(this);
+    return this.parent.childNodes.get(idx + 1);
+  }
+  
   deleteChildNode(node) {
     const idx = this.childNodes.indexOf(node);
     if (idx > -1) {
-      this.childNodes.splice(idx, 1);
+      this.childNodes.delete(idx);
       return true;
     }
     return false;
@@ -92,8 +104,8 @@ export class BlogPostNode {
       if (current.id === id) {
         return current;
       }
-      if (current.childNodes.length) {
-        queue.unshift(...current.childNodes)
+      if (current.childNodes.size) {
+        queue.unshift(...current.childNodes.toArray())
       }
     }
     return null;
@@ -103,14 +115,17 @@ export class BlogPostNode {
   
   }
   
-  getTextNode() {
-    if (!this.childNodes.length) {
-      const text = new BlogPostNode({type: NODE_TYPE_TEXT}, this);
-      this.childNodes.push(text);
-      return text;
+  updateContent(content) {
+    let textNode;
+    if (this.childNodes.size === 0) {
+      textNode = new BlogPostNode({ type: NODE_TYPE_TEXT }, this);
+    } else {
+      // TODO: fix this - assume there's only one child and it's a text node
+      textNode = this.childNodes.get(0);
+      this.childNodes.delete(0);
     }
-    // TODO: fix this - assume there's only one child and it's a text node
-    return this.childNodes[0];
+    textNode.content = content;
+    this.childNodes = this.childNodes.push(textNode);
   }
   
   toJSON() {
@@ -119,10 +134,6 @@ export class BlogPostNode {
     // raw.childNodes = raw.childNodes.map(child => child.toJson());
     return raw;
   }
-  
-  // TODO: this is a placeholder to be able to set the caret in an empty tag
-  ZERO_LENGTH_CHAR = '\u200B';
-  abudabi = 'hey, buddy';
   
   render() {
     switch (this.type) {
@@ -147,7 +158,6 @@ export class BlogPostNode {
       case NODE_TYPE_SECTION_H1:
         return (
           <H1 data-type="h1" name={this.id}>
-            {this.ZERO_LENGTH_CHAR}
             {this.childNodes.map(node => node.render())}
           </H1>
         );
@@ -218,7 +228,6 @@ export class BlogPostNode {
       case NODE_TYPE_P:
         return (
           <P data-type="p" name={this.id}>
-            {this.ZERO_LENGTH_CHAR}
             {this.childNodes.map(node => node.render())}
           </P>
         );
