@@ -27,7 +27,8 @@ export default class EditPost extends React.Component {
     }
   }
   
-  setCaret(node) {
+  setCaret(nodeId) {
+    const [node] = document.getElementsByName(nodeId);
     if (!node) return;
     const sel = window.getSelection();
     sel.removeAllRanges();
@@ -57,8 +58,7 @@ export default class EditPost extends React.Component {
       allNodesByParentId: allNodesByParentId
         .set(root.get('id'), List([h1]))
     }, () => {
-      const [h1Node] = document.getElementsByName(h1.id);
-      this.setCaret(h1Node)
+      this.setCaret(h1.get('id'))
     })
   }
   
@@ -66,6 +66,7 @@ export default class EditPost extends React.Component {
     this.getNewPost();
   }
   
+  history = [];
   timers = {};
   
   ZERO_LENGTH_CHAR = '\u200B';
@@ -99,28 +100,30 @@ export default class EditPost extends React.Component {
     }
   }
   
-  updateAllNodes(allNodesByParentId) {
-    return new Promise((resolve, reject) => {
-      this.setState({ allNodesByParentId }, resolve)
+  commitUpdates(focusElementId) {
+    this.setState({ allNodesByParentId: this.history.pop() }, () => {
+      this.setCaret(focusElementId);
+      this.history = [];
     })
   }
   
-  
   updateParentList(parentId, node = null, idx = -1) {
-    const { allNodesByParentId } = this.state;
+    const allNodesByParentId = this.history.pop() || this.state.allNodesByParentId;
     const children = allNodesByParentId.get(parentId, List());
     if (node === null && idx === -1) {
       throw new Error('updateParentList - must provide either a node or an index');
     }
     if (node === null) {
       // delete a node at idx
-      return this.updateAllNodes(allNodesByParentId.set(parentId, children.delete(idx)))
+      this.history.push(allNodesByParentId.set(parentId, children.delete(idx)))
+      return;
     }
     if (idx === -1) {
       // push to end of list
-      return this.updateAllNodes(allNodesByParentId.set(parentId, children.push(node)))
+      this.history.push(allNodesByParentId.set(parentId, children.push(node)))
+      return
     }
-    return this.updateAllNodes(allNodesByParentId.set(parentId, children.insert(idx, node)));
+    this.history.push(allNodesByParentId.set(parentId, children.insert(idx, node)));
   }
   
   handleEnter = async (evt) => {
@@ -145,43 +148,49 @@ export default class EditPost extends React.Component {
       const current = siblings
         .find(node => node.get('id') === nodeId);
       const currentIdx = siblings.indexOf(current);
-      
+  
+      /**
+       * update current model
+       * @type {boolean}
+       */
       // TODO: fix this - assume there's only one child and it's a text node
+      let shouldClearInnerText = false;
       let textNode = allNodesByParentId
         .get(current.get('id'), List())
-        .get(0, this.getMapWithId({ type: NODE_TYPE_TEXT }))
-        .set('content', activeElement.innerText);
-      
-      await this.updateParentList(current.get('id'), textNode);
+        .get(0, null);
+      if (textNode) {
+        shouldClearInnerText = true;
+      } else {
+        textNode = this.getMapWithId({ type: NODE_TYPE_TEXT })
+      }
+      textNode = textNode.set('content', activeElement.innerText);
+      if (shouldClearInnerText) {
+        activeElement.innerText = '';
+      }
+      this.updateParentList(current.get('id'), textNode);
       
       /**
        * insert a new element, default to P tag
        */
+      const p = this.getMapWithId({ type: NODE_TYPE_P });
       if (activeType === NODE_TYPE_P) {
-        const p = this.getMapWithId({ type: NODE_TYPE_P });
-        const currentIdx = parent.childNodes.indexOf(current);
-        parent.childNodes = parent.childNodes.insert(currentIdx + 1, p);
-        this.setState({ root }, () => {
-          const [newP] = document.getElementsByName(p.id);
-          this.setCaret(newP)
-        });
+        this.updateParentList(parentId, p, currentIdx + 1);
+        this.commitUpdates(p.get('id'));
+        return;
       }
       if (activeType === NODE_TYPE_SECTION_H1) {
         const nextSibling = siblings.get(currentIdx + 1, null);
-        const p = this.getMapWithId({ type: NODE_TYPE_P });
         if (!nextSibling) {
           // create a ContentSection
           const content = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
-          await this.updateParentList(content.get('id'), p);
-          await this.updateParentList(root.get('id'), content);
+          this.updateParentList(content.get('id'), p, 0);
+          this.updateParentList(root.get('id'), content);
         } else {
           // update existing ContentSection
-          await this.updateParentList(nextSibling.get('id'), p);
+          this.updateParentList(nextSibling.get('id'), p, 0);
         }
-        this.setState({ root: this.state.root, allNodesByParentId: this.state.allNodesByParentId }, () => {
-          const [newP] = document.getElementsByName(p.id);
-          this.setCaret(newP)
-        })
+        this.commitUpdates(p.get('id'));
+        return;
       }
     }
   }
@@ -206,3 +215,4 @@ export default class EditPost extends React.Component {
     );
   }
 }
+
