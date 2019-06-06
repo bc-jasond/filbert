@@ -27,13 +27,33 @@ export default class EditPost extends React.Component {
     }
   }
   
-  setCaret(nodeId) {
+  async componentDidMount() {
+    this.getNewPost();
+  }
+  
+  history = [];
+  timers = {};
+  
+  ZERO_LENGTH_CHAR = '\u200B';
+  
+  ENTER_KEY = 13;
+  BACKSPACE_KEY = 8;
+  UP_ARROW = 38;
+  DOWN_ARROW = 40;
+  LEFT_ARROW = 37;
+  RIGHT_ARROW = 39;
+  
+  setCaret(nodeId, shouldPlaceAtBeginning = false) {
     const [node] = document.getElementsByName(nodeId);
     if (!node) return;
     const sel = window.getSelection();
     sel.removeAllRanges();
     const range = document.createRange();
-    range.setEnd(node, 0);
+    if (shouldPlaceAtBeginning) {
+      range.setEndBefore(node);
+    } else {
+      range.setEndAfter(node);
+    }
     range.collapse();
     sel.addRange(range);
   }
@@ -41,7 +61,14 @@ export default class EditPost extends React.Component {
   getCaretNode() {
     const sel = window.getSelection();
     const range = sel.getRangeAt(0)
-    return range.endContainer.parentElement;
+    let commonAncestorContainer = range.commonAncestorContainer;
+    if (commonAncestorContainer.nodeType > 1) {
+      return commonAncestorContainer.parentElement
+    }
+    if (commonAncestorContainer.dataset.type === NODE_TYPE_SECTION_CONTENT) {
+      return commonAncestorContainer.lastChild;
+    }
+    return commonAncestorContainer;
   }
   
   getMapWithId(obj) {
@@ -62,33 +89,6 @@ export default class EditPost extends React.Component {
     })
   }
   
-  async componentDidMount() {
-    this.getNewPost();
-  }
-  
-  history = [];
-  timers = {};
-  
-  ZERO_LENGTH_CHAR = '\u200B';
-  
-  ENTER_KEY = 13;
-  BACKSPACE_KEY = 8;
-  UP_ARROW = 38;
-  DOWN_ARROW = 40;
-  LEFT_ARROW = 37;
-  RIGHT_ARROW = 39;
-  
-  handleBackspace = (evt) => {
-    if (evt.keyCode === this.BACKSPACE_KEY) {
-      const sel = window.getSelection();
-      const range = sel.getRangeAt(0);
-      if (range.startOffset === 0) {
-        // TODO: allow contenteditable to delete the current tag
-        evt.stopPropagation();
-        evt.preventDefault();
-      }
-    }
-  }
   
   getParentList(parentId) {
     const {
@@ -101,6 +101,9 @@ export default class EditPost extends React.Component {
   }
   
   commitUpdates(focusElementId) {
+    if (!this.history.length) {
+      return;
+    }
     this.setState({ allNodesByParentId: this.history.pop() }, () => {
       this.setCaret(focusElementId);
       this.history = [];
@@ -126,72 +129,150 @@ export default class EditPost extends React.Component {
     this.history.push(allNodesByParentId.set(parentId, children.insert(idx, node)));
   }
   
+  getNextSibling() {}
+  
+  getPreviousSibling(nodeId) {
+  
+  }
+  
+  cleanText(text) {
+    const re = new RegExp(`${this.ZERO_LENGTH_CHAR}`);
+    return text.trim().replace(re, '');
+  }
+  
+  handleBackspace = (evt) => {
+    if (evt.keyCode !== this.BACKSPACE_KEY) {
+      return;
+    }
+    
+    const {
+      root,
+      allNodesByParentId
+    } = this.state;
+    
+    const sel = window.getSelection();
+    const range = sel.getRangeAt(0);
+    if (range.startOffset > 0) {
+      return
+    }
+    evt.stopPropagation();
+    evt.preventDefault();
+    
+    const activeElement = this.getCaretNode();
+    const nodeId = activeElement.getAttribute('name');
+    const activeType = activeElement.dataset.type;
+    const activeParent = activeElement.parentElement;
+    const parentId = activeParent.getAttribute('name');
+    const parentType = activeParent.dataset.type;
+    const siblings = allNodesByParentId
+      .get(parentId, List());
+    const current = siblings
+      .find(node => node.get('id') === nodeId);
+    const currentIdx = siblings.indexOf(current);
+    
+    /**
+     * is first child of root (h1) OR is first child of first ContentSection of root?  noop()
+     */
+    if (parentType === NODE_TYPE_ROOT) {
+      return;
+    }
+    if (parentType === NODE_TYPE_SECTION_CONTENT) {
+      const isFirstRootChild = allNodesByParentId.get(root.get('id'))
+        .findIndex(node => node.get('id') === parentType) === 0;
+      if (isFirstRootChild) {
+        return;
+      }
+    }
+    
+    /**
+     * is first child of Section?
+     */
+    if (currentIdx === 0) {
+      // TODO - merge sections
+      return;
+    }
+    
+    if (this.cleanText(activeElement.innerText).length > 0) {
+      /**
+       * soft ball: merge siblings
+       */
+    } else {
+      /**
+       * softer ball: current element is empty, just delete it
+       */
+      this.updateParentList(parentId, null, currentIdx);
+    }
+    
+    const prevSiblingId = siblings.get(currentIdx - 1).get('id');
+    this.commitUpdates(prevSiblingId, false);
+  }
+  
   handleEnter = async (evt) => {
+    if (evt.keyCode !== this.ENTER_KEY) {
+      return;
+    }
+    
     const {
       root,
       allNodesByParentId,
     } = this.state;
-    if (evt.keyCode === this.ENTER_KEY) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      const activeElement = this.getCaretNode();
-      const nodeId = activeElement.getAttribute('name');
-      const activeType = activeElement.dataset.type;
-      const activeParent = activeElement.parentElement;
-      const parentId = activeParent.getAttribute('name');
-      
-      /**
-       * update model from DOM
-       */
-      const siblings = allNodesByParentId
-        .get(parentId, List());
-      const current = siblings
-        .find(node => node.get('id') === nodeId);
-      const currentIdx = siblings.indexOf(current);
-  
-      /**
-       * update current model
-       * @type {boolean}
-       */
+    
+    evt.stopPropagation();
+    evt.preventDefault();
+    const activeElement = this.getCaretNode();
+    const nodeId = activeElement.getAttribute('name');
+    const activeType = activeElement.dataset.type;
+    const activeParent = activeElement.parentElement;
+    const parentId = activeParent.getAttribute('name');
+    const siblings = allNodesByParentId
+      .get(parentId, List());
+    const current = siblings
+      .find(node => node.get('id') === nodeId);
+    const currentIdx = siblings.indexOf(current);
+    
+    /**
+     * update current model
+     * @type {boolean}
+     */
       // TODO: fix this - assume there's only one child and it's a text node
-      let shouldClearInnerText = false;
-      let textNode = allNodesByParentId
-        .get(current.get('id'), List())
-        .get(0, null);
-      if (textNode) {
-        shouldClearInnerText = true;
+    let shouldClearInnerText = false;
+    let textNode = allNodesByParentId
+      .get(current.get('id'), List())
+      .get(0, null);
+    if (textNode) {
+      shouldClearInnerText = true;
+    } else {
+      textNode = this.getMapWithId({ type: NODE_TYPE_TEXT })
+    }
+    const cleanedText = this.cleanText(activeElement.innerText);
+    textNode = textNode.set('content', cleanedText.length > 0 ? cleanedText : this.ZERO_LENGTH_CHAR);
+    if (shouldClearInnerText) {
+      activeElement.innerText = '';
+    }
+    this.updateParentList(current.get('id'), textNode);
+    
+    /**
+     * insert a new element, default to P tag
+     */
+    const p = this.getMapWithId({ type: NODE_TYPE_P });
+    if (activeType === NODE_TYPE_P) {
+      this.updateParentList(parentId, p, currentIdx + 1);
+      this.commitUpdates(p.get('id'), true, true);
+      return;
+    }
+    if (activeType === NODE_TYPE_SECTION_H1) {
+      const nextSibling = siblings.get(currentIdx + 1, null);
+      if (!nextSibling) {
+        // create a ContentSection
+        const content = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
+        this.updateParentList(content.get('id'), p, 0);
+        this.updateParentList(root.get('id'), content);
       } else {
-        textNode = this.getMapWithId({ type: NODE_TYPE_TEXT })
+        // update existing ContentSection
+        this.updateParentList(nextSibling.get('id'), p, 0);
       }
-      textNode = textNode.set('content', activeElement.innerText);
-      if (shouldClearInnerText) {
-        activeElement.innerText = '';
-      }
-      this.updateParentList(current.get('id'), textNode);
-      
-      /**
-       * insert a new element, default to P tag
-       */
-      const p = this.getMapWithId({ type: NODE_TYPE_P });
-      if (activeType === NODE_TYPE_P) {
-        this.updateParentList(parentId, p, currentIdx + 1);
-        this.commitUpdates(p.get('id'));
-        return;
-      }
-      if (activeType === NODE_TYPE_SECTION_H1) {
-        const nextSibling = siblings.get(currentIdx + 1, null);
-        if (!nextSibling) {
-          // create a ContentSection
-          const content = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
-          this.updateParentList(content.get('id'), p, 0);
-          this.updateParentList(root.get('id'), content);
-        } else {
-          // update existing ContentSection
-          this.updateParentList(nextSibling.get('id'), p, 0);
-        }
-        this.commitUpdates(p.get('id'));
-        return;
-      }
+      this.commitUpdates(p.get('id'), true, true);
+      return;
     }
   }
   

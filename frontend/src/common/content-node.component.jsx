@@ -1,5 +1,5 @@
 import React from 'react';
-import { List } from 'immutable';
+import { List, Map } from 'immutable';
 import styled from 'styled-components';
 import {
   NODE_TYPE_CODE,
@@ -79,8 +79,6 @@ export default class ContentNode extends React.PureComponent {
         return StrikeText;
       case NODE_TYPE_ITALIC:
         return ItalicText;
-      case NODE_TYPE_TEXT:
-        return React.Fragment;
       default:
         throw new Error(`unknown type: ${node.get('type')}`);
     }
@@ -92,7 +90,7 @@ export default class ContentNode extends React.PureComponent {
       allNodesByParentId,
     } = this.props;
     return allNodesByParentId
-      .get(node.get('id'), List())
+      .get(node.get('id'), List([Map({type: NODE_TYPE_TEXT, id: 'foo', content: ZERO_LENGTH_CHAR})]))
       .map(child => (<ContentNode key={child.get('id')} node={child} allNodesByParentId={allNodesByParentId} />))
   }
   
@@ -187,7 +185,7 @@ export default class ContentNode extends React.PureComponent {
         const StyledComponent = this.getTagFromType();
         return !StyledComponent ? null : (
           <StyledComponent data-type={node.get('type')} name={node.get('id')}>
-            {this.getChildNodes().size > 0 ? this.getChildNodes() : ZERO_LENGTH_CHAR}
+            {this.getChildNodes()}
           </StyledComponent>
         );
     }
