@@ -32,7 +32,7 @@ export default class EditPost extends React.Component {
   }
   
   history = [];
-  timers = {};
+  timers = {}; // TODO: add a debounced save timer per element
   
   ZERO_LENGTH_CHAR = '\u200B';
   
@@ -44,15 +44,24 @@ export default class EditPost extends React.Component {
   RIGHT_ARROW = 39;
   
   setCaret(nodeId, shouldPlaceAtBeginning = false) {
-    const [node] = document.getElementsByName(nodeId);
-    if (!node) return;
+    const [containerNode] = document.getElementsByName(nodeId);
+    if (!containerNode) return;
+    // has a text node?
     const sel = window.getSelection();
     sel.removeAllRanges();
     const range = document.createRange();
     if (shouldPlaceAtBeginning) {
-      range.setEndBefore(node);
+      range.setEnd(containerNode, 0);
     } else {
-      range.setEndAfter(node);
+      // find text node, if present
+      const textNode = Array.prototype.reduce.call(containerNode.childNodes, (acc, child) => acc || (child.nodeType === 3 ? child : null), null);
+      if (textNode) {
+        // set caret to end of text content
+        range.setEnd(textNode, textNode.textContent.length);
+      } else {
+        // set caret to last child - TODO: make recursive to find text node?
+        range.setEnd(containerNode, containerNode.childNodes.length - 1);
+      }
     }
     range.collapse();
     sel.addRange(range);
@@ -85,27 +94,16 @@ export default class EditPost extends React.Component {
       allNodesByParentId: allNodesByParentId
         .set(root.get('id'), List([h1]))
     }, () => {
-      this.setCaret(h1.get('id'))
+      this.setCaret(h1.get('id'), true)
     })
   }
   
-  
-  getParentList(parentId) {
-    const {
-      allNodesByParentId,
-    } = this.state;
-    const siblings = allNodesByParentId.get(parentId, null);
-    if (!siblings) {
-    
-    }
-  }
-  
-  commitUpdates(focusElementId) {
+  commitUpdates(focusElementId, placeCaretAtBeginning = false) {
     if (!this.history.length) {
       return;
     }
     this.setState({ allNodesByParentId: this.history.pop() }, () => {
-      this.setCaret(focusElementId);
+      this.setCaret(focusElementId, placeCaretAtBeginning);
       this.history = [];
     })
   }
@@ -129,15 +127,27 @@ export default class EditPost extends React.Component {
     this.history.push(allNodesByParentId.set(parentId, children.insert(idx, node)));
   }
   
-  getNextSibling() {}
-  
-  getPreviousSibling(nodeId) {
-  
-  }
-  
   cleanText(text) {
     const re = new RegExp(`${this.ZERO_LENGTH_CHAR}`);
     return text.trim().replace(re, '');
+  }
+  
+  resetDomAndModelReferences() {
+    const { allNodesByParentId } = this.state;
+    // DOM refs
+    this.activeElement = this.getCaretNode();
+    this.nodeId = this.activeElement.getAttribute('name');
+    this.activeType = this.activeElement.dataset.type;
+    this.activeParent = this.activeElement.parentElement;
+    this.parentId = this.activeParent.getAttribute('name');
+    this.parentType = this.activeParent.dataset.type;
+    // MODEL refs
+    this.siblings = allNodesByParentId
+      .get(this.parentId, List());
+    this.current = this.siblings
+      .find(node => node.get('id') === this.nodeId);
+    this.currentIdx = this.siblings.indexOf(this.current);
+    this.prevSibling = this.siblings.get(this.currentIdx - 1);
   }
   
   handleBackspace = (evt) => {
@@ -149,36 +159,35 @@ export default class EditPost extends React.Component {
       root,
       allNodesByParentId
     } = this.state;
+  
+    this.resetDomAndModelReferences();
     
     const sel = window.getSelection();
     const range = sel.getRangeAt(0);
-    if (range.startOffset > 0) {
+  
+    if (range.startOffset > 0 && this.cleanText(this.activeElement.textContent).length > 0) {
+      // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
       return
     }
     evt.stopPropagation();
     evt.preventDefault();
-    
-    const activeElement = this.getCaretNode();
-    const nodeId = activeElement.getAttribute('name');
-    const activeType = activeElement.dataset.type;
-    const activeParent = activeElement.parentElement;
-    const parentId = activeParent.getAttribute('name');
-    const parentType = activeParent.dataset.type;
-    const siblings = allNodesByParentId
-      .get(parentId, List());
-    const current = siblings
-      .find(node => node.get('id') === nodeId);
-    const currentIdx = siblings.indexOf(current);
+  
+    if (this.cleanText(this.activeElement.textContent).length === 0) {
+      // current element is 'empty', just remove it
+      this.updateParentList(this.parentId, null, this.currentIdx);
+      this.commitUpdates(this.prevSibling.get('id'));
+      return;
+    }
     
     /**
      * is first child of root (h1) OR is first child of first ContentSection of root?  noop()
      */
-    if (parentType === NODE_TYPE_ROOT) {
+    if (this.parentType === NODE_TYPE_ROOT) {
       return;
     }
-    if (parentType === NODE_TYPE_SECTION_CONTENT) {
+    if (this.parentType === NODE_TYPE_SECTION_CONTENT) {
       const isFirstRootChild = allNodesByParentId.get(root.get('id'))
-        .findIndex(node => node.get('id') === parentType) === 0;
+        .findIndex(node => node.get('id') === this.parentType) === 0;
       if (isFirstRootChild) {
         return;
       }
@@ -187,24 +196,31 @@ export default class EditPost extends React.Component {
     /**
      * is first child of Section?
      */
-    if (currentIdx === 0) {
+    if (this.currentIdx === 0) {
       // TODO - merge sections
       return;
     }
     
-    if (this.cleanText(activeElement.innerText).length > 0) {
+    if (this.cleanText(this.activeElement.innerText).length > 0) {
       /**
        * soft ball: merge siblings
        */
-    } else {
-      /**
-       * softer ball: current element is empty, just delete it
-       */
-      this.updateParentList(parentId, null, currentIdx);
+      const prevSiblingLastChild = allNodesByParentId
+        .get(this.prevSibling.get('id'))
+        .last();
+      const currentFirstChild = allNodesByParentId
+        .get(this.current.get('id'), List([Map({ type: NODE_TYPE_TEXT, content: this.activeElement.innerText })]))
+        .first();
+      // merged text node
+      const mergedSiblingLastChild = prevSiblingLastChild.set('content', this.cleanText(`${prevSiblingLastChild.get('content')}${currentFirstChild.get('content')}`));
+      // remove original text node
+      this.updateParentList(this.prevSibling.get('id'), null, 0);
+      // add merged text node to P tag
+      this.updateParentList(this.prevSibling.get('id'), mergedSiblingLastChild);
+      // remove deleted sibling
+      this.updateParentList(this.parentId, null, this.currentIdx);
+      this.commitUpdates(this.prevSibling.get('id'));
     }
-    
-    const prevSiblingId = siblings.get(currentIdx - 1).get('id');
-    this.commitUpdates(prevSiblingId, false);
   }
   
   handleEnter = async (evt) => {
@@ -219,49 +235,38 @@ export default class EditPost extends React.Component {
     
     evt.stopPropagation();
     evt.preventDefault();
-    const activeElement = this.getCaretNode();
-    const nodeId = activeElement.getAttribute('name');
-    const activeType = activeElement.dataset.type;
-    const activeParent = activeElement.parentElement;
-    const parentId = activeParent.getAttribute('name');
-    const siblings = allNodesByParentId
-      .get(parentId, List());
-    const current = siblings
-      .find(node => node.get('id') === nodeId);
-    const currentIdx = siblings.indexOf(current);
+    
+    this.resetDomAndModelReferences();
     
     /**
      * update current model
      * @type {boolean}
      */
-      // TODO: fix this - assume there's only one child and it's a text node
+    // TODO: fix this - assuming that there's only one child and it's a text node
+    const textNode = allNodesByParentId
+        .get(this.current.get('id'), List([this.getMapWithId({ type: NODE_TYPE_TEXT, content: '' })]))
+        .first();
     let shouldClearInnerText = false;
-    let textNode = allNodesByParentId
-      .get(current.get('id'), List())
-      .get(0, null);
-    if (textNode) {
+    if (textNode.get('content').length > 0) {
       shouldClearInnerText = true;
-    } else {
-      textNode = this.getMapWithId({ type: NODE_TYPE_TEXT })
     }
-    const cleanedText = this.cleanText(activeElement.innerText);
-    textNode = textNode.set('content', cleanedText.length > 0 ? cleanedText : this.ZERO_LENGTH_CHAR);
+    const cleanedText = this.cleanText(this.activeElement.innerText);
     if (shouldClearInnerText) {
-      activeElement.innerText = '';
+      this.activeElement.innerText = '';
     }
-    this.updateParentList(current.get('id'), textNode);
+    this.updateParentList(this.current.get('id'), textNode.set('content', cleanedText));
     
     /**
      * insert a new element, default to P tag
      */
     const p = this.getMapWithId({ type: NODE_TYPE_P });
-    if (activeType === NODE_TYPE_P) {
-      this.updateParentList(parentId, p, currentIdx + 1);
-      this.commitUpdates(p.get('id'), true, true);
+    if (this.activeType === NODE_TYPE_P) {
+      this.updateParentList(this.parentId, p, this.currentIdx + 1);
+      this.commitUpdates(p.get('id'));
       return;
     }
-    if (activeType === NODE_TYPE_SECTION_H1) {
-      const nextSibling = siblings.get(currentIdx + 1, null);
+    if (this.activeType === NODE_TYPE_SECTION_H1) {
+      const nextSibling = this.siblings.get(this.currentIdx + 1, null);
       if (!nextSibling) {
         // create a ContentSection
         const content = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
@@ -271,14 +276,12 @@ export default class EditPost extends React.Component {
         // update existing ContentSection
         this.updateParentList(nextSibling.get('id'), p, 0);
       }
-      this.commitUpdates(p.get('id'), true, true);
+      this.commitUpdates(p.get('id'));
       return;
     }
   }
   
-  handleArrows = (evt) => {}
-  
-  handleKeyDown = evt => {
+  handleChange = evt => {
     this.handleBackspace(evt);
     this.handleEnter(evt);
   }
@@ -290,7 +293,7 @@ export default class EditPost extends React.Component {
     } = this.state;
     
     return !root ? null : (
-      <div contentEditable={true} onKeyDown={this.handleKeyDown}>
+      <div onKeyDown={this.handleChange} contentEditable={true}>
         <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
       </div>
     );
