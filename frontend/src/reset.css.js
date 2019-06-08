@@ -68,4 +68,7 @@ table {
 * {
   box-sizing: border-box;
 }
+[contenteditable="true"] {
+  outline: none;
+}
 `;

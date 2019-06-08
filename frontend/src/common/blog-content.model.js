@@ -45,10 +45,18 @@ import {
   ImageSection,
 } from './shared-styled-components';
 
-class BlogPostNode {
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+    .toString(16)
+    .substring(1);
+}
+
+// TODO: this is a placeholder to be able to set the caret in an empty tag
+
+export class BlogPostNode {
   constructor({ type, id, parent_id, post_id, content, meta }, parent = null) {
     this.type = type;
-    this.id = id;
+    this.id = id || s4();
     this.parent_id = parent_id;
     this.post_id = post_id;
     this.content = content;
@@ -70,13 +78,53 @@ class BlogPostNode {
     ].includes(this.type)
   }
   
+  getNextSibling() {
+    if (!this.parent
+      || this.parent.childNodes.indexOf(this) === this.parent.childNodes.size - 1) {
+      return null;
+    }
+    const idx = this.parent.childNodes.indexOf(this);
+    return this.parent.childNodes.get(idx + 1);
+  }
+  
   deleteChildNode(node) {
     const idx = this.childNodes.indexOf(node);
     if (idx > -1) {
-      this.childNodes.splice(idx, 1);
+      this.childNodes.delete(idx);
       return true;
     }
     return false;
+  }
+  
+  findById(id) {
+    const queue = [this];
+    while (queue.length) {
+      const current = queue.pop();
+      if (current.id === id) {
+        return current;
+      }
+      if (current.childNodes.size) {
+        queue.unshift(...current.childNodes.toArray())
+      }
+    }
+    return null;
+  }
+  
+  getKey() {
+  
+  }
+  
+  updateContent(content) {
+    let textNode;
+    if (this.childNodes.size === 0) {
+      textNode = new BlogPostNode({ type: NODE_TYPE_TEXT }, this);
+    } else {
+      // TODO: fix this - assume there's only one child and it's a text node
+      textNode = this.childNodes.get(0);
+      this.childNodes.delete(0);
+    }
+    textNode.content = content;
+    this.childNodes = this.childNodes.push(textNode);
   }
   
   toJSON() {
@@ -88,24 +136,35 @@ class BlogPostNode {
   
   render() {
     switch (this.type) {
+      /**
+       * SPECIAL TYPES
+       */
       case NODE_TYPE_ROOT:
         return (
-          <React.Fragment>
+          <div data-type="root" name={this.id}>
             {this.childNodes.map(node => node.render())}
-          </React.Fragment>
+          </div>
         );
       case NODE_TYPE_TEXT:
         return this.content;
-      case NODE_TYPE_CODE:
-        return (<Code>{this.content}</Code>);
+      case NODE_TYPE_LI:
+        return (<Li>{this.childNodes.map(node => node.render())}</Li>);
+      /**
+       * SECTIONS
+       */
       case NODE_TYPE_SECTION_SPACER:
         return (<SpacerSection />);
       case NODE_TYPE_SECTION_H1:
-        return (<H1>{this.childNodes.map(node => node.render())}</H1>);
+        return (
+          <H1 data-type="h1" name={this.id}>
+            {this.childNodes.map(node => node.render())}
+          </H1>
+        );
       case NODE_TYPE_SECTION_H2:
         return (<H2>{this.childNodes.map(node => node.render())}</H2>);
       case NODE_TYPE_SECTION_CONTENT:
-        return (<ContentSection>{this.childNodes.map(node => node.render())}</ContentSection>);
+        return (<ContentSection data-type="content"
+                                name={this.id}>{this.childNodes.map(node => node.render())}</ContentSection>);
       case NODE_TYPE_SECTION_CODE:
         const { lines } = this.meta;
         return (
@@ -136,22 +195,6 @@ class BlogPostNode {
           </ContentSection>
         );
       }
-      case NODE_TYPE_P:
-        return (<P>{this.childNodes.map(node => node.render())}</P>);
-      case NODE_TYPE_OL:
-        return (<Ol>{this.childNodes.map(node => node.render())}</Ol>);
-      case NODE_TYPE_LI:
-        return (<Li>{this.childNodes.map(node => node.render())}</Li>);
-      case NODE_TYPE_LINK:
-        return (<LinkStyled to={this.content}>{this.childNodes.map(node => node.render())}</LinkStyled>);
-      case NODE_TYPE_A:
-        return (<A href={this.content}>{this.childNodes.map(node => node.render())}</A>);
-      case NODE_TYPE_SITEINFO:
-        return (<SiteInfo>{this.childNodes.map(node => node.render())}</SiteInfo>);
-      case NODE_TYPE_STRIKE:
-        return (<StrikeText>{this.childNodes.map(node => node.render())}</StrikeText>);
-      case NODE_TYPE_ITALIC:
-        return (<ItalicText>{this.childNodes.map(node => node.render())}</ItalicText>);
       case NODE_TYPE_SECTION_POSTLINK: {
         const { to } = this.meta;
         const Centered = styled.div`
@@ -176,6 +219,30 @@ class BlogPostNode {
           </Centered>
         );
       }
+      /**
+       * FORMATTING TYPES
+       */
+      case NODE_TYPE_CODE:
+        return (<Code>{this.content}</Code>);
+      case NODE_TYPE_P:
+        return (
+          <P data-type="p" name={this.id}>
+            {this.childNodes.map(node => node.render())}
+          </P>
+        );
+      case NODE_TYPE_OL:
+        return (<Ol>{this.childNodes.map(node => node.render())}</Ol>);
+      case NODE_TYPE_LINK:
+        return (<LinkStyled to={this.content}>{this.childNodes.map(node => node.render())}</LinkStyled>);
+      case NODE_TYPE_A:
+        return (<A href={this.content}>{this.childNodes.map(node => node.render())}</A>);
+      case NODE_TYPE_SITEINFO:
+        return (<SiteInfo>{this.childNodes.map(node => node.render())}</SiteInfo>);
+      case NODE_TYPE_STRIKE:
+        return (<StrikeText>{this.childNodes.map(node => node.render())}</StrikeText>);
+      case NODE_TYPE_ITALIC:
+        return (<ItalicText>{this.childNodes.map(node => node.render())}</ItalicText>);
+      
     }
   }
 }
