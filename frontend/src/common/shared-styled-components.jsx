@@ -94,6 +94,7 @@ export const Li = styled.li`
   margin-left: 30px;
   margin-bottom: 14px;
   &::before {
+    box-sizing: border-box;
     padding-right: 12px;
     counter-increment: post;
     content: counter(post) ".";

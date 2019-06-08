@@ -8,6 +8,7 @@ import { monospaced, sansSerif } from './fonts.css';
 export const Header = styled.header`
   position: fixed;
   display: block;
+  box-sizing: border-box;
   z-index: 500;
   width: 100%;
   background: rgba(255,255,255,.97);
@@ -78,7 +79,9 @@ export const HeaderSpacer = styled.div`
 export const Article = styled.article`
   width: 100%;
   min-height: 80vh;
+  padding: 0 20px 80px;
   margin: 0 auto;
+  box-sizing: border-box;
   position: relative;
   @media (max-width: 800px) {
     padding: 0 20px 80px 20px;
