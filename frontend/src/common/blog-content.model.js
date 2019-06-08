@@ -1,5 +1,4 @@
 import React from 'react';
-import { List } from 'immutable';
 import styled from 'styled-components';
 import {
   NODE_TYPE_CODE,
@@ -64,7 +63,7 @@ export class BlogPostNode {
     this.meta = meta;
     
     this.parent = parent;
-    this.childNodes = List();
+    this.childNodes = [];
   }
   
   canHaveChildren() {
