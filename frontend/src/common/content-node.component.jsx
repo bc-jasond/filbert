@@ -105,37 +105,39 @@ export default class ContentNode extends React.PureComponent {
       case NODE_TYPE_SECTION_SPACER:
         return (<SpacerSection />);
       case NODE_TYPE_SECTION_CODE:
-        const { lines } = node.get('meta');
+        const lines = node
+          .get('meta', Map())
+          .get('lines', List());
         return (
           <CodeSection>
             {lines.map((line, idx) => (<Pre key={idx}>{line}</Pre>))}
           </CodeSection>
         );
       case NODE_TYPE_SECTION_IMAGE: {
-        const { width, height, url, caption } = node.get('meta');
+        const meta = node.get('meta', Map());
         return (
           <ImageSection>
             <Figure>
-              <ImagePlaceholderContainer w={width} h={height}>
-                <ImagePlaceholderFill w={width} h={height} />
-                <Img src={url} />
+              <ImagePlaceholderContainer w={meta.get('width')} h={meta.get('height')}>
+                <ImagePlaceholderFill w={meta.get('width')} h={meta.get('height')} />
+                <Img src={meta.get('url')} />
               </ImagePlaceholderContainer>
-              <FigureCaption>{caption}</FigureCaption>
+              <FigureCaption>{meta.get('caption')}</FigureCaption>
             </Figure>
           </ImageSection>
         );
       }
       case NODE_TYPE_SECTION_QUOTE: {
-        const { quote, url, author, context } = node.get('meta');
+        const meta = node.get('meta', Map());
         return (
           <ContentSection>
-            <P>💡Remember: <ItalicText>{quote}<A href={url}>{author}</A>{context}
+            <P>💡Remember: <ItalicText>{meta.get('quote')}<A href={meta.get('url')}>{meta.get('author')}</A>{meta.get('context')}
             </ItalicText></P>
           </ContentSection>
         );
       }
       case NODE_TYPE_SECTION_POSTLINK: {
-        const { to } = node.get('meta');
+        const to = node.get('meta', Map()).get('to');
         const Centered = styled.div`
           text-align: center;
         `;

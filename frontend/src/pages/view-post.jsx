@@ -1,16 +1,18 @@
 import React from 'react';
+import Immutable from 'immutable';
 import { apiGet } from '../common/fetch';
 
 import Page404 from './404';
 
-import { getContentTree, BlogPost } from '../common/blog-content.model';
+import ContentNode from '../common/content-node.component';
 
 export default class ViewPost extends React.Component {
   constructor(props) {
     super(props);
     
     this.state = {
-      pageContent: null,
+      root: null,
+      allNodesByParentId: {},
       shouldShow404: false,
     }
   }
@@ -18,7 +20,10 @@ export default class ViewPost extends React.Component {
   async componentDidMount() {
     try {
       const { post, contentNodes } = await apiGet(`/post/${this.props.postId}`);
-      this.setState({ pageContent: getContentTree(contentNodes), shouldShow404: false })
+      // TODO: don't use 'null' as root node indicator
+      const allNodesByParentId = Immutable.fromJS(contentNodes);
+      const root = allNodesByParentId.get('null').get(0);
+      this.setState({ root, allNodesByParentId, shouldShow404: false })
     } catch (err) {
       console.log(err);
       this.setState({ pageContent: null, shouldShow404: true })
@@ -27,16 +32,15 @@ export default class ViewPost extends React.Component {
   
   render() {
     const {
-      pageContent,
+      root,
+      allNodesByParentId,
       shouldShow404,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
     
-    return !pageContent ? null : (
-      <React.Fragment>
-        {pageContent.render()}
-      </React.Fragment>
+    return !root ? null : (
+      <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
     );
   }
 }
