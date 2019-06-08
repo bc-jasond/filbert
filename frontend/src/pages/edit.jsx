@@ -54,7 +54,11 @@ export default class EditPost extends React.Component {
       range.setEnd(containerNode, 0);
     } else {
       // find text node, if present
-      const textNode = Array.prototype.reduce.call(containerNode.childNodes, (acc, child) => acc || (child.nodeType === 3 ? child : null), null);
+      const textNode = Array.prototype.reduce.call(
+        containerNode.childNodes,
+        (acc, child) => acc || (child.nodeType === 3 ? child : null),
+        null
+      );
       if (textNode) {
         // set caret to end of text content
         range.setEnd(textNode, textNode.textContent.length);
@@ -70,7 +74,7 @@ export default class EditPost extends React.Component {
   getCaretNode() {
     const sel = window.getSelection();
     const range = sel.getRangeAt(0)
-    let commonAncestorContainer = range.commonAncestorContainer;
+    let { commonAncestorContainer } = range;
     if (commonAncestorContainer.nodeType > 1) {
       return commonAncestorContainer.parentElement
     }
@@ -134,14 +138,18 @@ export default class EditPost extends React.Component {
   
   resetDomAndModelReferences() {
     const { allNodesByParentId } = this.state;
-    // DOM refs
+    /**
+     * DOM refs
+     */
     this.activeElement = this.getCaretNode();
     this.nodeId = this.activeElement.getAttribute('name');
     this.activeType = this.activeElement.dataset.type;
     this.activeParent = this.activeElement.parentElement;
     this.parentId = this.activeParent.getAttribute('name');
     this.parentType = this.activeParent.dataset.type;
-    // MODEL refs
+    /**
+     * MODEL refs
+     */
     this.siblings = allNodesByParentId
       .get(this.parentId, List());
     this.current = this.siblings
@@ -173,7 +181,7 @@ export default class EditPost extends React.Component {
     evt.preventDefault();
   
     if (this.cleanText(this.activeElement.textContent).length === 0) {
-      // current element is 'empty', just remove it
+      // current element (P tag) is 'empty', just remove it
       this.updateParentList(this.parentId, null, this.currentIdx);
       this.commitUpdates(this.prevSibling.get('id'));
       return;
@@ -217,7 +225,7 @@ export default class EditPost extends React.Component {
       this.updateParentList(this.prevSibling.get('id'), null, 0);
       // add merged text node to P tag
       this.updateParentList(this.prevSibling.get('id'), mergedSiblingLastChild);
-      // remove deleted sibling
+      // remove 'deleted' P tag
       this.updateParentList(this.parentId, null, this.currentIdx);
       this.commitUpdates(this.prevSibling.get('id'));
     }
