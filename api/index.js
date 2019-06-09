@@ -157,12 +157,12 @@ async function main() {
         }
         
         const passwordDoesMatch = await checkPassword(password, user.password);
-
+        
         if (!passwordDoesMatch) {
           res.status(401).send({ error: 'Invalid credentials' })
           return;
         }
-
+        
         res.send({
           token: encrypt(JSON.stringify(user)),
           session: {
@@ -177,7 +177,6 @@ async function main() {
     })
     
     app.get('/post', async (req, res) => {
-      // TODO: support 'published = NULL' and join on logged in user id
       const posts = await knex('post')
         .select(
           'post.id',
@@ -223,13 +222,66 @@ async function main() {
       
       res.send({ post, contentNodes });
     })
-  
+    
     /**
      * authenticated routes
      */
-    app.use((req, res, next) => {
-      // TODO: check auth token!
-      next();
+    app.use(async (req, res, next) => {
+      try {
+        const { headers: { authorization } } = req;
+        // decrypt Authorization header
+        // assign 'loggedInUser' session to req for all authenticated routes
+        req.loggedInUser = JSON.parse(decrypt(authorization));
+        // return 401 on failure
+        next();
+      } catch (err) {
+        res.sendStatus(401)
+      }
+    })
+    
+    /**
+     * creates a new post for logged in user
+     */
+    app.post('/post', async (req, res) => {
+      const user_id = req.loggedInUser.id;
+      const { title, canonical } = req.body;
+      
+      const knex = await getKnex();
+      
+      const post = await knex
+        .insert({ user_id, title, canonical })
+        .into('post');
+      
+      res.send({ post });
+    })
+    
+    /**
+     * takes a list of 1 or more content nodes
+     */
+    app.post('/content', async (req, res) => {
+      res.sendStatus(404);
+    })
+    
+    app.get('/draft', async (req, res) => {
+      const posts = await knex('post')
+        .select(
+          'post.id',
+          'user_id',
+          'canonical',
+          'title',
+          'abstract',
+          'post.created',
+          'updated',
+          'published',
+          'post.deleted',
+          'username',
+        )
+        .innerJoin('user', 'post.user_id', 'user.id')
+        .whereNull('published')
+        .andWhere('post.user_id', req.loggedInUser.id)
+        .orderBy('post.created', 'desc');
+      
+      res.send(posts);
     })
     
     app.listen(3001)
