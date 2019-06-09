@@ -10,6 +10,7 @@ import {
   LinkStyledSignIn,
   SignedInUser,
   NewPost,
+  ListDrafts,
   LinkStyledAbout,
   HeaderSpacer,
   Article,
@@ -30,6 +31,7 @@ export default (props) => (
             ? (
               <React.Fragment>
                 <NewPost to="/edit/new">new post</NewPost>
+                <ListDrafts to="/drafts">drafts</ListDrafts>
                 <SignedInUser onClick={() => {
                   if (confirm('Logout?')) {
                     signout();

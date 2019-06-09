@@ -83,6 +83,7 @@ async function main() {
         .where('post_id', post.id)
         .orderBy(['parent_id', 'position']);
       
+      // group nodes by parent_id, sorted by position
       const contentNodes = nodesArray.reduce((acc, node) => {
         if (!acc[node.parent_id]) {
           acc[node.parent_id] = [];
@@ -95,7 +96,7 @@ async function main() {
     })
     
     /**
-     * authenticated routes
+     * authenticated routes - all routes defined after this middleware will assume a logged in user
      */
     app.use(async (req, res, next) => {
       try {
@@ -130,9 +131,13 @@ async function main() {
      * takes a list of 1 or more content nodes
      */
     app.post('/content', async (req, res) => {
+      // TODO
       res.sendStatus(404);
     })
-    
+  
+    /**
+     * list drafts for logged in user
+     */
     app.get('/draft', async (req, res) => {
       const posts = await knex('post')
         .select(

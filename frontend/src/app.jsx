@@ -27,9 +27,14 @@ const App = () => (
         <Redirect push exact from="/" to="/posts" />
         <Redirect push exact from="/about" to="/posts/about" />
         <Route exact path="/signin" component={SignIn} />
-        <Route exact path="/posts" render={() => (
+        <Route exact path="/posts" render={(props) => (
           <PageLayout>
-            <ListAllPosts />
+            <ListAllPosts key={props.match.url} />
+          </PageLayout>
+        )} />
+        <Route exact path="/drafts" render={(props) => (
+          <PageLayout>
+            <ListAllPosts key={props.match.url} draftsOnly={true} />
           </PageLayout>
         )} />
         <Route path="/posts/:id" render={(props) =>

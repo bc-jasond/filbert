@@ -84,7 +84,8 @@ export default class AllPosts extends React.Component {
   }
   
   async componentDidMount() {
-    const posts = await apiGet('/post');
+    const { draftsOnly } = this.props;
+    const posts = await apiGet(draftsOnly ? '/draft' : '/post');
     const postsFormatted = posts.map(post => {
       const publishedDate = new Date(post.published);
       post.published = publishedDate.toLocaleDateString('en-us', {
@@ -100,11 +101,12 @@ export default class AllPosts extends React.Component {
   
   render() {
     const { posts } = this.state;
+    const { draftsOnly } = this.props;
     
     return (
       <React.Fragment>
         <PostRow>
-          <StyledH2>Recent Articles</StyledH2>
+          <StyledH2>{`Recent ${draftsOnly ? 'Drafts' : 'Articles'}`}</StyledH2>
         </PostRow>
         {posts.map(post => (
           <PostRow key={post.canonical}>

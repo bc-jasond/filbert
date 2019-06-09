@@ -62,6 +62,9 @@ export const HeaderButtonMixin = css`
 export const NewPost = styled(LinkStyled)`
   ${HeaderButtonMixin};
 `;
+export const ListDrafts = styled(LinkStyled)`
+  ${HeaderButtonMixin};
+`;
 export const SignedInUser = styled.div`
   ${HeaderButtonMixin};
 `;
