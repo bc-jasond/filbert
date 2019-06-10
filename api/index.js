@@ -107,6 +107,7 @@ async function main() {
         // return 401 on failure
         next();
       } catch (err) {
+        console.log('Authorization header Error', err);
         res.sendStatus(401)
       }
     })

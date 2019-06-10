@@ -4,6 +4,7 @@ import { sansSerif } from '../common/fonts.css';
 import { grey, darkGrey } from '../common/css';
 
 import { apiGet } from '../common/fetch';
+import { formatPostDate } from '../common/utils';
 
 import {
   H2
@@ -87,13 +88,8 @@ export default class AllPosts extends React.Component {
     const { draftsOnly } = this.props;
     const posts = await apiGet(draftsOnly ? '/draft' : '/post');
     const postsFormatted = posts.map(post => {
-      const publishedDate = new Date(post.published);
-      post.published = publishedDate.toLocaleDateString('en-us', {
-        weekday: 'long',
-        year: 'numeric',
-        day: 'numeric',
-        month: 'long'
-      });
+      post.published = formatPostDate(post.published);
+      post.updated = formatPostDate(post.updated);
       return post;
     })
     this.setState({ posts: postsFormatted })
@@ -110,16 +106,16 @@ export default class AllPosts extends React.Component {
         </PostRow>
         {posts.map(post => (
           <PostRow key={post.canonical}>
-            <StyledHeadingA href={`/posts/${post.canonical}`}>
+            <StyledHeadingA href={draftsOnly ? `/edit/${post.id}` : `/posts/${post.canonical}`}>
               {post.title}
             </StyledHeadingA>
             <PostAbstractRow>
-              <StyledA href={`/posts/${post.canonical}`}>
+              <StyledA href={draftsOnly ? `/edit/${post.id}` : `/posts/${post.canonical}`}>
                 {post.abstract}
               </StyledA>
             </PostAbstractRow>
             <PostMetaRow>
-              <PostMetaContent>{post.published}</PostMetaContent>
+              <PostMetaContent>{draftsOnly ? post.updated : post.published}</PostMetaContent>
               <PostMetaContent>|</PostMetaContent>
               <AuthorExpand>{post.username}</AuthorExpand>
             </PostMetaRow>
