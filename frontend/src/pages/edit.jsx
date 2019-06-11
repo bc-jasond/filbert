@@ -1,7 +1,11 @@
 import Immutable from 'immutable';
 import React from 'react';
+import { Redirect } from 'react-router-dom';
 import { List, Map } from 'immutable';
-import { apiGet } from '../common/fetch';
+import {
+  apiGet,
+  apiPost,
+} from '../common/fetch';
 
 import {
   getMapWithId,
@@ -27,6 +31,7 @@ export default class EditPost extends React.Component {
     super(props);
     
     this.state = {
+      postId: null,
       allNodesByParentId: Map(),
       root: null,
       shouldRedirectWithId: false,
@@ -37,7 +42,7 @@ export default class EditPost extends React.Component {
     try {
       const { postId } = this.props;
       if (postId === NEW_POST_URL_ID) {
-        this.getNewPost();
+        this.initPost();
       } else {
         await this.loadPost();
       }
@@ -47,19 +52,68 @@ export default class EditPost extends React.Component {
   }
   
   history = [];
-  timers = {}; // TODO: add a debounced save timer per element
+  updatedNodes = {}; // TODO: add a debounced save timer per element
   
-  getNewPost() {
+  initPost() {
     const { allNodesByParentId } = this.state;
     const root = getMapWithId({ type: NODE_TYPE_ROOT });
-    const h1 = getMapWithId({ type: NODE_TYPE_SECTION_H1 });
+    const h1 = getMapWithId({ type: NODE_TYPE_SECTION_H1, parent_id: root.get('id') });
     this.setState({
       root,
       allNodesByParentId: allNodesByParentId
+        .set('null', List([root]))
         .set(root.get('id'), List([h1]))
     }, () => {
       this.setCaret(h1.get('id'), true)
     })
+  }
+  
+  /**
+   * get content from textNode child
+   */
+  getContent(parentId) {
+    const { allNodesByParentId } = this.state;
+    // TODO: DFS through nodes until a NODE_TYPE_TEXT is reached
+    return allNodesByParentId.get(parentId).get(0).get('content');
+  }
+  
+  saveNewPost = async () => {
+    const {
+      root,
+      allNodesByParentId
+    } = this.state;
+    // get title from H1
+    // TODO: might not be first child...
+    const headingId = allNodesByParentId.get(root.get('id')).get(0).get('id');
+    const title = this.getContent(headingId);
+    // get canonical
+    const canonical = title;
+    // POST to /post
+    const { postId } = await apiPost('/post', { title, canonical });
+    // forEach allNodesByParentId, update postId, position - add to updatedNodes batch list
+    Object.entries(allNodesByParentId.toJS()).forEach(([parentId, children]) => {
+      children.forEach((childNode, idx) => {
+        childNode.post_id = postId;
+        childNode.position = idx;
+        childNode.meta = {};
+        childNode.content = childNode.content || null;
+        childNode.parent_id = parentId === 'null' ? null : parentId;
+        // add updated nodes keyed off of 'id' to the update list
+        this.updatedNodes[childNode.id] = childNode;
+      })
+    })
+    await this.saveContentBatch();
+    this.setState({ postId, shouldRedirectWithId: true })
+  }
+  
+  saveContentBatch = async () => {
+    try {
+      const result = await apiPost('/content', Object.values(this.updatedNodes))
+      this.updatedNodes = {};
+      console.info('Save Batch', result);
+    } catch (err) {
+      console.log('Content Batch Update Error: ', err);
+    }
   }
   
   loadPost = async () => {
@@ -70,12 +124,12 @@ export default class EditPost extends React.Component {
       const root = allNodesByParentId.get('null').get(0);
       // TODO: write a 'getFirstNode' method
       const firstNode = allNodesByParentId.get(root.get('id')).get(0);
-      this.setState({ root, allNodesByParentId, shouldShow404: false }, () => {
+      this.setState({ postId: post.id, root, allNodesByParentId, shouldShow404: false }, () => {
         this.setCaret(firstNode.get('id'), true)
       })
     } catch (err) {
       console.log(err);
-      this.setState({ root: null, allNodesByParentId: Map(), shouldShow404: true })
+      this.setState({ postId: null, root: null, allNodesByParentId: Map(), shouldShow404: true })
     }
   }
   
@@ -124,9 +178,14 @@ export default class EditPost extends React.Component {
     if (!this.history.length) {
       return;
     }
+    const { postId } = this.state;
     this.setState({ allNodesByParentId: this.history.pop() }, () => {
       this.setCaret(focusElementId, placeCaretAtBeginning);
       this.history = [];
+      if (!postId) {
+        // TODO: create a new post and redirect
+        this.saveNewPost();
+      }
     })
   }
   
@@ -139,6 +198,7 @@ export default class EditPost extends React.Component {
     if (node === null) {
       // delete a node at idx
       // TODO: is this the last child of `parentId` ?  Then remove parent from it's parent list
+      // TODO: reindex 'position' for all children
       this.history.push(allNodesByParentId.set(parentId, children.delete(idx)))
       return;
     }
@@ -148,6 +208,7 @@ export default class EditPost extends React.Component {
       return
     }
     this.history.push(allNodesByParentId.set(parentId, children.insert(idx, node)));
+    // TODO: reindex 'position'
   }
   
   activeElementHasContent() {
@@ -161,7 +222,13 @@ export default class EditPost extends React.Component {
     const { allNodesByParentId } = this.state;
     // TODO: fix this - assuming that there's only one child and it's a text node
     const textNode = allNodesByParentId
-      .get(this.current.get('id'), List([getMapWithId({ type: NODE_TYPE_TEXT })]))
+      .get(this.current.get('id'), List([
+        getMapWithId({
+          type: NODE_TYPE_TEXT,
+          parent_id: this.current.get('id'),
+          position: 0
+        })
+      ]))
       .first();
     this.updateParentList(this.current.get('id'), textNode.set('content', cleanText(this.activeElement.textContent)));
     // if there was existing content, clear the DOM to avoid duplication
@@ -313,12 +380,15 @@ export default class EditPost extends React.Component {
   
   render() {
     const {
+      postId,
       root,
       allNodesByParentId,
       shouldShow404,
+      shouldRedirectWithId,
     } = this.state;
-  
+    
     if (shouldShow404) return (<Page404 />);
+    if (shouldRedirectWithId) return (<Redirect to={`/edit/${postId}`} />);
     
     return !root ? null : (
       <div onKeyDown={this.handleChange} contentEditable={true}>
@@ -327,4 +397,3 @@ export default class EditPost extends React.Component {
     );
   }
 }
-

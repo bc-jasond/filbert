@@ -3,7 +3,10 @@ const express = require('express');
 const cors = require('cors');
 // const util = require('util');  for util.inspect()
 
-const { getKnex } = require('./mysql');
+const {
+  getKnex,
+  bulkContentNodeUpsert,
+} = require('./mysql');
 const { checkPassword } = require('./user');
 const { encrypt, decrypt } = require('./cipher');
 
@@ -124,11 +127,11 @@ async function main() {
       
       const knex = await getKnex();
       
-      const post = await knex
+      const [postId] = await knex
         .insert({ user_id, title, canonical })
         .into('post');
       
-      res.send({ post });
+      res.send({ postId });
     })
   
     /**
@@ -157,8 +160,13 @@ async function main() {
      * takes a list of 1 or more content nodes
      */
     app.post('/content', async (req, res) => {
-      // TODO
-      res.sendStatus(404);
+      try {
+        const result = await bulkContentNodeUpsert(req.body);
+        res.send(result);
+      } catch (err) {
+        console.log('POST /content Error: ', err);
+        res.sendStatus(500);
+      }
     })
   
     /**
