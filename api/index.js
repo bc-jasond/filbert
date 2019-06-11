@@ -7,12 +7,26 @@ const { getKnex } = require('./mysql');
 const { checkPassword } = require('./user');
 const { encrypt, decrypt } = require('./cipher');
 
-const app = express();
+async function getNodes(knex, postId) {
+  const nodesArray = await knex('content_node')
+    .where('post_id', postId)
+    .orderBy(['parent_id', 'position']);
+  
+  // group nodes by parent_id, sorted by position
+  return nodesArray.reduce((acc, node) => {
+    if (!acc[node.parent_id]) {
+      acc[node.parent_id] = [];
+    }
+    acc[node.parent_id].push(node);
+    return acc;
+  }, {})
+}
 
 async function main() {
   try {
     const knex = await getKnex();
-    
+  
+    const app = express();
     app.use(express.json());
     app.use(cors(/* TODO: whitelist *.dubaniewi.cz in PRODUCTION */))
     
@@ -79,18 +93,7 @@ async function main() {
         return;
       }
       
-      const nodesArray = await knex('content_node')
-        .where('post_id', post.id)
-        .orderBy(['parent_id', 'position']);
-      
-      // group nodes by parent_id, sorted by position
-      const contentNodes = nodesArray.reduce((acc, node) => {
-        if (!acc[node.parent_id]) {
-          acc[node.parent_id] = [];
-        }
-        acc[node.parent_id].push(node);
-        return acc;
-      }, {})
+      const contentNodes = await getNodes(knex, post.id);
       
       res.send({ post, contentNodes });
     })
@@ -126,6 +129,28 @@ async function main() {
         .into('post');
       
       res.send({ post });
+    })
+  
+    /**
+     * get post for editing
+     */
+    app.get('/edit/:id', async (req, res) => {
+      const { id } = req.params;
+    
+      const [post] = await knex('post')
+        .where({
+          'id': id,
+          'user_id': req.loggedInUser.id,
+        });
+    
+      if (!post) {
+        res.sendStatus(404);
+        return;
+      }
+    
+      const contentNodes = await getNodes(knex, post.id);
+    
+      res.send({ post, contentNodes });
     })
     
     /**

@@ -20,8 +20,8 @@ export default class ViewPost extends React.Component {
   async componentDidMount() {
     try {
       const { post, contentNodes } = await apiGet(`/post/${this.props.postId}`);
-      // TODO: don't use 'null' as root node indicator
       const allNodesByParentId = Immutable.fromJS(contentNodes);
+      // TODO: don't use 'null' as root node indicator
       const root = allNodesByParentId.get('null').get(0);
       this.setState({ root, allNodesByParentId, shouldShow404: false })
     } catch (err) {

@@ -1,5 +1,7 @@
+import Immutable from 'immutable';
 import React from 'react';
 import { List, Map } from 'immutable';
+import { apiGet } from '../common/fetch';
 
 import {
   getMapWithId,
@@ -14,9 +16,11 @@ import {
   NODE_TYPE_TEXT,
   ENTER_KEY,
   BACKSPACE_KEY,
+  NEW_POST_URL_ID,
 } from '../common/constants';
 
 import ContentNode from '../common/content-node.component';
+import Page404 from './404';
 
 export default class EditPost extends React.Component {
   constructor(props) {
@@ -25,15 +29,55 @@ export default class EditPost extends React.Component {
     this.state = {
       allNodesByParentId: Map(),
       root: null,
+      shouldRedirectWithId: false,
     }
   }
   
   async componentDidMount() {
-    this.getNewPost();
+    try {
+      const { postId } = this.props;
+      if (postId === NEW_POST_URL_ID) {
+        this.getNewPost();
+      } else {
+        await this.loadPost();
+      }
+    } catch (err) {
+      console.log('EDIT - load post error:', err);
+    }
   }
   
   history = [];
   timers = {}; // TODO: add a debounced save timer per element
+  
+  getNewPost() {
+    const { allNodesByParentId } = this.state;
+    const root = getMapWithId({ type: NODE_TYPE_ROOT });
+    const h1 = getMapWithId({ type: NODE_TYPE_SECTION_H1 });
+    this.setState({
+      root,
+      allNodesByParentId: allNodesByParentId
+        .set(root.get('id'), List([h1]))
+    }, () => {
+      this.setCaret(h1.get('id'), true)
+    })
+  }
+  
+  loadPost = async () => {
+    try {
+      const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
+      const allNodesByParentId = Immutable.fromJS(contentNodes);
+      // TODO: don't use 'null' as root node indicator
+      const root = allNodesByParentId.get('null').get(0);
+      // TODO: write a 'getFirstNode' method
+      const firstNode = allNodesByParentId.get(root.get('id')).get(0);
+      this.setState({ root, allNodesByParentId, shouldShow404: false }, () => {
+        this.setCaret(firstNode.get('id'), true)
+      })
+    } catch (err) {
+      console.log(err);
+      this.setState({ root: null, allNodesByParentId: Map(), shouldShow404: true })
+    }
+  }
   
   setCaret(nodeId, shouldPlaceAtBeginning = false) {
     const [containerNode] = document.getElementsByName(nodeId);
@@ -74,19 +118,6 @@ export default class EditPost extends React.Component {
       return commonAncestorContainer.lastChild;
     }
     return commonAncestorContainer;
-  }
-  
-  getNewPost() {
-    const { allNodesByParentId } = this.state;
-    const root = getMapWithId({ type: NODE_TYPE_ROOT });
-    const h1 = getMapWithId({ type: NODE_TYPE_SECTION_H1 });
-    this.setState({
-      root,
-      allNodesByParentId: allNodesByParentId
-        .set(root.get('id'), List([h1]))
-    }, () => {
-      this.setCaret(h1.get('id'), true)
-    })
   }
   
   commitUpdates(focusElementId, placeCaretAtBeginning = false) {
@@ -130,8 +161,8 @@ export default class EditPost extends React.Component {
     const { allNodesByParentId } = this.state;
     // TODO: fix this - assuming that there's only one child and it's a text node
     const textNode = allNodesByParentId
-        .get(this.current.get('id'), List([getMapWithId({ type: NODE_TYPE_TEXT })]))
-        .first();
+      .get(this.current.get('id'), List([getMapWithId({ type: NODE_TYPE_TEXT })]))
+      .first();
     this.updateParentList(this.current.get('id'), textNode.set('content', cleanText(this.activeElement.textContent)));
     // if there was existing content, clear the DOM to avoid duplication
     if (textNode.get('content', '').length > 0) {
@@ -170,19 +201,19 @@ export default class EditPost extends React.Component {
       root,
       allNodesByParentId
     } = this.state;
-  
+    
     this.resetDomAndModelReferences();
     
     const sel = window.getSelection();
     const range = sel.getRangeAt(0);
-  
+    
     if (range.startOffset > 0 && this.activeElementHasContent()) {
       // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
       return
     }
     evt.stopPropagation();
     evt.preventDefault();
-  
+    
     if (!this.activeElementHasContent()) {
       // current element (P tag) is 'empty', just remove it
       this.updateParentList(this.parentId, null, this.currentIdx);
@@ -211,7 +242,7 @@ export default class EditPost extends React.Component {
       // TODO - merge sections
       return;
     }
-  
+    
     /**
      * merge sibling (P tags only so far)
      */
@@ -284,7 +315,10 @@ export default class EditPost extends React.Component {
     const {
       root,
       allNodesByParentId,
+      shouldShow404,
     } = this.state;
+  
+    if (shouldShow404) return (<Page404 />);
     
     return !root ? null : (
       <div onKeyDown={this.handleChange} contentEditable={true}>
