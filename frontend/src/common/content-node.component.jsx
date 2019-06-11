@@ -21,6 +21,7 @@ import {
   NODE_TYPE_STRIKE,
   NODE_TYPE_TEXT,
   NODE_TYPE_ROOT,
+  ZERO_LENGTH_CHAR,
 } from './constants';
 import {
   H1,
@@ -48,16 +49,13 @@ import {
 
 const StyledDiv = styled.div``;
 
-// TODO: this is a placeholder to be able to set the caret in an empty tag
-const ZERO_LENGTH_CHAR = '\u200B';
-
 export default class ContentNode extends React.PureComponent {
   constructor(props) {
     super(props);
   }
   
   getTagFromType() {
-    const { node }  = this.props;
+    const { node } = this.props;
     switch (node.get('type')) {
       case NODE_TYPE_ROOT:
         return StyledDiv;
@@ -90,7 +88,7 @@ export default class ContentNode extends React.PureComponent {
       allNodesByParentId,
     } = this.props;
     return allNodesByParentId
-      .get(node.get('id'), List([Map({type: NODE_TYPE_TEXT, id: 'foo', content: ZERO_LENGTH_CHAR})]))
+      .get(node.get('id'), List([Map({ type: NODE_TYPE_TEXT, id: 'foo', content: ZERO_LENGTH_CHAR })]))
       .map(child => (<ContentNode key={child.get('id')} node={child} allNodesByParentId={allNodesByParentId} />))
   }
   
@@ -131,7 +129,8 @@ export default class ContentNode extends React.PureComponent {
         const meta = node.get('meta', Map());
         return (
           <ContentSection>
-            <P>💡Remember: <ItalicText>{meta.get('quote')}<A href={meta.get('url')}>{meta.get('author')}</A>{meta.get('context')}
+            <P>💡Remember: <ItalicText>{meta.get('quote')}<A
+              href={meta.get('url')}>{meta.get('author')}</A>{meta.get('context')}
             </ItalicText></P>
           </ContentSection>
         );
@@ -185,11 +184,13 @@ export default class ContentNode extends React.PureComponent {
        */
       default:
         const StyledComponent = this.getTagFromType();
-        return !StyledComponent ? null : (
+        if (!StyledComponent) return null;
+        
+        return (
           <StyledComponent data-type={node.get('type')} name={node.get('id')}>
             {this.getChildNodes()}
           </StyledComponent>
-        );
+        )
     }
   }
 }
