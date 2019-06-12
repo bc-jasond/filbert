@@ -1,9 +1,7 @@
-import Immutable from 'immutable';
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 import { List, Map } from 'immutable';
 import {
-  apiGet,
   apiPost,
 } from '../common/fetch';
 import {
@@ -16,36 +14,41 @@ import {
 } from '../common/dom';
 
 import {
-  NODE_TYPE_P,
   NODE_TYPE_ROOT,
-  NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_H1,
+  NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_TEXT,
+  NODE_TYPE_P,
   ENTER_KEY,
   BACKSPACE_KEY,
-  NEW_POST_URL_ID,
 } from '../common/constants';
 
 import ContentNode from '../common/content-node.component';
-import Page404 from './404';
 
-export default class EditPost extends React.Component {
+export default class NewPost extends React.Component {
   constructor(props) {
     super(props);
     
     this.state = {
-      allNodesByParentId: Map(),
+      postId: null,
       root: null,
-      shouldShow404: false,
+      allNodesByParentId: Map(),
+      shouldRedirectWithId: false,
     }
   }
   
   async componentDidMount() {
-    try {
-      await this.loadPost();
-    } catch (err) {
-      console.log('EDIT - load post error:', err);
-    }
+    const { allNodesByParentId } = this.state;
+    const root = getMapWithId({ type: NODE_TYPE_ROOT });
+    const h1 = getMapWithId({ type: NODE_TYPE_SECTION_H1, parent_id: root.get('id') });
+    this.setState({
+      root,
+      allNodesByParentId: allNodesByParentId
+        .set('null', List([root]))
+        .set(root.get('id'), List([h1]))
+    }, () => {
+      setCaret(h1.get('id'), true)
+    })
   }
   
   history = [];
@@ -60,6 +63,35 @@ export default class EditPost extends React.Component {
     return allNodesByParentId.get(parentId).get(0).get('content');
   }
   
+  saveNewPost = async () => {
+    const {
+      root,
+      allNodesByParentId
+    } = this.state;
+    // get title from H1
+    // TODO: might not be first child...
+    const headingId = allNodesByParentId.get(root.get('id')).get(0).get('id');
+    const title = this.getContent(headingId);
+    // get canonical
+    const canonical = title;
+    // POST to /post
+    const { postId } = await apiPost('/post', { title, canonical });
+    // forEach allNodesByParentId, update postId, position - add to updatedNodes batch list
+    Object.entries(allNodesByParentId.toJS()).forEach(([parentId, children]) => {
+      children.forEach((childNode, idx) => {
+        childNode.post_id = postId;
+        childNode.position = idx;
+        childNode.meta = {};
+        childNode.content = childNode.content || null;
+        childNode.parent_id = parentId === 'null' ? null : parentId;
+        // add updated nodes keyed off of 'id' to the update list
+        this.updatedNodes[childNode.id] = childNode;
+      })
+    })
+    await this.saveContentBatch();
+    this.setState({ postId, shouldRedirectWithId: true })
+  }
+  
   saveContentBatch = async () => {
     try {
       const result = await apiPost('/content', Object.values(this.updatedNodes))
@@ -70,30 +102,14 @@ export default class EditPost extends React.Component {
     }
   }
   
-  loadPost = async () => {
-    try {
-      const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
-      const allNodesByParentId = Immutable.fromJS(contentNodes);
-      // TODO: don't use 'null' as root node indicator
-      const root = allNodesByParentId.get('null').get(0);
-      // TODO: write a 'getFirstNode' method
-      const firstNode = allNodesByParentId.get(root.get('id')).get(0);
-      this.setState({ root, allNodesByParentId, shouldShow404: false }, () => {
-        setCaret(firstNode.get('id'), true)
-      })
-    } catch (err) {
-      console.log(err);
-      this.setState({ root: null, allNodesByParentId: Map(), shouldShow404: true })
-    }
-  }
-  
-  commitUpdates(focusElementId, placeCaretAtBeginning = false) {
+  commitUpdates() {
     if (!this.history.length) {
       return;
     }
     this.setState({ allNodesByParentId: this.history.pop() }, () => {
-      setCaret(focusElementId, placeCaretAtBeginning);
       this.history = [];
+      // create a new post and redirect
+      this.saveNewPost();
     })
   }
   
@@ -172,11 +188,6 @@ export default class EditPost extends React.Component {
       return;
     }
     
-    const {
-      root,
-      allNodesByParentId
-    } = this.state;
-    
     this.resetDomAndModelReferences();
     
     const sel = window.getSelection();
@@ -188,66 +199,14 @@ export default class EditPost extends React.Component {
     }
     evt.stopPropagation();
     evt.preventDefault();
-    
-    if (!this.activeElementHasContent()) {
-      // current element (P tag) is 'empty', just remove it
-      this.updateParentList(this.parentId, null, this.currentIdx);
-      this.commitUpdates(this.prevSibling.get('id'));
-      return;
-    }
-    
-    /**
-     * first child of root (h1)? OR first child of first ContentSection of root? -> noop()
-     */
-    if (this.parentType === NODE_TYPE_ROOT) {
-      return;
-    }
-    if (this.parentType === NODE_TYPE_SECTION_CONTENT) {
-      const isFirstRootChild = allNodesByParentId.get(root.get('id'))
-        .findIndex(node => node.get('id') === this.parentType) === 0;
-      if (isFirstRootChild) {
-        return;
-      }
-    }
-    
-    /**
-     * first child of Section?
-     */
-    if (this.currentIdx === 0) {
-      // TODO - merge sections
-      return;
-    }
-    
-    /**
-     * merge sibling (P tags only so far)
-     */
-    if (this.activeElementHasContent()) {
-      const prevSiblingLastChild = allNodesByParentId
-        .get(this.prevSibling.get('id'))
-        .last();
-      const currentFirstChild = allNodesByParentId
-        .get(this.current.get('id'), List([Map({ type: NODE_TYPE_TEXT, content: this.activeElement.textContent })]))
-        .first();
-      // merged text node
-      const mergedSiblingLastChild = prevSiblingLastChild.set('content', cleanText(`${prevSiblingLastChild.get('content')}${currentFirstChild.get('content')}`));
-      // remove original text node
-      this.updateParentList(this.prevSibling.get('id'), null, 0);
-      // add merged text node to P tag
-      this.updateParentList(this.prevSibling.get('id'), mergedSiblingLastChild);
-      // remove 'deleted' P tag
-      this.updateParentList(this.parentId, null, this.currentIdx);
-      this.commitUpdates(this.prevSibling.get('id'));
-    }
   }
   
   handleEnter = async (evt) => {
     if (evt.keyCode !== ENTER_KEY) {
       return;
     }
-    
-    const {
-      root,
-    } = this.state;
+  
+    const { root } = this.state;
     
     evt.stopPropagation();
     evt.preventDefault();
@@ -255,30 +214,15 @@ export default class EditPost extends React.Component {
     this.resetDomAndModelReferences();
     
     this.updateActiveElement();
+  
+    // create a ContentSection
+    const content = getMapWithId({ type: NODE_TYPE_SECTION_CONTENT, parent_id: root.get('id') });
+    const p = getMapWithId({ type: NODE_TYPE_P, parent_id: content.get('id') });
+    this.updateParentList(content.get('id'), p, 0);
+    this.updateParentList(root.get('id'), content);
     
-    /**
-     * insert a new element, default to P tag
-     */
-    const p = getMapWithId({ type: NODE_TYPE_P });
-    if (this.activeType === NODE_TYPE_P) {
-      this.updateParentList(this.parentId, p, this.currentIdx + 1);
-      this.commitUpdates(p.get('id'));
-      return;
-    }
-    if (this.activeType === NODE_TYPE_SECTION_H1) {
-      const nextSibling = this.siblings.get(this.currentIdx + 1, null);
-      if (!nextSibling) {
-        // create a ContentSection
-        const content = getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
-        this.updateParentList(content.get('id'), p, 0);
-        this.updateParentList(root.get('id'), content);
-      } else {
-        // update existing ContentSection
-        this.updateParentList(nextSibling.get('id'), p, 0);
-      }
-      this.commitUpdates(p.get('id'));
-      return;
-    }
+    // commit updates
+    this.commitUpdates();
   }
   
   handleChange = evt => {
@@ -288,12 +232,13 @@ export default class EditPost extends React.Component {
   
   render() {
     const {
+      postId,
       root,
       allNodesByParentId,
-      shouldShow404,
+      shouldRedirectWithId,
     } = this.state;
     
-    if (shouldShow404) return (<Page404 />);
+    if (shouldRedirectWithId) return (<Redirect to={`/edit/${postId}`} />);
     
     return !root ? null : (
       <div onKeyDown={this.handleChange} contentEditable={true}>

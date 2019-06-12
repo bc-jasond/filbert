@@ -105,7 +105,7 @@ export default class AllPosts extends React.Component {
           <StyledH2>{`Recent ${draftsOnly ? 'Drafts' : 'Articles'}`}</StyledH2>
         </PostRow>
         {posts.map(post => (
-          <PostRow key={post.canonical}>
+          <PostRow key={`${post.id}${post.canonical}`}>
             <StyledHeadingA href={draftsOnly ? `/edit/${post.id}` : `/posts/${post.canonical}`}>
               {post.title}
             </StyledHeadingA>
