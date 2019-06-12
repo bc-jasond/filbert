@@ -1,6 +1,5 @@
 import Immutable from 'immutable';
 import React from 'react';
-import { Redirect } from 'react-router-dom';
 import { List, Map } from 'immutable';
 import {
   apiGet,
@@ -23,7 +22,6 @@ import {
   NODE_TYPE_TEXT,
   ENTER_KEY,
   BACKSPACE_KEY,
-  NEW_POST_URL_ID,
 } from '../common/constants';
 
 import ContentNode from '../common/content-node.component';
@@ -48,7 +46,7 @@ export default class EditPost extends React.Component {
     }
   }
   
-  history = [];
+  allNodesByParentIdStaging = Map();
   updatedNodes = {}; // TODO: add a debounced save timer per element
   
   /**
@@ -60,9 +58,15 @@ export default class EditPost extends React.Component {
     return allNodesByParentId.get(parentId).get(0).get('content');
   }
   
+  getMapWithId(obj) {
+    return getMapWithId(obj).set('post_id', this.props.postId);
+  }
+  
   saveContentBatch = async () => {
     try {
-      const result = await apiPost('/content', Object.values(this.updatedNodes))
+      const updated = Object.values(this.updatedNodes);
+      if (updated.length === 0) return;
+      const result = await apiPost('/content', updated);
       this.updatedNodes = {};
       console.info('Save Batch', result);
     } catch (err) {
@@ -88,35 +92,42 @@ export default class EditPost extends React.Component {
   }
   
   commitUpdates(focusElementId, placeCaretAtBeginning = false) {
-    if (!this.history.length) {
+    if (this.allNodesByParentIdStaging.size === 0) {
       return;
     }
-    this.setState({ allNodesByParentId: this.history.pop() }, () => {
+    // optimistically save updated nodes
+    this.saveContentBatch();
+    // roll with state changes TODO: roll back on save failure?
+    this.setState({ allNodesByParentId: this.allNodesByParentIdStaging }, () => {
       setCaret(focusElementId, placeCaretAtBeginning);
-      this.history = [];
+      this.allNodesByParentIdStaging = Map();
     })
   }
   
   updateParentList(parentId, node = null, idx = -1) {
-    const allNodesByParentId = this.history.pop() || this.state.allNodesByParentId;
-    const children = allNodesByParentId.get(parentId, List());
+    const allNodesByParentId = this.allNodesByParentIdStaging.size > 0 ? this.allNodesByParentIdStaging : this.state.allNodesByParentId;
+    let children = allNodesByParentId.get(parentId, List());
     if (node === null && idx === -1) {
       throw new Error('updateParentList - must provide either a node or an index');
     }
     if (node === null) {
       // delete a node at idx
-      // TODO: is this the last child of `parentId` ?  Then remove parent from it's parent list
-      // TODO: reindex 'position' for all children
-      this.history.push(allNodesByParentId.set(parentId, children.delete(idx)))
-      return;
-    }
-    if (idx === -1) {
+      // TODO: is this the last child of `parentId` ?  Then remove parent from it's parent list?
+      const deletedNode = children.get(idx);
+      this.updatedNodes[deletedNode.get('id')] = { action: 'delete', node: deletedNode };
+      children = children.delete(idx)
+    } else if (idx === -1) {
       // push to end of list
-      this.history.push(allNodesByParentId.set(parentId, children.push(node)))
-      return
+      this.updatedNodes[node.get('id')] = { action: 'update', node: node.set('parent_id', parentId).set('position', children.size) };
+      children = children.push(node);
+    } else {
+      // insert at index
+      this.updatedNodes[node.get('id')] = { action: 'update', node: node.set('parent_id', parentId).set('position', idx) };
+      children = children.insert(idx, node);
     }
-    this.history.push(allNodesByParentId.set(parentId, children.insert(idx, node)));
-    // TODO: reindex 'position'
+    // reindex 'position' for all children, set postId TODO: clean this up
+    children = children.map((child, idx) => child.set('position', idx).set('post_id', this.props.postId));
+    this.allNodesByParentIdStaging = allNodesByParentId.set(parentId, children);
   }
   
   activeElementHasContent() {
@@ -131,7 +142,7 @@ export default class EditPost extends React.Component {
     // TODO: fix this - assuming that there's only one child and it's a text node
     const textNode = allNodesByParentId
       .get(this.current.get('id'), List([
-        getMapWithId({
+        this.getMapWithId({
           type: NODE_TYPE_TEXT,
           parent_id: this.current.get('id'),
           position: 0
@@ -259,7 +270,7 @@ export default class EditPost extends React.Component {
     /**
      * insert a new element, default to P tag
      */
-    const p = getMapWithId({ type: NODE_TYPE_P });
+    const p = this.getMapWithId({ type: NODE_TYPE_P });
     if (this.activeType === NODE_TYPE_P) {
       this.updateParentList(this.parentId, p, this.currentIdx + 1);
       this.commitUpdates(p.get('id'));
@@ -269,7 +280,7 @@ export default class EditPost extends React.Component {
       const nextSibling = this.siblings.get(this.currentIdx + 1, null);
       if (!nextSibling) {
         // create a ContentSection
-        const content = getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
+        const content = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
         this.updateParentList(content.get('id'), p, 0);
         this.updateParentList(root.get('id'), content);
       } else {

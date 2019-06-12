@@ -85,7 +85,7 @@ export default class NewPost extends React.Component {
         childNode.content = childNode.content || null;
         childNode.parent_id = parentId === 'null' ? null : parentId;
         // add updated nodes keyed off of 'id' to the update list
-        this.updatedNodes[childNode.id] = childNode;
+        this.updatedNodes[childNode.id] = { action: 'update', node: childNode };
       })
     })
     await this.saveContentBatch();

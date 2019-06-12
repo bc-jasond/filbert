@@ -1,29 +1,4 @@
-// const mysql = require('mysql2/promise')
 const knex = require('knex')
-
-// module.exports = {
-//   getConnection: async () => {
-//     const connectionPromise = await mysql.createConnection({
-//       host: 'localhost',
-//       user: 'root',
-//       password: 'example',
-//       database: 'dubaniewicz'
-//     });
-//
-//     const {
-//       // mysql2 'connection' is a wrapper of the node-mysql 'connection', used here for basic monitoring info
-//       connection: {
-//         threadId,
-//         _handshakePacket: {
-//           serverVersion
-//         }
-//       }
-//     } = connectionPromise;
-//     console.log(`MySQL version ${serverVersion} connected as ${threadId}`, );
-//
-//     return connectionPromise;
-//   }
-// }
 
 async function getKnex() {
   return knex({
@@ -40,6 +15,7 @@ async function getKnex() {
 }
 
 async function bulkContentNodeUpsert(records) {
+  if (records.length === 0) return;
   const knexInstance = await getKnex();
   const query = `
     INSERT INTO content_node (post_id, id, parent_id, position, type, content, meta) VALUES
@@ -56,16 +32,32 @@ async function bulkContentNodeUpsert(records) {
     values.push([
       record.post_id,
       record.id,
-      record.parent_id,
+      record.parent_id || null,
       record.position,
       record.type,
-      record.content,
-      JSON.stringify(record.meta),
+      record.content || null,
+      JSON.stringify(record.meta || {}),
     ]);
   });
   
   return knexInstance.raw(query, values);
 }
 
+async function bulkContentNodeDelete(records) {
+  // delete all records WHERE id IN (...recordIds) OR WHERE parent_id IN (...recordIds)
+  if (records.length === 0) return;
+  const postId = records[0].post_id;
+  const recordIds = records.map(r => r.id);
+  const knexInstance = await getKnex();
+  return knexInstance('content_node')
+    .where('post_id', postId)
+    .andWhere(builder => builder
+      .whereIn('id', recordIds)
+      .orWhereIn('parent_id', recordIds)
+    )
+    .del();
+}
+
 module.exports.getKnex = getKnex;
 module.exports.bulkContentNodeUpsert = bulkContentNodeUpsert;
+module.exports.bulkContentNodeDelete = bulkContentNodeDelete;

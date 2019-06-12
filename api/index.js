@@ -6,6 +6,7 @@ const cors = require('cors');
 const {
   getKnex,
   bulkContentNodeUpsert,
+  bulkContentNodeDelete,
 } = require('./mysql');
 const { checkPassword } = require('./user');
 const { encrypt, decrypt } = require('./cipher');
@@ -161,8 +162,11 @@ async function main() {
      */
     app.post('/content', async (req, res) => {
       try {
-        const result = await bulkContentNodeUpsert(req.body);
-        res.send(result);
+        const updates = req.body.filter(change => change.action === 'update').map(change => change.node);
+        const deletes = req.body.filter(change => change.action === 'delete').map(change => change.node);
+        const updateResult = await bulkContentNodeUpsert(updates);
+        const deleteResult = await bulkContentNodeDelete(deletes);
+        res.send({updateResult, deleteResult});
       } catch (err) {
         console.log('POST /content Error: ', err);
         res.sendStatus(500);
