@@ -7,6 +7,7 @@ import {
   Route,
   Redirect,
 } from 'react-router-dom';
+import { NEW_POST_URL_ID } from './common/constants';
 
 // GLOBAL CSS HERE
 import CssReset from './reset.css';
@@ -48,13 +49,9 @@ const App = () => (
           )}
         />
         <Route path="/edit/:id" render={(props) =>
-          props.match.params.id === 'new' ? (
+           (
             <PageLayout key={props.match.params.id} {...props}>
-              <NewPost />
-            </PageLayout>
-          ) : (
-            <PageLayout key={props.match.params.id} {...props}>
-              <EditPost postId={props.match.params.id}/>
+              {props.match.params.id === NEW_POST_URL_ID ? <NewPost /> : <EditPost postId={props.match.params.id}/>}
             </PageLayout>
           )}
         />

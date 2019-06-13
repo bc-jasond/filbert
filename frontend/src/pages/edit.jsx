@@ -26,6 +26,10 @@ import {
   NODE_TYPE_TEXT,
   ENTER_KEY,
   BACKSPACE_KEY,
+  UP_ARROW,
+  DOWN_ARROW,
+  LEFT_ARROW,
+  RIGHT_ARROW,
 } from '../common/constants';
 
 import ContentNode from '../common/content-node.component';
@@ -33,7 +37,9 @@ import Page404 from './404';
 
 const InsertSectionMenu = styled.div`
   position: absolute;
-  width: 100%;
+  overflow: hidden;
+  height: 56px;
+  width: 640px;
 `;
 const lineMixin = css`
   z-index: 2;
@@ -47,6 +53,8 @@ const lineMixin = css`
 `;
 const InsertSectionMenuButton = styled.button`
   position: absolute;
+  top: 16px;
+  z-index: 3;
   width: 24px;
   height: 24px;
   display: block;
@@ -70,8 +78,13 @@ const InsertSectionMenuButton = styled.button`
 `;
 const InsertSectionMenuItemsContainer = styled.div`
   position: absolute;
+  top: 16px;
   height: 24px;
-  left: 64px;
+  left: 48px;
+  transition: left .2s ease-in-out;
+  ${p => !p.isOpen && `
+    left: -100%;
+  `}
 `;
 const InsertSectionItem = styled.span`
   ${HeaderButtonMixin};
@@ -308,7 +321,7 @@ export default class EditPost extends React.Component {
     }
   }
   
-  handleEnter = async (evt) => {
+  handleEnter = (evt) => {
     if (evt.keyCode !== ENTER_KEY) {
       return;
     }
@@ -349,7 +362,19 @@ export default class EditPost extends React.Component {
     }
   }
   
+  handleArrows = (evt) => {
+    if (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW].includes(evt.keyCode)) {
+      return;
+    }
+  
+    this.resetDomAndModelReferences();
+    
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+  
   handleChange = evt => {
+    this.handleArrows(evt);
     this.handleBackspace(evt);
     this.handleEnter(evt);
   }
