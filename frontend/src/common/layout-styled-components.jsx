@@ -49,6 +49,7 @@ export const HeaderButtonMixin = css`
   cursor: pointer;
   text-decoration: none;
   font-size: 18px;
+  line-height: 24px;
   padding: 14px 18px;
   border-radius: 26px;
   border: 1px solid transparent;

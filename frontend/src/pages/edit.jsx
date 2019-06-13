@@ -1,10 +1,14 @@
 import Immutable from 'immutable';
 import React from 'react';
 import { List, Map } from 'immutable';
+import styled from 'styled-components';
+import { css } from 'styled-components';
+import { grey } from '../common/css';
 import {
   apiGet,
   apiPost,
 } from '../common/fetch';
+import { HeaderButtonMixin } from '../common/layout-styled-components';
 import {
   getMapWithId,
   cleanText,
@@ -27,6 +31,52 @@ import {
 import ContentNode from '../common/content-node.component';
 import Page404 from './404';
 
+const InsertSectionMenu = styled.div`
+  position: absolute;
+  width: 100%;
+`;
+const lineMixin = css`
+  z-index: 2;
+  position: absolute;
+  display: block;
+  content: '';
+  height: 2px;
+  width: 24px;
+  background-color: ${grey};
+  transition: transform .2s ease-in-out;
+`;
+const InsertSectionMenuButton = styled.button`
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  display: block;
+  cursor: pointer;
+  border: 0;
+  outline: 0;
+  &:before {
+    ${lineMixin}
+    transform: rotateZ(0deg);
+    ${p => p.isOpen && `
+      transform: rotateZ(225deg);
+    `}
+  }
+  &:after {
+    ${lineMixin}
+    transform: rotateZ(90deg);
+    ${p => p.isOpen && `
+      transform: rotateZ(-45deg);
+    `}
+  }
+`;
+const InsertSectionMenuItemsContainer = styled.div`
+  position: absolute;
+  height: 24px;
+  left: 64px;
+`;
+const InsertSectionItem = styled.span`
+  ${HeaderButtonMixin};
+`;
+
 export default class EditPost extends React.Component {
   constructor(props) {
     super(props);
@@ -35,6 +85,7 @@ export default class EditPost extends React.Component {
       allNodesByParentId: Map(),
       root: null,
       shouldShow404: false,
+      insertMenuIsOpen: false,
     }
   }
   
@@ -118,11 +169,17 @@ export default class EditPost extends React.Component {
       children = children.delete(idx)
     } else if (idx === -1) {
       // push to end of list
-      this.updatedNodes[node.get('id')] = { action: 'update', node: node.set('parent_id', parentId).set('position', children.size) };
+      this.updatedNodes[node.get('id')] = {
+        action: 'update',
+        node: node.set('parent_id', parentId).set('position', children.size)
+      };
       children = children.push(node);
     } else {
       // insert at index
-      this.updatedNodes[node.get('id')] = { action: 'update', node: node.set('parent_id', parentId).set('position', idx) };
+      this.updatedNodes[node.get('id')] = {
+        action: 'update',
+        node: node.set('parent_id', parentId).set('position', idx)
+      };
       children = children.insert(idx, node);
     }
     // reindex 'position' for all children, set postId TODO: clean this up
@@ -302,14 +359,30 @@ export default class EditPost extends React.Component {
       root,
       allNodesByParentId,
       shouldShow404,
+      insertMenuIsOpen,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
     
     return !root ? null : (
-      <div onKeyDown={this.handleChange} contentEditable={true}>
-        <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
-      </div>
+      <React.Fragment>
+        <div onKeyDown={this.handleChange} contentEditable={true}>
+          <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
+        </div>
+        <InsertSectionMenu name="insert-section-menu">
+          <InsertSectionMenuButton onClick={() => this.setState({ insertMenuIsOpen: !insertMenuIsOpen })}
+                                   isOpen={insertMenuIsOpen} />
+          <InsertSectionMenuItemsContainer autocomplete="off" autocorrect="off" autocapitalize="off"
+                                           spellcheck="false" isOpen={insertMenuIsOpen}>
+            <InsertSectionItem>photo</InsertSectionItem>
+            <InsertSectionItem>code</InsertSectionItem>
+            <InsertSectionItem>list</InsertSectionItem>
+            <InsertSectionItem>spacer</InsertSectionItem>
+            <InsertSectionItem>quote</InsertSectionItem>
+            <InsertSectionItem>post link</InsertSectionItem>
+          </InsertSectionMenuItemsContainer>
+        </InsertSectionMenu>
+      </React.Fragment>
     );
   }
 }

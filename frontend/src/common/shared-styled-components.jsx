@@ -62,6 +62,7 @@ export const ImageSection = styled(ContentSection)`
   margin: 0 auto 52px;
 `;
 export const P = styled.p`
+  position: relative;
   margin-bottom: 32px;
 `;
 export const Pre = styled.pre``;
