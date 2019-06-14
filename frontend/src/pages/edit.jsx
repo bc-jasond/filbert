@@ -39,7 +39,10 @@ const InsertSectionMenu = styled.div`
   position: absolute;
   overflow: hidden;
   height: 56px;
-  width: 640px;
+  width: ${p => p.isOpen ? '640' : '50'}px;
+  display: ${p => p.shouldShowInsertMenu ? 'block' : 'none'};
+  top: ${p => p.insertMenuTopOffset - 13}px;
+  left: ${p => p.insertMenuLeftOffset - 68}px;
 `;
 const lineMixin = css`
   z-index: 2;
@@ -81,9 +84,12 @@ const InsertSectionMenuItemsContainer = styled.div`
   top: 16px;
   height: 24px;
   left: 48px;
-  transition: left .2s ease-in-out;
+  display: block;
+  transition: left .2s ease-in-out, display .2 ease-in-out;
   ${p => !p.isOpen && `
     left: -100%;
+    display: none;
+    transition: none;
   `}
 `;
 const InsertSectionItem = styled.span`
@@ -98,7 +104,10 @@ export default class EditPost extends React.Component {
       allNodesByParentId: Map(),
       root: null,
       shouldShow404: false,
+      shouldShowInsertMenu: false,
       insertMenuIsOpen: false,
+      insertMenuTopOffset: 0,
+      insertMenuLeftOffset: 0,
     }
   }
   
@@ -362,21 +371,49 @@ export default class EditPost extends React.Component {
     }
   }
   
-  handleArrows = (evt) => {
-    if (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW].includes(evt.keyCode)) {
+  handleInsertMenu = (evt) => {
+    if (evt.type !== 'mouseup'
+      && (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW].includes(evt.keyCode))) {
       return;
     }
-  
+    
     this.resetDomAndModelReferences();
     
-    evt.stopPropagation();
-    evt.preventDefault();
+    const sel = window.getSelection();
+    const range = sel.getRangeAt(0);
+    
+    if (range.collapsed && !this.activeElementHasContent()) {
+      this.setState({
+        shouldShowInsertMenu: true,
+        insertMenuTopOffset: this.activeElement.offsetTop,
+        insertMenuLeftOffset: this.activeElement.offsetLeft,
+      });
+      return;
+    }
+    
+    this.setState({ shouldShowInsertMenu: false });
   }
   
-  handleChange = evt => {
-    this.handleArrows(evt);
+  handleKeyDown = evt => {
     this.handleBackspace(evt);
     this.handleEnter(evt);
+  }
+  
+  handleKeyUp = evt => {
+    this.handleInsertMenu(evt);
+  }
+  
+  handleMouseUp = evt => {
+    this.handleInsertMenu(evt);
+  }
+  
+  toggleInsertMenu = () => {
+    const { insertMenuIsOpen } = this.state;
+    this.setState({ insertMenuIsOpen: !insertMenuIsOpen }, () => {
+      if (insertMenuIsOpen) {
+        setCaret(this.nodeId);
+      }
+    });
   }
   
   render() {
@@ -384,18 +421,24 @@ export default class EditPost extends React.Component {
       root,
       allNodesByParentId,
       shouldShow404,
+      shouldShowInsertMenu,
       insertMenuIsOpen,
+      insertMenuTopOffset,
+      insertMenuLeftOffset,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
     
     return !root ? null : (
       <React.Fragment>
-        <div onKeyDown={this.handleChange} contentEditable={true}>
+        <div onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} onMouseUp={this.handleMouseUp} contentEditable={true}>
           <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
         </div>
-        <InsertSectionMenu name="insert-section-menu">
-          <InsertSectionMenuButton onClick={() => this.setState({ insertMenuIsOpen: !insertMenuIsOpen })}
+        <InsertSectionMenu name="insert-section-menu" isOpen={insertMenuIsOpen}
+                           shouldShowInsertMenu={shouldShowInsertMenu}
+                           insertMenuTopOffset={insertMenuTopOffset}
+                           insertMenuLeftOffset={insertMenuLeftOffset}>
+          <InsertSectionMenuButton onClick={this.toggleInsertMenu}
                                    isOpen={insertMenuIsOpen} />
           <InsertSectionMenuItemsContainer autocomplete="off" autocorrect="off" autocapitalize="off"
                                            spellcheck="false" isOpen={insertMenuIsOpen}>
