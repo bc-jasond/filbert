@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { sansSerif } from '../common/fonts.css';
 import { grey, darkGrey } from '../common/css';
 
-import { apiGet } from '../common/fetch';
+import { apiGet, apiDelete } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
 
 import {
@@ -74,6 +74,10 @@ const AuthorExpand = styled(PostMetaContent)`
     cursor: pointer;
   }
 `;
+const DeletePost = styled(PostMetaContent)`
+  cursor: pointer;
+  font-weight: bolder;
+`;
 
 export default class AllPosts extends React.Component {
   constructor(props) {
@@ -85,6 +89,10 @@ export default class AllPosts extends React.Component {
   }
   
   async componentDidMount() {
+    this.loadPosts();
+  }
+  
+  async loadPosts() {
     const { draftsOnly } = this.props;
     const posts = await apiGet(draftsOnly ? '/draft' : '/post');
     const postsFormatted = posts.map(post => {
@@ -93,6 +101,17 @@ export default class AllPosts extends React.Component {
       return post;
     })
     this.setState({ posts: postsFormatted })
+  }
+  
+  deleteDraft = async (post) => {
+    if (confirm(`Delete draft ${post.title}?`)) {
+      try {
+        await apiDelete(`/draft/${post.id}`)
+        await this.loadPosts();
+      } catch (err) {
+        console.error('Delete draft error:', err)
+      }
+    }
   }
   
   render() {
@@ -117,7 +136,7 @@ export default class AllPosts extends React.Component {
             <PostMetaRow>
               <PostMetaContent>{draftsOnly ? post.updated : post.published}</PostMetaContent>
               <PostMetaContent>|</PostMetaContent>
-              <AuthorExpand>{post.username}</AuthorExpand>
+              {draftsOnly ? (<DeletePost onClick={() => this.deleteDraft(post)}>X</DeletePost>) : (<AuthorExpand>{post.username}</AuthorExpand>)}
             </PostMetaRow>
           </PostRow>
         ))}

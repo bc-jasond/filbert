@@ -61,7 +61,7 @@ async function main() {
         });
       } catch (err) {
         console.log('Signin Error: ', err)
-        res.sendStatus(401)
+        res.send({}).status(401)
       }
     })
     
@@ -93,7 +93,7 @@ async function main() {
         .where('canonical', id);
       
       if (!post) {
-        res.sendStatus(404);
+        res.send({}).status(404);
         return;
       }
       
@@ -115,7 +115,7 @@ async function main() {
         next();
       } catch (err) {
         console.log('Authorization header Error', err);
-        res.sendStatus(401)
+        res.send({}).status(401)
       }
     })
     
@@ -148,7 +148,7 @@ async function main() {
         });
     
       if (!post) {
-        res.sendStatus(404);
+        res.send({}).status(404);
         return;
       }
     
@@ -164,12 +164,13 @@ async function main() {
       try {
         const updates = req.body.filter(change => change.action === 'update').map(change => change.node);
         const deletes = req.body.filter(change => change.action === 'delete').map(change => change.node);
+        // TODO: put in transaction?
         const updateResult = await bulkContentNodeUpsert(updates);
         const deleteResult = await bulkContentNodeDelete(deletes);
         res.send({updateResult, deleteResult});
       } catch (err) {
         console.log('POST /content Error: ', err);
-        res.sendStatus(500);
+        res.send({}).status(500);
       }
     })
   
@@ -196,6 +197,35 @@ async function main() {
         .orderBy('post.created', 'desc');
       
       res.send(posts);
+    })
+  
+    /**
+     * delete a draft for logged in user
+     */
+    app.delete('/draft/:id', async (req, res) => {
+      const { id } = req.params;
+      const [post] = await knex('post')
+        .whereNull('published')
+        .andWhere({
+          'user_id': req.loggedInUser.id,
+          id,
+        });
+      
+      if (!post) {
+        res.send({}).status(404);
+        return;
+      }
+      /**
+       * DANGER ZONE
+       */
+      await knex('content_node')
+        .where('post_id', id)
+        .del();
+      await knex('post')
+        .where('id', id)
+        .del();
+    
+      res.send({}).status(204);
     })
     
     app.listen(3001)

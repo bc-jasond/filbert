@@ -42,3 +42,15 @@ export async function apiPost(url, data) {
     throw err;
   }
 }
+
+export async function apiDelete(url) {
+  try {
+    const config = getBaseConfig();
+    config.method = 'DELETE';
+    const response = await fetch(`${API_URL}${url}`, config);
+    return response.json();
+  } catch (err) {
+    console.error('Fetch DELETE Error: ', err);
+    throw err;
+  }
+}
