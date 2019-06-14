@@ -101,7 +101,7 @@ export default class ContentNode extends React.PureComponent {
        * NON-RECURSIVE SECTIONS
        */
       case NODE_TYPE_SECTION_SPACER:
-        return (<SpacerSection />);
+        return (<SpacerSection data-type={node.get('type')} name={node.get('id')} />);
       case NODE_TYPE_SECTION_CODE:
         const lines = node
           .get('meta', Map())

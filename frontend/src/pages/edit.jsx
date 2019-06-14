@@ -29,7 +29,7 @@ import {
   UP_ARROW,
   DOWN_ARROW,
   LEFT_ARROW,
-  RIGHT_ARROW,
+  RIGHT_ARROW, NODE_TYPE_SECTION_SPACER,
 } from '../common/constants';
 
 import ContentNode from '../common/content-node.component';
@@ -50,7 +50,7 @@ const lineMixin = css`
   display: block;
   content: '';
   height: 2px;
-  width: 24px;
+  width: 20px;
   background-color: ${grey};
   transition: transform .2s ease-in-out;
 `;
@@ -171,7 +171,11 @@ export default class EditPost extends React.Component {
     // optimistically save updated nodes
     this.saveContentBatch();
     // roll with state changes TODO: roll back on save failure?
-    this.setState({ allNodesByParentId: this.allNodesByParentIdStaging }, () => {
+    this.setState({
+      allNodesByParentId: this.allNodesByParentIdStaging,
+      shouldShowInsertMenu: false,
+      insertMenuIsOpen: false
+    }, () => {
       setCaret(focusElementId, placeCaretAtBeginning);
       this.allNodesByParentIdStaging = Map();
     })
@@ -254,6 +258,7 @@ export default class EditPost extends React.Component {
     this.current = this.siblings
       .find(node => node.get('id') === this.nodeId);
     this.currentIdx = this.siblings.indexOf(this.current);
+    this.currentIsLastSibling = this.currentIdx === this.siblings.size - 1;
     this.prevSibling = this.siblings.get(this.currentIdx - 1);
   }
   
@@ -382,7 +387,7 @@ export default class EditPost extends React.Component {
     const sel = window.getSelection();
     const range = sel.getRangeAt(0);
     
-    if (range.collapsed && !this.activeElementHasContent()) {
+    if (range.collapsed && this.activeType === NODE_TYPE_P && !this.activeElementHasContent()) {
       this.setState({
         shouldShowInsertMenu: true,
         insertMenuTopOffset: this.activeElement.offsetTop,
@@ -391,7 +396,7 @@ export default class EditPost extends React.Component {
       return;
     }
     
-    this.setState({ shouldShowInsertMenu: false });
+    this.setState({ shouldShowInsertMenu: false, insertMenuIsOpen: false });
   }
   
   handleKeyDown = evt => {
@@ -416,6 +421,30 @@ export default class EditPost extends React.Component {
     });
   }
   
+  insertSpacer = () => {
+    const {
+      root,
+      allNodesByParentId,
+    } = this.state;
+    const newSpacerSection = this.getMapWithId({ type: NODE_TYPE_SECTION_SPACER, parent_id: root.get('id') });
+    const newContentSection = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT, parent_id: root.get('id') });
+    const newP = this.getMapWithId({ type: NODE_TYPE_P, parent_id: newContentSection.get('id')});
+    // TODO: add placeholder subsection for Content, etc
+    const currentSectionIdx = allNodesByParentId
+      .get(root.get('id'))
+      .findIndex(node => node.get('id') === this.parentId);
+    // this.current is last child, insert new section after
+    if (this.currentIsLastSibling) {
+      this.updateParentList(this.parentId, null, this.currentIdx);
+      this.updateParentList(root.get('id'), newSpacerSection, currentSectionIdx + 1);
+      this.updateParentList(root.get('id'), newContentSection, currentSectionIdx + 2);
+      this.updateParentList(newContentSection.get('id'), newP);
+      this.commitUpdates(newP.get('id'));
+      return;
+    }
+    // TODO: this.current isn't last child?  Split current section
+  }
+  
   render() {
     const {
       root,
@@ -431,7 +460,8 @@ export default class EditPost extends React.Component {
     
     return !root ? null : (
       <React.Fragment>
-        <div onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} onMouseUp={this.handleMouseUp} contentEditable={true}>
+        <div onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} onMouseUp={this.handleMouseUp}
+             contentEditable={true}>
           <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
         </div>
         <InsertSectionMenu name="insert-section-menu" isOpen={insertMenuIsOpen}
@@ -445,7 +475,7 @@ export default class EditPost extends React.Component {
             <InsertSectionItem>photo</InsertSectionItem>
             <InsertSectionItem>code</InsertSectionItem>
             <InsertSectionItem>list</InsertSectionItem>
-            <InsertSectionItem>spacer</InsertSectionItem>
+            <InsertSectionItem onClick={this.insertSpacer}>spacer</InsertSectionItem>
             <InsertSectionItem>quote</InsertSectionItem>
             <InsertSectionItem>post link</InsertSectionItem>
           </InsertSectionMenuItemsContainer>
