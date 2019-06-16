@@ -234,7 +234,7 @@ export default class EditPost extends React.Component {
   isFirstChild(nodeId) {}
   isLastChild(nodeId) {}
   
-  deleteFromParent(parentId, node = null, idx = -1) {
+  deleteFromParent(parentId, node = null, idx = -1, shouldRecurse = true) {
     let shouldUpdateFocusNodeId = false;
     let children = this.allNodes().get(parentId, List());
     if (node === null && idx === -1) {
@@ -252,36 +252,50 @@ export default class EditPost extends React.Component {
     }
     this.updatedNodes[deletedNode.get('id')] = { action: 'delete', node: deletedNode };
     children = children.delete(idx);
-    // keep deleting empty parent sections
-    while (children.size === 0) {
-      // delete the parent list
-      this.allNodesByParentIdStaging = this.allNodes().delete(parentId)
-      // delete the parent from it's parent
-      children = this.allNodes().get(this.getParent(parentId).get('id'))
-      idx = children.findIndex(n => n.get('id') === parentId);
-      const deletedNode = children.get(idx);
-      this.updatedNodes[deletedNode.get('id')] = { action: 'delete', node: deletedNode };
-      children = children.delete(idx)
-      parentId = this.getParent(parentId).get('id');
-    }
-    // delete section before?
-    if (idx > 0) {
-      shouldUpdateFocusNodeId = true;
-      const prevSection = children.get(idx - 1);
-      if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
-        this.updatedNodes[prevSection.get('id')] = { action: 'delete', node: prevSection };
-        children = children.delete(idx - 1);
+    if (shouldRecurse) {
+      // keep deleting empty parent sections
+      while (children.size === 0) {
+        // delete the parent list
+        this.allNodesByParentIdStaging = this.allNodes().delete(parentId)
+        // delete the parent from it's parent
+        children = this.allNodes().get(this.getParent(parentId).get('id'))
+        idx = children.findIndex(n => n.get('id') === parentId);
+        const deletedNode = children.get(idx);
+        this.updatedNodes[deletedNode.get('id')] = { action: 'delete', node: deletedNode };
+        children = children.delete(idx)
+        parentId = this.getParent(parentId).get('id');
       }
-    }
-    if (shouldUpdateFocusNodeId) {
-      this.focusLastChild(children);
+      // delete section before?
+      if (idx > 0) {
+        shouldUpdateFocusNodeId = true;
+        const prevSection = children.get(idx - 1);
+        if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+          this.updatedNodes[prevSection.get('id')] = { action: 'delete', node: prevSection };
+          children = children.delete(idx - 1);
+        }
+      }
+      if (shouldUpdateFocusNodeId) {
+        this.focusLastChild(children);
+      }
     }
     // reindex 'position' for all children, also set postId TODO: clean this up
     children = children.map((child, idx) => child.set('position', idx).set('post_id', this.props.postId));
     this.allNodesByParentIdStaging = this.allNodes().set(parentId, children);
   }
   
-  updateParentList(parentId, node, idx = -1) {
+  updateNodeInPlace(parentId, node) {
+    let children = this.allNodes().get(parentId, List());
+    const idx = children.find(n => n.get('id') === node.get('id'));
+    // replace at index
+    children = children.set(idx, node);
+    this.updatedNodes[node.get('id')] = {
+      action: 'update',
+      node,
+    };
+    this.allNodesByParentIdStaging = this.allNodes().set(parentId, children);
+  }
+  
+  insertNodeIntoParentList(parentId, node, idx = -1) {
     let children = this.allNodes().get(parentId, List());
     node = node.set('parent_id', parentId);
     if (idx === -1) {
@@ -310,23 +324,20 @@ export default class EditPost extends React.Component {
   /**
    * update/sync current model and DOM
    */
-  updateActiveElement() {
-    const { allNodesByParentId } = this.state;
-    // TODO: fix this - assuming that there's only one child and it's a text node
-    const textNode = allNodesByParentId
-      .get(this.current.get('id'), List([
+  // TODO: fix this - assuming that there's only one child and it's a text node
+  updateElementContent(nodeId) {
+    let textNode = this.allNodes()
+      .get(nodeId, List([
         this.getMapWithId({
           type: NODE_TYPE_TEXT,
-          parent_id: this.current.get('id'),
+          parent_id: nodeId,
           position: 0
         })
       ]))
       .first();
-    this.updateParentList(this.current.get('id'), textNode.set('content', cleanText(this.activeElement.textContent)));
-    // if there was existing content, clear the DOM to avoid duplication
-    if (textNode.get('content', '').length > 0) {
-      this.activeElement.textContent = '';
-    }
+    textNode = textNode.set('content', cleanText(this.activeElement.textContent));
+    this.deleteFromParent(nodeId, null, 0, false)
+    this.insertNodeIntoParentList(nodeId, textNode)
   }
   
   resetDomAndModelReferences() {
@@ -427,12 +438,10 @@ export default class EditPost extends React.Component {
         .first();
       // merged text node
       const mergedSiblingLastChild = prevSiblingLastChild.set('content', cleanText(`${prevSiblingLastChild.get('content')}${currentFirstChild.get('content')}`));
-      // remove original text node
-      this.deleteFromParent(this.prevSibling.get('id'), null, 0);
-      // add merged text node to P tag
-      this.updateParentList(this.prevSibling.get('id'), mergedSiblingLastChild);
+      // replace original text node
+      this.updateNodeInPlace(this.prevSibling.get('id'), mergedSiblingLastChild);
       // remove 'deleted' P tag
-      this.deleteFromParent(this.parentId, null, this.currentIdx);
+      this.deleteFromParent(this.parentId, null, this.currentIdx, false);
       this.focusNodeId = this.prevSibling.get('id');
       this.commitUpdates();
     }
@@ -452,7 +461,7 @@ export default class EditPost extends React.Component {
     
     this.resetDomAndModelReferences();
     
-    this.updateActiveElement();
+    this.updateElementContent(this.current.get('id'));
     
     /**
      * insert a new element, default to P tag
@@ -460,7 +469,7 @@ export default class EditPost extends React.Component {
     const p = this.getMapWithId({ type: NODE_TYPE_P });
     this.focusNodeId = p.get('id');
     if (this.activeType === NODE_TYPE_P) {
-      this.updateParentList(this.parentId, p, this.currentIdx + 1);
+      this.insertNodeIntoParentList(this.parentId, p, this.currentIdx + 1);
       this.commitUpdates();
       return;
     }
@@ -469,11 +478,11 @@ export default class EditPost extends React.Component {
       if (!nextSibling) {
         // create a ContentSection
         const content = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT });
-        this.updateParentList(content.get('id'), p, 0);
-        this.updateParentList(root.get('id'), content);
+        this.insertNodeIntoParentList(content.get('id'), p, 0);
+        this.insertNodeIntoParentList(root.get('id'), content);
       } else {
         // update existing ContentSection
-        this.updateParentList(nextSibling.get('id'), p, 0);
+        this.insertNodeIntoParentList(nextSibling.get('id'), p, 0);
       }
       this.commitUpdates();
       return;
@@ -523,6 +532,9 @@ export default class EditPost extends React.Component {
     });
   }
   
+  /**
+   * INSERT SECTIONS
+   */
   insertSpacer = () => {
     const {
       root,
@@ -538,9 +550,9 @@ export default class EditPost extends React.Component {
     // this.current is last child, insert new section after
     if (this.currentIsLastSibling) {
       this.deleteFromParent(this.parentId, null, this.currentIdx);
-      this.updateParentList(root.get('id'), newSpacerSection, currentSectionIdx + 1);
-      this.updateParentList(root.get('id'), newContentSection, currentSectionIdx + 2);
-      this.updateParentList(newContentSection.get('id'), newP);
+      this.insertNodeIntoParentList(root.get('id'), newSpacerSection, currentSectionIdx + 1);
+      this.insertNodeIntoParentList(root.get('id'), newContentSection, currentSectionIdx + 2);
+      this.insertNodeIntoParentList(newContentSection.get('id'), newP);
       this.focusNodeId = newP.get('id');
       this.commitUpdates();
       return;

@@ -241,7 +241,7 @@ export default class NewPost extends React.Component {
     if (shouldRedirectWithId) return (<Redirect to={`/edit/${postId}`} />);
     
     return !root ? null : (
-      <div onKeyDown={this.handleChange} contentEditable={true}>
+      <div onKeyDown={this.handleChange} contentEditable={true} suppressContentEditableWarning={true}>
         <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
       </div>
     );
