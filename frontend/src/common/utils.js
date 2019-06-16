@@ -25,7 +25,8 @@ export function getMapWithId(obj) {
 
 export function cleanText(text) {
   const re = new RegExp(ZERO_LENGTH_CHAR);
-  return text.trim().replace(re, '');
+  const cleaned = text.trim().replace(re, '');
+  return cleaned.length > 0 ? cleaned : ZERO_LENGTH_CHAR;
 }
 
 export function hasContent() {

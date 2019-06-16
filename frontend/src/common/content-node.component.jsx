@@ -87,6 +87,7 @@ export default class ContentNode extends React.PureComponent {
       node,
       allNodesByParentId,
     } = this.props;
+    console.debug('getChildNodes', allNodesByParentId.get(node.get('id')))
     return allNodesByParentId
       .get(node.get('id'), List([Map({ type: NODE_TYPE_TEXT, id: 'foo', content: ZERO_LENGTH_CHAR })]))
       .map(child => (<ContentNode key={child.get('id')} node={child} allNodesByParentId={allNodesByParentId} />))

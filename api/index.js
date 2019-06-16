@@ -1,4 +1,3 @@
-const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
 // const util = require('util');  for util.inspect()
@@ -158,7 +157,7 @@ async function main() {
     })
     
     /**
-     * takes a list of 1 or more content nodes
+     * takes a list of 1 or more content nodes to update and/or delete for a post
      */
     app.post('/content', async (req, res) => {
       try {
@@ -200,7 +199,7 @@ async function main() {
     })
   
     /**
-     * delete a draft for logged in user
+     * delete a draft (and content nodes) for logged in user
      */
     app.delete('/draft/:id', async (req, res) => {
       const { id } = req.params;
@@ -216,7 +215,7 @@ async function main() {
         return;
       }
       /**
-       * DANGER ZONE
+       * DANGER ZONE!!!
        */
       await knex('content_node')
         .where('post_id', id)

@@ -29,7 +29,7 @@ import {
   UP_ARROW,
   DOWN_ARROW,
   LEFT_ARROW,
-  RIGHT_ARROW, NODE_TYPE_SECTION_SPACER,
+  RIGHT_ARROW, NODE_TYPE_SECTION_SPACER, ZERO_LENGTH_CHAR,
 } from '../common/constants';
 
 import ContentNode from '../common/content-node.component';
@@ -56,7 +56,7 @@ const lineMixin = css`
 `;
 const InsertSectionMenuButton = styled.button`
   position: absolute;
-  top: 16px;
+  top: 18px;
   z-index: 3;
   width: 24px;
   height: 24px;
@@ -81,7 +81,7 @@ const InsertSectionMenuButton = styled.button`
 `;
 const InsertSectionMenuItemsContainer = styled.div`
   position: absolute;
-  top: 16px;
+  top: 18px;
   height: 24px;
   left: 48px;
   display: block;
@@ -115,12 +115,17 @@ export default class EditPost extends React.Component {
     try {
       await this.loadPost();
     } catch (err) {
-      console.log('EDIT - load post error:', err);
+      console.error('EDIT - load post error:', err);
     }
   }
   
   allNodesByParentIdStaging = Map();
   updatedNodes = {}; // TODO: add a debounced save timer per element
+  focusNodeId;
+  
+  allNodes() {
+    return this.allNodesByParentIdStaging.size > 0 ? this.allNodesByParentIdStaging : this.state.allNodesByParentId;
+  }
   
   /**
    * get content from textNode child
@@ -143,7 +148,7 @@ export default class EditPost extends React.Component {
       this.updatedNodes = {};
       console.info('Save Batch', result);
     } catch (err) {
-      console.log('Content Batch Update Error: ', err);
+      console.error('Content Batch Update Error: ', err);
     }
   }
   
@@ -154,17 +159,26 @@ export default class EditPost extends React.Component {
       // TODO: don't use 'null' as root node indicator
       const root = allNodesByParentId.get('null').get(0);
       // TODO: write a 'getFirstNode' method
-      const firstNode = allNodesByParentId.get(root.get('id')).get(0);
+      this.focusLastChild(allNodesByParentId.get(root.get('id')));
       this.setState({ root, allNodesByParentId, shouldShow404: false }, () => {
-        setCaret(firstNode.get('id'), true)
+        setCaret(this.focusNodeId)
       })
     } catch (err) {
-      console.log(err);
+      console.error(err);
       this.setState({ root: null, allNodesByParentId: Map(), shouldShow404: true })
     }
   }
   
-  commitUpdates(focusElementId, placeCaretAtBeginning = false) {
+  focusLastChild(children) {
+    let currentLast = children.last().get('id');
+    while (this.allNodes().get(currentLast, List()).size > 0) {
+      if (this.getNode(currentLast).get('type') === NODE_TYPE_P) break;
+      currentLast = this.allNodes().get(currentLast).last().get('id')
+    }
+    this.focusNodeId = currentLast;
+  }
+  
+  commitUpdates(placeCaretAtBeginning = false) {
     if (this.allNodesByParentIdStaging.size === 0) {
       return;
     }
@@ -176,45 +190,121 @@ export default class EditPost extends React.Component {
       shouldShowInsertMenu: false,
       insertMenuIsOpen: false
     }, () => {
-      setCaret(focusElementId, placeCaretAtBeginning);
+      setCaret(this.focusNodeId, placeCaretAtBeginning);
       this.allNodesByParentIdStaging = Map();
+      this.manageInsertMenu();
     })
   }
   
-  updateParentList(parentId, node = null, idx = -1) {
-    const allNodesByParentId = this.allNodesByParentIdStaging.size > 0 ? this.allNodesByParentIdStaging : this.state.allNodesByParentId;
-    let children = allNodesByParentId.get(parentId, List());
-    if (node === null && idx === -1) {
-      throw new Error('updateParentList - must provide either a node or an index');
+  getNode(nodeId) {
+    const { root } = this.state;
+    if (root.get('id') === nodeId) return root;
+    
+    const queue = [this.state.root.get('id')]
+    while (queue.length) {
+      const currentList = this.allNodes().get(queue.shift(), List());
+      const node = currentList.find(node => node.get('id') === nodeId);
+      if (node) {
+        return node;
+      }
+      currentList.forEach(n => {
+        queue.push(n.get('id'));
+      })
     }
-    if (node === null) {
+    return null;
+  }
+  
+  getParent(nodeId) {
+    const queue = [this.state.root.get('id')]
+    while (queue.length) {
+      const parentId = queue.shift();
+      const currentList = this.allNodes().get(parentId, List());
+      const node = currentList.find(node => node.get('id') === nodeId);
+      if (node) {
+        return this.getNode(parentId);
+      }
+      currentList.forEach(n => {
+        queue.push(n.get('id'));
+      })
+    }
+    return null;
+  }
+  getNextSibling(nodeId) {}
+  getPrevSibling(nodeId) {}
+  isFirstChild(nodeId) {}
+  isLastChild(nodeId) {}
+  
+  deleteFromParent(parentId, node = null, idx = -1) {
+    let shouldUpdateFocusNodeId = false;
+    let children = this.allNodes().get(parentId, List());
+    if (node === null && idx === -1) {
+      throw new Error('deleteFromParent - must provide either a node or an index');
+    }
+    if (idx === -1) {
       // delete a node at idx
       // TODO: is this the last child of `parentId` ?  Then remove parent from it's parent list?
+      idx = children.findIndex(n => n.get('id') === node.get('id'))
+    }
+    // find node and delete it from children
+    const deletedNode = children.get(idx)
+    if (!deletedNode) {
+      throw new Error('deleteFromParent - node not found!');
+    }
+    this.updatedNodes[deletedNode.get('id')] = { action: 'delete', node: deletedNode };
+    children = children.delete(idx);
+    // keep deleting empty parent sections
+    while (children.size === 0) {
+      // delete the parent list
+      this.allNodesByParentIdStaging = this.allNodes().delete(parentId)
+      // delete the parent from it's parent
+      children = this.allNodes().get(this.getParent(parentId).get('id'))
+      idx = children.findIndex(n => n.get('id') === parentId);
       const deletedNode = children.get(idx);
       this.updatedNodes[deletedNode.get('id')] = { action: 'delete', node: deletedNode };
       children = children.delete(idx)
-    } else if (idx === -1) {
-      // push to end of list
-      this.updatedNodes[node.get('id')] = {
-        action: 'update',
-        node: node.set('parent_id', parentId).set('position', children.size)
-      };
+      parentId = this.getParent(parentId).get('id');
+    }
+    // delete section before?
+    if (idx > 0) {
+      shouldUpdateFocusNodeId = true;
+      const prevSection = children.get(idx - 1);
+      if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+        this.updatedNodes[prevSection.get('id')] = { action: 'delete', node: prevSection };
+        children = children.delete(idx - 1);
+      }
+    }
+    if (shouldUpdateFocusNodeId) {
+      this.focusLastChild(children);
+    }
+    // reindex 'position' for all children, also set postId TODO: clean this up
+    children = children.map((child, idx) => child.set('position', idx).set('post_id', this.props.postId));
+    this.allNodesByParentIdStaging = this.allNodes().set(parentId, children);
+  }
+  
+  updateParentList(parentId, node, idx = -1) {
+    let children = this.allNodes().get(parentId, List());
+    node = node.set('parent_id', parentId);
+    if (idx === -1) {
+      // push to end
+      node = node.set('position', children.size);
       children = children.push(node);
     } else {
       // insert at index
-      this.updatedNodes[node.get('id')] = {
-        action: 'update',
-        node: node.set('parent_id', parentId).set('position', idx)
-      };
+      node = node.set('position', idx)
       children = children.insert(idx, node);
     }
+    this.updatedNodes[node.get('id')] = {
+      action: 'update',
+      node,
+    };
     // reindex 'position' for all children, set postId TODO: clean this up
     children = children.map((child, idx) => child.set('position', idx).set('post_id', this.props.postId));
-    this.allNodesByParentIdStaging = allNodesByParentId.set(parentId, children);
+    this.allNodesByParentIdStaging = this.allNodes().set(parentId, children);
   }
   
   activeElementHasContent() {
-    return cleanText(this.activeElement.textContent).length > 0;
+    const cleaned = cleanText(this.activeElement.textContent)
+    return cleaned.length > 0 && cleaned.charAt(0) !== ZERO_LENGTH_CHAR;
   }
   
   /**
@@ -240,7 +330,6 @@ export default class EditPost extends React.Component {
   }
   
   resetDomAndModelReferences() {
-    const { allNodesByParentId } = this.state;
     /**
      * DOM refs
      */
@@ -253,7 +342,7 @@ export default class EditPost extends React.Component {
     /**
      * MODEL refs
      */
-    this.siblings = allNodesByParentId
+    this.siblings = this.allNodes()
       .get(this.parentId, List());
     this.current = this.siblings
       .find(node => node.get('id') === this.nodeId);
@@ -285,28 +374,41 @@ export default class EditPost extends React.Component {
     evt.preventDefault();
     
     if (!this.activeElementHasContent()) {
-      // current element (P tag) is 'empty', just remove it
-      this.updateParentList(this.parentId, null, this.currentIdx);
-      this.commitUpdates(this.prevSibling.get('id'));
+      this.focusNodeId = this.prevSibling.get('id');
+      // current element (P tag) is 'empty'
+      this.deleteFromParent(this.parentId, this.current);
+      this.commitUpdates();
       return;
     }
     
     /**
-     * first child of root (h1)? OR first child of first ContentSection of root? -> noop()
+     * first child of root (h1)?
      */
     if (this.parentType === NODE_TYPE_ROOT) {
       return;
     }
+
+    /**
+     * first child of first ContentSection of root? -> noop()
+     */
     if (this.parentType === NODE_TYPE_SECTION_CONTENT) {
       const isFirstRootChild = allNodesByParentId.get(root.get('id'))
-        .findIndex(node => node.get('id') === this.parentType) === 0;
+        .findIndex(node => node.get('id') === this.parentId) === 0;
       if (isFirstRootChild) {
         return;
       }
     }
     
     /**
-     * first child of Section?
+     * only child of Section? --> delete current section (and previous section if it's 'special')
+     */
+    if (this.currentIdx === 0 && this.siblings.size === 1) {
+      
+      return;
+    }
+  
+    /**
+     * first child of section - merge, if previous section
      */
     if (this.currentIdx === 0) {
       // TODO - merge sections
@@ -326,12 +428,13 @@ export default class EditPost extends React.Component {
       // merged text node
       const mergedSiblingLastChild = prevSiblingLastChild.set('content', cleanText(`${prevSiblingLastChild.get('content')}${currentFirstChild.get('content')}`));
       // remove original text node
-      this.updateParentList(this.prevSibling.get('id'), null, 0);
+      this.deleteFromParent(this.prevSibling.get('id'), null, 0);
       // add merged text node to P tag
       this.updateParentList(this.prevSibling.get('id'), mergedSiblingLastChild);
       // remove 'deleted' P tag
-      this.updateParentList(this.parentId, null, this.currentIdx);
-      this.commitUpdates(this.prevSibling.get('id'));
+      this.deleteFromParent(this.parentId, null, this.currentIdx);
+      this.focusNodeId = this.prevSibling.get('id');
+      this.commitUpdates();
     }
   }
   
@@ -355,9 +458,10 @@ export default class EditPost extends React.Component {
      * insert a new element, default to P tag
      */
     const p = this.getMapWithId({ type: NODE_TYPE_P });
+    this.focusNodeId = p.get('id');
     if (this.activeType === NODE_TYPE_P) {
       this.updateParentList(this.parentId, p, this.currentIdx + 1);
-      this.commitUpdates(p.get('id'));
+      this.commitUpdates();
       return;
     }
     if (this.activeType === NODE_TYPE_SECTION_H1) {
@@ -371,17 +475,12 @@ export default class EditPost extends React.Component {
         // update existing ContentSection
         this.updateParentList(nextSibling.get('id'), p, 0);
       }
-      this.commitUpdates(p.get('id'));
+      this.commitUpdates();
       return;
     }
   }
   
-  handleInsertMenu = (evt) => {
-    if (evt.type !== 'mouseup'
-      && (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW].includes(evt.keyCode))) {
-      return;
-    }
-    
+  manageInsertMenu() {
     this.resetDomAndModelReferences();
     
     const sel = window.getSelection();
@@ -405,11 +504,14 @@ export default class EditPost extends React.Component {
   }
   
   handleKeyUp = evt => {
-    this.handleInsertMenu(evt);
+    if (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW].includes(evt.keyCode)) {
+      return;
+    }
+    this.manageInsertMenu();
   }
   
-  handleMouseUp = evt => {
-    this.handleInsertMenu(evt);
+  handleMouseUp = () => {
+    this.manageInsertMenu();
   }
   
   toggleInsertMenu = () => {
@@ -435,11 +537,12 @@ export default class EditPost extends React.Component {
       .findIndex(node => node.get('id') === this.parentId);
     // this.current is last child, insert new section after
     if (this.currentIsLastSibling) {
-      this.updateParentList(this.parentId, null, this.currentIdx);
+      this.deleteFromParent(this.parentId, null, this.currentIdx);
       this.updateParentList(root.get('id'), newSpacerSection, currentSectionIdx + 1);
       this.updateParentList(root.get('id'), newContentSection, currentSectionIdx + 2);
       this.updateParentList(newContentSection.get('id'), newP);
-      this.commitUpdates(newP.get('id'));
+      this.focusNodeId = newP.get('id');
+      this.commitUpdates();
       return;
     }
     // TODO: this.current isn't last child?  Split current section
@@ -461,7 +564,7 @@ export default class EditPost extends React.Component {
     return !root ? null : (
       <React.Fragment>
         <div onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} onMouseUp={this.handleMouseUp}
-             contentEditable={true}>
+             contentEditable={true} suppressContentEditableWarning={true}>
           <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
         </div>
         <InsertSectionMenu name="insert-section-menu" isOpen={insertMenuIsOpen}
