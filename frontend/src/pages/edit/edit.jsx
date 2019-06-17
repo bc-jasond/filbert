@@ -1,12 +1,12 @@
 import React from 'react';
 import { List, Map } from 'immutable';
-import EditPipeline from '../../common/edit-pipeline';
+import EditPipeline from './edit-pipeline';
 import {
   apiGet,
   apiPost,
 } from '../../common/fetch';
 import {
-  cleanText,
+  cleanText, hasContent,
 } from '../../common/utils';
 import {
   getCaretNode,
@@ -69,6 +69,7 @@ export default class EditPost extends React.Component {
     try {
       const updated = this.editPipeline.updates();
       if (updated.length === 0) return;
+      console.info('Save Batch', updated);
       const result = await apiPost('/content', updated);
       this.editPipeline.clearUpdates();
       console.info('Save Batch', result);
@@ -88,6 +89,7 @@ export default class EditPost extends React.Component {
         shouldShow404: false
       }, () => {
         setCaret(this.focusNodeId)
+        this.manageInsertMenu();
       })
     } catch (err) {
       console.error(err);
@@ -118,29 +120,35 @@ export default class EditPost extends React.Component {
     if (evt.keyCode !== BACKSPACE_KEY) {
       return;
     }
-    
-    const {
-      root,
-      nodesByParentId
-    } = this.state;
+  
+    const selectedNode = getCaretNode();
+    const selectedNodeId = getCaretNodeId();
+    const selectedNodeType = getCaretNodeType();
+    const selectedNodeContent = cleanText(selectedNode.textContent);
+  
+    console.info('BACKSPACE node ', selectedNode);
+    console.info('BACKSPACE node content ', selectedNodeContent);
     
     const sel = window.getSelection();
     const range = sel.getRangeAt(0);
     
-    if (range.startOffset > 0 && this.activeElementHasContent()) {
+    if (range.startOffset > 0 && hasContent(selectedNodeContent)) {
       // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
       return
     }
+    
     evt.stopPropagation();
     evt.preventDefault();
     
-    if (!this.activeElementHasContent()) {
-      this.focusNodeId = this.prevSibling.get('id');
-      // current element (P tag) is 'empty'
-      this.deleteFromParent(this.parentId, this.current);
+    // not the first child and empty, just a simple remove
+    if (!hasContent(selectedNodeContent) && !this.editPipeline.isOnlyChild(selectedNodeId)) {
+      this.focusNodeId = this.editPipeline.getPrevSibling(selectedNodeId);
+      this.editPipeline.delete(selectedNodeId);
       this.commitUpdates();
       return;
     }
+    
+    return;
     
     /**
      * first child of root (h1)?
@@ -205,36 +213,41 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     
-    /**
-     * sync content from selected DOM node to the model
-     */
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
     const selectedNodeType = getCaretNodeType();
     const selectedNodeContent = cleanText(selectedNode.textContent);
     
-    console.info('selected node ', selectedNode);
-    console.info('selected node content ', selectedNodeContent);
-    
-    this.editPipeline.updateFromDom(selectedNodeId, selectedNodeContent);
+    console.info('ENTER node ', selectedNode);
+    console.info('ENTER node content ', selectedNodeContent);
+  
+    /**
+     * sync content from selected DOM node to the model
+     */
+    this.editPipeline.replaceTextSection(selectedNodeId, selectedNodeContent);
     
     /**
      * insert a new element, default to P tag
      */
     if (selectedNodeType === NODE_TYPE_P) {
-      this.focusNodeId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P);
+      const pId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P);
+      this.editPipeline.replaceTextSection(pId, ZERO_LENGTH_CHAR);
+      this.focusNodeId = pId;
     }
     if (selectedNodeType === NODE_TYPE_SECTION_H1) {
       const nextSibling = this.editPipeline.getNextSibling(selectedNodeId);
-      if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
-        // add to existing content section
-        this.focusNodeId = this.editPipeline.insertSubSection(nextSibling.get('id'), NODE_TYPE_P, 0);
+      let nextSiblingId;
+      if (nextSibling && nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
+        nextSiblingId = nextSibling.get('id');
       } else {
         // create a ContentSection
         const contentSectionId = this.editPipeline.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
-        // create a P
-        this.focusNodeId = this.editPipeline.insertSubSection(contentSectionId, NODE_TYPE_P, 0);
+        nextSiblingId = contentSectionId.get('id');
       }
+      // add to existing content section
+      const pId = this.editPipeline.insertSubSection(nextSiblingId, NODE_TYPE_P, 0);
+      this.editPipeline.replaceTextSection(pId, ZERO_LENGTH_CHAR);
+      this.focusNodeId = pId;
     }
     this.commitUpdates();
   }

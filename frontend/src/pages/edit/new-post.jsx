@@ -32,18 +32,18 @@ export default class NewPost extends React.Component {
     this.state = {
       postId: null,
       root: null,
-      allNodesByParentId: Map(),
+      nodesByParentId: Map(),
       shouldRedirectWithId: false,
     }
   }
   
   async componentDidMount() {
-    const { allNodesByParentId } = this.state;
+    const { nodesByParentId } = this.state;
     const root = getMapWithId({ type: NODE_TYPE_ROOT });
     const h1 = getMapWithId({ type: NODE_TYPE_SECTION_H1, parent_id: root.get('id') });
     this.setState({
       root,
-      allNodesByParentId: allNodesByParentId
+      nodesByParentId: nodesByParentId
         .set('null', List([root]))
         .set(root.get('id'), List([h1]))
     }, () => {
@@ -58,26 +58,26 @@ export default class NewPost extends React.Component {
    * get content from textNode child
    */
   getContent(parentId) {
-    const { allNodesByParentId } = this.state;
+    const { nodesByParentId } = this.state;
     // TODO: DFS through nodes until a NODE_TYPE_TEXT is reached
-    return allNodesByParentId.get(parentId).get(0).get('content');
+    return nodesByParentId.get(parentId).get(0).get('content');
   }
   
   saveNewPost = async () => {
     const {
       root,
-      allNodesByParentId
+      nodesByParentId
     } = this.state;
     // get title from H1
     // TODO: might not be first child...
-    const headingId = allNodesByParentId.get(root.get('id')).get(0).get('id');
+    const headingId = nodesByParentId.get(root.get('id')).get(0).get('id');
     const title = this.getContent(headingId);
     // get canonical
     const canonical = title;
     // POST to /post
     const { postId } = await apiPost('/post', { title, canonical });
-    // forEach allNodesByParentId, update postId, position - add to updatedNodes batch list
-    Object.entries(allNodesByParentId.toJS()).forEach(([parentId, children]) => {
+    // forEach nodesByParentId, update postId, position - add to updatedNodes batch list
+    Object.entries(nodesByParentId.toJS()).forEach(([parentId, children]) => {
       children.forEach((childNode, idx) => {
         childNode.post_id = postId;
         childNode.position = idx;
@@ -106,7 +106,7 @@ export default class NewPost extends React.Component {
     if (!this.history.length) {
       return;
     }
-    this.setState({ allNodesByParentId: this.history.pop() }, () => {
+    this.setState({ nodesByParentId: this.history.pop() }, () => {
       this.history = [];
       // create a new post and redirect
       this.saveNewPost();
@@ -114,8 +114,8 @@ export default class NewPost extends React.Component {
   }
   
   updateParentList(parentId, node = null, idx = -1) {
-    const allNodesByParentId = this.history.pop() || this.state.allNodesByParentId;
-    const children = allNodesByParentId.get(parentId, List());
+    const nodesByParentId = this.history.pop() || this.state.nodesByParentId;
+    const children = nodesByParentId.get(parentId, List());
     if (node === null && idx === -1) {
       throw new Error('updateParentList - must provide either a node or an index');
     }
@@ -123,15 +123,15 @@ export default class NewPost extends React.Component {
       // delete a node at idx
       // TODO: is this the last child of `parentId` ?  Then remove parent from it's parent list
       // TODO: reindex 'position' for all children
-      this.history.push(allNodesByParentId.set(parentId, children.delete(idx)))
+      this.history.push(nodesByParentId.set(parentId, children.delete(idx)))
       return;
     }
     if (idx === -1) {
       // push to end of list
-      this.history.push(allNodesByParentId.set(parentId, children.push(node)))
+      this.history.push(nodesByParentId.set(parentId, children.push(node)))
       return
     }
-    this.history.push(allNodesByParentId.set(parentId, children.insert(idx, node)));
+    this.history.push(nodesByParentId.set(parentId, children.insert(idx, node)));
     // TODO: reindex 'position'
   }
   
@@ -143,9 +143,9 @@ export default class NewPost extends React.Component {
    * update/sync current model and DOM
    */
   updateActiveElement() {
-    const { allNodesByParentId } = this.state;
+    const { nodesByParentId } = this.state;
     // TODO: fix this - assuming that there's only one child and it's a text node
-    const textNode = allNodesByParentId
+    const textNode = nodesByParentId
       .get(this.current.get('id'), List([
         getMapWithId({
           type: NODE_TYPE_TEXT,
@@ -162,7 +162,7 @@ export default class NewPost extends React.Component {
   }
   
   resetDomAndModelReferences() {
-    const { allNodesByParentId } = this.state;
+    const { nodesByParentId } = this.state;
     /**
      * DOM refs
      */
@@ -175,7 +175,7 @@ export default class NewPost extends React.Component {
     /**
      * MODEL refs
      */
-    this.siblings = allNodesByParentId
+    this.siblings = nodesByParentId
       .get(this.parentId, List());
     this.current = this.siblings
       .find(node => node.get('id') === this.nodeId);
@@ -234,7 +234,7 @@ export default class NewPost extends React.Component {
     const {
       postId,
       root,
-      allNodesByParentId,
+      nodesByParentId,
       shouldRedirectWithId,
     } = this.state;
     
@@ -242,7 +242,7 @@ export default class NewPost extends React.Component {
     
     return !root ? null : (
       <div onKeyDown={this.handleChange} contentEditable={true} suppressContentEditableWarning={true}>
-        <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
+        <ContentNode node={root} nodesByParentId={nodesByParentId} />
       </div>
     );
   }

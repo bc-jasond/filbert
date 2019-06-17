@@ -5,8 +5,8 @@ import {
   NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_H2, NODE_TYPE_SECTION_IMAGE,
   NODE_TYPE_SECTION_POSTLINK, NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER, NODE_TYPE_TEXT
-} from './constants';
-import { getMapWithId } from './utils';
+} from '../../common/constants';
+import { getMapWithId } from '../../common/utils';
 
 export default class EditPipeline {
   post;
@@ -58,15 +58,27 @@ export default class EditPipeline {
     return siblings.get(idx + 1);
   }
   
-  getPrevSibling(nodeId) {}
+  getPrevSibling(nodeId) {
+    const parent = this.getParent(nodeId);
+    const siblings = this.nodesByParentId.get(parent.get('id'));
+    const idx = siblings.findIndex(s => s.get('id') === nodeId);
+    return siblings.get(idx - 1);
+  }
   
-  isFirstChild(nodeId) {}
+  isFirstChild(nodeId) {
+    const parent = this.getParent(nodeId);
+    const siblings = this.nodesByParentId.get(parent.get('id'));
+    return siblings.first().get('id') === nodeId;
+  }
   
   isLastChild(nodeId) {
     const parent = this.getParent(nodeId);
     const siblings = this.nodesByParentId.get(parent.get('id'));
-    const idx = siblings.findIndex(s => s.get('id') === nodeId);
-    return idx === (siblings.size - 1);
+    return siblings.last().get('id') === nodeId;
+  }
+  
+  isOnlyChild(nodeId) {
+    return this.isFirstChild(nodeId) && this.isLastChild(nodeId);
   }
   
   isSectionType(node) {
@@ -83,23 +95,6 @@ export default class EditPipeline {
   }
   
   canHaveChildren(nodeId) {}
-  
-  updateFromDom(nodeId, content) {
-    const children = this.nodesByParentId.get(nodeId, List());
-    let textNode;
-    console.info('updateFromDom nodeId, children', nodeId, children);
-    if (children.size === 0) {
-      // add a new text node
-      textNode = this.getMapWithId({ type: NODE_TYPE_TEXT, parent_id: nodeId, position: 0, content })
-    } else {
-      // update existing text node
-      textNode = children.first();
-      console.info('updateFromDom existing node', textNode)
-      textNode = textNode.set('content', content);
-    }
-    this.nodeUpdates[textNode.get('id')] = { action: 'update', node: textNode };
-    this.nodesByParentId = this.nodesByParentId.set(nodeId, List([textNode]));
-  }
   
   insertSectionAfter(sectionId, type) {
     // parent must be root
@@ -127,6 +122,23 @@ export default class EditPipeline {
   }
   
   updateSection(node) {}
+  
+  replaceTextSection(nodeId, content) {
+    const children = this.nodesByParentId.get(nodeId, List());
+    let textNode;
+    console.info('updateFromDom nodeId, children', nodeId, children);
+    if (children.size === 0) {
+      // add a new text node
+      textNode = this.getMapWithId({ type: NODE_TYPE_TEXT, parent_id: nodeId, position: 0, content })
+    } else {
+      // update existing text node
+      textNode = children.first();
+      console.info('updateFromDom existing node', textNode)
+      textNode = textNode.set('content', content);
+    }
+    this.nodeUpdates[textNode.get('id')] = { action: 'update', node: textNode };
+    this.nodesByParentId = this.nodesByParentId.set(nodeId, List([textNode]));
+  }
   
   insertSubSectionAfter(siblingId, type) {
     const parentId = this.getParent(siblingId).get('id');
@@ -170,13 +182,7 @@ export default class EditPipeline {
       // reindex positions for remaining siblings
       .map((node, idx) => node.set('position', idx))
     );
-    
-    let children = this.nodesByParentId.get(nodeId, List());
-    const queue = [...children.map(c => c.get('id')).toJS()];
-    while (queue.length) {
-      const currentId = queue.shift();
-      this.delete(currentId);
-    }
+    this.pruneEmptyAndOrphanedParents();
   }
   
   getLastChildForCaret(parent) {
@@ -189,8 +195,8 @@ export default class EditPipeline {
     return currentLastId;
   }
   
-  pruneEmptyParents() {
-    this.nodesByParentId = this.nodesByParentId.filter(children => children.size > 0);
+  pruneEmptyAndOrphanedParents() {
+    this.nodesByParentId = this.nodesByParentId.filter((children, id) => (children.size > 0 && this.getNode(id)));
   }
   
   updates() {
