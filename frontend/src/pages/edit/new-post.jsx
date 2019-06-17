@@ -3,15 +3,15 @@ import { Redirect } from 'react-router-dom';
 import { List, Map } from 'immutable';
 import {
   apiPost,
-} from '../common/fetch';
+} from '../../common/fetch';
 import {
   getMapWithId,
   cleanText,
-} from '../common/utils';
+} from '../../common/utils';
 import {
   getCaretNode,
   setCaret,
-} from '../common/dom';
+} from '../../common/dom';
 
 import {
   NODE_TYPE_ROOT,
@@ -21,9 +21,9 @@ import {
   NODE_TYPE_P,
   ENTER_KEY,
   BACKSPACE_KEY,
-} from '../common/constants';
+} from '../../common/constants';
 
-import ContentNode from '../common/content-node.component';
+import ContentNode from '../../common/content-node.component';
 
 export default class NewPost extends React.Component {
   constructor(props) {

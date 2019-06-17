@@ -40,3 +40,13 @@ export function getCaretNode() {
   }
   return commonAncestorContainer;
 }
+
+export function getCaretNodeType() {
+  const selectedNode = getCaretNode();
+  return selectedNode.dataset.type;
+}
+
+export function getCaretNodeId() {
+  const selectedNode = getCaretNode();
+  return selectedNode.getAttribute('name');
+}
