@@ -28,15 +28,16 @@ async function bulkContentNodeUpsert(records) {
   
   const values = [];
   
-  records.forEach(record => {
+  records.forEach(([nodeId, update]) => {
+    const { post_id, node } = update;
     values.push([
-      record.post_id,
-      record.id,
-      record.parent_id !== 'null' ? record.parent_id : null,
-      record.position,
-      record.type,
-      record.content || null,
-      JSON.stringify(record.meta || {}),
+      post_id,
+      nodeId,
+      node.parent_id !== 'null' ? node.parent_id : null,
+      node.position,
+      node.type,
+      node.content || null,
+      JSON.stringify(node.meta || {}),
     ]);
   });
   
@@ -46,8 +47,8 @@ async function bulkContentNodeUpsert(records) {
 async function bulkContentNodeDelete(records) {
   // delete all records WHERE id IN (...recordIds) OR WHERE parent_id IN (...recordIds)
   if (records.length === 0) return;
-  const postId = records[0].post_id;
-  const recordIds = records.map(r => r.id);
+  const postId = records[0][1].post_id;
+  const recordIds = records.map(r => r[0]);
   const knexInstance = await getKnex();
   return knexInstance('content_node')
     .where('post_id', postId)

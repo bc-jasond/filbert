@@ -70,19 +70,23 @@ export default class EditPost extends React.Component {
   }
   
   editPipeline = new EditPipeline();
+  commitTimeoutId;
   focusNodeId;
   
-  saveContentBatch = async () => {
-    try {
-      const updated = this.editPipeline.updates();
-      if (updated.length === 0) return;
-      console.info('Save Batch', updated);
-      const result = await apiPost('/content', updated);
-      this.editPipeline.clearUpdates();
-      console.info('Save Batch result', result);
-    } catch (err) {
-      console.error('Content Batch Update Error: ', err);
-    }
+  saveContentBatch() {
+    clearTimeout(this.commitTimeoutId);
+    this.commitTimeoutId = setTimeout(async () => {
+      try {
+        const updated = this.editPipeline.updates();
+        if (updated.length === 0) return;
+        console.info('Save Batch', updated);
+        const result = await apiPost('/content', updated);
+        this.editPipeline.clearUpdates();
+        console.info('Save Batch result', result);
+      } catch (err) {
+        console.error('Content Batch Update Error: ', err);
+      }
+    }, 1000);
   }
   
   newPost() {
@@ -174,10 +178,10 @@ export default class EditPost extends React.Component {
     
     evt.stopPropagation();
     evt.preventDefault();
-  
+    
     /**
      * not an only child and empty, just a simple remove
-      */
+     */
     if (!hasContent(selectedNodeContent) && !this.editPipeline.isFirstChild(selectedNodeId)) {
       this.focusNodeId = this.editPipeline.getPrevSibling(selectedNodeId).get('id');
       console.info('BACKSPACE remove empty node - focus node ', this.focusNodeId);
@@ -206,7 +210,7 @@ export default class EditPost extends React.Component {
     
     evt.stopPropagation();
     evt.preventDefault();
-  
+    
     const sel = window.getSelection();
     const range = sel.getRangeAt(0);
     

@@ -32,7 +32,7 @@ export default class EditPipeline {
     } else {
       this.root = getMapWithId({ type: NODE_TYPE_ROOT, parent_id: ROOT_NODE_PARENT_ID, position: 0 });
       this.rootId = this.root.get('id');
-      this.nodeUpdates = this.nodeUpdates.set(this.rootId, Map({ action: 'update', node: this.root }));
+      this.nodeUpdates = this.nodeUpdates.set(this.rootId, Map({ action: 'update' }));
       this.nodesByParentId = this.nodesByParentId.set(ROOT_NODE_PARENT_ID, List([this.root]));
     }
   }
@@ -111,6 +111,14 @@ export default class EditPipeline {
   
   canHaveChildren(nodeId) {}
   
+  stageNodeUpdate(nodeId) {
+    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: 'update', post_id: this.post.get('id') }));
+  }
+  
+  stageNodeDelete(nodeId) {
+    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: 'delete', post_id: this.post.get('id') }));
+  }
+  
   insertSectionAfter(sectionId, type) {
     // parent must be root
     const sections = this.nodesByParentId.get(this.rootId, List());
@@ -148,7 +156,7 @@ export default class EditPipeline {
       console.info('updateFromDom existing node', textNode)
       textNode = textNode.set('content', content);
     }
-    this.nodeUpdates = this.nodeUpdates.set(textNode.get('id'), Map({ action: 'update', node: textNode }));
+    this.stageNodeUpdate(textNode.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(nodeId, List([textNode]));
   }
   
@@ -168,7 +176,7 @@ export default class EditPipeline {
       parent_id: parentId,
       position: index,
     });
-    this.nodeUpdates = this.nodeUpdates.set(newNode.get('id'), Map({ action: 'update', node: newNode }));
+    this.stageNodeUpdate(newNode.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
       .insert(newNode.get('position'), newNode)
     );
@@ -183,7 +191,7 @@ export default class EditPipeline {
    */
   delete(nodeId) {
     // mark this node deleted
-    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: 'delete', node: this.getNode(nodeId) }));
+    this.stageNodeDelete(nodeId);
     const parentId = this.getParent(nodeId).get('id');
     const siblings = this.nodesByParentId.get(parentId);
     // filter this node out of the parent list
@@ -197,14 +205,16 @@ export default class EditPipeline {
   
   updateNodesForParent(parentId) {
     const siblings = this.nodesByParentId.get(parentId);
-    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
+    this.nodesByParentId = this.nodesByParentId.set(
+      parentId,
+      siblings
       // reindex positions for remaining siblings
-      .map((node, idx) => node.set('position', idx))
+        .map((node, idx) => node.set('position', idx))
     );
     // since positions have changed, update all nodes for this parent
     // TODO: make this smarter, maybe it's worth it
     this.nodesByParentId.get(parentId).forEach(node => {
-      this.nodeUpdates = this.nodeUpdates.set(node.get('id'), Map({ action: 'update', node }));
+      this.stageNodeUpdate(node.get('id'));
     });
   }
   
@@ -219,7 +229,16 @@ export default class EditPipeline {
   }
   
   pruneEmptyAndOrphanedParents() {
-    this.nodesByParentId = this.nodesByParentId.filter((children, id) => (children.size > 0 && this.getNode(id)));
+    this.nodesByParentId = this.nodesByParentId.filter(
+      (children, id) => {
+        if (id === ROOT_NODE_PARENT_ID || (children.size > 0 && this.getNode(id))) {
+          return true;
+        } else {
+          this.stageNodeDelete(id);
+          return false;
+        }
+      }
+    );
   }
   
   addPostIdToUpdates(postId) {
@@ -227,7 +246,11 @@ export default class EditPipeline {
   }
   
   updates() {
-    return Object.values(this.nodeUpdates.toJS());
+    return Object.entries(
+      this.nodeUpdates
+        .map((update, nodeId) => update.set('node', this.getNode(nodeId)))
+        .toJS()
+    );
   }
   
   clearUpdates() {

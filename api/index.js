@@ -161,8 +161,8 @@ async function main() {
      */
     app.post('/content', async (req, res) => {
       try {
-        const updates = req.body.filter(change => change.action === 'update').map(change => change.node);
-        const deletes = req.body.filter(change => change.action === 'delete').map(change => change.node);
+        const updates = req.body.filter(change => change[1].action === 'update');
+        const deletes = req.body.filter(change => change[1].action === 'delete');
         // TODO: put in transaction?
         const updateResult = await bulkContentNodeUpsert(updates);
         const deleteResult = await bulkContentNodeDelete(deletes);
