@@ -1,4 +1,4 @@
-import { NODE_TYPE_SECTION_CONTENT } from './constants';
+import { NODE_TYPE_SECTION_CONTENT, NODE_TYPE_SECTION_H1 } from './constants';
 
 export function setCaret(nodeId, shouldPlaceAtBeginning = false) {
   const [containerNode] = document.getElementsByName(nodeId);
@@ -49,4 +49,9 @@ export function getCaretNodeType() {
 export function getCaretNodeId() {
   const selectedNode = getCaretNode();
   return selectedNode.getAttribute('name');
+}
+
+export function getFirstHeadingContent() {
+  const [h1] = document.querySelectorAll(`[data-type='${NODE_TYPE_SECTION_H1}']`);
+  return h1.textContent;
 }

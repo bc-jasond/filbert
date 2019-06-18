@@ -1,5 +1,6 @@
 import React from 'react';
-import { List, Map } from 'immutable';
+import Immutable, { List, Map } from 'immutable';
+import { Redirect } from 'react-router-dom';
 import EditPipeline from './edit-pipeline';
 import {
   apiGet,
@@ -11,7 +12,7 @@ import {
 import {
   getCaretNode,
   getCaretNodeId,
-  getCaretNodeType,
+  getCaretNodeType, getFirstHeadingContent,
   setCaret,
 } from '../../common/dom';
 
@@ -26,7 +27,7 @@ import {
   UP_ARROW,
   DOWN_ARROW,
   LEFT_ARROW,
-  RIGHT_ARROW, NODE_TYPE_SECTION_SPACER, ZERO_LENGTH_CHAR,
+  RIGHT_ARROW, NODE_TYPE_SECTION_SPACER, ZERO_LENGTH_CHAR, NEW_POST_URL_ID, ROOT_NODE_PARENT_ID,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -47,6 +48,7 @@ export default class EditPost extends React.Component {
       nodesByParentId: Map(),
       root: null,
       shouldShow404: false,
+      shouldRedirectWithId: false,
       shouldShowInsertMenu: false,
       insertMenuIsOpen: false,
       insertMenuTopOffset: 0,
@@ -56,7 +58,12 @@ export default class EditPost extends React.Component {
   
   async componentDidMount() {
     try {
-      await this.loadPost();
+      const { postId } = this.props;
+      if (postId === NEW_POST_URL_ID) {
+        this.newPost();
+      } else {
+        await this.loadPost();
+      }
     } catch (err) {
       console.error('EDIT - load post error:', err);
     }
@@ -72,23 +79,47 @@ export default class EditPost extends React.Component {
       console.info('Save Batch', updated);
       const result = await apiPost('/content', updated);
       this.editPipeline.clearUpdates();
-      console.info('Save Batch', result);
+      console.info('Save Batch result', result);
     } catch (err) {
       console.error('Content Batch Update Error: ', err);
     }
+  }
+  
+  newPost() {
+    const postPlaceholder = Map({ id: NEW_POST_URL_ID });
+    this.editPipeline.init(postPlaceholder);
+    const focusNodeId = this.editPipeline.insertSection(NODE_TYPE_SECTION_H1, 0);
+    this.setState({
+      root: this.editPipeline.nodesByParentId.get(ROOT_NODE_PARENT_ID).first(),
+      nodesByParentId: this.editPipeline.nodesByParentId,
+    }, () => {
+      setCaret(focusNodeId);
+    });
+  }
+  
+  saveNewPost = async () => {
+    const title = getFirstHeadingContent();
+    // get canonical
+    const canonical = title;
+    // POST to /post
+    const { postId } = await apiPost('/post', { title, canonical });
+    // update post id for all updates
+    this.editPipeline.addPostIdToUpdates(postId);
+    await this.saveContentBatch();
+    this.setState({ shouldRedirectWithId: postId })
   }
   
   loadPost = async () => {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
       this.editPipeline.init(post, contentNodes);
-      this.focusNodeId = this.editPipeline.getLastChildForCaret(this.editPipeline.root);
+      const focusNodeId = this.editPipeline.getLastChildForCaret(this.editPipeline.root);
       this.setState({
         root: this.editPipeline.root,
         nodesByParentId: this.editPipeline.nodesByParentId,
         shouldShow404: false
       }, () => {
-        setCaret(this.focusNodeId)
+        setCaret(focusNodeId)
         this.manageInsertMenu();
       })
     } catch (err) {
@@ -97,9 +128,7 @@ export default class EditPost extends React.Component {
     }
   }
   
-  commitUpdates(placeCaretAtBeginning = false) {
-    // optimistically save updated nodes - look ma, no errors!
-    this.saveContentBatch();
+  commitUpdates = async (placeCaretAtBeginning = false) => {
     // roll with state changes TODO: roll back on save failure?
     this.setState({
       nodesByParentId: this.editPipeline.nodesByParentId,
@@ -108,7 +137,14 @@ export default class EditPost extends React.Component {
     }, () => {
       setCaret(this.focusNodeId, placeCaretAtBeginning);
       this.manageInsertMenu();
-    })
+    });
+    
+    if (this.props.postId === NEW_POST_URL_ID) {
+      await this.saveNewPost();
+      return;
+    }
+    // optimistically save updated nodes - look ma, no errors!
+    await this.saveContentBatch();
   }
   
   activeElementHasContent() {
@@ -120,12 +156,12 @@ export default class EditPost extends React.Component {
     if (evt.keyCode !== BACKSPACE_KEY) {
       return;
     }
-  
+    
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
     const selectedNodeType = getCaretNodeType();
     const selectedNodeContent = cleanText(selectedNode.textContent);
-  
+    
     console.info('BACKSPACE node ', selectedNode);
     console.info('BACKSPACE node content ', selectedNodeContent);
     
@@ -220,7 +256,7 @@ export default class EditPost extends React.Component {
     
     console.info('ENTER node ', selectedNode);
     console.info('ENTER node content ', selectedNodeContent);
-  
+    
     /**
      * sync content from selected DOM node to the model
      */
@@ -241,8 +277,7 @@ export default class EditPost extends React.Component {
         nextSiblingId = nextSibling.get('id');
       } else {
         // create a ContentSection
-        const contentSectionId = this.editPipeline.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
-        nextSiblingId = contentSectionId.get('id');
+        nextSiblingId = this.editPipeline.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
       }
       // add to existing content section
       const pId = this.editPipeline.insertSubSection(nextSiblingId, NODE_TYPE_P, 0);
@@ -276,9 +311,9 @@ export default class EditPost extends React.Component {
   }
   
   handleKeyUp = evt => {
-    if (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW].includes(evt.keyCode)) {
-      return;
-    }
+    // if (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW, BACKSPACE_KEY].includes(evt.keyCode)) {
+    //   return;
+    // }
     console.info('Selected Node: ', getCaretNode())
     this.manageInsertMenu();
   }
@@ -329,6 +364,7 @@ export default class EditPost extends React.Component {
       root,
       nodesByParentId,
       shouldShow404,
+      shouldRedirectWithId,
       shouldShowInsertMenu,
       insertMenuIsOpen,
       insertMenuTopOffset,
@@ -336,6 +372,7 @@ export default class EditPost extends React.Component {
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
+    if (shouldRedirectWithId) return (<Redirect to={`/edit/${shouldRedirectWithId}`} />);
     
     return !root ? null : (
       <React.Fragment>

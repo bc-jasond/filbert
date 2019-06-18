@@ -1,5 +1,6 @@
 import React from 'react';
 import Immutable from 'immutable';
+import { ROOT_NODE_PARENT_ID } from '../common/constants';
 import { apiGet } from '../common/fetch';
 
 import Page404 from './404';
@@ -22,7 +23,7 @@ export default class ViewPost extends React.Component {
       const { post, contentNodes } = await apiGet(`/post/${this.props.postId}`);
       const allNodesByParentId = Immutable.fromJS(contentNodes);
       // TODO: don't use 'null' as root node indicator
-      const root = allNodesByParentId.get('null').get(0);
+      const root = allNodesByParentId.get(ROOT_NODE_PARENT_ID).get(0);
       this.setState({ root, allNodesByParentId, shouldShow404: false })
     } catch (err) {
       console.log(err);

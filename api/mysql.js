@@ -32,7 +32,7 @@ async function bulkContentNodeUpsert(records) {
     values.push([
       record.post_id,
       record.id,
-      record.parent_id || null,
+      record.parent_id !== 'null' ? record.parent_id : null,
       record.position,
       record.type,
       record.content || null,

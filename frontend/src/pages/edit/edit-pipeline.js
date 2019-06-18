@@ -1,10 +1,18 @@
 import Immutable, { List, Map } from 'immutable';
 import {
-  NODE_TYPE_P, NODE_TYPE_SECTION_CODE,
+  NEW_POST_URL_ID,
+  NODE_TYPE_P,
+  NODE_TYPE_ROOT,
+  NODE_TYPE_SECTION_CODE,
   NODE_TYPE_SECTION_CONTENT,
-  NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_H2, NODE_TYPE_SECTION_IMAGE,
-  NODE_TYPE_SECTION_POSTLINK, NODE_TYPE_SECTION_QUOTE,
-  NODE_TYPE_SECTION_SPACER, NODE_TYPE_TEXT
+  NODE_TYPE_SECTION_H1,
+  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_SECTION_IMAGE,
+  NODE_TYPE_SECTION_POSTLINK,
+  NODE_TYPE_SECTION_QUOTE,
+  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_TEXT,
+  ROOT_NODE_PARENT_ID,
 } from '../../common/constants';
 import { getMapWithId } from '../../common/utils';
 
@@ -13,17 +21,24 @@ export default class EditPipeline {
   root;
   rootId;
   nodesByParentId = Map();
-  nodeUpdates = {}; // keyed off of nodeId to avoid duplication TODO: add a debounced save timer per element
+  nodeUpdates = Map(); // keyed off of nodeId to avoid duplication TODO: add a debounced save timer per element
   
-  init(post, jsonData) {
+  init(post, jsonData = null) {
     this.post = Immutable.fromJS(post);
-    this.nodesByParentId = Immutable.fromJS(jsonData);
-    this.root = this.nodesByParentId.get('null').first();
-    this.rootId = this.root.get('id');
+    if (jsonData) {
+      this.nodesByParentId = Immutable.fromJS(jsonData);
+      this.root = this.nodesByParentId.get(ROOT_NODE_PARENT_ID).first();
+      this.rootId = this.root.get('id');
+    } else {
+      this.root = getMapWithId({ type: NODE_TYPE_ROOT, parent_id: ROOT_NODE_PARENT_ID, position: 0 });
+      this.rootId = this.root.get('id');
+      this.nodeUpdates = this.nodeUpdates.set(this.rootId, Map({ action: 'update', node: this.root }));
+      this.nodesByParentId = this.nodesByParentId.set(ROOT_NODE_PARENT_ID, List([this.root]));
+    }
   }
   
   getMapWithId(obj) {
-    return getMapWithId(obj).set('post_id', this.post.get('id'));
+    return getMapWithId(obj).set('post_id', this.post.get('id', NEW_POST_URL_ID));
   }
   
   getNode(nodeId) {
@@ -98,7 +113,7 @@ export default class EditPipeline {
   
   insertSectionAfter(sectionId, type) {
     // parent must be root
-    const sections = this.nodesByParentId.get(this.rootId);
+    const sections = this.nodesByParentId.get(this.rootId, List());
     const siblingIndex = sections.findIndex(s => s.get('id') === sectionId);
     if (siblingIndex === -1) {
       const errorMessage = 'insertSectionAfter - sibling section not found';
@@ -110,13 +125,13 @@ export default class EditPipeline {
   
   insertSection(type, index = -1) {
     // parent must be root
-    const sections = this.nodesByParentId.get(this.rootId);
+    const sections = this.nodesByParentId.get(this.rootId, List());
     let newSection = this.getMapWithId({
       type,
       parent_id: this.rootId,
       position: (index === -1 ? sections.size : index)
     })
-    this.nodeUpdates[newSection.get('id')] = { action: 'update', node: newSection };
+    this.nodeUpdates = this.nodeUpdates.set(newSection.get('id'), Map({ action: 'update', node: newSection }));
     this.nodesByParentId = this.nodesByParentId.set(this.rootId, sections.insert(newSection.get('position'), newSection));
     return newSection.get('id');
   }
@@ -136,32 +151,32 @@ export default class EditPipeline {
       console.info('updateFromDom existing node', textNode)
       textNode = textNode.set('content', content);
     }
-    this.nodeUpdates[textNode.get('id')] = { action: 'update', node: textNode };
+    this.nodeUpdates = this.nodeUpdates.set(textNode.get('id'), Map({ action: 'update', node: textNode }));
     this.nodesByParentId = this.nodesByParentId.set(nodeId, List([textNode]));
   }
   
   insertSubSectionAfter(siblingId, type) {
     const parentId = this.getParent(siblingId).get('id');
-    const siblings = this.nodesByParentId.get(parentId);
+    const siblings = this.nodesByParentId.get(parentId, List);
     const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
     let newSubSection = this.getMapWithId({
       type,
       parent_id: parentId,
       position: siblingIdx + 1,
     })
-    this.nodeUpdates[newSubSection.get('id')] = { action: 'update', node: newSubSection };
+    this.nodeUpdates = this.nodeUpdates.set(newSubSection.get('id'), Map({ action: 'update', node: newSubSection }));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.insert(newSubSection.get('position'), newSubSection));
     return newSubSection.get('id');
   }
   
   insertSubSection(parentId, type, index) {
-    const siblings = this.nodesByParentId.get(parentId);
+    const siblings = this.nodesByParentId.get(parentId, List());
     let newSubSection = this.getMapWithId({
       type,
       parent_id: parentId,
       position: index,
     })
-    this.nodeUpdates[newSubSection.get('id')] = { action: 'update', node: newSubSection };
+    this.nodeUpdates = this.nodeUpdates.set(newSubSection.get('id'), Map({ action: 'update', node: newSubSection }));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.insert(newSubSection.get('position'), newSubSection));
     return newSubSection.get('id');
   }
@@ -173,7 +188,7 @@ export default class EditPipeline {
    */
   delete(nodeId) {
     // mark this node deleted
-    this.nodeUpdates[nodeId] = { action: 'delete', node: this.getNode(nodeId) };
+    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: 'delete', node: this.getNode(nodeId) }));
     const parentId = this.getParent(nodeId).get('id');
     const siblings = this.nodesByParentId.get(parentId);
     // filter this node out of the parent list
@@ -199,14 +214,18 @@ export default class EditPipeline {
     this.nodesByParentId = this.nodesByParentId.filter((children, id) => (children.size > 0 && this.getNode(id)));
   }
   
+  addPostIdToUpdates(postId) {
+    this.nodeUpdates = this.nodeUpdates.map(update => update.setIn(['node', 'post_id'], postId));
+  }
+  
   updates() {
-    return Object.values(this.nodeUpdates);
+    return Object.values(this.nodeUpdates.toJS());
   }
   
   clearUpdates() {
-    if (Object.values(this.nodeUpdates).length > 0) {
+    if (this.nodeUpdates.size > 0) {
       console.warn('Edit Pipeline - clearing non-empty update pipeline', this.nodeUpdates);
     }
-    this.nodeUpdates = {};
+    this.nodeUpdates = Map();
   }
 }

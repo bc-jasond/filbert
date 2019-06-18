@@ -26,6 +26,7 @@ export const NODE_TYPE_STRIKE = 'strike';
 // EDITOR
 // TODO: this is a placeholder to be able to set the caret in an empty tag
 export const NEW_POST_URL_ID = 'new';
+export const ROOT_NODE_PARENT_ID = 'null';
 export const ZERO_LENGTH_CHAR = '\u200B';
 export const ENTER_KEY = 13;
 export const BACKSPACE_KEY = 8;

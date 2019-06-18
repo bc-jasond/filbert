@@ -7,7 +7,6 @@ import {
   Route,
   Redirect,
 } from 'react-router-dom';
-import { NEW_POST_URL_ID } from './common/constants';
 
 // GLOBAL CSS HERE
 import CssReset from './reset.css';
@@ -20,7 +19,6 @@ import ListAllPosts from './pages/list-all-posts';
 import ViewPost from './pages/view-post';
 import SignIn from './pages/signin';
 import EditPost from './pages/edit/edit';
-import NewPost from './pages/edit/new-post';
 
 const App = () => (
   <React.Fragment>
@@ -51,7 +49,7 @@ const App = () => (
         <Route path="/edit/:id" render={(props) =>
            (
             <PageLayout key={props.match.params.id} {...props}>
-              {props.match.params.id === NEW_POST_URL_ID ? <NewPost /> : <EditPost postId={props.match.params.id}/>}
+              <EditPost postId={props.match.params.id}/>
             </PageLayout>
           )}
         />
