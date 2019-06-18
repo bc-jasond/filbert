@@ -12,7 +12,7 @@ import {
 import {
   getCaretNode,
   getCaretNodeId,
-  getCaretNodeType, getFirstHeadingContent,
+  getCaretNodeType, getCaretOffset, getFirstHeadingContent,
   setCaret,
 } from '../../common/dom';
 
@@ -128,23 +128,22 @@ export default class EditPost extends React.Component {
     }
   }
   
-  commitUpdates = async (placeCaretAtBeginning = false) => {
+  commitUpdates = async (offset = -1) => {
+    if (this.props.postId === NEW_POST_URL_ID) {
+      await this.saveNewPost();
+    } else {
+      // optimistically save updated nodes - look ma, no errors!
+      await this.saveContentBatch();
+    }
     // roll with state changes TODO: roll back on save failure?
     this.setState({
       nodesByParentId: this.editPipeline.nodesByParentId,
       shouldShowInsertMenu: false,
       insertMenuIsOpen: false
     }, () => {
-      setCaret(this.focusNodeId, placeCaretAtBeginning);
+      setCaret(this.focusNodeId, offset);
       this.manageInsertMenu();
     });
-    
-    if (this.props.postId === NEW_POST_URL_ID) {
-      await this.saveNewPost();
-      return;
-    }
-    // optimistically save updated nodes - look ma, no errors!
-    await this.saveContentBatch();
   }
   
   activeElementHasContent() {
@@ -175,69 +174,28 @@ export default class EditPost extends React.Component {
     
     evt.stopPropagation();
     evt.preventDefault();
-    
-    // not the first child and empty, just a simple remove
+  
+    /**
+     * not an only child and empty, just a simple remove
+      */
     if (!hasContent(selectedNodeContent) && !this.editPipeline.isOnlyChild(selectedNodeId)) {
-      this.focusNodeId = this.editPipeline.getPrevSibling(selectedNodeId);
+      this.focusNodeId = this.editPipeline.getPrevSibling(selectedNodeId).get('id');
+      console.info('BACKSPACE remove empty node - focus node ', this.focusNodeId);
       this.editPipeline.delete(selectedNodeId);
       this.commitUpdates();
       return;
     }
     
-    return;
-    
     /**
-     * first child of root (h1)?
+     * merge siblings (P tags only so far)
      */
-    if (this.parentType === NODE_TYPE_ROOT) {
-      return;
-    }
-    
-    /**
-     * first child of first ContentSection of root? -> noop()
-     */
-    if (this.parentType === NODE_TYPE_SECTION_CONTENT) {
-      const isFirstRootChild = nodesByParentId.get(root.get('id'))
-        .findIndex(node => node.get('id') === this.parentId) === 0;
-      if (isFirstRootChild) {
-        return;
-      }
-    }
-    
-    /**
-     * only child of Section? --> delete current section (and previous section if it's 'special')
-     */
-    if (this.currentIdx === 0 && this.siblings.size === 1) {
-      
-      return;
-    }
-    
-    /**
-     * first child of section - merge, if previous section
-     */
-    if (this.currentIdx === 0) {
-      // TODO - merge sections
-      return;
-    }
-    
-    /**
-     * merge sibling (P tags only so far)
-     */
-    if (this.activeElementHasContent()) {
-      const prevSiblingLastChild = nodesByParentId
-        .get(this.prevSibling.get('id'))
-        .last();
-      const currentFirstChild = nodesByParentId
-        .get(this.current.get('id'), List([Map({ type: NODE_TYPE_TEXT, content: this.activeElement.textContent })]))
-        .first();
-      // merged text node
-      const mergedSiblingLastChild = prevSiblingLastChild.set('content', cleanText(`${prevSiblingLastChild.get('content')}${currentFirstChild.get('content')}`));
-      // replace original text node
-      this.updateNodeInPlace(this.prevSibling.get('id'), mergedSiblingLastChild);
-      // remove 'deleted' P tag
-      this.deleteFromParent(this.parentId, null, this.currentIdx, false);
-      this.focusNodeId = this.prevSibling.get('id');
-      this.commitUpdates();
+    if (hasContent(selectedNodeContent) && !this.editPipeline.isFirstChild(selectedNodeId)) {
+      const prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
+      const prevSiblingText = this.editPipeline.getText(prevSibling.get('id'));
+      this.editPipeline.replaceTextNode(prevSibling.get('id'), `${prevSiblingText}${selectedNodeContent}`);
+      this.editPipeline.delete(selectedNodeId);
+      this.focusNodeId = prevSibling.get('id');
+      this.commitUpdates(prevSiblingText.length);
     }
   }
   
@@ -260,14 +218,14 @@ export default class EditPost extends React.Component {
     /**
      * sync content from selected DOM node to the model
      */
-    this.editPipeline.replaceTextSection(selectedNodeId, selectedNodeContent);
+    this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent);
     
     /**
      * insert a new element, default to P tag
      */
     if (selectedNodeType === NODE_TYPE_P) {
       const pId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P);
-      this.editPipeline.replaceTextSection(pId, ZERO_LENGTH_CHAR);
+      this.editPipeline.replaceTextNode(pId, ZERO_LENGTH_CHAR);
       this.focusNodeId = pId;
     }
     if (selectedNodeType === NODE_TYPE_SECTION_H1) {
@@ -280,8 +238,8 @@ export default class EditPost extends React.Component {
         nextSiblingId = this.editPipeline.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
       }
       // add to existing content section
-      const pId = this.editPipeline.insertSubSection(nextSiblingId, NODE_TYPE_P, 0);
-      this.editPipeline.replaceTextSection(pId, ZERO_LENGTH_CHAR);
+      const pId = this.editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0);
+      this.editPipeline.replaceTextNode(pId, ZERO_LENGTH_CHAR);
       this.focusNodeId = pId;
     }
     this.commitUpdates();
@@ -314,7 +272,7 @@ export default class EditPost extends React.Component {
     // if (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW, BACKSPACE_KEY].includes(evt.keyCode)) {
     //   return;
     // }
-    console.info('Selected Node: ', getCaretNode())
+    console.info('Selected Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.manageInsertMenu();
   }
   

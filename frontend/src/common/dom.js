@@ -1,29 +1,31 @@
 import { NODE_TYPE_SECTION_CONTENT, NODE_TYPE_SECTION_H1 } from './constants';
 
-export function setCaret(nodeId, shouldPlaceAtBeginning = false) {
+export function setCaret(nodeId, offset = -1) {
   const [containerNode] = document.getElementsByName(nodeId);
-  if (!containerNode) return;
+  if (!containerNode) {
+    console.warn('setCaret node not found ', nodeId);
+    return;
+  }
   // has a text node?
   const sel = window.getSelection();
   sel.removeAllRanges();
   const range = document.createRange();
-  if (shouldPlaceAtBeginning) {
-    range.setEnd(containerNode, 0);
+  // find text node, if present
+  const textNode = Array.prototype.reduce.call(
+    containerNode.childNodes,
+    (acc, child) => acc || (child.nodeType === 3 ? child : null),
+    null
+  );
+  if (textNode) {
+    console.info('setCaret textNode ', textNode, ' offset ', offset);
+    // set caret to end of text content
+    range.setEnd(textNode, offset === -1 ? textNode.textContent.length : offset);
   } else {
-    // find text node, if present
-    const textNode = Array.prototype.reduce.call(
-      containerNode.childNodes,
-      (acc, child) => acc || (child.nodeType === 3 ? child : null),
-      null
-    );
-    if (textNode) {
-      // set caret to end of text content
-      range.setEnd(textNode, textNode.textContent.length);
-    } else {
-      // set caret to last child - TODO: make recursive to find text node?
-      range.setEnd(containerNode, containerNode.childNodes.length - 1);
-    }
+    console.info('setCaret containerNode ', containerNode, ' offset ', offset);
+    // set caret to last child - TODO: make recursive to find text node?
+    range.setEnd(containerNode, offset === -1 ? containerNode.textContent.length : offset);
   }
+  
   range.collapse();
   sel.addRange(range);
 }
@@ -39,6 +41,12 @@ export function getCaretNode() {
     return commonAncestorContainer.lastChild;
   }
   return commonAncestorContainer;
+}
+
+export function getCaretOffset() {
+  const sel = window.getSelection();
+  const range = sel.getRangeAt(0)
+  return range.endOffset;
 }
 
 export function getCaretNodeType() {

@@ -120,25 +120,21 @@ export default class EditPipeline {
       console.error(errorMessage, sectionId);
       throw new Error(errorMessage);
     }
-    return this.insertSection(type, siblingIndex + 1);
+    return this.insert(this.rootId, type, siblingIndex + 1);
   }
   
   insertSection(type, index = -1) {
     // parent must be root
-    const sections = this.nodesByParentId.get(this.rootId, List());
-    let newSection = this.getMapWithId({
-      type,
-      parent_id: this.rootId,
-      position: (index === -1 ? sections.size : index)
-    })
-    this.nodeUpdates = this.nodeUpdates.set(newSection.get('id'), Map({ action: 'update', node: newSection }));
-    this.nodesByParentId = this.nodesByParentId.set(this.rootId, sections.insert(newSection.get('position'), newSection));
-    return newSection.get('id');
+    return this.insert(this.rootId, type, index);
   }
   
   updateSection(node) {}
   
-  replaceTextSection(nodeId, content) {
+  getText(nodeId) {
+    return this.nodesByParentId.get(nodeId).first().get('content');
+  }
+  
+  replaceTextNode(nodeId, content) {
     const children = this.nodesByParentId.get(nodeId, List());
     let textNode;
     console.info('updateFromDom nodeId, children', nodeId, children);
@@ -159,29 +155,26 @@ export default class EditPipeline {
     const parentId = this.getParent(siblingId).get('id');
     const siblings = this.nodesByParentId.get(parentId, List);
     const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
-    let newSubSection = this.getMapWithId({
-      type,
-      parent_id: parentId,
-      position: siblingIdx + 1,
-    })
-    this.nodeUpdates = this.nodeUpdates.set(newSubSection.get('id'), Map({ action: 'update', node: newSubSection }));
-    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.insert(newSubSection.get('position'), newSubSection));
-    return newSubSection.get('id');
-  }
-  
-  insertSubSection(parentId, type, index) {
-    const siblings = this.nodesByParentId.get(parentId, List());
-    let newSubSection = this.getMapWithId({
-      type,
-      parent_id: parentId,
-      position: index,
-    })
-    this.nodeUpdates = this.nodeUpdates.set(newSubSection.get('id'), Map({ action: 'update', node: newSubSection }));
-    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.insert(newSubSection.get('position'), newSubSection));
-    return newSubSection.get('id');
+    return this.insert(parentId, type, siblingIdx + 1);
   }
   
   updateSubSection(subSection) {}
+  
+  insert(parentId, type, index) {
+    const siblings = this.nodesByParentId.get(parentId, List());
+    let newNode = this.getMapWithId({
+      type,
+      parent_id: parentId,
+      position: index,
+    });
+    this.nodeUpdates = this.nodeUpdates.set(newNode.get('id'), Map({ action: 'update', node: newNode }));
+    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
+      .insert(newNode.get('position'), newNode)
+      // reindex positions for all siblings
+      .map((node, idx) => node.set('position', idx))
+    );
+    return newNode.get('id');
+  }
   
   /**
    * delete a node and all of it's children
