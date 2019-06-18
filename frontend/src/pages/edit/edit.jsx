@@ -1,5 +1,5 @@
 import React from 'react';
-import Immutable, { List, Map } from 'immutable';
+import { Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 import EditPipeline from './edit-pipeline';
 import {
@@ -86,7 +86,7 @@ export default class EditPost extends React.Component {
       } catch (err) {
         console.error('Content Batch Update Error: ', err);
       }
-    }, 1000);
+    }, 2000);
   }
   
   newPost() {
@@ -139,7 +139,7 @@ export default class EditPost extends React.Component {
       // optimistically save updated nodes - look ma, no errors!
       await this.saveContentBatch();
     }
-    // roll with state changes TODO: roll back on save failure?
+    // roll with state changes TODO: handle errors - roll back?
     this.setState({
       nodesByParentId: this.editPipeline.nodesByParentId,
       shouldShowInsertMenu: false,
@@ -180,7 +180,7 @@ export default class EditPost extends React.Component {
     evt.preventDefault();
     
     /**
-     * not an only child and empty, just a simple remove
+     * not a first child and empty, just a simple remove
      */
     if (!hasContent(selectedNodeContent) && !this.editPipeline.isFirstChild(selectedNodeId)) {
       this.focusNodeId = this.editPipeline.getPrevSibling(selectedNodeId).get('id');
@@ -257,6 +257,17 @@ export default class EditPost extends React.Component {
     this.commitUpdates(0);
   }
   
+  handleSyncFromDom = () => {
+    const selectedNode = getCaretNode();
+    const selectedNodeId = getCaretNodeId();
+    const selectedNodeContent = cleanText(selectedNode.textContent);
+    if (!this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent)) {
+      return;
+    }
+    this.focusNodeId = selectedNodeId;
+    this.saveContentBatch()
+  }
+  
   manageInsertMenu() {
     const selectedNode = getCaretNode();
     const selectedType = getCaretNodeType();
@@ -284,6 +295,7 @@ export default class EditPost extends React.Component {
     // if (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW, BACKSPACE_KEY].includes(evt.keyCode)) {
     //   return;
     // }
+    this.handleSyncFromDom(evt);
     console.info('Selected Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.manageInsertMenu();
   }

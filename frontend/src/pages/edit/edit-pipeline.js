@@ -14,7 +14,7 @@ import {
   NODE_TYPE_TEXT,
   ROOT_NODE_PARENT_ID, ZERO_LENGTH_CHAR,
 } from '../../common/constants';
-import { getMapWithId } from '../../common/utils';
+import { cleanText, getMapWithId } from '../../common/utils';
 
 export default class EditPipeline {
   post;
@@ -146,18 +146,23 @@ export default class EditPipeline {
     const content = contentArg || ZERO_LENGTH_CHAR;
     const children = this.nodesByParentId.get(nodeId, List());
     let textNode;
-    console.info('updateFromDom nodeId, children', nodeId, children);
     if (children.size === 0) {
       // add a new text node
       textNode = this.getMapWithId({ type: NODE_TYPE_TEXT, parent_id: nodeId, position: 0, content })
+      console.info('replaceTextNode - NEW node: ', textNode)
     } else {
       // update existing text node
       textNode = children.first();
-      console.info('updateFromDom existing node', textNode)
+      if (cleanText(textNode.get('content')) === cleanText(contentArg)) {
+        // DOM & model already equal, no update needed
+        return false;
+      }
+      console.info('replaceTextNode - existing node: ', textNode)
       textNode = textNode.set('content', content);
     }
     this.stageNodeUpdate(textNode.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(nodeId, List([textNode]));
+    return true;
   }
   
   insertSubSectionAfter(siblingId, type) {
