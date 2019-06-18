@@ -268,22 +268,41 @@ export default class EditPost extends React.Component {
     this.saveContentBatch()
   }
   
-  handleKeyDown = evt => {
-    this.handleBackspace(evt);
-    this.handleEnter(evt);
+  handleCaret = (evt) => {
+    if (evt.isPropagationStopped()) {
+      return;
+    }
+    const selectedNodeId = getCaretNodeId();
+    const selectedNode = this.editPipeline.getNode(selectedNodeId);
+    console.info('handleCaret - node', getCaretNode());
+    if (selectedNode.get('type') === NODE_TYPE_SECTION_SPACER) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      const section = evt.keyCode === UP_ARROW
+        ? this.editPipeline.getPrevSibling(selectedNodeId)
+        : this.editPipeline.getNextSibling(selectedNodeId);
+      const focusNodeId = this.editPipeline.getLastChildForCaret(section);
+      setCaret(focusNodeId);
+    }
   }
   
-  handleKeyUp = evt => {
-    // if (![UP_ARROW, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW, BACKSPACE_KEY].includes(evt.keyCode)) {
-    //   return;
-    // }
+  handleKeyDown = (evt) => {
+    console.info('KeyDown Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    this.handleBackspace(evt);
+    this.handleEnter(evt);
+    this.handleCaret(evt);
+  }
+  
+  handleKeyUp = (evt) => {
+    console.info('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleSyncFromDom(evt);
-    console.info('Selected Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    this.handleCaret(evt);
     this.manageInsertMenu();
   }
   
-  handleMouseUp = () => {
-    console.info('Selected Node: ', getCaretNode(), ' offset ', getCaretOffset())
+  handleMouseUp = (evt) => {
+    console.info('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    this.handleCaret(evt);
     this.manageInsertMenu();
   }
   
