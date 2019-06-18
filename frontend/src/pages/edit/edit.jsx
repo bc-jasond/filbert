@@ -206,26 +206,34 @@ export default class EditPost extends React.Component {
     
     evt.stopPropagation();
     evt.preventDefault();
+  
+    const sel = window.getSelection();
+    const range = sel.getRangeAt(0);
     
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
     const selectedNodeType = getCaretNodeType();
     const selectedNodeContent = cleanText(selectedNode.textContent);
+    // split selectedNodeContent at caret
+    const contentLeft = selectedNodeContent.substring(0, range.endOffset);
+    const contentRight = selectedNodeContent.substring(range.endOffset);
     
-    console.info('ENTER node ', selectedNode);
-    console.info('ENTER node content ', selectedNodeContent);
+    console.info('ENTER node: ', selectedNode);
+    console.info('ENTER node content: ', selectedNodeContent);
+    console.info('ENTER node content left: ', contentLeft);
+    console.info('ENTER node content right: ', contentRight);
     
     /**
      * sync content from selected DOM node to the model
      */
-    this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent);
+    this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
     
     /**
      * insert a new element, default to P tag
      */
     if (selectedNodeType === NODE_TYPE_P) {
       const pId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P);
-      this.editPipeline.replaceTextNode(pId, ZERO_LENGTH_CHAR);
+      this.editPipeline.replaceTextNode(pId, contentRight);
       this.focusNodeId = pId;
     }
     if (selectedNodeType === NODE_TYPE_SECTION_H1) {
@@ -239,10 +247,10 @@ export default class EditPost extends React.Component {
       }
       // add to existing content section
       const pId = this.editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0);
-      this.editPipeline.replaceTextNode(pId, ZERO_LENGTH_CHAR);
+      this.editPipeline.replaceTextNode(pId, contentRight);
       this.focusNodeId = pId;
     }
-    this.commitUpdates();
+    this.commitUpdates(0);
   }
   
   manageInsertMenu() {

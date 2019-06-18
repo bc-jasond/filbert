@@ -12,7 +12,7 @@ import {
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_TEXT,
-  ROOT_NODE_PARENT_ID,
+  ROOT_NODE_PARENT_ID, ZERO_LENGTH_CHAR,
 } from '../../common/constants';
 import { getMapWithId } from '../../common/utils';
 
@@ -134,7 +134,8 @@ export default class EditPipeline {
     return this.nodesByParentId.get(nodeId).first().get('content');
   }
   
-  replaceTextNode(nodeId, content) {
+  replaceTextNode(nodeId, contentArg) {
+    const content = contentArg || ZERO_LENGTH_CHAR;
     const children = this.nodesByParentId.get(nodeId, List());
     let textNode;
     console.info('updateFromDom nodeId, children', nodeId, children);
@@ -153,7 +154,7 @@ export default class EditPipeline {
   
   insertSubSectionAfter(siblingId, type) {
     const parentId = this.getParent(siblingId).get('id');
-    const siblings = this.nodesByParentId.get(parentId, List);
+    const siblings = this.nodesByParentId.get(parentId, List());
     const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
     return this.insert(parentId, type, siblingIdx + 1);
   }
@@ -170,9 +171,10 @@ export default class EditPipeline {
     this.nodeUpdates = this.nodeUpdates.set(newNode.get('id'), Map({ action: 'update', node: newNode }));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
       .insert(newNode.get('position'), newNode)
-      // reindex positions for all siblings
-      .map((node, idx) => node.set('position', idx))
     );
+    // reindex children and persist changes
+    this.updateNodesForParent(parentId);
+    // update all nodes
     return newNode.get('id');
   }
   
@@ -187,10 +189,23 @@ export default class EditPipeline {
     // filter this node out of the parent list
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
       .filter(node => node.get('id') !== nodeId)
+    );
+    // reindex children and persist changes
+    this.updateNodesForParent(parentId);
+    this.pruneEmptyAndOrphanedParents();
+  }
+  
+  updateNodesForParent(parentId) {
+    const siblings = this.nodesByParentId.get(parentId);
+    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
       // reindex positions for remaining siblings
       .map((node, idx) => node.set('position', idx))
     );
-    this.pruneEmptyAndOrphanedParents();
+    // since positions have changed, update all nodes for this parent
+    // TODO: make this smarter, maybe it's worth it
+    this.nodesByParentId.get(parentId).forEach(node => {
+      this.nodeUpdates = this.nodeUpdates.set(node.get('id'), Map({ action: 'update', node }));
+    });
   }
   
   getLastChildForCaret(parent) {

@@ -46,7 +46,7 @@ export function getCaretNode() {
 export function getCaretOffset() {
   const sel = window.getSelection();
   const range = sel.getRangeAt(0)
-  return range.endOffset;
+  return range.startOffset;
 }
 
 export function getCaretNodeType() {
