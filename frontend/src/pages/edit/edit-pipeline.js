@@ -66,11 +66,25 @@ export default class EditPipeline {
     return this.getNode(node.get('parent_id'));
   }
   
+  getSection(nodeId) {
+    let sectionId = this.getNode(nodeId).get('id');
+    while (!this.isSectionType(sectionId)) {
+      sectionId = this.getParent(sectionId).get('id');
+    }
+    return this.getNode(sectionId);
+  }
+  
   getNextSibling(nodeId) {
     const parent = this.getParent(nodeId);
     const siblings = this.nodesByParentId.get(parent.get('id'));
     const idx = siblings.findIndex(s => s.get('id') === nodeId);
     return siblings.get(idx + 1);
+  }
+  
+  nextSectionIsContentType(nodeId) {
+    const currentSection = this.getSection(nodeId);
+    const nextSection = this.getNextSibling(currentSection.get('id'))
+    return nextSection && nextSection.get('type') === NODE_TYPE_SECTION_CONTENT;
   }
   
   getPrevSibling(nodeId) {
@@ -96,7 +110,7 @@ export default class EditPipeline {
     return this.isFirstChild(nodeId) && this.isLastChild(nodeId);
   }
   
-  isSectionType(node) {
+  isSectionType(nodeId) {
     return [
       NODE_TYPE_SECTION_SPACER,
       NODE_TYPE_SECTION_CONTENT,
@@ -106,7 +120,7 @@ export default class EditPipeline {
       NODE_TYPE_SECTION_QUOTE,
       NODE_TYPE_SECTION_IMAGE,
       NODE_TYPE_SECTION_CODE,
-    ].includes(node.get('type'))
+    ].includes(this.getNode(nodeId).get('type'))
   }
   
   canHaveChildren(nodeId) {}

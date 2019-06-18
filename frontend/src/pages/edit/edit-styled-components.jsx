@@ -23,7 +23,7 @@ const lineMixin = css`
 `;
 export const InsertSectionMenuButton = styled.button`
   position: absolute;
-  top: 18px;
+  top: 16px;
   z-index: 3;
   width: 24px;
   height: 24px;
@@ -48,7 +48,7 @@ export const InsertSectionMenuButton = styled.button`
 `;
 export const InsertSectionMenuItemsContainer = styled.div`
   position: absolute;
-  top: 18px;
+  top: 16px;
   height: 24px;
   left: 48px;
   display: block;

@@ -268,24 +268,6 @@ export default class EditPost extends React.Component {
     this.saveContentBatch()
   }
   
-  manageInsertMenu() {
-    const selectedNode = getCaretNode();
-    const selectedType = getCaretNodeType();
-    const sel = window.getSelection();
-    const range = sel.getRangeAt(0);
-    
-    if (range.collapsed && selectedType === NODE_TYPE_P && !this.activeElementHasContent()) {
-      this.setState({
-        shouldShowInsertMenu: true,
-        insertMenuTopOffset: selectedNode.offsetTop,
-        insertMenuLeftOffset: selectedNode.offsetLeft,
-      });
-      return;
-    }
-    
-    this.setState({ shouldShowInsertMenu: false, insertMenuIsOpen: false });
-  }
-  
   handleKeyDown = evt => {
     this.handleBackspace(evt);
     this.handleEnter(evt);
@@ -305,6 +287,26 @@ export default class EditPost extends React.Component {
     this.manageInsertMenu();
   }
   
+  manageInsertMenu() {
+    const selectedNode = getCaretNode();
+    const selectedType = getCaretNodeType();
+    const sel = window.getSelection();
+    const range = sel.getRangeAt(0);
+    // save current nodeId because the selection will disappear when the insert menu is shown
+    this.insertMenuSelectedNodeId = getCaretNodeId();
+    
+    if (range.collapsed && selectedType === NODE_TYPE_P && !this.activeElementHasContent()) {
+      this.setState({
+        shouldShowInsertMenu: true,
+        insertMenuTopOffset: selectedNode.offsetTop,
+        insertMenuLeftOffset: selectedNode.offsetLeft,
+      });
+      return;
+    }
+    
+    this.setState({ shouldShowInsertMenu: false, insertMenuIsOpen: false });
+  }
+  
   toggleInsertMenu = () => {
     const { insertMenuIsOpen } = this.state;
     this.setState({ insertMenuIsOpen: !insertMenuIsOpen }, () => {
@@ -318,28 +320,19 @@ export default class EditPost extends React.Component {
    * INSERT SECTIONS
    */
   insertSpacer = () => {
-    const {
-      root,
-      nodesByParentId,
-    } = this.state;
-    const newSpacerSection = this.getMapWithId({ type: NODE_TYPE_SECTION_SPACER, parent_id: root.get('id') });
-    const newContentSection = this.getMapWithId({ type: NODE_TYPE_SECTION_CONTENT, parent_id: root.get('id') });
-    const newP = this.getMapWithId({ type: NODE_TYPE_P, parent_id: newContentSection.get('id') });
-    // TODO: add placeholder subsection for Content, etc
-    const currentSectionIdx = nodesByParentId
-      .get(root.get('id'))
-      .findIndex(node => node.get('id') === this.parentId);
-    // this.current is last child, insert new section after
-    if (this.currentIsLastSibling) {
-      this.deleteFromParent(this.parentId, null, this.currentIdx);
-      this.insertNodeIntoParentList(root.get('id'), newSpacerSection, currentSectionIdx + 1);
-      this.insertNodeIntoParentList(root.get('id'), newContentSection, currentSectionIdx + 2);
-      this.insertNodeIntoParentList(newContentSection.get('id'), newP);
-      this.focusNodeId = newP.get('id');
-      this.commitUpdates();
-      return;
+    const selectedNodeId = this.insertMenuSelectedNodeId;
+    const selectedSectionId = this.editPipeline.getParent(selectedNodeId).get('id');
+    // current is last child of section - insert the spacer and a new Content Section + P
+    if (this.editPipeline.isLastChild(selectedNodeId)) {
+      if (!this.editPipeline.isOnlyChild(selectedNodeId)) {
+        this.editPipeline.delete(selectedNodeId);
+      }
+      const spacerId = this.editPipeline.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_SPACER);
+      const contentId = this.editPipeline.insertSectionAfter(spacerId, NODE_TYPE_SECTION_CONTENT);
+      const pId = this.editPipeline.insert(contentId, NODE_TYPE_P, 0);
+      this.focusNodeId = pId
     }
-    // TODO: this.current isn't last child?  Split current section
+    this.commitUpdates();
   }
   
   render() {
