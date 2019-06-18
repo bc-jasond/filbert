@@ -178,7 +178,7 @@ export default class EditPost extends React.Component {
     /**
      * not an only child and empty, just a simple remove
       */
-    if (!hasContent(selectedNodeContent) && !this.editPipeline.isOnlyChild(selectedNodeId)) {
+    if (!hasContent(selectedNodeContent) && !this.editPipeline.isFirstChild(selectedNodeId)) {
       this.focusNodeId = this.editPipeline.getPrevSibling(selectedNodeId).get('id');
       console.info('BACKSPACE remove empty node - focus node ', this.focusNodeId);
       this.editPipeline.delete(selectedNodeId);
@@ -277,6 +277,7 @@ export default class EditPost extends React.Component {
   }
   
   handleMouseUp = () => {
+    console.info('Selected Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.manageInsertMenu();
   }
   

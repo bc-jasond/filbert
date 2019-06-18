@@ -217,7 +217,7 @@ export default class EditPipeline {
   
   clearUpdates() {
     if (this.nodeUpdates.size > 0) {
-      console.warn('Edit Pipeline - clearing non-empty update pipeline', this.nodeUpdates);
+      console.info('clearUpdates - clearing non-empty update pipeline', this.nodeUpdates);
     }
     this.nodeUpdates = Map();
   }
