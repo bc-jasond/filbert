@@ -1,4 +1,5 @@
 import Immutable, { List, Map } from 'immutable';
+
 import {
   NEW_POST_URL_ID,
   NODE_TYPE_P,
@@ -12,9 +13,13 @@ import {
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_TEXT,
-  ROOT_NODE_PARENT_ID, ZERO_LENGTH_CHAR,
+  ROOT_NODE_PARENT_ID,
 } from '../../common/constants';
-import { cleanText, getMapWithId } from '../../common/utils';
+import {
+  cleanText,
+  cleanTextOrZeroLengthPlaceholder,
+  getMapWithId,
+} from '../../common/utils';
 
 export default class EditPipeline {
   post;
@@ -150,6 +155,33 @@ export default class EditPipeline {
     return this.insert(this.rootId, type, index);
   }
   
+  splitSection(sectionId, nodeId) {
+    const section = this.getNode(sectionId);
+    if (section.get('type') !== NODE_TYPE_SECTION_CONTENT) {
+      console.error('splitSection', section);
+      throw new Error('splitSection - I only split CONTENT sections ATM')
+    }
+    const siblings = this.nodesByParentId.get(sectionId);
+    const nodeIdx = siblings.findIndex(s => s.get('id') === nodeId);
+    
+    this.delete(nodeId);
+    // update existing section
+    this.nodesByParentId = this.nodesByParentId.set(sectionId, siblings.slice(0, nodeIdx));
+    // if all existing nodes moved to the new section, create a new P
+    if (this.nodesByParentId.get(sectionId).size === 0) {
+      this.insert(sectionId, NODE_TYPE_P, 0);
+    }
+    this.updateNodesForParent(sectionId);
+    // new section
+    const newSectionid = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
+    this.nodesByParentId = this.nodesByParentId.set(newSectionid, siblings.slice(nodeIdx));
+    // if all existing nodes stayed in the existing section, create a new P
+    if (this.nodesByParentId.get(newSectionid).size === 0) {
+      this.insert(newSectionid, NODE_TYPE_P, 0);
+    }
+    this.updateNodesForParent(newSectionid);
+  }
+  
   mergeSections(leftSectionId, rightSectionId) {
     const left = this.getNode(leftSectionId);
     const right = this.getNode(rightSectionId);
@@ -158,30 +190,26 @@ export default class EditPipeline {
       throw new Error('mergeSections - I only merge CONTENT sections ATM')
     }
     const rightNodes = this.nodesByParentId.get(rightSectionId);
-    this.nodesByParentId = this.nodesByParentId.set(
-      leftSectionId,
-      this.nodesByParentId.get(leftSectionId)
-        .concat(rightNodes)
-        .map((n, idx) => n
-          .set('parent_id', leftSectionId)
-          .set('position', idx)
-        )
-    );
-    this.nodesByParentId.get(leftSectionId).forEach(n => {
-      this.stageNodeUpdate(n.get('id'));
-    });
-    this.nodesByParentId.set(rightSectionId, List());
+    const leftNodes = this.nodesByParentId.get(leftSectionId);
+    this.nodesByParentId = this.nodesByParentId.set(leftSectionId, leftNodes.concat(rightNodes));
+    this.updateNodesForParent(leftSectionId);
+    this.nodesByParentId = this.nodesByParentId.set(rightSectionId, List());
     this.delete(rightSectionId);
   }
   
   updateSection(node) {}
   
   getText(nodeId) {
-    return this.nodesByParentId.get(nodeId).first().get('content');
+    const children = this.nodesByParentId.get(nodeId, List());
+    if (children.size === 0) {
+      console.warn('getText - no children for ', nodeId);
+      return '';
+    }
+    return cleanText(children.first().get('content'));
   }
   
   replaceTextNode(nodeId, contentArg) {
-    const content = contentArg || ZERO_LENGTH_CHAR;
+    const content = cleanTextOrZeroLengthPlaceholder(contentArg);
     const children = this.nodesByParentId.get(nodeId, List());
     let textNode;
     if (children.size === 0) {
@@ -191,7 +219,11 @@ export default class EditPipeline {
     } else {
       // update existing text node
       textNode = children.first();
-      if (cleanText(textNode.get('content')) === cleanText(contentArg)) {
+      if (textNode.get('type') !== NODE_TYPE_TEXT) {
+        console.warn('replaceTextNode - comparing other node type: ', textNode.toJS());
+        return false;
+      }
+      if (cleanTextOrZeroLengthPlaceholder(textNode.get('content')) === content) {
         // DOM & model already equal, no update needed
         return false;
       }
@@ -252,7 +284,9 @@ export default class EditPipeline {
       parentId,
       siblings
       // reindex positions for remaining siblings
-        .map((node, idx) => node.set('position', idx))
+        .map((node, idx) => node
+          .set('position', idx)
+          .set('parent_id', parentId))
     );
     // since positions have changed, update all nodes for this parent
     // TODO: make this smarter, maybe it's worth it
