@@ -150,6 +150,30 @@ export default class EditPipeline {
     return this.insert(this.rootId, type, index);
   }
   
+  mergeSections(leftSectionId, rightSectionId) {
+    const left = this.getNode(leftSectionId);
+    const right = this.getNode(rightSectionId);
+    if (!(left.get('type') === NODE_TYPE_SECTION_CONTENT && right.get('type') === NODE_TYPE_SECTION_CONTENT)) {
+      console.error('mergeSections', left, right);
+      throw new Error('mergeSections - I only merge CONTENT sections ATM')
+    }
+    const rightNodes = this.nodesByParentId.get(rightSectionId);
+    this.nodesByParentId = this.nodesByParentId.set(
+      leftSectionId,
+      this.nodesByParentId.get(leftSectionId)
+        .concat(rightNodes)
+        .map((n, idx) => n
+          .set('parent_id', leftSectionId)
+          .set('position', idx)
+        )
+    );
+    this.nodesByParentId.get(leftSectionId).forEach(n => {
+      this.stageNodeUpdate(n.get('id'));
+    });
+    this.nodesByParentId.set(rightSectionId, List());
+    this.delete(rightSectionId);
+  }
+  
   updateSection(node) {}
   
   getText(nodeId) {
@@ -261,7 +285,7 @@ export default class EditPipeline {
   }
   
   addPostIdToUpdates(postId) {
-    this.nodeUpdates = this.nodeUpdates.map(update => update.setIn(['node', 'post_id'], postId));
+    this.nodeUpdates = this.nodeUpdates.map(update => update.set('post_id', postId));
   }
   
   updates() {

@@ -7,27 +7,29 @@ import {
   apiPost,
 } from '../../common/fetch';
 import {
-  cleanText, hasContent,
+  cleanText,
+  hasContent,
 } from '../../common/utils';
 import {
   getCaretNode,
   getCaretNodeId,
-  getCaretNodeType, getCaretOffset, getFirstHeadingContent,
+  getCaretNodeType,
+  getCaretOffset,
+  getFirstHeadingContent,
   setCaret,
 } from '../../common/dom';
 
 import {
   NODE_TYPE_P,
-  NODE_TYPE_ROOT,
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_H1,
-  NODE_TYPE_TEXT,
   ENTER_KEY,
   BACKSPACE_KEY,
   UP_ARROW,
-  DOWN_ARROW,
-  LEFT_ARROW,
-  RIGHT_ARROW, NODE_TYPE_SECTION_SPACER, ZERO_LENGTH_CHAR, NEW_POST_URL_ID, ROOT_NODE_PARENT_ID,
+  NODE_TYPE_SECTION_SPACER,
+  ZERO_LENGTH_CHAR,
+  NEW_POST_URL_ID,
+  ROOT_NODE_PARENT_ID,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -73,20 +75,22 @@ export default class EditPost extends React.Component {
   commitTimeoutId;
   focusNodeId;
   
-  saveContentBatch() {
+  saveContentBatch = async () => {
+    try {
+      const updated = this.editPipeline.updates();
+      if (updated.length === 0) return;
+      console.info('Save Batch', updated);
+      const result = await apiPost('/content', updated);
+      this.editPipeline.clearUpdates();
+      console.info('Save Batch result', result);
+    } catch (err) {
+      console.error('Content Batch Update Error: ', err);
+    }
+  }
+  
+  saveContentBatchDebounce() {
     clearTimeout(this.commitTimeoutId);
-    this.commitTimeoutId = setTimeout(async () => {
-      try {
-        const updated = this.editPipeline.updates();
-        if (updated.length === 0) return;
-        console.info('Save Batch', updated);
-        const result = await apiPost('/content', updated);
-        this.editPipeline.clearUpdates();
-        console.info('Save Batch result', result);
-      } catch (err) {
-        console.error('Content Batch Update Error: ', err);
-      }
-    }, 2000);
+    this.commitTimeoutId = setTimeout(this.saveContentBatch, 1000);
   }
   
   newPost() {
@@ -137,7 +141,7 @@ export default class EditPost extends React.Component {
       await this.saveNewPost();
     } else {
       // optimistically save updated nodes - look ma, no errors!
-      await this.saveContentBatch();
+      await this.saveContentBatchDebounce();
     }
     // roll with state changes TODO: handle errors - roll back?
     this.setState({
@@ -179,28 +183,43 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     
-    /**
-     * not a first child and empty, just a simple remove
-     */
-    if (!hasContent(selectedNodeContent) && !this.editPipeline.isFirstChild(selectedNodeId)) {
-      this.focusNodeId = this.editPipeline.getPrevSibling(selectedNodeId).get('id');
-      console.info('BACKSPACE remove empty node - focus node ', this.focusNodeId);
-      this.editPipeline.delete(selectedNodeId);
-      this.commitUpdates();
-      return;
-    }
+    const section = this.editPipeline.getSection(selectedNodeId);
+    let prevSection = this.editPipeline.getPrevSibling(section.get('id'));
+    let caretOffset = -1;
     
     /**
-     * merge siblings (P tags only so far)
+     * THINGS TO CONSIDER FOR DELETE (in order):
+     * 1) delete the previous section (if it's a SPACER or other terminal node)?
+     * 2) merge the current section's children (could be 0) into previous section AND delete current section
+     * 3) merge the current selected node's text into the previous node?
+     * 4) ALWAYS delete the current selected node
      */
+    
+    // #1 - delete previous section (SPACER, etc)
+    if (this.editPipeline.isFirstChild(selectedNodeId) && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+      const spacerId = prevSection.get('id');
+      prevSection = this.editPipeline.getPrevSibling(prevSection.get('id'));
+      this.editPipeline.delete(spacerId);
+    }
+    
+    // #2 - merge current section's children
+    if (this.editPipeline.isFirstChild(selectedNodeId) && prevSection && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
+      this.editPipeline.mergeSections(prevSection.get('id'), section.get('id'));
+    }
+    
+    // #3 - merge current node's text into previous sibling
     if (hasContent(selectedNodeContent) && !this.editPipeline.isFirstChild(selectedNodeId)) {
       const prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
       const prevSiblingText = this.editPipeline.getText(prevSibling.get('id'));
       this.editPipeline.replaceTextNode(prevSibling.get('id'), `${prevSiblingText}${selectedNodeContent}`);
-      this.editPipeline.delete(selectedNodeId);
+      caretOffset = prevSiblingText.length;
       this.focusNodeId = prevSibling.get('id');
-      this.commitUpdates(prevSiblingText.length);
     }
+    
+    // #4 - always delete current node
+    this.editPipeline.delete(selectedNodeId);
+    
+    this.commitUpdates(caretOffset);
   }
   
   handleEnter = (evt) => {
@@ -258,6 +277,11 @@ export default class EditPost extends React.Component {
   }
   
   handleSyncFromDom = () => {
+    if (this.props.postId === NEW_POST_URL_ID) {
+      // doesn't work with a 'new' post
+      return;
+    }
+    
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
     const selectedNodeContent = cleanText(selectedNode.textContent);
@@ -265,7 +289,7 @@ export default class EditPost extends React.Component {
       return;
     }
     this.focusNodeId = selectedNodeId;
-    this.saveContentBatch()
+    this.saveContentBatchDebounce()
   }
   
   handleCaret = (evt) => {
