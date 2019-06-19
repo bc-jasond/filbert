@@ -138,6 +138,7 @@ export default class EditPost extends React.Component {
   commitUpdates = async (offset = -1) => {
     if (this.props.postId === NEW_POST_URL_ID) {
       await this.saveNewPost();
+      return;
     } else {
       // optimistically save updated nodes - look ma, no errors!
       await this.saveContentBatchDebounce();

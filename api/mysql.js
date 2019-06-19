@@ -1,17 +1,22 @@
 const knex = require('knex')
 
+let knexConnection;
+
 async function getKnex() {
-  return knex({
-    client: 'mysql2',
-    connection: {
-      host: 'localhost',
-      user: 'root',
-      password: 'example',
-      database: 'dubaniewicz'
-    },
-    asyncStackTraces: true,
-    debug: true,
-  });
+  if (!knexConnection) {
+    knexConnection = knex({
+      client: 'mysql2',
+      connection: {
+        host: 'localhost',
+        user: 'root',
+        password: 'example',
+        database: 'dubaniewicz'
+      },
+      asyncStackTraces: true,
+      debug: true,
+    });
+  }
+  return knexConnection;
 }
 
 async function bulkContentNodeUpsert(records) {
