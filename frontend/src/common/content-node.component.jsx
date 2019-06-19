@@ -93,6 +93,18 @@ export default class ContentNode extends React.PureComponent {
       .map(child => (<ContentNode key={child.get('id')} node={child} nodesByParentId={nodesByParentId} />))
   }
   
+  getKey() {
+    const {
+      node,
+      nodesByParentId,
+    } = this.props;
+    console.debug('getKey', nodesByParentId.get(node.get('id')))
+    return nodesByParentId
+      .get(node.get('id'), List([Map({ type: NODE_TYPE_TEXT, id: 'foo', content: ZERO_LENGTH_CHAR })]))
+      // create a key from all child ids catenated together - this is to fix a stale render issue for TEXT (invisible to the DOM) children
+      .reduce((acc, child) => `${child.get('id')}`, '')
+  }
+  
   render() {
     const {
       node,
@@ -188,7 +200,7 @@ export default class ContentNode extends React.PureComponent {
         if (!StyledComponent) return null;
         
         return (
-          <StyledComponent data-type={node.get('type')} name={node.get('id')}>
+          <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')}>
             {this.getChildNodes()}
           </StyledComponent>
         )
