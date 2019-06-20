@@ -31,6 +31,7 @@ export const InsertSectionMenuButton = styled.button`
   cursor: pointer;
   border: 0;
   outline: 0;
+  background: transparent;
   &:before {
     ${lineMixin}
     transform: rotateZ(0deg);

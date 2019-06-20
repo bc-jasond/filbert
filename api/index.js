@@ -59,7 +59,7 @@ async function main() {
           },
         });
       } catch (err) {
-        console.log('Signin Error: ', err)
+        console.error('Signin Error: ', err)
         res.send({}).status(401)
       }
     })
@@ -113,7 +113,7 @@ async function main() {
         // return 401 on failure
         next();
       } catch (err) {
-        console.log('Authorization header Error', err);
+        console.error('Authorization header Error', err);
         res.send({}).status(401)
       }
     })
@@ -168,7 +168,7 @@ async function main() {
         const deleteResult = await bulkContentNodeDelete(deletes);
         res.send({updateResult, deleteResult});
       } catch (err) {
-        console.log('POST /content Error: ', err);
+        console.error('POST /content Error: ', err);
         res.send({}).status(500);
       }
     })
@@ -230,7 +230,7 @@ async function main() {
     app.listen(3001)
     
   } catch (err) {
-    console.log('main() error: ', err);
+    console.error('main() error: ', err);
   }
 }
 

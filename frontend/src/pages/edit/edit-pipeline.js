@@ -14,6 +14,8 @@ import {
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_TEXT,
   ROOT_NODE_PARENT_ID,
+  NODE_ACTION_UPDATE,
+  NODE_ACTION_DELETE,
 } from '../../common/constants';
 import {
   cleanText,
@@ -32,12 +34,12 @@ export default class EditPipeline {
     this.post = Immutable.fromJS(post);
     if (jsonData) {
       this.nodesByParentId = Immutable.fromJS(jsonData);
-      this.root = this.nodesByParentId.get(ROOT_NODE_PARENT_ID).first();
+      this.root = this.getFirstChild(ROOT_NODE_PARENT_ID);
       this.rootId = this.root.get('id');
     } else {
       this.root = getMapWithId({ type: NODE_TYPE_ROOT, parent_id: ROOT_NODE_PARENT_ID, position: 0 });
       this.rootId = this.root.get('id');
-      this.nodeUpdates = this.nodeUpdates.set(this.rootId, Map({ action: 'update' }));
+      this.nodeUpdates = this.nodeUpdates.set(this.rootId, Map({ action: NODE_ACTION_UPDATE }));
       this.nodesByParentId = this.nodesByParentId.set(ROOT_NODE_PARENT_ID, List([this.root]));
     }
   }
@@ -49,7 +51,7 @@ export default class EditPipeline {
   getNode(nodeId) {
     if (this.rootId === nodeId) return this.root;
     
-    const queue = [this.rootId]
+    const queue = [this.rootId];
     while (queue.length) {
       const currentList = this.nodesByParentId.get(queue.shift(), List());
       const node = currentList.find(node => node.get('id') === nodeId);
@@ -60,14 +62,12 @@ export default class EditPipeline {
         queue.push(n.get('id'));
       })
     }
-    return null;
+    console.error(`getNode id: ${nodeId} - not found!`);
+    return Map();
   }
   
   getParent(nodeId) {
     const node = this.getNode(nodeId);
-    if (!node) {
-      throw new Error('getParent - parent not found!');
-    }
     return this.getNode(node.get('parent_id'));
   }
   
@@ -83,32 +83,52 @@ export default class EditPipeline {
     const parent = this.getParent(nodeId);
     const siblings = this.nodesByParentId.get(parent.get('id'));
     const idx = siblings.findIndex(s => s.get('id') === nodeId);
+    if (idx === siblings.size - 1) {
+      return Map();
+    }
     return siblings.get(idx + 1);
   }
   
   nextSectionIsContentType(nodeId) {
     const currentSection = this.getSection(nodeId);
     const nextSection = this.getNextSibling(currentSection.get('id'))
-    return nextSection && nextSection.get('type') === NODE_TYPE_SECTION_CONTENT;
+    return nextSection.get('type') === NODE_TYPE_SECTION_CONTENT;
   }
   
   getPrevSibling(nodeId) {
     const parent = this.getParent(nodeId);
     const siblings = this.nodesByParentId.get(parent.get('id'));
     const idx = siblings.findIndex(s => s.get('id') === nodeId);
+    if (idx === 0) return Map();
     return siblings.get(idx - 1);
   }
   
   isFirstChild(nodeId) {
-    const parent = this.getParent(nodeId);
-    const siblings = this.nodesByParentId.get(parent.get('id'));
-    return siblings.first().get('id') === nodeId;
+    const parentId = this.getParent(nodeId).get('id');
+    return this.getFirstChild(parentId).get('id') === nodeId;
+  }
+  
+  getFirstChild(nodeId) {
+    const siblings = this.nodesByParentId.get(nodeId, List());
+    if (siblings.size === 0) {
+      console.warn('getFirstChild - no children! ', nodeId);
+      return Map();
+    }
+    return siblings.first();
   }
   
   isLastChild(nodeId) {
-    const parent = this.getParent(nodeId);
-    const siblings = this.nodesByParentId.get(parent.get('id'));
-    return siblings.last().get('id') === nodeId;
+    const parentId = this.getParent(nodeId).get('id');
+    return this.getLastChild(parentId).get('id') === nodeId;
+  }
+  
+  getLastChild(nodeId) {
+    const siblings = this.nodesByParentId.get(nodeId, List());
+    if (siblings.size === 0) {
+      console.warn('getLastChild - no children! ', nodeId);
+      return Map();
+    }
+    return siblings.last();
   }
   
   isOnlyChild(nodeId) {
@@ -131,11 +151,27 @@ export default class EditPipeline {
   canHaveChildren(nodeId) {}
   
   stageNodeUpdate(nodeId) {
-    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: 'update', post_id: this.post.get('id') }));
+    if (nodeId === null || nodeId === 'null') {
+      console.warn('stageNodeUpdate - trying to update null');
+      return;
+    }
+    if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE) {
+      console.warn('stageNodeUpdate - updating a deleted node, pain could be nigh');
+    }
+    console.info('stageNodeUpdate ', nodeId);
+    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id') }));
   }
   
   stageNodeDelete(nodeId) {
-    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: 'delete', post_id: this.post.get('id') }));
+    if (nodeId === null || nodeId === 'null') {
+      console.warn('stageNodeDelete - trying to update null');
+      return;
+    }
+    if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE) {
+      console.warn('stageNodeDelete - deleting an updated node, pain could be nigh');
+    }
+    console.info('stageNodeDelete ', nodeId);
+    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_DELETE, post_id: this.post.get('id') }));
   }
   
   insertSectionAfter(sectionId, type) {
@@ -189,6 +225,7 @@ export default class EditPipeline {
       console.error('mergeSections', left, right);
       throw new Error('mergeSections - I only merge CONTENT sections ATM')
     }
+    console.info('mergingSections ', left.get('id'), right.get('id'));
     const rightNodes = this.nodesByParentId.get(rightSectionId);
     const leftNodes = this.nodesByParentId.get(leftSectionId);
     this.nodesByParentId = this.nodesByParentId.set(leftSectionId, leftNodes.concat(rightNodes));
@@ -197,28 +234,18 @@ export default class EditPipeline {
     this.delete(rightSectionId);
   }
   
-  updateSection(node) {}
-  
   getText(nodeId) {
-    const children = this.nodesByParentId.get(nodeId, List());
-    if (children.size === 0) {
-      console.warn('getText - no children for ', nodeId);
-      return '';
-    }
-    return cleanText(children.first().get('content'));
+    return cleanText(this.getFirstChild(nodeId).get('content', ''));
   }
   
   replaceTextNode(nodeId, contentArg) {
     const content = cleanTextOrZeroLengthPlaceholder(contentArg);
-    const children = this.nodesByParentId.get(nodeId, List());
-    let textNode;
-    if (children.size === 0) {
+    let textNode = this.getFirstChild(nodeId);
+    if (!textNode.get('id')) {
       // add a new text node
       textNode = this.getMapWithId({ type: NODE_TYPE_TEXT, parent_id: nodeId, position: 0, content })
       console.info('replaceTextNode - NEW node: ', textNode)
     } else {
-      // update existing text node
-      textNode = children.first();
       if (textNode.get('type') !== NODE_TYPE_TEXT) {
         console.warn('replaceTextNode - comparing other node type: ', textNode.toJS());
         return false;
@@ -227,7 +254,7 @@ export default class EditPipeline {
         // DOM & model already equal, no update needed
         return false;
       }
-      console.info('replaceTextNode - existing node: ', textNode)
+      console.info('replaceTextNode - existing node: ', textNode);
       textNode = textNode.set('content', content);
     }
     this.stageNodeUpdate(textNode.get('id'));
@@ -241,8 +268,6 @@ export default class EditPipeline {
     const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
     return this.insert(parentId, type, siblingIdx + 1);
   }
-  
-  updateSubSection(subSection) {}
   
   insert(parentId, type, index) {
     const siblings = this.nodesByParentId.get(parentId, List());
@@ -265,21 +290,30 @@ export default class EditPipeline {
    * delete a node and all of it's children
    */
   delete(nodeId) {
+    if (nodeId === this.rootId) {
+      console.warn('edit pipeline - delete - trying to delete the root node!')
+      return;
+    }
     // mark this node deleted
     this.stageNodeDelete(nodeId);
     const parentId = this.getParent(nodeId).get('id');
     const siblings = this.nodesByParentId.get(parentId);
-    // filter this node out of the parent list
+    // filter this node out of its parent list
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
       .filter(node => node.get('id') !== nodeId)
     );
+    // delete this node's children list
+    this.nodesByParentId = this.nodesByParentId.delete(nodeId);
     // reindex children and persist changes
     this.updateNodesForParent(parentId);
+    // safe guard against integrity constraint violations
+    // TODO: add integrity constraints AKA, node type can only have children of type [x,y,z]
     this.pruneEmptyAndOrphanedParents();
   }
   
   updateNodesForParent(parentId) {
-    const siblings = this.nodesByParentId.get(parentId);
+    console.info('updateNodesForParent ', parentId);
+    const siblings = this.nodesByParentId.get(parentId, List());
     this.nodesByParentId = this.nodesByParentId.set(
       parentId,
       siblings
@@ -290,32 +324,71 @@ export default class EditPipeline {
     );
     // since positions have changed, update all nodes for this parent
     // TODO: make this smarter, maybe it's worth it
-    this.nodesByParentId.get(parentId).forEach(node => {
+    this.nodesByParentId.get(parentId, List()).forEach(node => {
       this.stageNodeUpdate(node.get('id'));
     });
   }
   
-  getLastChildForCaret(parent) {
-    // TODO: only types that are allowed to be focused
-    let currentLastId = this.nodesByParentId.get(parent.get('id')).last().get('id');
-    while (this.nodesByParentId.get(currentLastId, List()).size > 0) {
-      if (this.getNode(currentLastId).get('type') === NODE_TYPE_P) break;
-      currentLastId = this.nodesByParentId.get(currentLastId).last().get('id')
+  getClosestFocusNodeInSection(sectionId, isPrevious = true) {
+    console.info('getClosestFocusNodeId for SECTION', sectionId);
+    if ((isPrevious && this.isFirstChild(sectionId)) || (!isPrevious && this.isLastChild(sectionId)) || this.isOnlyChild(sectionId)) {
+      return isPrevious ? this.getFirstChild(sectionId).get('id') : this.getLastChild(sectionId).get('id');
     }
-    return currentLastId;
+    if (isPrevious) {
+      const prevSectionId = this.getPrevSibling(sectionId).get('id');
+      return this.getLastChild(prevSectionId).get('id');
+    } else {
+      const nextSectionId = this.getNextSibling(sectionId).get('id');
+      return this.getFirstChild(nextSectionId).get('id');
+    }
+  }
+  
+  getClosestFocusNodeId(nodeId, isPrevious = true) {
+    let focusNodeId;
+    if (nodeId === this.rootId) {
+      // nodeId is ROOT
+      console.info('getClosestFocusNodeId for ROOT ', nodeId);
+      const sectionId = isPrevious
+        ? this.getFirstChild(nodeId).get('id')
+        : this.getLastChild(nodeId).get('id');
+      focusNodeId = this.getClosestFocusNodeInSection(sectionId, isPrevious)
+    } else if (this.isSectionType(nodeId)) {
+      // nodeId is a Section
+      focusNodeId = this.getClosestFocusNodeInSection(nodeId, isPrevious);
+    } else {
+      // nodeId is a P
+      console.info('getClosestFocusNodeId for P', nodeId);
+      const currentSectionId = this.getSection(nodeId).get('id');
+      if (this.isOnlyChild(nodeId)
+        || (isPrevious && this.isFirstChild(nodeId))
+        || (!isPrevious && this.isLastChild(nodeId))) {
+        focusNodeId = nodeId;
+      } else if (isPrevious && !this.isFirstChild(nodeId)) {
+        focusNodeId = this.getPrevSibling(nodeId).get('id');
+      } else if (!isPrevious && !this.isLastChild()) {
+        focusNodeId = this.getNextSibling(nodeId).get('id');
+      }
+    }
+    
+    if (!focusNodeId) {
+      console.error(`WTF? getClosestFocusNodeId - I can't find another node ${isPrevious ? 'in front of' : 'after'} ${nodeId}`);
+    }
+  
+    console.info('getClosestFocusNodeId found: ', focusNodeId);
+    
+    return focusNodeId;
   }
   
   pruneEmptyAndOrphanedParents() {
     this.nodesByParentId = this.nodesByParentId.filter(
       (children, id) => {
-        if (id === ROOT_NODE_PARENT_ID || (children.size > 0 && this.getNode(id))) {
+        if (id === ROOT_NODE_PARENT_ID || (children.size > 0 && this.getNode(id).get('id'))) {
           return true;
         } else {
           this.stageNodeDelete(id);
           return false;
         }
-      }
-    );
+      });
   }
   
   addPostIdToUpdates(postId) {
@@ -325,7 +398,8 @@ export default class EditPipeline {
   updates() {
     return Object.entries(
       this.nodeUpdates
-        .map((update, nodeId) => update.set('node', this.getNode(nodeId)))
+      // don't look for deleted nodes...
+        .map((update, nodeId) => update.get('action') === NODE_ACTION_DELETE ? update : update.set('node', this.getNode(nodeId)))
         .toJS()
     );
   }

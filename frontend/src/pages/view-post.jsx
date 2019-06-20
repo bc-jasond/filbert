@@ -26,7 +26,7 @@ export default class ViewPost extends React.Component {
       const root = allNodesByParentId.get(ROOT_NODE_PARENT_ID).get(0);
       this.setState({ root, allNodesByParentId, shouldShow404: false })
     } catch (err) {
-      console.log(err);
+      console.error(err);
       this.setState({ pageContent: null, shouldShow404: true })
     }
   }

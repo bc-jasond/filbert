@@ -11,6 +11,7 @@ import {
   cleanText,
 } from '../../common/utils';
 import {
+  getRange,
   getCaretNode,
   getCaretNodeId,
   getCaretNodeType,
@@ -72,7 +73,6 @@ export default class EditPost extends React.Component {
   
   editPipeline = new EditPipeline();
   commitTimeoutId;
-  focusNodeId;
   
   saveContentBatch = async () => {
     try {
@@ -120,7 +120,7 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
       this.editPipeline.init(post, contentNodes);
-      const focusNodeId = this.editPipeline.getLastChildForCaret(this.editPipeline.root);
+      const focusNodeId = this.editPipeline.getClosestFocusNodeId(this.editPipeline.rootId, false);
       this.setState({
         root: this.editPipeline.root,
         nodesByParentId: this.editPipeline.nodesByParentId,
@@ -135,7 +135,7 @@ export default class EditPost extends React.Component {
     }
   }
   
-  commitUpdates = async (offset = -1) => {
+  commitUpdates = async (focusNodeId, offset = -1) => {
     if (this.props.postId === NEW_POST_URL_ID) {
       await this.saveNewPost();
       return;
@@ -149,7 +149,7 @@ export default class EditPost extends React.Component {
       shouldShowInsertMenu: false,
       insertMenuIsOpen: false
     }, () => {
-      setCaret(this.focusNodeId, offset);
+      setCaret(focusNodeId, offset);
       this.manageInsertMenu();
     });
   }
@@ -166,14 +166,15 @@ export default class EditPost extends React.Component {
     
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
-    const selectedNodeType = getCaretNodeType();
     const selectedNodeContent = cleanText(selectedNode.textContent);
     
-    console.info('BACKSPACE node ', selectedNode);
-    console.info('BACKSPACE node content ', selectedNodeContent);
+    console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
     
-    const sel = window.getSelection();
-    const range = sel.getRangeAt(0);
+    const range = getRange();
+    if (!range) {
+      console.warn('BACKSPACE no range');
+      return;
+    }
     
     if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
       // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
@@ -184,47 +185,55 @@ export default class EditPost extends React.Component {
     evt.preventDefault();
     
     const section = this.editPipeline.getSection(selectedNodeId);
-    let prevSection = this.editPipeline.getPrevSibling(section.get('id'));
+    const prevSection = this.editPipeline.getPrevSibling(section.get('id'));
+    const twoSectionsBack = this.editPipeline.getPrevSibling(prevSection.get('id'));
+    
     let caretOffset = -1;
     
     /**
      * THINGS TO CONSIDER FOR DELETE (in order):
-     * 1) delete the previous section (if it's a SPACER or other terminal node)?
-     * 2) merge the current section's children (could be 0) into previous section AND delete current section
-     * 3) merge the current selected node's text into the previous node?
-     * 4) ALWAYS delete the current selected node
+     * 1) only-child of first section - noop!
+     * 2) only-child, delete current section
+     * 3) delete the previous section (if it's a SPACER or other terminal node)?
+     * 4) merge the current section's children (could be 0) into previous section AND delete current section
+     * 5) merge the current selected node's text into the previous node?
+     * 6) delete the current selected node?
      */
     
-    // #1 - delete previous section (SPACER, etc)
-    if (this.editPipeline.isFirstChild(selectedNodeId) && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+    // only child of first section
+    if (this.editPipeline.isOnlyChild(selectedNodeId) && !prevSection) {
+      return;
+    }
+  
+    let focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedNodeId);
+    
+    const isFirstChild = this.editPipeline.isFirstChild(selectedNodeId);
+    const prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
+    // delete current node
+    this.editPipeline.delete(selectedNodeId);
+    
+    // delete previous section (SPACER, etc)
+    if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
       const spacerId = prevSection.get('id');
-      prevSection = this.editPipeline.getPrevSibling(prevSection.get('id'));
-      this.focusNodeId = this.editPipeline.getLastChildForCaret(prevSection);
+      focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
       this.editPipeline.delete(spacerId);
     }
     
-    // #2 - merge current section's children
-    if (this.editPipeline.isFirstChild(selectedNodeId) && prevSection && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
+    // merge current section's children
+    if (isFirstChild && prevSection && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
       this.editPipeline.mergeSections(prevSection.get('id'), section.get('id'));
-      this.focusNodeId = this.editPipeline.getLastChildForCaret(prevSection);
+      focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
     }
     
-    // #3 - merge current node's text into previous sibling
-    if (cleanText(selectedNodeContent) && !this.editPipeline.isFirstChild(selectedNodeId)) {
-      const prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
+    // merge current node's text into previous sibling
+    if (cleanText(selectedNodeContent) && !isFirstChild) {
       const prevSiblingText = this.editPipeline.getText(prevSibling.get('id'));
       this.editPipeline.replaceTextNode(prevSibling.get('id'), `${prevSiblingText}${selectedNodeContent}`);
       caretOffset = prevSiblingText.length;
-      this.focusNodeId = prevSibling.get('id');
+      focusNodeId = prevSibling.get('id');
     }
     
-    // #4 - always delete current node
-    if (!this.focusNodeId) {
-      this.focusNodeId = this.editPipeline.getPrevSibling(selectedNodeId).get('id');
-    }
-    this.editPipeline.delete(selectedNodeId);
-    
-    this.commitUpdates(caretOffset);
+    this.commitUpdates(focusNodeId, caretOffset);
   }
   
   handleEnter = (evt) => {
@@ -235,8 +244,11 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     
-    const sel = window.getSelection();
-    const range = sel.getRangeAt(0);
+    const range = getRange();
+    if (!range) {
+      console.warn('ENTER no range');
+      return;
+    }
     
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
@@ -251,6 +263,8 @@ export default class EditPost extends React.Component {
     console.info('ENTER node content left: ', contentLeft);
     console.info('ENTER node content right: ', contentRight);
     
+    let focusNodeId;
+    
     /**
      * sync content from selected DOM node to the model
      */
@@ -262,7 +276,7 @@ export default class EditPost extends React.Component {
     if (selectedNodeType === NODE_TYPE_P) {
       const pId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P);
       this.editPipeline.replaceTextNode(pId, contentRight);
-      this.focusNodeId = pId;
+      focusNodeId = pId;
     }
     /**
      * insert a new Content Section and a P tag
@@ -279,9 +293,9 @@ export default class EditPost extends React.Component {
       // add to existing content section
       const pId = this.editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0);
       this.editPipeline.replaceTextNode(pId, contentRight);
-      this.focusNodeId = pId;
+      focusNodeId = pId;
     }
-    this.commitUpdates(0);
+    this.commitUpdates(focusNodeId,0);
   }
   
   handleSyncFromDom = () => {
@@ -296,7 +310,7 @@ export default class EditPost extends React.Component {
     if (!this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent)) {
       return;
     }
-    this.focusNodeId = selectedNodeId;
+    console.info('handleSyncFromDom', selectedNode);
     this.saveContentBatchDebounce()
   }
   
@@ -306,34 +320,36 @@ export default class EditPost extends React.Component {
     }
     const selectedNodeId = getCaretNodeId();
     const selectedNode = this.editPipeline.getNode(selectedNodeId);
+    if (!selectedNode) {
+      console.warn('handleCaret no node, bad selection: ', getCaretNode());
+      return;
+    }
     console.info('handleCaret - node', getCaretNode());
     if (selectedNode.get('type') === NODE_TYPE_SECTION_SPACER) {
       evt.stopPropagation();
       evt.preventDefault();
-      const section = evt.keyCode === UP_ARROW
-        ? this.editPipeline.getPrevSibling(selectedNodeId)
-        : this.editPipeline.getNextSibling(selectedNodeId);
-      const focusNodeId = this.editPipeline.getLastChildForCaret(section);
+      const shouldFocusOnPrevious = evt.keyCode === UP_ARROW;
+      const focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedNodeId, shouldFocusOnPrevious);
       setCaret(focusNodeId);
     }
   }
   
   handleKeyDown = (evt) => {
-    console.info('KeyDown Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    console.debug('KeyDown Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleBackspace(evt);
     this.handleEnter(evt);
-    this.handleCaret(evt);
+    // this.handleCaret(evt);
   }
   
   handleKeyUp = (evt) => {
-    console.info('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    console.debug('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleSyncFromDom(evt);
     this.handleCaret(evt);
     this.manageInsertMenu();
   }
   
   handleMouseUp = (evt) => {
-    console.info('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    console.debug('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleCaret(evt);
     this.manageInsertMenu();
   }
@@ -341,8 +357,10 @@ export default class EditPost extends React.Component {
   manageInsertMenu() {
     const selectedNode = getCaretNode();
     const selectedType = getCaretNodeType();
-    const sel = window.getSelection();
-    const range = sel.getRangeAt(0);
+    const range = getRange();
+    if (!range) {
+      return;
+    }
     // save current nodeId because the selection will disappear when the insert menu is shown
     this.insertMenuSelectedNodeId = getCaretNodeId();
     
@@ -376,8 +394,9 @@ export default class EditPost extends React.Component {
     // splitting the current section even if selectedNodeId is first or last child
     this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
     // insert the spacer
-    this.editPipeline.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_SPACER);
-    this.commitUpdates();
+    const spacerId = this.editPipeline.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_SPACER);
+    const focusNodeId = this.editPipeline.getClosestFocusNodeId(spacerId, false);
+    this.commitUpdates(focusNodeId);
   }
   
   render() {
@@ -395,7 +414,7 @@ export default class EditPost extends React.Component {
     if (shouldShow404) return (<Page404 />);
     if (shouldRedirectWithId) return (<Redirect to={`/edit/${shouldRedirectWithId}`} />);
     
-    return !root ? null : (
+    return root && (
       <React.Fragment>
         <div onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} onMouseUp={this.handleMouseUp}
              contentEditable={true} suppressContentEditableWarning={true}>
