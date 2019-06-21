@@ -17,11 +17,14 @@ function getBaseConfig() {
 
 export async function apiGet(url) {
   try {
+    Pace.restart();
     const config = getBaseConfig();
     config.method = 'GET';
     const response = await fetch(`${API_URL}${url}`, config);
+    Pace.stop();
     return response.json();
   } catch (err) {
+    Pace.stop();
     console.error('Fetch GET Error: ', err);
     throw err;
   }
@@ -29,6 +32,7 @@ export async function apiGet(url) {
 
 export async function apiPost(url, data) {
   try {
+    Pace.restart();
     const config = getBaseConfig();
     config.method = 'POST';
     config.body = JSON.stringify(data); // body data type must match "Content-Type" header
@@ -36,8 +40,10 @@ export async function apiPost(url, data) {
     if (response.status.toString(10).charAt(0) !== '2') {
       throw new Error(`${response.status} - ${response.statusText}`);
     }
+    Pace.stop();
     return response.json();
   } catch (err) {
+    Pace.stop();
     console.error('Fetch POST Error: ', err);
     throw err;
   }
@@ -45,11 +51,14 @@ export async function apiPost(url, data) {
 
 export async function apiDelete(url) {
   try {
+    Pace.restart();
     const config = getBaseConfig();
     config.method = 'DELETE';
     const response = await fetch(`${API_URL}${url}`, config);
+    Pace.stop();
     return response.json();
   } catch (err) {
+    Pace.stop();
     console.error('Fetch DELETE Error: ', err);
     throw err;
   }

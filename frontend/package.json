@@ -11,7 +11,8 @@
     "clean": "rm -rf dist/*",
     "test": "echo 'Coming soon...  OK'",
     "build-prod": "webpack -p --mode production",
-    "start": "webpack-dev-server --hot --mode development"
+    "start": "webpack-dev-server --hot --mode development",
+    "start-prod": "webpack-dev-server --hot --mode production"
   },
   "dependencies": {
     "immutable": "^4.0.0-rc.12",
