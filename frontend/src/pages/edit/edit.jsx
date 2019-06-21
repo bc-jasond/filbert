@@ -184,9 +184,8 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     
-    const section = this.editPipeline.getSection(selectedNodeId);
-    const prevSection = this.editPipeline.getPrevSibling(section.get('id'));
-    const twoSectionsBack = this.editPipeline.getPrevSibling(prevSection.get('id'));
+    const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
+    const prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
     
     let caretOffset = -1;
     
@@ -206,7 +205,8 @@ export default class EditPost extends React.Component {
     }
   
     let focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedNodeId);
-    
+    // save these locally before updates
+    const isOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
     const isFirstChild = this.editPipeline.isFirstChild(selectedNodeId);
     const prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
     // delete current node
@@ -221,7 +221,7 @@ export default class EditPost extends React.Component {
     
     // merge current section's children
     if (isFirstChild && prevSection && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
-      this.editPipeline.mergeSections(prevSection.get('id'), section.get('id'));
+      this.editPipeline.mergeSections(prevSection.get('id'), selectedSectionId);
       focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
     }
     
@@ -231,6 +231,11 @@ export default class EditPost extends React.Component {
       this.editPipeline.replaceTextNode(prevSibling.get('id'), `${prevSiblingText}${selectedNodeContent}`);
       caretOffset = prevSiblingText.length;
       focusNodeId = prevSibling.get('id');
+    }
+    
+    // delete section?
+    if (isOnlyChild) {
+      this.editPipeline.delete(selectedSectionId);
     }
     
     this.commitUpdates(focusNodeId, caretOffset);
