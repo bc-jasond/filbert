@@ -29,7 +29,7 @@ import {
   UP_ARROW,
   NODE_TYPE_SECTION_SPACER,
   NEW_POST_URL_ID,
-  ROOT_NODE_PARENT_ID,
+  ROOT_NODE_PARENT_ID, NODE_TYPE_SECTION_H2,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -414,14 +414,26 @@ export default class EditPost extends React.Component {
   /**
    * INSERT SECTIONS
    */
-  insertSpacer = () => {
+  insertSection = (sectionType) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
     const selectedSectionId = this.editPipeline.getParent(selectedNodeId).get('id');
-    // splitting the current section even if selectedNodeId is first or last child
-    this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
-    // insert the spacer
-    const spacerId = this.editPipeline.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_SPACER);
-    const focusNodeId = this.editPipeline.getClosestFocusNodeId(spacerId, false);
+    let focusNodeId;
+    if (sectionType === NODE_TYPE_SECTION_SPACER) {
+      // TODO: all 'terminal' sections
+      //  1) create additional content section after
+      //  2) move caret ahead to new section
+      // splitting the current section even if selectedNodeId is first or last child
+      this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
+      // insert the spacer
+      const newSectionid = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType);
+      // focus *after* new section
+      focusNodeId = this.editPipeline.getClosestFocusNodeId(newSectionid, false);
+    } else {
+      // sections with children, just create section and focus it
+      const newSectionid = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType);
+      focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedSectionId, false);
+    }
+    
     this.commitUpdates(focusNodeId);
   }
   
@@ -457,7 +469,9 @@ export default class EditPost extends React.Component {
             <InsertSectionItem>photo</InsertSectionItem>
             <InsertSectionItem>code</InsertSectionItem>
             <InsertSectionItem>list</InsertSectionItem>
-            <InsertSectionItem onClick={this.insertSpacer}>spacer</InsertSectionItem>
+            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_SPACER)}>spacer</InsertSectionItem>
+            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_H1)}>H1</InsertSectionItem>
+            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_H2)}>H2</InsertSectionItem>
             <InsertSectionItem>quote</InsertSectionItem>
             <InsertSectionItem>post link</InsertSectionItem>
           </InsertSectionMenuItemsContainer>

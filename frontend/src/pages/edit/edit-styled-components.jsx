@@ -6,7 +6,7 @@ export const InsertSectionMenu = styled.div`
   position: absolute;
   overflow: hidden;
   height: 56px;
-  width: ${p => p.isOpen ? '640' : '50'}px;
+  width: ${p => p.isOpen ? '755' : '50'}px;
   display: ${p => p.shouldShowInsertMenu ? 'block' : 'none'};
   top: ${p => p.insertMenuTopOffset - 13}px;
   left: ${p => p.insertMenuLeftOffset - 68}px;
