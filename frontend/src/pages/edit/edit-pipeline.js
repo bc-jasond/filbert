@@ -226,8 +226,9 @@ export default class EditPipeline {
       throw new Error('mergeSections - I only merge CONTENT sections ATM')
     }
     console.info('mergingSections ', left.get('id'), right.get('id'));
-    const rightNodes = this.nodesByParentId.get(rightSectionId);
-    const leftNodes = this.nodesByParentId.get(leftSectionId);
+    // left or right could be empty because the selectedNode was already deleted
+    const rightNodes = this.nodesByParentId.get(rightSectionId, List());
+    const leftNodes = this.nodesByParentId.get(leftSectionId, List());
     this.nodesByParentId = this.nodesByParentId.set(leftSectionId, leftNodes.concat(rightNodes));
     this.updateNodesForParent(leftSectionId);
     this.nodesByParentId = this.nodesByParentId.set(rightSectionId, List());

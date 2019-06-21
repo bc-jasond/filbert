@@ -185,7 +185,7 @@ export default class EditPost extends React.Component {
     evt.preventDefault();
     
     const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
-    const prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
+    let prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
     
     let caretOffset = -1;
     
@@ -205,10 +205,13 @@ export default class EditPost extends React.Component {
     }
   
     let focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedNodeId);
+    let prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
+    let didMergeSections = false;
+    let didDeletePrevSection = false;
     // save these locally before updates
     const isOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
     const isFirstChild = this.editPipeline.isFirstChild(selectedNodeId);
-    const prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
+    
     // delete current node
     this.editPipeline.delete(selectedNodeId);
     
@@ -216,17 +219,23 @@ export default class EditPost extends React.Component {
     if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
       const spacerId = prevSection.get('id');
       focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
+      prevSection = this.editPipeline.getPrevSibling(spacerId);
+      prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
+      didDeletePrevSection = true;
       this.editPipeline.delete(spacerId);
     }
     
     // merge current section's children
     if (isFirstChild && prevSection && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
       this.editPipeline.mergeSections(prevSection.get('id'), selectedSectionId);
-      focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
+      if (!didDeletePrevSection) {
+        focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
+      }
+      didMergeSections = true;
     }
     
     // merge current node's text into previous sibling
-    if (cleanText(selectedNodeContent) && !isFirstChild) {
+    if (cleanText(selectedNodeContent)) {
       const prevSiblingText = this.editPipeline.getText(prevSibling.get('id'));
       this.editPipeline.replaceTextNode(prevSibling.get('id'), `${prevSiblingText}${selectedNodeContent}`);
       caretOffset = prevSiblingText.length;
@@ -234,7 +243,7 @@ export default class EditPost extends React.Component {
     }
     
     // delete section?
-    if (isOnlyChild) {
+    if (isOnlyChild && !didMergeSections) {
       this.editPipeline.delete(selectedSectionId);
     }
     
