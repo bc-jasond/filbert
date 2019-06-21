@@ -49,6 +49,9 @@ export default class EditPipeline {
   }
   
   getNode(nodeId) {
+    if (!nodeId) {
+      return Map();
+    }
     if (this.rootId === nodeId) return this.root;
     
     const queue = [this.rootId];
@@ -72,35 +75,27 @@ export default class EditPipeline {
   }
   
   getSection(nodeId) {
-    let sectionId = this.getNode(nodeId).get('id');
+    let sectionId = nodeId;
     while (!this.isSectionType(sectionId)) {
       sectionId = this.getParent(sectionId).get('id');
     }
     return this.getNode(sectionId);
   }
   
-  getNextSibling(nodeId) {
+  getSibling(nodeId, prev = true) {
     const parent = this.getParent(nodeId);
     const siblings = this.nodesByParentId.get(parent.get('id'));
     const idx = siblings.findIndex(s => s.get('id') === nodeId);
-    if (idx === siblings.size - 1) {
-      return Map();
-    }
-    return siblings.get(idx + 1);
+    if ((prev && idx === 0) || (!prev && idx === siblings.size - 1)) return Map();
+    return siblings.get(prev ? idx - 1 : idx + 1);
   }
   
-  nextSectionIsContentType(nodeId) {
-    const currentSection = this.getSection(nodeId);
-    const nextSection = this.getNextSibling(currentSection.get('id'))
-    return nextSection.get('type') === NODE_TYPE_SECTION_CONTENT;
+  getNextSibling(nodeId) {
+    return this.getSibling(nodeId, false);
   }
   
   getPrevSibling(nodeId) {
-    const parent = this.getParent(nodeId);
-    const siblings = this.nodesByParentId.get(parent.get('id'));
-    const idx = siblings.findIndex(s => s.get('id') === nodeId);
-    if (idx === 0) return Map();
-    return siblings.get(idx - 1);
+    return this.getSibling(nodeId);
   }
   
   isFirstChild(nodeId) {
@@ -366,64 +361,87 @@ export default class EditPipeline {
     });
   }
   
-  getClosestFocusNodeInSection(sectionId, isPrevious = true) {
-    console.info('getClosestFocusNodeId for SECTION', sectionId);
-    if ((isPrevious && this.isFirstChild(sectionId))
-      || (!isPrevious && this.isLastChild(sectionId))
-      || this.isOnlyChild(sectionId)) {
-      // TODO: some 'sections' are actually 'subsections' that can be focused - this design is probably a bad idea
-      if (this.getNode(sectionId).get('type') === NODE_TYPE_SECTION_H1) {
-        return sectionId;
-      }
-      return isPrevious ? this.getFirstChild(sectionId).get('id') : this.getLastChild(sectionId).get('id');
-    }
-    if (isPrevious) {
-      const prevSectionId = this.getPrevSibling(sectionId).get('id');
-      return this.getLastChild(prevSectionId).get('id');
-    } else {
-      const nextSectionId = this.getNextSibling(sectionId).get('id');
-      return this.getFirstChild(nextSectionId).get('id');
-    }
+  canFocusNode(nodeId) {
+    return [
+      NODE_TYPE_SECTION_H1,
+      NODE_TYPE_SECTION_H2,
+      NODE_TYPE_P,
+    ].includes(this.getNode(nodeId).get('type'));
   }
   
-  getClosestFocusNodeId(nodeId, isPrevious = true) {
+  getPreviousFocusNodeId(nodeId) {
     let focusNodeId;
-    if (nodeId === this.rootId) {
-      // nodeId is ROOT
-      console.info('getClosestFocusNodeId for ROOT ', nodeId);
-      const sectionId = isPrevious
-        ? this.getFirstChild(nodeId).get('id')
-        : this.getLastChild(nodeId).get('id');
-      focusNodeId = this.getClosestFocusNodeInSection(sectionId, isPrevious)
-    } else if (this.isSectionType(nodeId)) {
+    if (nodeId === this.rootId || this.isSectionType(nodeId)) {
+      let sectionId = nodeId;
+      if (nodeId === this.rootId) {
+        // nodeId is ROOT - get first section
+        console.info('getPreviousFocusNodeId for ROOT ', nodeId);
+        sectionId = this.getFirstChild(nodeId).get('id');
+      }
       // nodeId is a Section
-      focusNodeId = this.getClosestFocusNodeInSection(nodeId, isPrevious);
+      // TODO: some 'sections' are actually 'subsections' that can be focused - this design is probably a bad idea
+      console.info('getPreviousFocusNodeId for SECTION', sectionId);
+      if (this.isFirstChild(sectionId) || this.isOnlyChild(sectionId)) {
+        focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getFirstChild(sectionId).get('id');
+      } else {
+        const prevSectionId = this.getPrevSibling(sectionId).get('id');
+        focusNodeId = this.canFocusNode(prevSectionId) ? prevSectionId : this.getLastChild(prevSectionId).get('id');
+      }
     } else {
-      // nodeId is a P
-      console.info('getClosestFocusNodeId for P', nodeId);
-      const currentSectionId = this.getSection(nodeId).get('id');
-      if (this.isOnlyChild(nodeId)
-        || (isPrevious && this.isFirstChild(nodeId))
-        || (!isPrevious && this.isLastChild(nodeId))) {
+      // nodeId is a P or bad things
+      console.info('getPreviousFocusNodeId for P', nodeId);
+      if (this.isOnlyChild(nodeId) || this.isFirstChild(nodeId)) {
         focusNodeId = nodeId;
-      } else if (isPrevious && !this.isFirstChild(nodeId)) {
+      } else {
         focusNodeId = this.getPrevSibling(nodeId).get('id');
-      } else if (!isPrevious && !this.isLastChild()) {
-        focusNodeId = this.getNextSibling(nodeId).get('id');
       }
     }
-    
     if (!focusNodeId) {
-      console.error(`WTF? getClosestFocusNodeId - I can't find another node ${isPrevious ? 'in front of' : 'after'} ${nodeId}`);
+      console.error(`getPreviousFocusNodeId - can't find a node before `, nodeId, ' type ', this.getNode(nodeId).get('type'));
     }
-    
-    console.info('getClosestFocusNodeId found: ', focusNodeId);
-    
+    console.info('getPreviousFocusNodeId found: ', focusNodeId);
     return focusNodeId;
   }
   
-  // TODO: this is a bad idea
+  getNextFocusNodeId(nodeId) {
+    let focusNodeId;
+    if (nodeId === this.rootId || this.isSectionType(nodeId)) {
+      let sectionId = nodeId;
+      if (nodeId === this.rootId) {
+        // nodeId is ROOT
+        console.info('getNextFocusNodeId for ROOT ', nodeId);
+        sectionId = this.getLastChild(nodeId).get('id');
+      }
+      // nodeId is a Section
+      // TODO: some 'sections' are actually 'subsections' that can be focused - this design is probably a bad idea
+      console.info('getNextFocusNodeId for SECTION', sectionId);
+      if (this.isLastChild(sectionId) || this.isOnlyChild(sectionId)) {
+        focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getLastChild(sectionId).get('id');
+      } else {
+        const nextSectionId = this.getNextSibling(sectionId).get('id');
+        focusNodeId = this.canFocusNode(nextSectionId) ? nextSectionId : this.getFirstChild(nextSectionId).get('id');
+      }
+    } else {
+      // nodeId is a P
+      console.info('getNextFocusNodeId for P', nodeId);
+      if (this.isOnlyChild(nodeId) || this.isLastChild(nodeId)) {
+        focusNodeId = nodeId;
+      } else {
+        focusNodeId = this.getNextSibling(nodeId).get('id');
+      }
+    }
+    if (!focusNodeId) {
+      console.error(`getNextFocusNodeId - can't find a node after: `, nodeId, ', type: ', this.getNode(nodeId).get('type'));
+    }
+    console.info('getNextFocusNodeId found: ', focusNodeId, ', type: ', this.getNode(focusNodeId).get('type'));
+    return focusNodeId;
+  }
+  
+  // TODO: this is a bad idea but, if the DOM gets into an illegal state everything is F!@KED
   pruneEmptyAndOrphanedParents() {
+    console.warn('pruneEmptyAndOrphanedParents BAD BAD BAD!');
+    return;
+    
     const idsToDelete = this.nodesByParentId
       .filterNot(
         (children, id) => (id === ROOT_NODE_PARENT_ID || (children.size > 0 && this.getNode(id).get('id')))

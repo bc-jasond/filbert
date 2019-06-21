@@ -62,10 +62,9 @@ export default class EditPost extends React.Component {
     try {
       const { postId } = this.props;
       if (postId === NEW_POST_URL_ID) {
-        this.newPost();
-      } else {
-        await this.loadPost();
+        return this.newPost();
       }
+      return this.loadPost();
     } catch (err) {
       console.error('EDIT - load post error:', err);
     }
@@ -120,7 +119,7 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
       this.editPipeline.init(post, contentNodes);
-      const focusNodeId = this.editPipeline.getClosestFocusNodeId(this.editPipeline.rootId, false);
+      const focusNodeId = this.editPipeline.getPreviousFocusNodeId(this.editPipeline.rootId);
       this.setState({
         root: this.editPipeline.root,
         nodesByParentId: this.editPipeline.nodesByParentId,
@@ -128,6 +127,7 @@ export default class EditPost extends React.Component {
       }, () => {
         setCaret(focusNodeId)
         this.manageInsertMenu();
+        window.scrollTo(0, 0);
       })
     } catch (err) {
       console.error(err);
@@ -209,13 +209,16 @@ export default class EditPost extends React.Component {
     if (this.editPipeline.isOnlyChild(selectedNodeId) && prevSection.size === 0) {
       return;
     }
-  
-    let focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedNodeId);
+    
     let prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
     let didDeletePrevSection = false;
     // save these locally before updates
     const isOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
+    // handles CONTENT only
     const isFirstChild = this.editPipeline.isFirstChild(selectedNodeId);
+    // need to pick the node or the section to get the right previous!
+    const selectedSectionIsFirstChildOfRoot = this.editPipeline.isFirstChild(selectedSectionId);
+    let focusNodeId = this.editPipeline.getPreviousFocusNodeId(selectedSectionIsFirstChildOfRoot ? selectedNodeId : selectedSectionId);
     
     // delete current node
     this.editPipeline.delete(selectedNodeId);
@@ -223,24 +226,29 @@ export default class EditPost extends React.Component {
     // delete previous section (SPACER, etc)
     if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
       const spacerId = prevSection.get('id');
-      focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
+      focusNodeId = this.editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
       prevSection = this.editPipeline.getPrevSibling(spacerId);
       prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
       didDeletePrevSection = true;
       this.editPipeline.delete(spacerId);
     }
     
-    // merge current section's children TODO expand beyond content section
+    // merge current section's children
+    // TODO: merge & convert section types H1 -> Content, Content -> H1, etc.
     if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
       this.editPipeline.mergeSections(prevSection.get('id'), selectedSectionId);
       if (!didDeletePrevSection) {
-        // TODO: this is confusing.  Given a sectionId, getClosestFocusNodeId will look for a previous/next section.  But here, we want to look for the first/last child of current section.  This will already have happened by 'delete previous section' code
-        focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
+        // TODO: this is confusing.  Given a sectionId, getPreviousFocusNodeId will look for a previous/next section.  But here, we want to look for the first/last child of current section.  This will already have happened by 'delete previous section' code
+        focusNodeId = this.editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
       }
     }
     
     // merge current node's text into previous sibling
     if (cleanText(selectedNodeContent)) {
+      if (selectedNodeId === selectedSectionId) {
+        // H1 or H2 - aka, sections that have text nodes directly
+        prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
+      }
       const prevSiblingText = this.editPipeline.getText(prevSibling.get('id'));
       this.editPipeline.replaceTextNode(prevSibling.get('id'), `${prevSiblingText}${selectedNodeContent}`);
       caretOffset = prevSiblingText.length;
@@ -302,12 +310,12 @@ export default class EditPost extends React.Component {
       focusNodeId = pId;
     }
     /**
-     * insert a new Content Section and a P tag
+     * insert a new P tag (and a Content Section if the next section isn't one)
      */
-    if (selectedNodeType === NODE_TYPE_SECTION_H1) {
+    if ([NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_H2].includes(selectedNodeType)) {
       const nextSibling = this.editPipeline.getNextSibling(selectedNodeId);
       let nextSiblingId;
-      if (nextSibling && nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
+      if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
         nextSiblingId = nextSibling.get('id');
       } else {
         // create a ContentSection
@@ -355,7 +363,9 @@ export default class EditPost extends React.Component {
       evt.stopPropagation();
       evt.preventDefault();
       const shouldFocusOnPrevious = evt.keyCode === UP_ARROW;
-      const focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedNodeId, shouldFocusOnPrevious);
+      const focusNodeId = shouldFocusOnPrevious
+        ? this.editPipeline.getPreviousFocusNodeId(selectedNodeId)
+        : this.editPipeline.getNextFocusNodeId(selectedNodeId);
       setCaret(focusNodeId);
     }
   }
@@ -406,7 +416,7 @@ export default class EditPost extends React.Component {
     const { insertMenuIsOpen } = this.state;
     this.setState({ insertMenuIsOpen: !insertMenuIsOpen }, () => {
       if (insertMenuIsOpen) {
-        setCaret(this.nodeId);
+        setCaret(this.insertMenuSelectedNodeId);
       }
     });
   }
@@ -416,22 +426,21 @@ export default class EditPost extends React.Component {
    */
   insertSection = (sectionType) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
-    const selectedSectionId = this.editPipeline.getParent(selectedNodeId).get('id');
+    const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
+    // splitting the current section even if selectedNodeId is first or last child
+    this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
+    // insert the spacer
+    const newSectionId = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType);
     let focusNodeId;
     if (sectionType === NODE_TYPE_SECTION_SPACER) {
       // TODO: all 'terminal' sections
-      //  1) create additional content section after
-      //  2) move caret ahead to new section
-      // splitting the current section even if selectedNodeId is first or last child
-      this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
-      // insert the spacer
-      const newSectionid = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType);
+      //  1) move caret ahead to new section
       // focus *after* new section
-      focusNodeId = this.editPipeline.getClosestFocusNodeId(newSectionid, false);
+      focusNodeId = this.editPipeline.getNextFocusNodeId(newSectionId);
     } else {
-      // sections with children, just create section and focus it
-      const newSectionid = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType);
-      focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedSectionId, false);
+      // don't need this empty P tag
+      this.editPipeline.delete(selectedNodeId);
+      focusNodeId = newSectionId;
     }
     
     this.commitUpdates(focusNodeId);
