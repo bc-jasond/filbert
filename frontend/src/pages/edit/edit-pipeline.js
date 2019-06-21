@@ -162,6 +162,10 @@ export default class EditPipeline {
     this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id') }));
   }
   
+  nodeHasBeenStagedForUpdate(nodeId) {
+    return !!this.nodeUpdates.find((update, nodeId) => nodeId === searchNodeId && update.get('action') === NODE_ACTION_UPDATE)
+  }
+  
   stageNodeDelete(nodeId) {
     if (nodeId === null || nodeId === 'null') {
       console.warn('stageNodeDelete - trying to update null');
@@ -172,6 +176,32 @@ export default class EditPipeline {
     }
     console.info('stageNodeDelete ', nodeId);
     this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_DELETE, post_id: this.post.get('id') }));
+  }
+  
+  nodeHasBeenStagedForDelete(searchNodeId) {
+    return !!this.nodeUpdates.find((update, nodeId) => nodeId === searchNodeId && update.get('action') === NODE_ACTION_DELETE)
+  }
+  
+  addPostIdToUpdates(postId) {
+    this.nodeUpdates = this.nodeUpdates.map(update => update.set('post_id', postId));
+  }
+  
+  updates() {
+    return Object.entries(
+      this.nodeUpdates
+      // don't send bad updates
+        .filterNot( (update, nodeId) => nodeId === 'null' || !nodeId)
+        // don't look for deleted nodes...
+        .map((update, nodeId) => update.get('action') === NODE_ACTION_DELETE ? update : update.set('node', this.getNode(nodeId)))
+        .toJS()
+    );
+  }
+  
+  clearUpdates() {
+    if (this.nodeUpdates.size > 0) {
+      console.info('clearUpdates - clearing non-empty update pipeline', this.nodeUpdates);
+    }
+    this.nodeUpdates = Map();
   }
   
   insertSectionAfter(sectionId, type) {
@@ -292,7 +322,12 @@ export default class EditPipeline {
    */
   delete(nodeId) {
     if (nodeId === this.rootId) {
-      console.warn('edit pipeline - delete - trying to delete the root node!')
+      console.error('edit pipeline - delete - trying to delete the root node!')
+      return;
+    }
+    // check if node is already deleted
+    if (this.nodeHasBeenStagedForDelete(nodeId)) {
+      console.info('edit pipeline - already deleted ', nodeId);
       return;
     }
     // mark this node deleted
@@ -304,12 +339,13 @@ export default class EditPipeline {
       .filter(node => node.get('id') !== nodeId)
     );
     // delete this node's children list
+    // note: don't stage delete it's children, they might have moved to another section during a merge
     this.nodesByParentId = this.nodesByParentId.delete(nodeId);
     // reindex children and persist changes
     this.updateNodesForParent(parentId);
     // safe guard against integrity constraint violations
     // TODO: add integrity constraints AKA, node type can only have children of type [x,y,z]
-    this.pruneEmptyAndOrphanedParents();
+    // this.pruneEmptyAndOrphanedParents();
   }
   
   updateNodesForParent(parentId) {
@@ -332,7 +368,13 @@ export default class EditPipeline {
   
   getClosestFocusNodeInSection(sectionId, isPrevious = true) {
     console.info('getClosestFocusNodeId for SECTION', sectionId);
-    if ((isPrevious && this.isFirstChild(sectionId)) || (!isPrevious && this.isLastChild(sectionId)) || this.isOnlyChild(sectionId)) {
+    if ((isPrevious && this.isFirstChild(sectionId))
+      || (!isPrevious && this.isLastChild(sectionId))
+      || this.isOnlyChild(sectionId)) {
+      // TODO: some 'sections' are actually 'subsections' that can be focused - this design is probably a bad idea
+      if (this.getNode(sectionId).get('type') === NODE_TYPE_SECTION_H1) {
+        return sectionId;
+      }
       return isPrevious ? this.getFirstChild(sectionId).get('id') : this.getLastChild(sectionId).get('id');
     }
     if (isPrevious) {
@@ -374,41 +416,25 @@ export default class EditPipeline {
     if (!focusNodeId) {
       console.error(`WTF? getClosestFocusNodeId - I can't find another node ${isPrevious ? 'in front of' : 'after'} ${nodeId}`);
     }
-  
+    
     console.info('getClosestFocusNodeId found: ', focusNodeId);
     
     return focusNodeId;
   }
   
+  // TODO: this is a bad idea
   pruneEmptyAndOrphanedParents() {
-    this.nodesByParentId = this.nodesByParentId.filter(
-      (children, id) => {
-        if (id === ROOT_NODE_PARENT_ID || (children.size > 0 && this.getNode(id).get('id'))) {
-          return true;
-        } else {
-          this.stageNodeDelete(id);
-          return false;
-        }
-      });
-  }
-  
-  addPostIdToUpdates(postId) {
-    this.nodeUpdates = this.nodeUpdates.map(update => update.set('post_id', postId));
-  }
-  
-  updates() {
-    return Object.entries(
-      this.nodeUpdates
-      // don't look for deleted nodes...
-        .map((update, nodeId) => update.get('action') === NODE_ACTION_DELETE ? update : update.set('node', this.getNode(nodeId)))
-        .toJS()
-    );
-  }
-  
-  clearUpdates() {
-    if (this.nodeUpdates.size > 0) {
-      console.info('clearUpdates - clearing non-empty update pipeline', this.nodeUpdates);
+    const idsToDelete = this.nodesByParentId
+      .filterNot(
+        (children, id) => (id === ROOT_NODE_PARENT_ID || (children.size > 0 && this.getNode(id).get('id')))
+      )
+      .map((_, id) => id);
+    
+    if (idsToDelete.size > 0) {
+      console.info('pruneEmptyAndOrphanedParents ', idsToDelete);
     }
-    this.nodeUpdates = Map();
+    idsToDelete.forEach(id => {
+      // this.delete(id);
+    });
   }
 }

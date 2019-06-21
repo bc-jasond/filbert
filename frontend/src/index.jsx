@@ -7,6 +7,8 @@ import Pace from './common/pace';
 
 Pace();
 
+console.debug = () => {};
+
 ReactDOM.render(
   <AppWithHot />,
   document.getElementById('app'),

@@ -164,17 +164,22 @@ export default class EditPost extends React.Component {
       return;
     }
     
-    const selectedNode = getCaretNode();
-    const selectedNodeId = getCaretNodeId();
-    const selectedNodeContent = cleanText(selectedNode.textContent);
-    
-    console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
-    
     const range = getRange();
     if (!range) {
       console.warn('BACKSPACE no range');
       return;
     }
+  
+    const selectedNode = getCaretNode();
+    const selectedNodeId = getCaretNodeId();
+  
+    if (selectedNodeId === 'null' || !selectedNodeId) {
+      console.warn('BACKSPACE - bad selection, no id ', selectedNode);
+      return;
+    }
+    const selectedNodeContent = cleanText(selectedNode.textContent);
+  
+    console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
     
     if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
       // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
@@ -190,23 +195,23 @@ export default class EditPost extends React.Component {
     let caretOffset = -1;
     
     /**
+     * // TODO: make these into sets of atomic commands that are added to a queue, then make a 'flush' command to process this queue.  Right now, live updates are happening and it's wack-a-mole galore
      * THINGS TO CONSIDER FOR DELETE (in order):
-     * 1) only-child of first section - noop!
-     * 2) only-child, delete current section
+     * 1) only-child of first section - noop until there's special 'rootIsEmpty' placeholder logic
+     * 2) delete the current selected node - always if 'this far'
      * 3) delete the previous section (if it's a SPACER or other terminal node)?
-     * 4) merge the current section's children (could be 0) into previous section AND delete current section
+     * 4) merge the current section's children (could be 0) into previous section (current section will be deleted)
      * 5) merge the current selected node's text into the previous node?
-     * 6) delete the current selected node?
+     * 6) selected node is/was an only-child, delete current section
      */
     
     // only child of first section
-    if (this.editPipeline.isOnlyChild(selectedNodeId) && !prevSection) {
+    if (this.editPipeline.isOnlyChild(selectedNodeId) && prevSection.size === 0) {
       return;
     }
   
     let focusNodeId = this.editPipeline.getClosestFocusNodeId(selectedNodeId);
     let prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
-    let didMergeSections = false;
     let didDeletePrevSection = false;
     // save these locally before updates
     const isOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
@@ -225,13 +230,13 @@ export default class EditPost extends React.Component {
       this.editPipeline.delete(spacerId);
     }
     
-    // merge current section's children
-    if (isFirstChild && prevSection && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
+    // merge current section's children TODO expand beyond content section
+    if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
       this.editPipeline.mergeSections(prevSection.get('id'), selectedSectionId);
       if (!didDeletePrevSection) {
+        // TODO: this is confusing.  Given a sectionId, getClosestFocusNodeId will look for a previous/next section.  But here, we want to look for the first/last child of current section.  This will already have happened by 'delete previous section' code
         focusNodeId = this.editPipeline.getClosestFocusNodeId(prevSection.get('id'));
       }
-      didMergeSections = true;
     }
     
     // merge current node's text into previous sibling
@@ -242,8 +247,8 @@ export default class EditPost extends React.Component {
       focusNodeId = prevSibling.get('id');
     }
     
-    // delete section?
-    if (isOnlyChild && !didMergeSections) {
+    // delete section? merging will have already deleted it
+    if (isOnlyChild) {
       this.editPipeline.delete(selectedSectionId);
     }
     
@@ -266,6 +271,10 @@ export default class EditPost extends React.Component {
     
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
+    if (selectedNodeId === 'null' || !selectedNodeId) {
+      console.warn('ENTER - bad selection, no id ', selectedNode);
+      return;
+    }
     const selectedNodeType = getCaretNodeType();
     const selectedNodeContent = cleanText(selectedNode.textContent);
     // split selectedNodeContent at caret
@@ -317,14 +326,17 @@ export default class EditPost extends React.Component {
       // doesn't work with a 'new' post
       return;
     }
-    
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
+    if (selectedNodeId === 'null' || !selectedNodeId) {
+      console.warn('DOM SYNC - bad selection, no id ', selectedNode);
+      return;
+    }
     const selectedNodeContent = cleanText(selectedNode.textContent);
     if (!this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent)) {
       return;
     }
-    console.info('handleSyncFromDom', selectedNode);
+    console.info('DOM SYNC ', selectedNode);
     this.saveContentBatchDebounce()
   }
   
@@ -335,10 +347,10 @@ export default class EditPost extends React.Component {
     const selectedNodeId = getCaretNodeId();
     const selectedNode = this.editPipeline.getNode(selectedNodeId);
     if (!selectedNode) {
-      console.warn('handleCaret no node, bad selection: ', getCaretNode());
+      console.warn('CARET no node, bad selection: ', getCaretNode());
       return;
     }
-    console.info('handleCaret - node', getCaretNode());
+    console.info('CARET - node', getCaretNode());
     if (selectedNode.get('type') === NODE_TYPE_SECTION_SPACER) {
       evt.stopPropagation();
       evt.preventDefault();
