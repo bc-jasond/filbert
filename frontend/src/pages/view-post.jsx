@@ -13,7 +13,7 @@ export default class ViewPost extends React.Component {
     
     this.state = {
       root: null,
-      allNodesByParentId: {},
+      nodesByParentId: {},
       shouldShow404: false,
     }
   }
@@ -21,10 +21,10 @@ export default class ViewPost extends React.Component {
   async componentDidMount() {
     try {
       const { post, contentNodes } = await apiGet(`/post/${this.props.postId}`);
-      const allNodesByParentId = Immutable.fromJS(contentNodes);
+      const nodesByParentId = Immutable.fromJS(contentNodes);
       // TODO: don't use 'null' as root node indicator
-      const root = allNodesByParentId.get(ROOT_NODE_PARENT_ID).get(0);
-      this.setState({ root, allNodesByParentId, shouldShow404: false })
+      const root = nodesByParentId.get(ROOT_NODE_PARENT_ID).get(0);
+      this.setState({ root, nodesByParentId, shouldShow404: false })
     } catch (err) {
       console.error(err);
       this.setState({ pageContent: null, shouldShow404: true })
@@ -34,14 +34,14 @@ export default class ViewPost extends React.Component {
   render() {
     const {
       root,
-      allNodesByParentId,
+      nodesByParentId,
       shouldShow404,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
     
     return !root ? null : (
-      <ContentNode node={root} allNodesByParentId={allNodesByParentId} />
+      <ContentNode node={root} nodesByParentId={nodesByParentId} />
     );
   }
 }
