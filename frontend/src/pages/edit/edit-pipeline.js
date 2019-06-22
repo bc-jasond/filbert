@@ -49,9 +49,6 @@ export default class EditPipeline {
   }
   
   getNode(nodeId) {
-    if (!nodeId) {
-      return Map();
-    }
     if (this.rootId === nodeId) return this.root;
     
     const queue = [this.rootId];
@@ -71,19 +68,23 @@ export default class EditPipeline {
   
   getParent(nodeId) {
     const node = this.getNode(nodeId);
-    return this.getNode(node.get('parent_id'));
+    return node.get('parent_id') ? this.getNode(node.get('parent_id')) : node;
   }
   
   getSection(nodeId) {
     let sectionId = nodeId;
     while (!this.isSectionType(sectionId)) {
       sectionId = this.getParent(sectionId).get('id');
+      if (!sectionId) { break; }
     }
     return this.getNode(sectionId);
   }
   
   getSibling(nodeId, prev = true) {
     const parent = this.getParent(nodeId);
+    if (parent.size === 0) {
+      return Map();
+    }
     const siblings = this.nodesByParentId.get(parent.get('id'));
     const idx = siblings.findIndex(s => s.get('id') === nodeId);
     if ((prev && idx === 0) || (!prev && idx === siblings.size - 1)) return Map();
@@ -157,10 +158,6 @@ export default class EditPipeline {
     this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id') }));
   }
   
-  nodeHasBeenStagedForUpdate(nodeId) {
-    return !!this.nodeUpdates.find((update, nodeId) => nodeId === searchNodeId && update.get('action') === NODE_ACTION_UPDATE)
-  }
-  
   stageNodeDelete(nodeId) {
     if (nodeId === null || nodeId === 'null') {
       console.warn('stageNodeDelete - trying to update null');
@@ -199,7 +196,7 @@ export default class EditPipeline {
     this.nodeUpdates = Map();
   }
   
-  insertSectionAfter(sectionId, type) {
+  insertSectionAfter(sectionId, type, meta = Map()) {
     // parent must be root
     const sections = this.nodesByParentId.get(this.rootId, List());
     const siblingIndex = sections.findIndex(s => s.get('id') === sectionId);
@@ -208,12 +205,12 @@ export default class EditPipeline {
       console.error(errorMessage, sectionId);
       throw new Error(errorMessage);
     }
-    return this.insert(this.rootId, type, siblingIndex + 1);
+    return this.insert(this.rootId, type, siblingIndex + 1, meta);
   }
   
-  insertSection(type, index = -1) {
+  insertSection(type, index = -1, meta = Map()) {
     // parent must be root
-    return this.insert(this.rootId, type, index);
+    return this.insert(this.rootId, type, index, meta);
   }
   
   splitSection(sectionId, nodeId) {
@@ -288,19 +285,20 @@ export default class EditPipeline {
     return true;
   }
   
-  insertSubSectionAfter(siblingId, type) {
+  insertSubSectionAfter(siblingId, type, meta = Map()) {
     const parentId = this.getParent(siblingId).get('id');
     const siblings = this.nodesByParentId.get(parentId, List());
     const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
-    return this.insert(parentId, type, siblingIdx + 1);
+    return this.insert(parentId, type, siblingIdx + 1, meta);
   }
   
-  insert(parentId, type, index) {
+  insert(parentId, type, index, meta) {
     const siblings = this.nodesByParentId.get(parentId, List());
     let newNode = this.getMapWithId({
       type,
       parent_id: parentId,
       position: index,
+      meta,
     });
     this.stageNodeUpdate(newNode.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
@@ -310,6 +308,14 @@ export default class EditPipeline {
     this.updateNodesForParent(parentId);
     // update all nodes
     return newNode.get('id');
+  }
+  
+  update(node) {
+    const parentId = this.getParent(node.get('id')).get('id');
+    const siblings = this.nodesByParentId.get(parentId);
+    const nodeIdx = siblings.findIndex(n => n.get('id') === node.get('id'));
+    this.stageNodeUpdate(node.get('id'));
+    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.set(nodeIdx, node))
   }
   
   /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map } from 'immutable';
+import { List, Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
 import EditPipeline from './edit-pipeline';
@@ -29,7 +29,7 @@ import {
   UP_ARROW,
   NODE_TYPE_SECTION_SPACER,
   NEW_POST_URL_ID,
-  ROOT_NODE_PARENT_ID, NODE_TYPE_SECTION_H2,
+  ROOT_NODE_PARENT_ID, NODE_TYPE_SECTION_H2, NODE_TYPE_SECTION_CODE, ZERO_LENGTH_CHAR,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -169,16 +169,16 @@ export default class EditPost extends React.Component {
       console.warn('BACKSPACE no range');
       return;
     }
-  
+    
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
-  
+    
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('BACKSPACE - bad selection, no id ', selectedNode);
       return;
     }
     const selectedNodeContent = cleanText(selectedNode.textContent);
-  
+    
     console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
     
     if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
@@ -188,6 +188,27 @@ export default class EditPost extends React.Component {
     
     evt.stopPropagation();
     evt.preventDefault();
+  
+    // CodeSection
+    if (selectedNode.tagName === 'PRE') {
+      const name = selectedNode.getAttribute('name');
+      const [selectedSectionId, lineIdx] = name.split('-');
+      const selectedSection = this.editPipeline.getNode(selectedSectionId);
+      const meta = selectedSection.get('meta');
+      let lines = meta.get('lines');
+    
+      this.editPipeline.update(
+        selectedSection.set('meta',
+          meta.set('lines',
+            lines.delete(lineIdx)
+          )
+        )
+      );
+    
+      console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIdx);
+      this.commitUpdates();
+      return;
+    }
     
     const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
     let prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
@@ -276,15 +297,39 @@ export default class EditPost extends React.Component {
       console.warn('ENTER no range');
       return;
     }
-    
+  
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
+    const selectedNodeContent = cleanText(selectedNode.textContent);
+    
+    // CodeSection
+    if (selectedNode.tagName === 'PRE') {
+      const name = selectedNode.getAttribute('name');
+      const [selectedSectionId, lineIdx] = name.split('-');
+      const selectedSection = this.editPipeline.getNode(selectedSectionId);
+      const meta = selectedSection.get('meta');
+      let lines = meta.get('lines');
+      
+      this.editPipeline.update(
+        selectedSection.set('meta',
+          meta.set('lines',
+            lines
+              .set(lineIdx, selectedNodeContent)
+              .insert(lineIdx + 1, ZERO_LENGTH_CHAR)
+          )
+        )
+      );
+      
+      console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIdx);
+      this.commitUpdates();
+      return;
+    }
+    
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('ENTER - bad selection, no id ', selectedNode);
       return;
     }
     const selectedNodeType = getCaretNodeType();
-    const selectedNodeContent = cleanText(selectedNode.textContent);
     // split selectedNodeContent at caret
     const contentLeft = selectedNodeContent.substring(0, range.endOffset);
     const contentRight = selectedNodeContent.substring(range.endOffset);
@@ -326,7 +371,7 @@ export default class EditPost extends React.Component {
       this.editPipeline.replaceTextNode(pId, contentRight);
       focusNodeId = pId;
     }
-    this.commitUpdates(focusNodeId,0);
+    this.commitUpdates(focusNodeId, 0);
   }
   
   handleSyncFromDom = () => {
@@ -336,6 +381,10 @@ export default class EditPost extends React.Component {
     }
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
+    if (selectedNode.tagName === 'PRE') {
+      // TODO:
+      return;
+    }
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('DOM SYNC - bad selection, no id ', selectedNode);
       return;
@@ -350,6 +399,11 @@ export default class EditPost extends React.Component {
   
   handleCaret = (evt) => {
     if (evt.isPropagationStopped()) {
+      return;
+    }
+    const domNode = getCaretNode();
+    if (domNode.tagName === 'PRE') {
+      // TODO
       return;
     }
     const selectedNodeId = getCaretNodeId();
@@ -388,6 +442,29 @@ export default class EditPost extends React.Component {
     console.debug('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleCaret(evt);
     this.manageInsertMenu();
+  }
+  
+  handlePaste = (evt) => {
+    const selectedNode = getCaretNode();
+    const selectedNodeId = getCaretNodeId();
+    const domLines = evt.clipboardData.getData('text/plain').split('\n');
+    if (getCaretNodeType() === NODE_TYPE_SECTION_CODE) {
+      const selectedSection = this.editPipeline.getNode(selectedNodeId);
+      const meta = selectedSection.get('meta');
+  
+      this.editPipeline.update(
+        selectedSection.set('meta',
+          meta.set('lines', List(domLines))
+        )
+      );
+      this.commitUpdates();
+    }
+    if (selectedNode.tagName === 'PRE') {
+    
+    }
+    console.log('PASTE ', domLines, selectedNode);
+    evt.stopPropagation();
+    evt.preventDefault();
   }
   
   manageInsertMenu() {
@@ -429,8 +506,12 @@ export default class EditPost extends React.Component {
     const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
     // splitting the current section even if selectedNodeId is first or last child
     this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
-    // insert the spacer
-    const newSectionId = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType);
+    // meta for custom terminal sections?
+    const newSectionMeta = sectionType === NODE_TYPE_SECTION_CODE
+      ? Map({ lines: List([ZERO_LENGTH_CHAR]) })
+      : Map();
+    // insert the section
+    const newSectionId = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType, newSectionMeta);
     let focusNodeId;
     if (sectionType === NODE_TYPE_SECTION_SPACER) {
       // TODO: all 'terminal' sections
@@ -463,7 +544,7 @@ export default class EditPost extends React.Component {
     
     return root && (
       <React.Fragment>
-        <div onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} onMouseUp={this.handleMouseUp}
+        <div onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} onMouseUp={this.handleMouseUp} onPaste={this.handlePaste}
              contentEditable={true} suppressContentEditableWarning={true}>
           <ContentNode node={root} nodesByParentId={nodesByParentId} />
         </div>
@@ -476,7 +557,7 @@ export default class EditPost extends React.Component {
           <InsertSectionMenuItemsContainer autocomplete="off" autocorrect="off" autocapitalize="off"
                                            spellcheck="false" isOpen={insertMenuIsOpen}>
             <InsertSectionItem>photo</InsertSectionItem>
-            <InsertSectionItem>code</InsertSectionItem>
+            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_CODE)}>code</InsertSectionItem>
             <InsertSectionItem>list</InsertSectionItem>
             <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_SPACER)}>spacer</InsertSectionItem>
             <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_H1)}>H1</InsertSectionItem>

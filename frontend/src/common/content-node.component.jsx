@@ -120,8 +120,8 @@ export default class ContentNode extends React.PureComponent {
           .get('meta', Map())
           .get('lines', List());
         return (
-          <CodeSection>
-            {lines.map((line, idx) => (<Pre key={idx}>{line}</Pre>))}
+          <CodeSection data-type={node.get('type')} name={node.get('id')} >
+            {lines.map((line, idx) => (<Pre key={`${node.get('id')}-${idx}`} name={`${node.get('id')}-${idx}`}>{line}</Pre>))}
           </CodeSection>
         );
       case NODE_TYPE_SECTION_IMAGE: {
