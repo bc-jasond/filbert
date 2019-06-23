@@ -307,11 +307,28 @@ export default class EditPost extends React.Component {
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
     const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
+    
+    if (selectedNodeId === 'null' || !selectedNodeId) {
+      console.warn('ENTER - bad selection, no id ', selectedNode);
+      return;
+    }
+  
+    console.info('ENTER node: ', selectedNode);
+    console.info('ENTER node content: ', selectedNodeContent);
+    console.info('ENTER node content left: ', contentLeft);
+    console.info('ENTER node content right: ', contentRight);
+    
+    const selectedNodeType = getCaretNodeType();
+    // split selectedNodeContent at caret
+    const contentLeft = selectedNodeContent.substring(0, range.endOffset);
+    const contentRight = selectedNodeContent.substring(range.endOffset);
+    
+    let focusNodeId;
   
     /**
      * CodeSection
      */
-    
+  
     if (selectedNode.tagName === 'PRE') {
       const name = selectedNode.getAttribute('name');
       const [selectedSectionId, idx] = name.split('-');
@@ -319,7 +336,7 @@ export default class EditPost extends React.Component {
       const selectedSection = this.editPipeline.getNode(selectedSectionId);
       const meta = selectedSection.get('meta');
       let lines = meta.get('lines');
-      
+    
       this.editPipeline.update(
         selectedSection.set('meta',
           meta.set('lines',
@@ -329,37 +346,16 @@ export default class EditPost extends React.Component {
           )
         )
       );
-      
+    
       console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIndex);
-      this.commitUpdates(`${selectedSectionId}-${lineIndex + 1}`);
-      return;
+      focusNodeId = `${selectedSectionId}-${lineIndex + 1}`;
     }
-    
-    if (selectedNodeId === 'null' || !selectedNodeId) {
-      console.warn('ENTER - bad selection, no id ', selectedNode);
-      return;
-    }
-    const selectedNodeType = getCaretNodeType();
-    // split selectedNodeContent at caret
-    const contentLeft = selectedNodeContent.substring(0, range.endOffset);
-    const contentRight = selectedNodeContent.substring(range.endOffset);
-    
-    console.info('ENTER node: ', selectedNode);
-    console.info('ENTER node content: ', selectedNodeContent);
-    console.info('ENTER node content left: ', contentLeft);
-    console.info('ENTER node content right: ', contentRight);
-    
-    let focusNodeId;
-    
-    /**
-     * sync content from selected DOM node to the model
-     */
-    this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
     
     /**
      * insert a new P after the current one
      */
     if (selectedNodeType === NODE_TYPE_P) {
+      this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
       const pId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P);
       this.editPipeline.replaceTextNode(pId, contentRight);
       focusNodeId = pId;
@@ -368,6 +364,7 @@ export default class EditPost extends React.Component {
      * insert a new P tag (and a Content Section if the next section isn't one)
      */
     if ([NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_H2].includes(selectedNodeType)) {
+      this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
       const nextSibling = this.editPipeline.getNextSibling(selectedNodeId);
       let nextSiblingId;
       if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
