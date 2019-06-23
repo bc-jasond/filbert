@@ -148,11 +148,12 @@ export default class EditPipeline {
   
   stageNodeUpdate(nodeId) {
     if (nodeId === null || nodeId === 'null') {
-      console.warn('stageNodeUpdate - trying to update null');
+      console.error('stageNodeUpdate - trying to update null');
       return;
     }
     if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE) {
-      console.warn('stageNodeUpdate - updating a deleted node, pain could be nigh');
+      console.error('stageNodeUpdate - updating a deleted node');
+      return;
     }
     console.info('stageNodeUpdate ', nodeId);
     this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id') }));
@@ -160,11 +161,12 @@ export default class EditPipeline {
   
   stageNodeDelete(nodeId) {
     if (nodeId === null || nodeId === 'null') {
-      console.warn('stageNodeDelete - trying to update null');
+      console.error('stageNodeDelete - trying to update null');
       return;
     }
     if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE) {
-      console.warn('stageNodeDelete - deleting an updated node, pain could be nigh');
+      console.error('stageNodeDelete - deleting an updated node');
+      return;
     }
     console.info('stageNodeDelete ', nodeId);
     this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_DELETE, post_id: this.post.get('id') }));
@@ -350,7 +352,9 @@ export default class EditPipeline {
   }
   
   updateNodesForParent(parentId) {
-    console.info('updateNodesForParent ', parentId);
+    // TODO: this is getting called 7 times when inserting a CodeSection
+    //  it's clobbering deleted nodes with updates, it's a hot mess.
+    console.info('UPDATE NodesFor PARENT ', parentId);
     const siblings = this.nodesByParentId.get(parentId, List());
     this.nodesByParentId = this.nodesByParentId.set(
       parentId,

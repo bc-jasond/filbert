@@ -8,7 +8,7 @@ import {
   apiPost,
 } from '../../common/fetch';
 import {
-  cleanText,
+  cleanText, cleanTextOrZeroLengthPlaceholder,
 } from '../../common/utils';
 import {
   getRange,
@@ -192,21 +192,27 @@ export default class EditPost extends React.Component {
     // CodeSection
     if (selectedNode.tagName === 'PRE') {
       const name = selectedNode.getAttribute('name');
-      const [selectedSectionId, lineIdx] = name.split('-');
+      const [selectedSectionId, idx] = name.split('-');
+      const lineIdx = parseInt(idx, 10);
       const selectedSection = this.editPipeline.getNode(selectedSectionId);
       const meta = selectedSection.get('meta');
       let lines = meta.get('lines');
-    
-      this.editPipeline.update(
-        selectedSection.set('meta',
-          meta.set('lines',
-            lines.delete(lineIdx)
+      
+      if (lines.size === 1) {
+        // delete the section
+        this.editPipeline.delete(selectedSectionId);
+      } else {
+        this.editPipeline.update(
+          selectedSection.set('meta',
+            meta.set('lines',
+              lines.delete(lineIdx)
+            )
           )
-        )
-      );
+        );
+      }
     
       console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIdx);
-      this.commitUpdates();
+      this.commitUpdates(`${selectedSectionId}-${lineIdx - 1 > 0 ? lineIdx - 1 : 0}`);
       return;
     }
     
@@ -300,12 +306,16 @@ export default class EditPost extends React.Component {
   
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
-    const selectedNodeContent = cleanText(selectedNode.textContent);
+    const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
+  
+    /**
+     * CodeSection
+     */
     
-    // CodeSection
     if (selectedNode.tagName === 'PRE') {
       const name = selectedNode.getAttribute('name');
-      const [selectedSectionId, lineIdx] = name.split('-');
+      const [selectedSectionId, idx] = name.split('-');
+      const lineIndex = parseInt(idx, 10);
       const selectedSection = this.editPipeline.getNode(selectedSectionId);
       const meta = selectedSection.get('meta');
       let lines = meta.get('lines');
@@ -314,14 +324,14 @@ export default class EditPost extends React.Component {
         selectedSection.set('meta',
           meta.set('lines',
             lines
-              .set(lineIdx, selectedNodeContent)
-              .insert(lineIdx + 1, ZERO_LENGTH_CHAR)
+              .set(lineIndex, selectedNodeContent)
+              .insert(lineIndex + 1, ZERO_LENGTH_CHAR)
           )
         )
       );
       
-      console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIdx);
-      this.commitUpdates();
+      console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIndex);
+      this.commitUpdates(`${selectedSectionId}-${lineIndex + 1}`);
       return;
     }
     
@@ -381,16 +391,27 @@ export default class EditPost extends React.Component {
     }
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
-    if (selectedNode.tagName === 'PRE') {
-      // TODO:
-      return;
-    }
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
     const selectedNodeContent = cleanText(selectedNode.textContent);
-    if (!this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent)) {
+    if (selectedNode.tagName === 'PRE') {
+      const [selectedSectionId, idx] = selectedNodeId.split('-');
+      const lineIndex = parseInt(idx, 10);
+      const selectedSection = this.editPipeline.getNode(selectedSectionId);
+      const meta = selectedSection.get('meta');
+      let lines = meta.get('lines');
+      const currentLineContent = lines.get(lineIndex);
+      if (currentLineContent === selectedNodeContent) {
+        return;
+      }
+      this.editPipeline.update(
+        selectedSection.set('meta',
+          meta.set('lines', lines.set(lineIndex, selectedNodeContent))
+        )
+      );
+    } else if (!this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent)) {
       return;
     }
     console.info('DOM SYNC ', selectedNode);
@@ -520,7 +541,11 @@ export default class EditPost extends React.Component {
       focusNodeId = this.editPipeline.getNextFocusNodeId(newSectionId);
     } else {
       // don't need this empty P tag
-      this.editPipeline.delete(selectedNodeId);
+      if (this.editPipeline.isOnlyChild(selectedNodeId)) {
+        this.editPipeline.delete(selectedSectionId);
+      } else {
+        this.editPipeline.delete(selectedNodeId);
+      }
       focusNodeId = newSectionId;
     }
     
