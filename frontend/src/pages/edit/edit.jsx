@@ -29,7 +29,13 @@ import {
   UP_ARROW,
   NODE_TYPE_SECTION_SPACER,
   NEW_POST_URL_ID,
-  ROOT_NODE_PARENT_ID, NODE_TYPE_SECTION_H2, NODE_TYPE_SECTION_CODE, ZERO_LENGTH_CHAR, NODE_TYPE_ROOT,
+  ROOT_NODE_PARENT_ID,
+  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_SECTION_CODE,
+  ZERO_LENGTH_CHAR,
+  NODE_TYPE_ROOT,
+  NODE_TYPE_OL,
+  NODE_TYPE_LI,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -526,15 +532,25 @@ export default class EditPost extends React.Component {
   insertSection = (sectionType) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
     const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
-    // splitting the current section even if selectedNodeId is first or last child
-    this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
-    // meta for custom terminal sections?
-    const newSectionMeta = sectionType === NODE_TYPE_SECTION_CODE
-      ? Map({ lines: List([ZERO_LENGTH_CHAR]) })
-      : Map();
-    // insert the section
-    const newSectionId = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType, newSectionMeta);
+    let newSectionId;
     let focusNodeId;
+    
+    // lists get added to content sections, keep current section
+    if (sectionType === NODE_TYPE_OL) {
+      const olId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_OL);
+      focusNodeId = this.editPipeline.insert(olId, NODE_TYPE_LI, 0);
+      this.editPipeline.delete(selectedNodeId);
+    } else {
+      // splitting the current section even if selectedNodeId is first or last child
+      this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
+      // meta for custom terminal sections?
+      const newSectionMeta = sectionType === NODE_TYPE_SECTION_CODE
+        ? Map({ lines: List([ZERO_LENGTH_CHAR]) })
+        : Map();
+      // insert the section
+      newSectionId = this.editPipeline.insertSectionAfter(selectedSectionId, sectionType, newSectionMeta);
+    }
+    
     if (sectionType === NODE_TYPE_SECTION_SPACER) {
       // TODO: all 'terminal' sections
       //  1) move caret ahead to new section
@@ -584,7 +600,7 @@ export default class EditPost extends React.Component {
                                            spellcheck="false" isOpen={insertMenuIsOpen}>
             <InsertSectionItem>photo</InsertSectionItem>
             <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_CODE)}>code</InsertSectionItem>
-            <InsertSectionItem>list</InsertSectionItem>
+            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_OL)}>list</InsertSectionItem>
             <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_SPACER)}>spacer</InsertSectionItem>
             <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_H1)}>H1</InsertSectionItem>
             <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_H2)}>H2</InsertSectionItem>
