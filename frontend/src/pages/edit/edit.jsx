@@ -347,14 +347,34 @@ export default class EditPost extends React.Component {
         selectedSection.set('meta',
           meta.set('lines',
             lines
-              .set(lineIndex, selectedNodeContent)
-              .insert(lineIndex + 1, ZERO_LENGTH_CHAR)
+              .set(lineIndex, contentLeft)
+              .insert(lineIndex + 1, contentRight)
           )
         )
       );
     
       console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIndex);
       focusNodeId = `${selectedSectionId}-${lineIndex + 1}`;
+    }
+  
+    /**
+     * List
+     */
+  
+    if (selectedNodeType === NODE_TYPE_LI) {
+      if (cleanText(contentLeft).length === 0) {
+        // create a P tag after the OL
+        const olId = this.editPipeline.getParent(selectedNodeId).get('id');
+        this.editPipeline.delete(selectedNodeId);
+        const pId = this.editPipeline.insertSubSectionAfter(olId, NODE_TYPE_P);
+        this.editPipeline.replaceTextNode(pId, contentRight);
+        focusNodeId = pId;
+      } else {
+        this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
+        const liId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI);
+        this.editPipeline.replaceTextNode(liId, contentRight);
+        focusNodeId = liId;
+      }
     }
     
     /**
