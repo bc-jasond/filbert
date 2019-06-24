@@ -29,7 +29,7 @@ import {
   UP_ARROW,
   NODE_TYPE_SECTION_SPACER,
   NEW_POST_URL_ID,
-  ROOT_NODE_PARENT_ID, NODE_TYPE_SECTION_H2, NODE_TYPE_SECTION_CODE, ZERO_LENGTH_CHAR,
+  ROOT_NODE_PARENT_ID, NODE_TYPE_SECTION_H2, NODE_TYPE_SECTION_CODE, ZERO_LENGTH_CHAR, NODE_TYPE_ROOT,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -189,38 +189,6 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
   
-    // CodeSection
-    if (selectedNode.tagName === 'PRE') {
-      const name = selectedNode.getAttribute('name');
-      const [selectedSectionId, idx] = name.split('-');
-      const lineIdx = parseInt(idx, 10);
-      const selectedSection = this.editPipeline.getNode(selectedSectionId);
-      const meta = selectedSection.get('meta');
-      let lines = meta.get('lines');
-      
-      if (lines.size === 1) {
-        // delete the section
-        this.editPipeline.delete(selectedSectionId);
-      } else {
-        this.editPipeline.update(
-          selectedSection.set('meta',
-            meta.set('lines',
-              lines.delete(lineIdx)
-            )
-          )
-        );
-      }
-    
-      console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIdx);
-      this.commitUpdates(`${selectedSectionId}-${lineIdx - 1 > 0 ? lineIdx - 1 : 0}`);
-      return;
-    }
-    
-    const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
-    let prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
-    
-    let caretOffset = -1;
-    
     /**
      * // TODO: make these into sets of atomic commands that are added to a queue, then make a 'flush' command to process this queue.  Right now, live updates are happening and it's wack-a-mole galore
      * THINGS TO CONSIDER FOR DELETE (in order):
@@ -231,8 +199,13 @@ export default class EditPost extends React.Component {
      * 5) merge the current selected node's text into the previous node?
      * 6) selected node is/was an only-child, delete current section
      */
+  
     
-    // only child of first section
+    
+    const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
+    let prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
+    
+    // only child of first section - noop
     if (this.editPipeline.isOnlyChild(selectedNodeId) && prevSection.size === 0) {
       return;
     }
@@ -246,9 +219,35 @@ export default class EditPost extends React.Component {
     // need to pick the node or the section to get the right previous!
     const selectedSectionIsFirstChildOfRoot = this.editPipeline.isFirstChild(selectedSectionId);
     let focusNodeId = this.editPipeline.getPreviousFocusNodeId(selectedSectionIsFirstChildOfRoot ? selectedNodeId : selectedSectionId);
+  
+    // CodeSection - custom 'terminal' section logic
+    if (selectedNode.tagName === 'PRE') {
+      const name = selectedNode.getAttribute('name');
+      const [selectedSectionId, idx] = name.split('-');
+      const lineIdx = parseInt(idx, 10);
+      const selectedSection = this.editPipeline.getNode(selectedSectionId);
+      const meta = selectedSection.get('meta');
+      let lines = meta.get('lines');
     
-    // delete current node
-    this.editPipeline.delete(selectedNodeId);
+      if (lines.size === 1) {
+        // delete the section
+        this.editPipeline.delete(selectedSectionId);
+      } else {
+        this.editPipeline.update(
+          selectedSection.set('meta',
+            meta.set('lines',
+              lines.delete(lineIdx)
+            )
+          )
+        );
+      }
+    
+      console.info('BACKSPACE - code section content: ', selectedNodeContent, selectedSectionId, lineIdx);
+      focusNodeId = `${selectedSectionId}-${lineIdx - 1 > 0 ? lineIdx - 1 : 0}`;
+    } else {
+      // delete current node
+      this.editPipeline.delete(selectedNodeId);
+    }
     
     // delete previous section (SPACER, etc)
     if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
@@ -269,7 +268,8 @@ export default class EditPost extends React.Component {
         focusNodeId = this.editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
       }
     }
-    
+  
+    let caretOffset = -1;
     // merge current node's text into previous sibling
     if (cleanText(selectedNodeContent)) {
       if (selectedNodeId === selectedSectionId) {
@@ -439,6 +439,10 @@ export default class EditPost extends React.Component {
         ? this.editPipeline.getPreviousFocusNodeId(selectedNodeId)
         : this.editPipeline.getNextFocusNodeId(selectedNodeId);
       setCaret(focusNodeId);
+    } else if (selectedNode.get('type') === NODE_TYPE_ROOT) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      setCaret(this.editPipeline.getNextFocusNodeId(selectedNodeId));
     }
   }
   

@@ -62,7 +62,7 @@ export default class EditPipeline {
         queue.push(n.get('id'));
       })
     }
-    console.error(`getNode id: ${nodeId} - not found!`);
+    console.warn(`getNode id: ${nodeId} - not found!`);
     return Map();
   }
   
@@ -152,8 +152,7 @@ export default class EditPipeline {
       return;
     }
     if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE) {
-      console.error('stageNodeUpdate - updating a deleted node');
-      return;
+      console.warn('stageNodeUpdate - updating a deleted node');
     }
     console.info('stageNodeUpdate ', nodeId);
     this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id') }));
@@ -165,8 +164,7 @@ export default class EditPipeline {
       return;
     }
     if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE) {
-      console.error('stageNodeDelete - deleting an updated node');
-      return;
+      console.warn('stageNodeDelete - deleting an updated node');
     }
     console.info('stageNodeDelete ', nodeId);
     this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_DELETE, post_id: this.post.get('id') }));
@@ -184,7 +182,7 @@ export default class EditPipeline {
     return Object.entries(
       this.nodeUpdates
       // don't send bad updates
-        .filterNot( (update, nodeId) => nodeId === 'null' || !nodeId)
+        .filterNot( (update, nodeId) => nodeId === 'null' || !nodeId || (update.get('action') === NODE_ACTION_UPDATE && this.getNode(nodeId).size === 0))
         // don't look for deleted nodes...
         .map((update, nodeId) => update.get('action') === NODE_ACTION_DELETE ? update : update.set('node', this.getNode(nodeId)))
         .toJS()
