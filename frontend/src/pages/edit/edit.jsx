@@ -141,7 +141,7 @@ export default class EditPost extends React.Component {
     }
   }
   
-  commitUpdates = async (focusNodeId, offset = -1) => {
+  commitUpdates = async (focusNodeId, offset = -1, shouldFocusLastChild) => {
     if (this.props.postId === NEW_POST_URL_ID) {
       await this.saveNewPost();
       return;
@@ -155,7 +155,7 @@ export default class EditPost extends React.Component {
       shouldShowInsertMenu: false,
       insertMenuIsOpen: false
     }, () => {
-      setCaret(focusNodeId, offset);
+      setCaret(focusNodeId, offset, shouldFocusLastChild);
       this.manageInsertMenu();
     });
   }
@@ -206,25 +206,24 @@ export default class EditPost extends React.Component {
      * 6) selected node is/was an only-child, delete current section
      */
   
-    
-    
+  
+    // save these locally before updates
     const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
     let prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
+    const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
     
     // only child of first section - noop
-    if (this.editPipeline.isOnlyChild(selectedNodeId) && prevSection.size === 0) {
+    if (wasOnlyChild && prevSection.size === 0) {
       return;
     }
     
     let prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
     let didDeletePrevSection = false;
-    // save these locally before updates
-    const isOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
+    
     // handles CONTENT only
     const isFirstChild = this.editPipeline.isFirstChild(selectedNodeId);
-    // need to pick the node or the section to get the right previous!
-    const selectedSectionIsFirstChildOfRoot = this.editPipeline.isFirstChild(selectedSectionId);
-    let focusNodeId = this.editPipeline.getPreviousFocusNodeId(selectedSectionIsFirstChildOfRoot ? selectedNodeId : selectedSectionId);
+    // default previous focusable node
+    let focusNodeId = this.editPipeline.getPreviousFocusNodeId(selectedNodeId);
   
     // CodeSection - custom 'terminal' section logic
     if (selectedNode.tagName === 'PRE') {
@@ -289,11 +288,11 @@ export default class EditPost extends React.Component {
     }
     
     // delete section? merging will have already deleted it
-    if (isOnlyChild) {
+    if (wasOnlyChild) {
       this.editPipeline.delete(selectedSectionId);
     }
     
-    this.commitUpdates(focusNodeId, caretOffset);
+    this.commitUpdates(focusNodeId, caretOffset, true);
   }
   
   handleEnter = (evt) => {
@@ -446,7 +445,7 @@ export default class EditPost extends React.Component {
       return;
     }
     const domNode = getCaretNode();
-    if (domNode.tagName === 'PRE') {
+    if (domNode && domNode.tagName === 'PRE') {
       // TODO
       return;
     }
@@ -464,7 +463,7 @@ export default class EditPost extends React.Component {
       const focusNodeId = shouldFocusOnPrevious
         ? this.editPipeline.getPreviousFocusNodeId(selectedNodeId)
         : this.editPipeline.getNextFocusNodeId(selectedNodeId);
-      setCaret(focusNodeId);
+      setCaret(focusNodeId, -1, shouldFocusOnPrevious);
     } else if (selectedNode.get('type') === NODE_TYPE_ROOT) {
       evt.stopPropagation();
       evt.preventDefault();
@@ -552,6 +551,7 @@ export default class EditPost extends React.Component {
   insertSection = (sectionType) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
     const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
+    const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
     let newSectionId;
     let focusNodeId;
     
@@ -578,7 +578,8 @@ export default class EditPost extends React.Component {
       focusNodeId = this.editPipeline.getNextFocusNodeId(newSectionId);
     } else {
       // don't need this empty P tag
-      if (this.editPipeline.isOnlyChild(selectedNodeId)) {
+      if (wasOnlyChild) {
+        // if the empty P tag was the only child in the content section, delete it
         this.editPipeline.delete(selectedSectionId);
       } else {
         this.editPipeline.delete(selectedNodeId);

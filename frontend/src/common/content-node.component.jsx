@@ -46,6 +46,7 @@ import {
   FigureCaption,
   ImageSection,
 } from './shared-styled-components';
+import { cleanTextOrZeroLengthPlaceholder } from './utils';
 
 const StyledDiv = styled.div``;
 
@@ -114,14 +115,14 @@ export default class ContentNode extends React.PureComponent {
        * NON-RECURSIVE SECTIONS
        */
       case NODE_TYPE_SECTION_SPACER:
-        return (<SpacerSection data-type={node.get('type')} name={node.get('id')} />);
+        return (<SpacerSection data-type={node.get('type')} name={node.get('id')} contentEditable={false} />);
       case NODE_TYPE_SECTION_CODE:
         const lines = node
           .get('meta', Map())
           .get('lines', List());
         return (
           <CodeSection data-type={node.get('type')} name={node.get('id')} >
-            {lines.map((line, idx) => (<Pre key={`${node.get('id')}-${idx}`} name={`${node.get('id')}-${idx}`}>{line}</Pre>))}
+            {lines.map((line, idx) => (<Pre key={`${node.get('id')}-${idx}`} name={`${node.get('id')}-${idx}`}>{cleanTextOrZeroLengthPlaceholder(line)}</Pre>))}
           </CodeSection>
         );
       case NODE_TYPE_SECTION_IMAGE: {

@@ -1,6 +1,10 @@
-import { NODE_TYPE_SECTION_CONTENT, NODE_TYPE_SECTION_H1 } from './constants';
+import {
+  NODE_TYPE_SECTION_CONTENT,
+  NODE_TYPE_SECTION_H1,
+  DOM_TEXT_NODE_TYPE_ID,
+} from './constants';
 
-export function setCaret(nodeId, offset = -1) {
+export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   const [containerNode] = document.getElementsByName(nodeId);
   if (!containerNode) {
     console.warn('setCaret containerNode NOT FOUND ', nodeId);
@@ -12,22 +16,27 @@ export function setCaret(nodeId, offset = -1) {
   sel.removeAllRanges();
   const range = document.createRange();
   // find text node, if present
-  const textNode = Array.prototype.reduce.call(
-    containerNode.childNodes,
-    (acc, child) => acc || (child.nodeType === 3 ? child : null),
-    null
-  );
+  let textNode;
+  const queue = [...containerNode.childNodes];
+  while (queue.length) {
+    // find first (queue), find last - (stack) yay!
+    const current = shouldFindLastNode ? queue.pop() : queue.shift();
+    if (current.nodeType === DOM_TEXT_NODE_TYPE_ID) {
+      textNode = current;
+      break;
+    }
+    if (current.childNodes.length) {
+      queue.push(...current.childNodes);
+    }
+  }
   if (textNode) {
     console.info('setCaret textNode ', textNode, ' offset ', offset);
     // set caret to end of text content
     range.setEnd(textNode, offset === -1 ? textNode.textContent.length : offset);
-  } else {
-    // set caret to last child - TODO: make recursive to find text node?
-    range.setEnd(containerNode, offset === -1 ? containerNode.textContent.length : offset);
+    range.collapse();
+    sel.addRange(range);
   }
-  
-  range.collapse();
-  sel.addRange(range);
+  console.warn(`setCaret - couldn't find a text node inside of `, nodeId);
 }
 
 export function getRange() {

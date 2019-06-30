@@ -44,3 +44,6 @@ export const API_URL = 'http://localhost:3001';
 // AUTH
 export const AUTH_TOKEN_KEY = 'dubaniewicz-token';
 export const SESSION_KEY = 'dubaniewicz-session';
+
+// DOM
+export const DOM_TEXT_NODE_TYPE_ID = 3;
