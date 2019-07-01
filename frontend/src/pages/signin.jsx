@@ -1,16 +1,24 @@
 import * as React from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { Link, Redirect } from 'react-router-dom';
 
 import { signin } from '../common/session';
 
-import { blue, darkBlue, grey, mediumGrey, error, success } from '../common/css';
-import { monospaced, sansSerif } from '../common/fonts.css';
+import { blue } from '../common/css';
+import { monospaced } from '../common/fonts.css';
 
 import {
   H1,
   H3,
   A,
+  InputContainer,
+  Input,
+  Label,
+  SuccessMessage,
+  ErrorMessage,
+  Button,
+  ButtonSpan,
+  CancelButton,
 } from '../common/shared-styled-components';
 import {
   LinkStyled,
@@ -39,75 +47,10 @@ const StyledLinkStyled = styled(LinkStyled)`
   position: static;
   padding-bottom: 24px;
 `;
-const InputContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin: 24px 0;
-  &:last-of-type {
-    margin-bottom: 48px;
-  }
-`;
-const Input = styled.input`
-  font-size: 18px;
-  font-weight: 400;
-  font-family: ${monospaced};
-  line-height: 36px;
-  border-radius: 2px;
-  border: 1px solid ${grey};
-  padding: 2px 8px;
-  ${p => p.error && css`
-    border-color: ${error};
-  `}
-`;
-const Label = styled.label`
-  margin-bottom: 4px;
-  font-family: ${sansSerif};
-  ${p => p.error && css`
-    color: ${error};
-  `}
-`;
 const MessageContainer = styled.div`
   min-height: 36px;
   text-align: center;
   font-family: ${monospaced};
-`;
-const SuccessMessage = styled.span`
-  font-family: inherit;
-  color: ${success};
-`;
-const ErrorMessage = styled.span`
-  font-family: inherit;
-  color: ${error};
-`;
-const Button = styled.button`
-  display: block;
-  border-radius: 26px;
-  width: 100%;
-  margin-bottom: 16px;
-  background: ${blue};
-  border: 0;
-  padding: 14px 18px;
-  font-size: 18px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  -webkit-appearance: none;
-  -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-  
-  &:hover {
-    background: ${darkBlue};
-  }
-`;
-const CancelButton = styled(Button)`
-  background: ${mediumGrey};
-  margin-bottom: 0;
-  &:hover {
-    background: ${grey};
-  }
-`;
-const ButtonSpan = styled.span`
-  color: white;
-  font-family: ${sansSerif};
 `;
 const LinkStyled2 = styled(Link)`
   text-decoration: none;

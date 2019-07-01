@@ -30,6 +30,7 @@ import {
   SpacerSection,
   CodeSection,
   P,
+  QuoteP,
   Pre,
   A,
   Ol,
@@ -38,6 +39,7 @@ import {
   SiteInfo,
   StrikeText,
   ItalicText,
+  MiniText,
   Code,
   Figure,
   ImagePlaceholderContainer,
@@ -87,11 +89,12 @@ export default class ContentNode extends React.PureComponent {
     const {
       node,
       nodesByParentId,
+      isEditing,
     } = this.props;
     console.debug('getChildNodes', nodesByParentId.get(node.get('id')))
     return nodesByParentId
       .get(node.get('id'), List([Map({ type: NODE_TYPE_TEXT, id: 'foo', content: ZERO_LENGTH_CHAR })]))
-      .map(child => (<ContentNode key={child.get('id')} node={child} nodesByParentId={nodesByParentId} />))
+      .map(child => (<ContentNode key={child.get('id')} node={child} nodesByParentId={nodesByParentId} isEditing={isEditing} />))
   }
   
   getKey() {
@@ -101,7 +104,7 @@ export default class ContentNode extends React.PureComponent {
     } = this.props;
     console.debug('getKey', nodesByParentId.get(node.get('id')))
     return nodesByParentId
-      .get(node.get('id'), List([Map({ type: NODE_TYPE_TEXT, id: 'foo', content: ZERO_LENGTH_CHAR })]))
+      .get(node.get('id'), List([Map()]))
       // create a key from all child ids catenated together - this is to fix a stale render issue for TEXT (invisible to the DOM) children
       .reduce((acc, child) => `${child.get('id')}`, '')
   }
@@ -109,13 +112,14 @@ export default class ContentNode extends React.PureComponent {
   render() {
     const {
       node,
+      isEditing,
     } = this.props;
     switch (node.get('type')) {
       /**
        * NON-RECURSIVE SECTIONS
        */
       case NODE_TYPE_SECTION_SPACER:
-        return (<SpacerSection data-type={node.get('type')} name={node.get('id')} contentEditable={false} />);
+        return (<SpacerSection data-type={NODE_TYPE_SECTION_SPACER} name={node.get('id')} contentEditable={false} />);
       case NODE_TYPE_SECTION_CODE:
         const lines = node
           .get('meta', Map())
@@ -128,11 +132,18 @@ export default class ContentNode extends React.PureComponent {
       case NODE_TYPE_SECTION_IMAGE: {
         const meta = node.get('meta', Map());
         return (
-          <ImageSection>
+          <ImageSection data-type={NODE_TYPE_SECTION_IMAGE} name={node.get('id')} contentEditable={false}>
             <Figure>
               <ImagePlaceholderContainer w={meta.get('width')} h={meta.get('height')}>
                 <ImagePlaceholderFill w={meta.get('width')} h={meta.get('height')} />
-                <Img src={meta.get('url')} />
+                <Img
+                  isEditing={isEditing}
+                  onClick={() => {
+                    if (!isEditing) return;
+                    isEditing(node.get('id'))}
+                  }
+                  src={meta.get('url')}
+                />
               </ImagePlaceholderContainer>
               <FigureCaption>{meta.get('caption')}</FigureCaption>
             </Figure>
@@ -142,10 +153,21 @@ export default class ContentNode extends React.PureComponent {
       case NODE_TYPE_SECTION_QUOTE: {
         const meta = node.get('meta', Map());
         return (
-          <ContentSection>
-            <P>💡Remember: <ItalicText>{meta.get('quote')}<A
-              href={meta.get('url')}>{meta.get('author')}</A>{meta.get('context')}
-            </ItalicText></P>
+          <ContentSection data-type={NODE_TYPE_SECTION_QUOTE} name={node.get('id')} contentEditable={false}>
+            <QuoteP
+              isEditing={isEditing}
+              onClick={() => {
+                if (!isEditing) return;
+                isEditing(node.get('id'))}
+              }
+            >
+              {'💡Remember: '}
+              <ItalicText>
+                {meta.get('quote') && `"${meta.get('quote')}" `}
+                <A href={meta.get('url')}>{meta.get('author') && `-${meta.get('author')}`}</A>
+                <MiniText>{meta.get('context') && ` ${meta.get('context')}`}</MiniText>
+              </ItalicText>
+            </QuoteP>
           </ContentSection>
         );
       }
@@ -201,7 +223,7 @@ export default class ContentNode extends React.PureComponent {
         if (!StyledComponent) return null;
         
         return (
-          <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')}>
+          <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
             {this.getChildNodes()}
           </StyledComponent>
         )

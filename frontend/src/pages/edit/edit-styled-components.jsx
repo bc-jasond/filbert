@@ -4,8 +4,6 @@ import { HeaderButtonMixin } from '../../common/layout-styled-components';
 
 export const InsertSectionMenu = styled.div`
   position: absolute;
-  overflow: hidden;
-  height: 56px;
   width: ${p => p.isOpen ? '755' : '50'}px;
   display: ${p => p.shouldShowInsertMenu ? 'block' : 'none'};
   top: ${p => p.insertMenuTopOffset - 13}px;
@@ -50,7 +48,7 @@ export const InsertSectionMenuButton = styled.button`
 export const InsertSectionMenuItemsContainer = styled.div`
   position: absolute;
   top: 16px;
-  height: 24px;
+  min-height: 24px;
   left: 48px;
   display: block;
   transition: left .2s ease-in-out, display .2 ease-in-out;
@@ -63,3 +61,13 @@ export const InsertSectionMenuItemsContainer = styled.div`
 export const InsertSectionItem = styled.span`
   ${HeaderButtonMixin};
 `;
+export const InsertQuoteForm = styled.div`
+  padding: 20px;
+  background-color: white;
+  position: absolute;
+  width: 755px;
+  display: ${p => p.isOpen ? 'block' : 'none'};
+  top: ${p => p.sectionMetaFormTopOffset}px;
+  left: ${p => p.sectionMetaFormLeftOffset}px;
+`;
+export const InsertPhotoForm = styled(InsertQuoteForm)``;

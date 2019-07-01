@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components';
 import { Link } from 'react-router-dom';
 import { contentSerif, italicSerif, monospaced, sansSerif, titleSerif } from './fonts.css';
-import { darkGrey, grey } from "./css";
+import { blue, darkBlue, darkGrey, error, grey, lightBlue, lightGrey, mediumGrey, success } from "./css";
 
 const sectionWidthMixin = css`
   max-width: 740px;
@@ -65,7 +65,25 @@ export const P = styled.p`
   position: relative;
   margin-bottom: 32px;
 `;
-export const Pre = styled.pre``;
+export const QuoteP = styled(P)`
+  border: 4px solid transparent;
+  ${p => p.isEditing && `
+    &:hover {
+      cursor: pointer;
+      border: 4px solid ${lightBlue};
+    }
+  `}
+`;
+export const Pre = styled.pre`
+  font: inherit;
+  margin: 0;
+  &::before {
+    display: inline-block;
+    width: 35px;
+    color: ${mediumGrey};
+    counter-increment: code;
+    content: counter(code);
+  }`;
 export const CodeSection = styled(ContentSection)`
   font-family: ${monospaced}, monospace;
   font-size: 16px;
@@ -73,13 +91,10 @@ export const CodeSection = styled(ContentSection)`
   letter-spacing: -.03em;
   word-spacing: -.2em;
   line-height: 1.75;
-  background: rgba(0,0,0,.05);
+  background: ${lightGrey};
   padding: 20px;
   overflow: auto;
-  ${Pre} {
-    font: inherit;
-    margin: 0;  
-  }
+  counter-reset: code;
 `;
 export const Ol = styled.ol`
   margin-bottom: 38px;
@@ -126,7 +141,7 @@ export const Code = styled.code`
   display: inline-block;
   font-family: ${monospaced}, monospace;
   font-size: 18px;
-  background: rgba(0,0,0,.05);
+  background: ${lightGrey};
   padding: 0 4px;
   margin: 0 2px;
 `;
@@ -140,11 +155,7 @@ export const ItalicText = styled.span`
 export const StrikeText = styled.span`
   text-decoration: line-through;
 `;
-export const Figure = styled.figure`
-  padding: 5px 0;
-  position: relative;
-`;
-export const FigureCaption = styled.figcaption`
+const miniText = css`
   font-family: ${sansSerif}, sans-serif;
   font-weight: 300;
   font-style: normal;
@@ -152,6 +163,16 @@ export const FigureCaption = styled.figcaption`
   line-height: 1.4;
   color: rgba(0,0,0,.68);
   letter-spacing: 0;
+`;
+export const MiniText = styled.span`
+  ${miniText}
+`;
+export const Figure = styled.figure`
+  padding: 5px 0;
+  position: relative;
+`;
+export const FigureCaption = styled.figcaption`
+  ${miniText}
   text-align: center;
   margin: 10px auto 0;
 `;
@@ -176,5 +197,78 @@ export const Img = styled.img`
   margin: 0;
   display: block;
   max-width: 100%;
+  border: 4px solid transparent;
+  ${p => p.isEditing && `
+    &:hover {
+      cursor: pointer;
+      border: 4px solid ${lightBlue};
+    }
+  `}
+`;
+
+// FORMS
+export const InputContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin: 24px 0;
+  &:last-of-type {
+    margin-bottom: 48px;
+  }
+`;
+export const Input = styled.input`
+  font-size: 18px;
+  font-weight: 400;
+  font-family: ${monospaced};
+  line-height: 36px;
+  border-radius: 2px;
+  border: 1px solid ${grey};
+  padding: 2px 8px;
+  ${p => p.error && css`
+    border-color: ${error};
+  `}
+`;
+export const Label = styled.label`
+  margin-bottom: 4px;
+  font-family: ${sansSerif};
+  ${p => p.error && css`
+    color: ${error};
+  `}
+`;
+export const SuccessMessage = styled.span`
+  font-family: inherit;
+  color: ${success};
+`;
+export const ErrorMessage = styled.span`
+  font-family: inherit;
+  color: ${error};
+`;
+export const Button = styled.button`
+  display: block;
+  border-radius: 26px;
+  width: 100%;
+  margin-bottom: 16px;
+  background: ${blue};
   border: 0;
+  padding: 14px 18px;
+  font-size: 18px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  -webkit-appearance: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  
+  &:hover {
+    background: ${darkBlue};
+  }
+`;
+export const CancelButton = styled(Button)`
+  background: ${mediumGrey};
+  margin-bottom: 0;
+  &:hover {
+    background: ${grey};
+  }
+`;
+export const ButtonSpan = styled.span`
+  color: white;
+  font-family: ${sansSerif};
 `;

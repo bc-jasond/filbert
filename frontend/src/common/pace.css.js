@@ -1,4 +1,5 @@
 import { createGlobalStyle } from 'styled-components';
+import { mediumGrey } from './css';
 
 export default createGlobalStyle`
   .pace {
@@ -15,7 +16,7 @@ export default createGlobalStyle`
   }
 
   .pace .pace-progress {
-    background: rgba(0,0,0,.24);
+    background: ${mediumGrey};
     position: fixed;
     z-index: 2000;
     top: 0;

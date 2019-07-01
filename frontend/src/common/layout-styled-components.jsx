@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import GitHubSvg from '../../assets/github-mark.svg';
 import LinkedInSvg from '../../assets/linkedin-logo.svg';
-import { darkGrey, grey, lightBlue } from './css';
+import { darkGrey, grey, lightBlue, lightGrey } from './css';
 import { monospaced, sansSerif } from './fonts.css';
 
 export const Header = styled.header`
@@ -59,6 +59,11 @@ export const HeaderButtonMixin = css`
     color: white;
     background-color: ${lightBlue};
   }
+  ${p => p.isOpen && `
+    font-size: 18px;
+    color: white;
+    background-color: ${lightBlue};
+  `}
 `;
 export const NewPost = styled(LinkStyled)`
   ${HeaderButtonMixin};
@@ -93,10 +98,10 @@ export const Article = styled.article`
 `;
 export const Footer = styled.footer`
   font-family: ${monospaced}, monospaced;
-  background: rgba(0,0,0,.05);
+  background: ${lightGrey};
   padding: 20px;
   text-align: center;
-  color: rgba(0,0,0,.54);
+  color: ${grey};
 `;
 export const SocialLinksContainer = styled.div`
   display: flex;
