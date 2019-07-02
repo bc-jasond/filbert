@@ -21,43 +21,30 @@ import {
 } from '../../common/dom';
 
 import {
-  NODE_TYPE_P,
-  NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_H1,
+  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_SECTION_CODE,
+  NODE_TYPE_SECTION_CONTENT,
+  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_SECTION_QUOTE,
+  NODE_TYPE_SECTION_IMAGE,
   ENTER_KEY,
   BACKSPACE_KEY,
   UP_ARROW,
-  NODE_TYPE_SECTION_SPACER,
   NEW_POST_URL_ID,
   ROOT_NODE_PARENT_ID,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_CODE,
   ZERO_LENGTH_CHAR,
   NODE_TYPE_ROOT,
+  NODE_TYPE_P,
   NODE_TYPE_OL,
   NODE_TYPE_LI,
-  NODE_TYPE_SECTION_QUOTE, NODE_TYPE_SECTION_IMAGE,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
-import Page404 from '../404';
+import InsertSectionMenu from './insert-section-menu';
+import EditSectionForm from './edit-section-form';
 
-import {
-  InsertSectionMenu,
-  InsertSectionMenuButton,
-  InsertSectionMenuItemsContainer,
-  InsertSectionItem,
-  InsertQuoteForm,
-  InsertPhotoForm,
-} from './edit-styled-components';
-import {
-  Input,
-  InputContainer,
-  Label,
-  Button,
-  ButtonSpan,
-  CancelButton,
-} from '../../common/shared-styled-components';
+import Page404 from '../404';
 
 export default class EditPost extends React.Component {
   constructor(props) {
@@ -72,11 +59,11 @@ export default class EditPost extends React.Component {
       insertMenuIsOpen: false,
       insertMenuTopOffset: 0,
       insertMenuLeftOffset: 0,
-      insertQuoteFormIsOpen: false,
-      insertPhotoFormIsOpen: false,
-      currentSectionMeta: Map(),
-      sectionMetaFormTopOffset: 0,
-      sectionMetaFormLeftOffset: 0,
+      editSectionId: null,
+      editSectionType: null,
+      editSectionMeta: Map(),
+      editSectionMetaFormTopOffset: 0,
+      editSectionMetaFormLeftOffset: 0,
     }
   }
   
@@ -165,16 +152,20 @@ export default class EditPost extends React.Component {
       // optimistically save updated nodes - look ma, no errors!
       await this.saveContentBatchDebounce();
     }
-    // roll with state changes TODO: handle errors - roll back?
-    this.setState({
-      nodesByParentId: this.editPipeline.nodesByParentId,
-      shouldShowInsertMenu: false,
-      insertMenuIsOpen: false,
-      editSectionId: null,
-    }, () => {
-      setCaret(focusNodeId, offset, shouldFocusLastChild);
-      this.manageInsertMenu();
-    });
+    
+    return new Promise((resolve, reject) => {
+      // roll with state changes TODO: handle errors - roll back?
+      this.setState({
+        nodesByParentId: this.editPipeline.nodesByParentId,
+        shouldShowInsertMenu: false,
+        insertMenuIsOpen: false,
+        editSectionId: null,
+      }, () => {
+        setCaret(focusNodeId, offset, shouldFocusLastChild);
+        this.manageInsertMenu();
+        resolve();
+      });
+    })
   }
   
   activeElementHasContent() {
@@ -565,13 +556,13 @@ export default class EditPost extends React.Component {
   /**
    * INSERT SECTIONS
    */
-  insertSection = (sectionType) => {
+  insertSection = async (sectionType) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
     const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
     const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
     let newSectionId;
     let focusNodeId;
-    const { currentSectionMeta } = this.state;
+    const { editSectionMeta } = this.state;
     
     // lists get added to content sections, keep current section
     if (sectionType === NODE_TYPE_OL) {
@@ -588,7 +579,7 @@ export default class EditPost extends React.Component {
         // meta for custom terminal sections - will be Map() otherwise
         sectionType === NODE_TYPE_SECTION_CODE
           ? Map({ lines: List([ZERO_LENGTH_CHAR]) })
-          : currentSectionMeta
+          : editSectionMeta
       );
     }
     
@@ -608,39 +599,28 @@ export default class EditPost extends React.Component {
       focusNodeId = newSectionId;
     }
     
-    this.commitUpdates(focusNodeId);
-    return focusNodeId;
+    await this.commitUpdates(focusNodeId);
+    if ([NODE_TYPE_SECTION_QUOTE, NODE_TYPE_SECTION_IMAGE].includes(sectionType)) {
+      this.sectionEdit(focusNodeId)
+    }
   }
   
-  togglePhotoForm = () => {
-    const { insertPhotoFormIsOpen } = this.state;
-    this.setState({
-      currentSectionMeta: Map(),
-      insertQuoteFormIsOpen: false,
-      insertPhotoFormIsOpen: !insertPhotoFormIsOpen,
-    });
-  }
-  toggleQuoteForm = () => {
-    const { editSectionId } = this.state;
-    this.setState({
-      currentSectionMeta: Map(),
-      insertPhotoFormIsOpen: false,
-      editSectionId: !editSectionId,
-    });
-  }
+  
   updateMetaProp = (propName, value) => {
-    const { currentSectionMeta } = this.state;
-    this.setState({ currentSectionMeta: currentSectionMeta.set(propName, value) })
+    const { editSectionMeta } = this.state;
+    this.setState({ editSectionMeta: editSectionMeta.set(propName, value) })
   }
   sectionEdit = (sectionId) => {
     console.log('SECTION CALLBACK ', sectionId);
-    const [section] = document.getElementsByName(sectionId);
+    const [sectionDomNode] = document.getElementsByName(sectionId);
+    const section = this.editPipeline.getNode(sectionId);
     
     this.setState({
-      currentSectionMeta: this.editPipeline.getNode(sectionId).get('meta', Map()),
       editSectionId: sectionId,
-      sectionMetaFormTopOffset: section.offsetTop,
-      sectionMetaFormLeftOffset: section.offsetLeft,
+      editSectionType: section.get('type'),
+      editSectionMeta: section.get('meta', Map()),
+      editSectionMetaFormTopOffset: sectionDomNode.offsetTop,
+      editSectionMetaFormLeftOffset: sectionDomNode.offsetLeft,
     });
     
     // 1. open edit menu
@@ -648,10 +628,17 @@ export default class EditPost extends React.Component {
     // 3. save and close
     // 4. cancel and close
   }
+  sectionEditClose = () => {
+    this.setState({
+      editSectionId: null,
+      editSectionType: null,
+      editSectionMeta: Map(),
+    });
+  }
   sectionSaveMeta = (sectionId) => {
-    const { currentSectionMeta } = this.state;
+    const { editSectionMeta } = this.state;
     const section = this.editPipeline.getNode(sectionId);
-    this.editPipeline.update(section.set('meta', currentSectionMeta));
+    this.editPipeline.update(section.set('meta', editSectionMeta));
     this.commitUpdates(sectionId);
   }
   
@@ -666,10 +653,10 @@ export default class EditPost extends React.Component {
       insertMenuTopOffset,
       insertMenuLeftOffset,
       editSectionId,
-      insertPhotoFormIsOpen,
-      currentSectionMeta,
-      sectionMetaFormTopOffset,
-      sectionMetaFormLeftOffset,
+      editSectionType,
+      editSectionMeta,
+      editSectionMetaFormTopOffset,
+      editSectionMetaFormLeftOffset,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
@@ -682,117 +669,23 @@ export default class EditPost extends React.Component {
              contentEditable={true} suppressContentEditableWarning={true}>
           <ContentNode node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
         </div>
-        <InsertSectionMenu name="insert-section-menu" isOpen={insertMenuIsOpen}
-                           shouldShowInsertMenu={shouldShowInsertMenu}
-                           insertMenuTopOffset={insertMenuTopOffset}
-                           insertMenuLeftOffset={insertMenuLeftOffset}>
-          <InsertSectionMenuButton onClick={this.toggleInsertMenu}
-                                   isOpen={insertMenuIsOpen} />
-          <InsertSectionMenuItemsContainer autocomplete="off" autocorrect="off" autocapitalize="off"
-                                           spellcheck="false" isOpen={insertMenuIsOpen}>
-            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_H1)}>H1</InsertSectionItem>
-            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_H2)}>H2</InsertSectionItem>
-            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_CODE)}>code</InsertSectionItem>
-            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_OL)}>list</InsertSectionItem>
-            <InsertSectionItem onClick={() => this.insertSection(NODE_TYPE_SECTION_SPACER)}>spacer</InsertSectionItem>
-            <InsertSectionItem onClick={this.togglePhotoForm} isOpen={insertPhotoFormIsOpen}>photo</InsertSectionItem>
-            <InsertSectionItem onClick={this.toggleQuoteForm} isOpen={editSectionId}>quote</InsertSectionItem>
-          </InsertSectionMenuItemsContainer>
-        </InsertSectionMenu>
-        {/*PHOTO*/}
-        <InsertPhotoForm isOpen={insertPhotoFormIsOpen}>
-          <InputContainer>
-            <Label htmlFor="width" error={false}>Width</Label>
-            <Input name="width" type="text" value={currentSectionMeta.get('width', '')}
-                   onChange={(e) => {
-                     this.updateMetaProp('width', e.target.value)
-                   }}
-                   error={false} />
-          </InputContainer>
-          <InputContainer>
-            <Label htmlFor="height" error={false}>Height</Label>
-            <Input name="height" type="text" value={currentSectionMeta.get('height', '')}
-                   onChange={(e) => {
-                     this.updateMetaProp('height', e.target.value)
-                   }}
-                   error={false} />
-          </InputContainer>
-          <InputContainer>
-            <Label htmlFor="url" error={false}>Url</Label>
-            <Input name="url" type="text" value={currentSectionMeta.get('url', '')}
-                   onChange={(e) => {
-                     this.updateMetaProp('url', e.target.value)
-                   }}
-                   error={false} />
-          </InputContainer>
-          <InputContainer>
-            <Label htmlFor="caption" error={false}>Caption</Label>
-            <Input name="caption" type="text" value={currentSectionMeta.get('caption', '')}
-                   onChange={(e) => {
-                     this.updateMetaProp('caption', e.target.value)
-                   }}
-                   error={false} />
-          </InputContainer>
-          <Button>
-            <ButtonSpan onClick={() => {
-              this.insertSection(NODE_TYPE_SECTION_IMAGE)
-            }}>
-              Insert Photo
-            </ButtonSpan>
-          </Button>
-          <CancelButton onClick={this.togglePhotoForm}>
-            <ButtonSpan>Cancel</ButtonSpan>
-          </CancelButton>
-        </InsertPhotoForm>
-        {/*QUOTE*/}
-        <InsertQuoteForm
-          isOpen={editSectionId}
-          sectionMetaFormTopOffset={sectionMetaFormTopOffset}
-          sectionMetaFormLeftOffset={sectionMetaFormLeftOffset}
-        >
-          <InputContainer>
-            <Label htmlFor="quote" error={false}>Quote</Label>
-            <Input name="quote" type="text" value={currentSectionMeta.get('quote', '')}
-                   onChange={(e) => {
-                     this.updateMetaProp('quote', e.target.value)
-                   }}
-                   error={false} />
-          </InputContainer>
-          <InputContainer>
-            <Label htmlFor="url" error={false}>Url</Label>
-            <Input name="url" type="text" value={currentSectionMeta.get('url', '')}
-                   onChange={(e) => {
-                     this.updateMetaProp('url', e.target.value)
-                   }}
-                   error={false} />
-          </InputContainer>
-          <InputContainer>
-            <Label htmlFor="author" error={false}>Author</Label>
-            <Input name="author" type="text" value={currentSectionMeta.get('author', '')}
-                   onChange={(e) => {
-                     this.updateMetaProp('author', e.target.value)
-                   }}
-                   error={false} />
-          </InputContainer>
-          <InputContainer>
-            <Label htmlFor="context" error={false}>Context</Label>
-            <Input name="context" type="text" value={currentSectionMeta.get('context', '')}
-                   onChange={(e) => {
-                     this.updateMetaProp('context', e.target.value)
-                   }}
-                   error={false} />
-          </InputContainer>
-          <Button>
-            <ButtonSpan onClick={() => {
-              this.sectionSaveMeta(editSectionId)
-            }}>
-              Save
-            </ButtonSpan>
-          </Button>
-          <CancelButton onClick={this.toggleQuoteForm}>
-            <ButtonSpan>Cancel</ButtonSpan>
-          </CancelButton>
-        </InsertQuoteForm>
+        {shouldShowInsertMenu && (<InsertSectionMenu
+          insertMenuTopOffset={insertMenuTopOffset}
+          insertMenuLeftOffset={insertMenuLeftOffset}
+          toggleInsertMenu={this.toggleInsertMenu}
+          insertMenuIsOpen={insertMenuIsOpen}
+          insertSection={this.insertSection}
+        />)}
+        {editSectionId && (<EditSectionForm
+          editSectionId={editSectionId}
+          editSectionType={editSectionType}
+          editSectionMeta={editSectionMeta}
+          editSectionMetaFormTopOffset={editSectionMetaFormTopOffset}
+          editSectionMetaFormLeftOffset={editSectionMetaFormLeftOffset}
+          updateMetaProp={this.updateMetaProp}
+          sectionSaveMeta={this.sectionSaveMeta}
+          close={this.sectionEditClose}
+        />)}
       </React.Fragment>
     );
   }

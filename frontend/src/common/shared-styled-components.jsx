@@ -228,6 +228,7 @@ export const Input = styled.input`
   `}
 `;
 export const Label = styled.label`
+  text-transform: capitalize;
   margin-bottom: 4px;
   font-family: ${sansSerif};
   ${p => p.error && css`
