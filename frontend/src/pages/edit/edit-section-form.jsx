@@ -4,6 +4,7 @@ import {
   Button,
   ButtonSpan,
   CancelButton,
+  DeleteButton,
   Input,
   InputContainer,
   Label,
@@ -35,6 +36,7 @@ export default ({
                   editSectionMetaFormLeftOffset,
                   updateMetaProp,
                   sectionSaveMeta,
+                  sectionDelete,
                   close,
                 }) => (
   <EditSectionForm
@@ -61,5 +63,10 @@ export default ({
     <CancelButton onClick={close}>
       <ButtonSpan>Cancel</ButtonSpan>
     </CancelButton>
+    <DeleteButton onClick={() => {
+      sectionDelete(editSectionId);
+    }}>
+      <ButtonSpan>Delete</ButtonSpan>
+    </DeleteButton>
   </EditSectionForm>
 )

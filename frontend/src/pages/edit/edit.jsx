@@ -641,6 +641,12 @@ export default class EditPost extends React.Component {
     this.editPipeline.update(section.set('meta', editSectionMeta));
     this.commitUpdates(sectionId);
   }
+  sectionDelete = (sectionId) => {
+    if (confirm('Delete Section?')) {
+      this.editPipeline.delete(sectionId);
+      this.commitUpdates(sectionId);
+    }
+  }
   
   render() {
     const {
@@ -684,6 +690,7 @@ export default class EditPost extends React.Component {
           editSectionMetaFormLeftOffset={editSectionMetaFormLeftOffset}
           updateMetaProp={this.updateMetaProp}
           sectionSaveMeta={this.sectionSaveMeta}
+          sectionDelete={this.sectionDelete}
           close={this.sectionEditClose}
         />)}
       </React.Fragment>
