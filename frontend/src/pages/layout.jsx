@@ -11,7 +11,6 @@ import {
   SignedInUser,
   NewPost,
   ListDrafts,
-  LinkStyledAbout,
   HeaderSpacer,
   Article,
   Footer,
@@ -19,6 +18,7 @@ import {
   A,
   GitHubStyled,
   LinkedInStyled,
+  InfoStyled,
 } from '../common/layout-styled-components';
 
 export default (props) => (
@@ -42,7 +42,6 @@ export default (props) => (
               </React.Fragment>
             )
             : (<LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>)}
-          <LinkStyledAbout to="/about">i</LinkStyledAbout>
         </HeaderLinksContainer>
       </HeaderContentContainer>
     </Header>
@@ -55,6 +54,7 @@ export default (props) => (
       <SocialLinksContainer>
         <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
         <A href="https://www.linkedin.com/in/jasondubaniewicz/"><LinkedInStyled /></A>
+        <LinkStyled to="/about"><InfoStyled /></LinkStyled>
       </SocialLinksContainer>
     </Footer>
   </React.Fragment>

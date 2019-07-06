@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import GitHubSvg from '../../assets/github-mark.svg';
 import LinkedInSvg from '../../assets/linkedin-logo.svg';
+import InfoSvg from '../../assets/info.svg';
 import { darkGrey, grey, lightBlue, lightGrey } from './css';
 import { monospaced, sansSerif } from './fonts.css';
 
@@ -77,9 +78,6 @@ export const SignedInUser = styled.div`
 export const LinkStyledSignIn = styled(LinkStyled)`
   ${HeaderButtonMixin};
 `;
-export const LinkStyledAbout = styled(LinkStyled)`
-  ${HeaderButtonMixin};
-`;
 export const HeaderSpacer = styled.div`
   z-index: 100;
   position: relative;
@@ -118,7 +116,7 @@ export const SocialIcon = css`
   display: block;
   height: 32px;
   width: 34px;
-  margin: 20px 5px 0 5px;
+  margin: 20px 10px 0 10px;
   transition: fill .375s;
   fill: ${grey};
   &:hover {
@@ -130,5 +128,8 @@ export const GitHubStyled = styled(GitHubSvg)`
   ${SocialIcon};
 `;
 export const LinkedInStyled = styled(LinkedInSvg)`
+  ${SocialIcon};
+`;
+export const InfoStyled = styled(InfoSvg)`
   ${SocialIcon};
 `;
