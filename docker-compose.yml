@@ -10,7 +10,7 @@ services:
   api:
     build: ./backend
     environment:
-      MYSQL_ROOT_PASSWORD
+      - MYSQL_ROOT_PASSWORD
     ports:
       - 3001:3001
 
@@ -18,6 +18,6 @@ services:
     image: percona
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD
+      - MYSQL_ROOT_PASSWORD
     ports:
       - 3306:3306
