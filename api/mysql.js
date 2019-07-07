@@ -9,7 +9,7 @@ async function getKnex() {
       connection: {
         host: 'localhost',
         user: 'root',
-        password: 'example',
+        password: process.env.MYSQL_ROOT_PASSWORD,
         database: 'dubaniewicz'
       },
       asyncStackTraces: true,
