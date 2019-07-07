@@ -1,10 +1,18 @@
-FROM nginx
+FROM node:12-alpine
 
 ENV NODE_ENV=production
 
-RUN yarn && yarn build-prod
+WORKDIR /work
+COPY assets /work/assets/
+COPY src /work/src/
+COPY ["yarn.lock","webpack.config.js","package.json",".babelrc","/work/"]
 
-ADD ./dist /usr/local/
-ADD ./nginx.conf /etc/nginx/nginx.conf
+RUN yarn; \
+ yarn build-prod;
+
+FROM nginx:alpine
+
+COPY --from=0 /work/dist /var/www
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
