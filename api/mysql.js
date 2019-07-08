@@ -7,7 +7,7 @@ async function getKnex() {
     knexConnection = knex({
       client: 'mysql2',
       connection: {
-        host: 'localhost',
+        host: process.env.DATABASE_HOSTNAME,
         user: 'root',
         password: process.env.MYSQL_ROOT_PASSWORD,
         database: 'dubaniewicz'

@@ -11,8 +11,11 @@ services:
     build: ./api
     environment:
       - MYSQL_ROOT_PASSWORD
+      - DATABASE_HOSTNAME
     ports:
       - 3001:3001
+    networks:
+      - default
 
   db:
     image: percona
@@ -21,3 +24,7 @@ services:
       - MYSQL_ROOT_PASSWORD
     ports:
       - 3306:3306
+    networks:
+      default:
+        aliases:
+          - ${DATABASE_HOSTNAME}
