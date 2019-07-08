@@ -37,7 +37,7 @@ const SignInForm = styled.form`
   max-width: 450px;
   min-width: 320px;
   padding: 40px;
-  margin: 0 auto 100px;
+  margin: 140px auto 100px;
   overflow: hidden;
   background-color: white;
   border-radius: 2px;
