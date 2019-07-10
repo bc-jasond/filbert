@@ -39,7 +39,7 @@ export const NODE_ACTION_UPDATE = 'update';
 export const NODE_ACTION_DELETE = 'delete';
 
 // ENV
-export const API_URL = 'http://localhost:3001';
+export const API_URL = process.env.API_URL;
 
 // AUTH
 export const AUTH_TOKEN_KEY = 'dubaniewicz-token';
