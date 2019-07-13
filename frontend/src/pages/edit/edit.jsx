@@ -43,6 +43,7 @@ import {
 import ContentNode from '../../common/content-node.component';
 import InsertSectionMenu from './insert-section-menu';
 import EditSectionForm from './edit-section-form';
+import FormatSelectionMenu from './format-selection-menu';
 
 import Page404 from '../404';
 
@@ -64,6 +65,7 @@ export default class EditPost extends React.Component {
       editSectionMeta: Map(),
       editSectionMetaFormTopOffset: 0,
       editSectionMetaFormLeftOffset: 0,
+      formatSelectionNodeId: null,
     }
   }
   
@@ -160,6 +162,7 @@ export default class EditPost extends React.Component {
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,
+        formatSelectionNodeId: null,
       }, () => {
         setCaret(focusNodeId, offset, shouldFocusLastChild);
         this.manageInsertMenu();
@@ -497,6 +500,7 @@ export default class EditPost extends React.Component {
     console.debug('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleCaret(evt);
     this.manageInsertMenu();
+    this.manageFormatSelectionMenu();
   }
   
   handlePaste = (evt) => {
@@ -523,12 +527,13 @@ export default class EditPost extends React.Component {
   }
   
   manageInsertMenu() {
-    const selectedNode = getCaretNode();
-    const selectedType = getCaretNodeType();
     const range = getRange();
     if (!range) {
       return;
     }
+    const selectedNode = getCaretNode();
+    const selectedType = getCaretNodeType();
+    
     // save current nodeId because the selection will disappear when the insert menu is shown
     this.insertMenuSelectedNodeId = getCaretNodeId();
     
@@ -648,6 +653,14 @@ export default class EditPost extends React.Component {
     }
   }
   
+  manageFormatSelectionMenu() {
+    const range = getRange();
+    if (!range || range.collapsed) {
+      return;
+    }
+    console.info('SELECTION: ', range);
+  }
+  
   render() {
     const {
       root,
@@ -663,6 +676,9 @@ export default class EditPost extends React.Component {
       editSectionMeta,
       editSectionMetaFormTopOffset,
       editSectionMetaFormLeftOffset,
+      formatSelectionNodeId,
+      formatSelectionMenuTopOffset,
+      formatSelectionMenuLeftOffset,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
@@ -693,6 +709,12 @@ export default class EditPost extends React.Component {
           sectionDelete={this.sectionDelete}
           close={this.sectionEditClose}
         />)}
+        {formatSelectionNodeId && (<FormatSelectionMenu
+          formatSelectionNodeId={formatSelectionNodeId}
+          formatSelectionMenuTopOffset={formatSelectionMenuTopOffset}
+          formatSelectionMenuLeftOffset={formatSelectionMenuLeftOffset}
+        />)}
+        <FormatSelectionMenu />
       </React.Fragment>
     );
   }

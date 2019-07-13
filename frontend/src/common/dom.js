@@ -67,7 +67,7 @@ export function getCaretOffset() {
   if (!range) {
     return;
   }
-  return range.startOffset;
+  return [range.startOffset, range.endOffset];
 }
 
 export function getCaretNodeType() {
