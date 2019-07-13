@@ -149,7 +149,7 @@ export const SiteInfo = styled.span`
   display: inline-block;
   font-family: ${sansSerif}, sans-serif;
 `;
-export const ItalicText = styled.span`
+export const ItalicText = styled.em`
   font-family: ${italicSerif}, sans-serif;
 `;
 export const StrikeText = styled.span`

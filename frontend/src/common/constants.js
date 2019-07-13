@@ -4,24 +4,28 @@ export const NODE_TYPE_SECTION_H1 = 'h1';
 export const NODE_TYPE_SECTION_H2 = 'h2';
 export const NODE_TYPE_SECTION_SPACER = 'spacer';
 export const NODE_TYPE_SECTION_CONTENT = 'content';
+
 // opinionated sections - have fixed format, can't have children
 export const NODE_TYPE_SECTION_CODE = 'codesection';
 export const NODE_TYPE_SECTION_IMAGE = 'image';
 export const NODE_TYPE_SECTION_QUOTE = 'quote';
 export const NODE_TYPE_SECTION_POSTLINK = 'postlink';
+export const NODE_TYPE_OL = 'ol';
 
-// nodes for content - must have a parent node of a section type
-export const NODE_TYPE_TEXT = 'text';  // the #text or DOM nodeType 3
+// base nodes for content - must have a parent node of a section type
 export const NODE_TYPE_P = 'p';
 export const NODE_TYPE_PRE = 'pre';
-export const NODE_TYPE_OL = 'ol';
 export const NODE_TYPE_LI = 'li';
+
+// formatting nodes
 export const NODE_TYPE_A = 'a';
-export const NODE_TYPE_LINK = 'link';
+export const NODE_TYPE_LINK = 'link';  // @deprecated, should just be a type of NODE_TYPE_A
 export const NODE_TYPE_CODE = 'code';
 export const NODE_TYPE_SITEINFO = 'siteinfo';
 export const NODE_TYPE_ITALIC = 'italic';
 export const NODE_TYPE_STRIKE = 'strike';
+export const NODE_TYPE_BOLD = 'bold';
+
 
 // EDITOR
 // TODO: this is a placeholder to be able to set the caret in an empty tag

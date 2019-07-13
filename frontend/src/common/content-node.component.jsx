@@ -57,17 +57,20 @@ export default class ContentNode extends React.PureComponent {
     super(props);
   }
   
-  getTagFromType() {
+  getTagFromType(type = null) {
     const { node } = this.props;
-    switch (node.get('type')) {
+    switch (type || node.get('type')) {
+      // ROOT TYPE
       case NODE_TYPE_ROOT:
         return StyledDiv;
+      // SECTION TYPES
       case NODE_TYPE_SECTION_H1:
         return H1;
       case NODE_TYPE_SECTION_H2:
         return H2;
       case NODE_TYPE_SECTION_CONTENT:
         return ContentSection;
+      // PARAGRAPH TYPES
       case NODE_TYPE_P:
         return P;
       case NODE_TYPE_OL:
@@ -80,6 +83,8 @@ export default class ContentNode extends React.PureComponent {
         return StrikeText;
       case NODE_TYPE_ITALIC:
         return ItalicText;
+      case NODE_TYPE_CODE:
+        return Code;
       default:
         throw new Error(`unknown type: ${node.get('type')}`);
     }
@@ -107,6 +112,21 @@ export default class ContentNode extends React.PureComponent {
       .get(node.get('id'), List([Map()]))
       // create a key from all child ids catenated together - this is to fix a stale render issue for TEXT (invisible to the DOM) children
       .reduce((acc, child) => `${child.get('id')}`, '')
+  }
+  
+  getSelection(selection) {
+    const getTagNames = (selection) => selection
+      .get('types', List())
+      .filter(type => type)
+      .map(selectionType => this.getTagFromType(selectionType));
+    const getContent = (selection) => node
+      .get('content', '')
+      .substring(selection.get('start'), selection.get('end'));
+    return (
+      <React.Fragment>
+      
+      </React.Fragment>
+    )
   }
   
   render() {
@@ -171,6 +191,7 @@ export default class ContentNode extends React.PureComponent {
           </ContentSection>
         );
       }
+      // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout
       case NODE_TYPE_SECTION_POSTLINK: {
         const to = node.get('meta', Map()).get('to');
         const Centered = styled.div`
@@ -207,24 +228,22 @@ export default class ContentNode extends React.PureComponent {
             {this.getChildNodes()}
           </A>
         );
-      /**
-       * BASE CONTENT TYPES
-       */
-      case NODE_TYPE_CODE:
-        return (<Code>{node.get('content')}</Code>);
-      case NODE_TYPE_TEXT:
-        return node.get('content');
       
       /**
-       * RECURSIVE TYPES WITH CHILDREN
+       * PARAGRAPH TYPES
        */
       default:
         const StyledComponent = this.getTagFromType();
         if (!StyledComponent) return null;
+        const selections = node
+          .get('meta', Map())
+          .get('selections', List());
         
         return (
           <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
-            {this.getChildNodes()}
+            {selections.map(selection => (
+              
+              ))}
           </StyledComponent>
         )
     }
