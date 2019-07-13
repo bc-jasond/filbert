@@ -655,10 +655,22 @@ export default class EditPost extends React.Component {
   
   manageFormatSelectionMenu() {
     const range = getRange();
-    if (!range || range.collapsed) {
+    const selectedNode = getCaretNode();
+    if (!range || range.collapsed || !selectedNode) {
+      this.setState({
+        formatSelectionNodeId: null,
+        formatSelectionMenuTopOffset: 0,
+        formatSelectionMenuLeftOffset: 0,
+      })
       return;
     }
-    console.info('SELECTION: ', range);
+    console.info('SELECTION: ', range, range.getBoundingClientRect());
+    const rect = range.getBoundingClientRect();
+    this.setState({
+      formatSelectionNodeId: getCaretNodeId(),
+      formatSelectionMenuTopOffset: selectedNode.offsetTop,
+      formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2,
+    });
   }
   
   render() {
@@ -711,10 +723,9 @@ export default class EditPost extends React.Component {
         />)}
         {formatSelectionNodeId && (<FormatSelectionMenu
           formatSelectionNodeId={formatSelectionNodeId}
-          formatSelectionMenuTopOffset={formatSelectionMenuTopOffset}
-          formatSelectionMenuLeftOffset={formatSelectionMenuLeftOffset}
+          offsetTop={formatSelectionMenuTopOffset}
+          offsetLeft={formatSelectionMenuLeftOffset}
         />)}
-        <FormatSelectionMenu />
       </React.Fragment>
     );
   }

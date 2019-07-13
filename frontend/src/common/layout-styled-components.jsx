@@ -10,7 +10,7 @@ export const Header = styled.header`
   position: fixed;
   display: block;
   box-sizing: border-box;
-  z-index: 500;
+  z-index: 10;
   width: 100%;
   background: rgba(255,255,255,.97);
   letter-spacing: 0;

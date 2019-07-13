@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styled, { css } from 'styled-components';
-import { darkBlue, darkGrey, lightBlue } from '../../common/css';
+import { darkBlue, darkGrey } from '../../common/css';
 
 import IconBoldSvg from '../../../assets/bold.svg';
 import IconItalicSvg from '../../../assets/italic.svg';
@@ -42,7 +42,9 @@ const IconH2 = styled(IconH2Svg)`
 
 export const FormatSelectionMenu = styled.div`
   position: absolute;
-  z-index: 5;
+  top: ${p => p.top - 50}px;
+  left: ${p => p.left - 146}px; // 146 is half the width of the menu
+  z-index: 11;
   background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
   background-repeat: repeat-x;
   border-radius: 5px;
