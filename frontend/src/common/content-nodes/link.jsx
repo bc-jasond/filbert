@@ -1,21 +1,22 @@
 import React from 'react';
 import {
-  StrikeText,
+  A,
 } from '../shared-styled-components';
 
-export default class StrikethroughNode extends React.PureComponent {
+export default class LinkNode extends React.PureComponent {
   constructor(props) {
     super(props);
   }
   
   render() {
     const {
+      href,
       selection,
       children,
     } = this.props;
-    return selection.get('isStrikethrough')
+    return selection.get('isLink')
       ? (
-        <StrikeText>{children}</StrikeText>
+        <A href={href}>{children}</A>
       ) : (
         <React.Fragment>{children}</React.Fragment>
       )

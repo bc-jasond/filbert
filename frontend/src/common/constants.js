@@ -19,12 +19,13 @@ export const NODE_TYPE_LI = 'li';
 
 // formatting nodes
 export const NODE_TYPE_A = 'a';
-export const NODE_TYPE_LINK = 'link';  // @deprecated, should just be a type of NODE_TYPE_A
 export const NODE_TYPE_CODE = 'code';
 export const NODE_TYPE_SITEINFO = 'siteinfo';
 export const NODE_TYPE_ITALIC = 'italic';
 export const NODE_TYPE_STRIKE = 'strike';
 export const NODE_TYPE_BOLD = 'bold';
+// @deprecated, should just be a type of NODE_TYPE_A
+export const NODE_TYPE_LINK = 'link';
 
 
 // EDITOR

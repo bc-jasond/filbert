@@ -1,9 +1,9 @@
 import React from 'react';
 import {
-  StrikeText,
+  SiteInfo,
 } from '../shared-styled-components';
 
-export default class StrikethroughNode extends React.PureComponent {
+export default class SiteInfoNode extends React.PureComponent {
   constructor(props) {
     super(props);
   }
@@ -13,9 +13,9 @@ export default class StrikethroughNode extends React.PureComponent {
       selection,
       children,
     } = this.props;
-    return selection.get('isStrikethrough')
+    return selection.get('isSiteInfo')
       ? (
-        <StrikeText>{children}</StrikeText>
+        <SiteInfo>{children}</SiteInfo>
       ) : (
         <React.Fragment>{children}</React.Fragment>
       )
