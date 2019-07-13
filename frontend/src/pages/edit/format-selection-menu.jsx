@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styled, { css } from 'styled-components';
-import { darkBlue, darkGrey } from '../../common/css';
+import { blue, darkBlue, darkGrey } from '../../common/css';
 
 import IconBoldSvg from '../../../assets/bold.svg';
 import IconItalicSvg from '../../../assets/italic.svg';
@@ -16,6 +16,9 @@ const SvgIconMixin = css`
   top: -1px;
   vertical-align: middle;
   height: 21px;
+  &:hover {
+    fill: ${blue};
+  }
 `;
 const IconBold = styled(IconBoldSvg)`
   ${SvgIconMixin};

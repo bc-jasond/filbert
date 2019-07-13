@@ -79,7 +79,7 @@ export const LinkStyledSignIn = styled(LinkStyled)`
   ${HeaderButtonMixin};
 `;
 export const HeaderSpacer = styled.div`
-  z-index: 100;
+  z-index: 9;
   position: relative;
   height: 65px;
 `;
