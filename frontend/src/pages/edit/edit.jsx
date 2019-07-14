@@ -293,8 +293,8 @@ export default class EditPost extends React.Component {
         prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
       }
       const prevSiblingText = this.editPipeline.getText(prevSibling.get('id'));
-      this.editPipeline.replaceTextNode(prevSibling.get('id'), `${prevSiblingText}${selectedNodeContent}`);
       caretOffset = prevSiblingText.length;
+      this.editPipeline.update(prevSibling.set('content', `${prevSiblingText}${selectedNodeContent}`));
       focusNodeId = prevSibling.get('id');
     }
     
@@ -339,6 +339,8 @@ export default class EditPost extends React.Component {
     const contentLeft = selectedNodeContent.substring(0, range.endOffset);
     const contentRight = selectedNodeContent.substring(range.endOffset);
     
+    const selectedNodeMap = this.editPipeline.getNode(selectedNodeId);
+    
     let focusNodeId;
     
     /**
@@ -376,14 +378,10 @@ export default class EditPost extends React.Component {
         // create a P tag after the OL
         const olId = this.editPipeline.getParent(selectedNodeId).get('id');
         this.editPipeline.delete(selectedNodeId);
-        const pId = this.editPipeline.insertSubSectionAfter(olId, NODE_TYPE_P);
-        this.editPipeline.replaceTextNode(pId, contentRight);
-        focusNodeId = pId;
+        focusNodeId = this.editPipeline.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight);
       } else {
-        this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
-        const liId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI);
-        this.editPipeline.replaceTextNode(liId, contentRight);
-        focusNodeId = liId;
+        this.editPipeline.update(selectedNodeMap.set('content', contentLeft));
+        focusNodeId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight);
       }
     }
     
@@ -391,16 +389,14 @@ export default class EditPost extends React.Component {
      * insert a new P after the current one
      */
     if (selectedNodeType === NODE_TYPE_P) {
-      this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
-      const pId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P);
-      this.editPipeline.replaceTextNode(pId, contentRight);
-      focusNodeId = pId;
+      this.editPipeline.update(selectedNodeMap.set('content', contentLeft));
+      focusNodeId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P, contentRight);
     }
     /**
      * insert a new P tag (and a Content Section if the next section isn't one)
      */
     if ([NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_H2].includes(selectedNodeType)) {
-      this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
+      this.editPipeline.update(selectedNodeMap.set('content', contentLeft));
       const nextSibling = this.editPipeline.getNextSibling(selectedNodeId);
       let nextSiblingId;
       if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
@@ -410,9 +406,7 @@ export default class EditPost extends React.Component {
         nextSiblingId = this.editPipeline.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
       }
       // add to existing content section
-      const pId = this.editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0);
-      this.editPipeline.replaceTextNode(pId, contentRight);
-      focusNodeId = pId;
+      focusNodeId = this.editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
     }
     this.commitUpdates(focusNodeId, 0);
   }
@@ -428,6 +422,7 @@ export default class EditPost extends React.Component {
       console.warn('DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
+    const selectedNodeMap = this.editPipeline.getNode(selectedNodeId);
     const selectedNodeContent = cleanText(selectedNode.textContent);
     if (selectedNode.tagName === 'PRE') {
       const [selectedSectionId, idx] = selectedNodeId.split('-');
@@ -444,9 +439,8 @@ export default class EditPost extends React.Component {
           meta.set('lines', lines.set(lineIndex, selectedNodeContent))
         )
       );
-    } else if (!this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent)) {
-      return;
     }
+    this.editPipeline.update(selectedNodeMap.set('content', selectedNodeContent));
     console.info('DOM SYNC ', selectedNode);
     this.saveContentBatchDebounce()
   }
@@ -461,13 +455,13 @@ export default class EditPost extends React.Component {
       return;
     }
     const selectedNodeId = getCaretNodeId();
-    const selectedNode = this.editPipeline.getNode(selectedNodeId);
-    if (!selectedNode) {
+    const selectedNodeMap = this.editPipeline.getNode(selectedNodeId);
+    if (!selectedNodeMap) {
       console.warn('CARET no node, bad selection: ', getCaretNode());
       return;
     }
     console.info('CARET - node', getCaretNode());
-    if (selectedNode.get('type') === NODE_TYPE_SECTION_SPACER) {
+    if (selectedNodeMap.get('type') === NODE_TYPE_SECTION_SPACER) {
       evt.stopPropagation();
       evt.preventDefault();
       const shouldFocusOnPrevious = evt.keyCode === UP_ARROW;
@@ -475,7 +469,7 @@ export default class EditPost extends React.Component {
         ? this.editPipeline.getPreviousFocusNodeId(selectedNodeId)
         : this.editPipeline.getNextFocusNodeId(selectedNodeId);
       setCaret(focusNodeId, -1, shouldFocusOnPrevious);
-    } else if (selectedNode.get('type') === NODE_TYPE_ROOT) {
+    } else if (selectedNodeMap.get('type') === NODE_TYPE_ROOT) {
       evt.stopPropagation();
       evt.preventDefault();
       setCaret(this.editPipeline.getNextFocusNodeId(selectedNodeId));

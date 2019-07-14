@@ -12,14 +12,13 @@ import {
   NODE_TYPE_SECTION_POSTLINK,
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER,
-  NODE_TYPE_TEXT,
   ROOT_NODE_PARENT_ID,
   NODE_ACTION_UPDATE,
   NODE_ACTION_DELETE,
+  ZERO_LENGTH_CHAR,
 } from '../../common/constants';
 import {
   cleanText,
-  cleanTextOrZeroLengthPlaceholder,
   getMapWithId,
 } from '../../common/utils';
 
@@ -205,12 +204,12 @@ export default class EditPipeline {
       console.error(errorMessage, sectionId);
       throw new Error(errorMessage);
     }
-    return this.insert(this.rootId, type, siblingIndex + 1, meta);
+    return this.insert(this.rootId, type, siblingIndex + 1, '', meta);
   }
   
   insertSection(type, index = -1, meta = Map()) {
     // parent must be root
-    return this.insert(this.rootId, type, index, meta);
+    return this.insert(this.rootId, type, index, '', meta);
   }
   
   splitSection(sectionId, nodeId) {
@@ -258,46 +257,23 @@ export default class EditPipeline {
   }
   
   getText(nodeId) {
-    return cleanText(this.getFirstChild(nodeId).get('content', ''));
+    return cleanText(this.getNode(nodeId).get('content', ''));
   }
   
-  replaceTextNode(nodeId, contentArg) {
-    const content = cleanTextOrZeroLengthPlaceholder(contentArg);
-    let textNode = this.getFirstChild(nodeId);
-    if (!textNode.get('id')) {
-      // add a new text node
-      textNode = this.getMapWithId({ type: NODE_TYPE_TEXT, parent_id: nodeId, position: 0, content })
-      console.info('replaceTextNode - NEW node: ', textNode)
-    } else {
-      if (textNode.get('type') !== NODE_TYPE_TEXT) {
-        console.warn('replaceTextNode - comparing other node type: ', textNode.toJS());
-        return false;
-      }
-      if (cleanTextOrZeroLengthPlaceholder(textNode.get('content')) === content) {
-        // DOM & model already equal, no update needed
-        return false;
-      }
-      console.info('replaceTextNode - existing node: ', textNode);
-      textNode = textNode.set('content', content);
-    }
-    this.stageNodeUpdate(textNode.get('id'));
-    this.nodesByParentId = this.nodesByParentId.set(nodeId, List([textNode]));
-    return true;
-  }
-  
-  insertSubSectionAfter(siblingId, type, meta = Map()) {
+  insertSubSectionAfter(siblingId, type, content, meta = Map()) {
     const parentId = this.getParent(siblingId).get('id');
     const siblings = this.nodesByParentId.get(parentId, List());
     const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
-    return this.insert(parentId, type, siblingIdx + 1, meta);
+    return this.insert(parentId, type, siblingIdx + 1, content = '', meta);
   }
   
-  insert(parentId, type, index, meta) {
+  insert(parentId, type, index, content, meta) {
     const siblings = this.nodesByParentId.get(parentId, List());
     let newNode = this.getMapWithId({
       type,
       parent_id: parentId,
       position: index,
+      content,
       meta,
     });
     this.stageNodeUpdate(newNode.get('id'));
