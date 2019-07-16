@@ -13,7 +13,7 @@ import {
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_SECTION_POSTLINK,
   NODE_TYPE_ROOT,
-  NODE_TYPE_LI,
+  NODE_TYPE_LI, NODE_TYPE_PRE,
 } from './constants';
 import {
   H1,
@@ -111,6 +111,7 @@ export default class ContentNode extends React.PureComponent {
         return (
           <CodeSection data-type={node.get('type')} name={node.get('id')}>
             {lines.map((line, idx) => (<Pre key={`${node.get('id')}-${idx}`}
+                                            data-type={NODE_TYPE_PRE}
                                             name={`${node.get('id')}-${idx}`}>{cleanTextOrZeroLengthPlaceholder(line)}</Pre>))}
           </CodeSection>
         );
