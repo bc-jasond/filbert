@@ -12,7 +12,8 @@ import {
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_SECTION_POSTLINK,
-  NODE_TYPE_ROOT, ZERO_LENGTH_CHAR,
+  NODE_TYPE_ROOT,
+  NODE_TYPE_LI,
 } from './constants';
 import {
   H1,
@@ -71,7 +72,7 @@ export default class ContentNode extends React.PureComponent {
     } = this.props;
     console.debug('getChildNodes', nodesByParentId.get(node.get('id')))
     return nodesByParentId
-      .get(node.get('id'))
+      .get(node.get('id'), List())
       .map(child => (
         <ContentNode key={child.get('id')} node={child} nodesByParentId={nodesByParentId} isEditing={isEditing} />))
   }
@@ -83,7 +84,7 @@ export default class ContentNode extends React.PureComponent {
     } = this.props;
     console.debug('getKey', nodesByParentId.get(node.get('id')))
     return nodesByParentId
-      .get(node.get('id'), List([Map()]))
+      .get(node.get('id'), List())
       // create a key from all child ids concatenated together - this is to fix a stale render issue for TEXT (invisible to the DOM) children
       .reduce((acc, child) => `${child.get('id')}`, '')
   }
@@ -100,7 +101,7 @@ export default class ContentNode extends React.PureComponent {
       case NODE_TYPE_SECTION_H1:
         return (<H1 data-type={NODE_TYPE_SECTION_H1} name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H1>);
       case NODE_TYPE_SECTION_H2:
-        return (<H2 data-type={NODE_TYPE_SECTION_H2} name={node.get('id')}>{node.get('content', ZERO_LENGTH_CHAR)}</H2>);
+        return (<H2 data-type={NODE_TYPE_SECTION_H2} name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H2>);
       case NODE_TYPE_SECTION_SPACER:
         return (<SpacerSection data-type={NODE_TYPE_SECTION_SPACER} name={node.get('id')} contentEditable={false} />);
       case NODE_TYPE_SECTION_CODE:
@@ -199,28 +200,42 @@ export default class ContentNode extends React.PureComponent {
        * PARAGRAPH TYPES
        */
       default: {
-        const StyledComponent = node.get('type') === NODE_TYPE_P ? P : Li;
-        if (!StyledComponent) {
-          console.error('Error: Unknown type! ', node.get('type'));
-          return null;
+        let StyledComponent;
+        switch (node.get('type')) {
+          case NODE_TYPE_P:
+            StyledComponent = P;
+            break;
+          case NODE_TYPE_LI:
+            StyledComponent = Li;
+            break;
+          default:
+            console.error('Error: Unknown type! ', node.get('type'));
+            return null;
         }
         const meta = node.get('meta', Map());
         const selections = meta
           .get('selections', List([Map()]));
-        const getContent = (selection) => node
-          .get('content', '')
-          .substring(selection.get('start', 0), selection.get('end', -1) === -1 ? node.get('content').length : selection.get('end'));
+        const getContentForSelection = (selection) => {
+          const startOffset = selection.get('start', 0);
+          const endOffset = selection.get('end', -1) === -1
+            ? node.get('content', '').length
+            : selection.get('end');
+          const content = node
+            .get('content', '')
+            .substring(startOffset, endOffset);
+          return cleanTextOrZeroLengthPlaceholder(content);
+        };
   
         return (
           <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
-            {selections.map(selection => (
-              <LinkNode href={meta.get('href')} selection={selection}>
+            {selections.map((selection, idx) => (
+              <LinkNode key={`${node.get('id')}-${idx}`} href={meta.get('href')} selection={selection}>
                 <BoldNode selection={selection}>
                   <CodeNode selection={selection}>
                     <ItalicNode selection={selection}>
                       <SiteInfoNode selection={selection}>
                         <StrikethroughNode selection={selection}>
-                          {cleanTextOrZeroLengthPlaceholder(getContent(selection))}
+                          {getContentForSelection(selection)}
                         </StrikethroughNode>
                       </SiteInfoNode>
                     </ItalicNode>

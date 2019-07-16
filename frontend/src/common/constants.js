@@ -33,12 +33,15 @@ export const NODE_TYPE_LINK = 'link';
 export const NEW_POST_URL_ID = 'new';
 export const ROOT_NODE_PARENT_ID = 'null';
 export const ZERO_LENGTH_CHAR = '\u200B';
-export const ENTER_KEY = 13;
+// key codes
 export const BACKSPACE_KEY = 8;
-export const UP_ARROW = 38;
-export const DOWN_ARROW = 40;
+export const ENTER_KEY = 13;
+export const ESC_KEY = 27;
 export const LEFT_ARROW = 37;
+export const UP_ARROW = 38;
 export const RIGHT_ARROW = 39;
+export const DOWN_ARROW = 40;
+// edit actions
 export const NODE_ACTION_INSERT = 'insert';
 export const NODE_ACTION_UPDATE = 'update';
 export const NODE_ACTION_DELETE = 'delete';

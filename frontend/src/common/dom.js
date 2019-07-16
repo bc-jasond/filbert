@@ -35,8 +35,9 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
     range.setEnd(textNode, offset === -1 ? textNode.textContent.length : offset);
     range.collapse();
     sel.addRange(range);
+  } else {
+    console.warn(`setCaret - couldn't find a text node inside of `, nodeId);
   }
-  console.warn(`setCaret - couldn't find a text node inside of `, nodeId);
 }
 
 export function getRange() {

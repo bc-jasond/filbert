@@ -37,7 +37,7 @@ import {
   NODE_TYPE_ROOT,
   NODE_TYPE_P,
   NODE_TYPE_OL,
-  NODE_TYPE_LI,
+  NODE_TYPE_LI, ESC_KEY,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -130,13 +130,13 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
       this.editPipeline.init(post, contentNodes);
-      const focusNodeId = this.editPipeline.getPreviousFocusNodeId(this.editPipeline.rootId);
+      const focusNodeId = this.editPipeline.getNextFocusNodeId(this.editPipeline.rootId);
       this.setState({
         root: this.editPipeline.root,
         nodesByParentId: this.editPipeline.nodesByParentId,
         shouldShow404: false
       }, () => {
-        setCaret(focusNodeId)
+        setCaret(focusNodeId, -1, true)
         this.manageInsertMenu();
         window.scrollTo(0, 0);
       })
@@ -188,7 +188,7 @@ export default class EditPost extends React.Component {
     }
     
     const selectedNode = getCaretNode();
-    const selectedNodeId = getCaretNodeId();
+    let selectedNodeId = getCaretNodeId();
     
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('BACKSPACE - bad selection, no id ', selectedNode);
@@ -207,7 +207,10 @@ export default class EditPost extends React.Component {
     evt.preventDefault();
     
     /**
-     * // TODO: make these into sets of atomic commands that are added to a queue, then make a 'flush' command to process this queue.  Right now, live updates are happening and it's wack-a-mole galore
+     * TODO: make these into sets of atomic commands that are added to a queue,
+     *  then make a 'flush' command to process this queue.
+     *  Right now, live updates are happening and it's wack-a-mole galore
+     *
      * THINGS TO CONSIDER FOR DELETE (in order):
      * 1) only-child of first section - noop until there's special 'rootIsEmpty' placeholder logic
      * 2) delete the current selected node - always if 'this far'
@@ -216,11 +219,22 @@ export default class EditPost extends React.Component {
      * 5) merge the current selected node's text into the previous node?
      * 6) selected node is/was an only-child, delete current section
      */
-      
-      
-      // save these locally before updates
-    const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
-    let prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
+    
+    // CODE_SECTION - custom 'terminal' section logic
+    if (selectedNode.tagName === 'PRE') {
+      this.handleBackspacePre(selectedNodeId);
+      return;
+    }
+    
+    // LIST
+    if (selectedNode.tagName === 'LI') {
+      this.handleBackspaceLi(selectedNodeId);
+      return;
+    }
+    
+    // save these locally before updates
+    const selectedSection = this.editPipeline.getSection(selectedNodeId);
+    let prevSection = this.editPipeline.getPrevSibling(selectedSection.get('id'));
     const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
     
     // only child of first section - noop
@@ -233,37 +247,15 @@ export default class EditPost extends React.Component {
     
     // handles CONTENT only
     const isFirstChild = this.editPipeline.isFirstChild(selectedNodeId);
+    
     // default previous focusable node
     let focusNodeId = this.editPipeline.getPreviousFocusNodeId(selectedNodeId);
-    
-    // CodeSection - custom 'terminal' section logic
-    if (selectedNode.tagName === 'PRE') {
-      const name = selectedNode.getAttribute('name');
-      const [selectedSectionId, idx] = name.split('-');
-      const lineIdx = parseInt(idx, 10);
-      const selectedSection = this.editPipeline.getNode(selectedSectionId);
-      const meta = selectedSection.get('meta');
-      let lines = meta.get('lines');
-      
-      if (lines.size === 1) {
-        // delete the section
-        this.editPipeline.delete(selectedSectionId);
-      } else {
-        this.editPipeline.update(
-          selectedSection.set('meta',
-            meta.set('lines',
-              lines.delete(lineIdx)
-            )
-          )
-        );
-      }
-      
-      console.info('BACKSPACE - code section content: ', selectedNodeContent, selectedSectionId, lineIdx);
-      focusNodeId = `${selectedSectionId}-${lineIdx - 1 > 0 ? lineIdx - 1 : 0}`;
-    } else {
-      // delete current node
-      this.editPipeline.delete(selectedNodeId);
-    }
+  
+    /**
+     * MUTATION START
+     */
+    // delete current node
+    this.editPipeline.delete(selectedNodeId);
     
     // delete previous section (SPACER, etc)
     if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
@@ -278,7 +270,7 @@ export default class EditPost extends React.Component {
     // merge current section's children
     // TODO: merge & convert section types H1 -> Content, Content -> H1, etc.
     if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
-      this.editPipeline.mergeSections(prevSection.get('id'), selectedSectionId);
+      this.editPipeline.mergeSections(prevSection, selectedSection);
       if (!didDeletePrevSection) {
         // TODO: this is confusing.  Given a sectionId, getPreviousFocusNodeId will look for a previous/next section.  But here, we want to look for the first/last child of current section.  This will already have happened by 'delete previous section' code
         focusNodeId = this.editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
@@ -288,7 +280,7 @@ export default class EditPost extends React.Component {
     let caretOffset = -1;
     // merge current node's text into previous sibling
     if (cleanText(selectedNodeContent)) {
-      if (selectedNodeId === selectedSectionId) {
+      if (selectedNodeId === selectedSection.get('id')) {
         // H1 or H2 - aka, sections that have text nodes directly
         prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
       }
@@ -300,10 +292,93 @@ export default class EditPost extends React.Component {
     
     // delete section? merging will have already deleted it
     if (wasOnlyChild) {
-      this.editPipeline.delete(selectedSectionId);
+      this.editPipeline.delete(selectedSection.get('id'));
     }
     
     this.commitUpdates(focusNodeId, caretOffset, true);
+  }
+  
+  handleBackspacePre = (selectedNodeId) => {
+    const [selectedSectionId, idx] = selectedNodeId.split('-');
+    const lineIdx = parseInt(idx, 10);
+    const selectedSection = this.editPipeline.getNode(selectedSectionId);
+    const nextSection = this.editPipeline.getNextSibling(selectedSectionId);
+    const meta = selectedSection.get('meta');
+    let lines = meta.get('lines');
+    
+    // remove the section
+    if (lines.size === 1) {
+      // delete the previous section?  Currently, only if SPACER
+      let prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
+      if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+        prevSection = this.editPipeline.getPrevSibling(prevSection.get('id'));
+        this.editPipeline.delete(prevSection.get('id'))
+      }
+      // TODO: merge content sections?
+      this.editPipeline.mergeSections(prevSection, nextSection)
+      // delete the section
+      this.editPipeline.delete(selectedSectionId);
+    } else {
+      // just delete one line of code
+      this.editPipeline.update(
+        selectedSection.set('meta',
+          meta.set('lines',
+            lines.delete(lineIdx)
+          )
+        )
+      );
+    }
+    
+    console.info('BACKSPACE - code section content: ', selectedSectionId, lineIdx);
+    let focusNodeId;
+    if (lineIdx > 0) {
+      // a PRE was deleted, focus previous PRE
+      focusNodeId = `${selectedSectionId}-${lineIdx - 1}`;
+    } else {
+      // the CODE_SECTION was deleted, focus previous section
+      focusNodeId = this.editPipeline.getPreviousFocusNodeId(selectedSectionId);
+    }
+    this.commitUpdates(focusNodeId, -1, true);
+  }
+  
+  handleBackspaceLi = (selectedNodeId) => {
+    const selectedSection = this.editPipeline.getParent(selectedNodeId);
+    const selectedNode = this.editPipeline.getNode(selectedNodeId);
+    let focusNodeId;
+    let focusOffset = -1;
+    if (this.editPipeline.isFirstChild(selectedNodeId)) {
+      let prevSection = this.editPipeline.getPrevSibling(selectedSection.get('id'));
+      // delete a spacer?
+      if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+        const spacerSectionId = prevSection.get('id');
+        prevSection = this.editPipeline.getPrevSibling(spacerSectionId)
+        this.editPipeline.delete(spacerSectionId);
+      }
+      if (prevSection.get('type') === NODE_TYPE_OL) {
+        // merge OLs?
+        this.editPipeline.mergeSections(prevSection, selectedSection);
+        const lastLi = this.editPipeline.getLastChild(prevSection.get('id'));
+        focusNodeId = lastLi.get('id');
+        focusOffset = lastLi.get('content').length;
+      } else {
+        // convert 1st LI to P
+        const prevParagraph = this.editPipeline.getPrevSibling(selectedSection.get('id'));
+        const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
+        this.editPipeline.mergeParagraphs(prevParagraph.get('id'), selectedNodeId);
+        if (wasOnlyChild) {
+          // delete empty OL
+          this.editPipeline.delete(selectedSection.get('id'))
+        }
+        focusNodeId = prevParagraph.get('id');
+        focusOffset = prevParagraph.get('content').length;
+      }
+    } else {
+      const prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
+      this.editPipeline.mergeParagraphs(prevSibling.get('id'), selectedNodeId);
+      focusNodeId = prevSibling.get('id');
+      focusOffset = prevSibling.get('content').length;
+    }
+    this.commitUpdates(focusNodeId, focusOffset, true);
   }
   
   handleEnter = (evt) => {
@@ -331,13 +406,13 @@ export default class EditPost extends React.Component {
     
     console.info('ENTER node: ', selectedNode);
     console.info('ENTER node content: ', selectedNodeContent);
-    console.info('ENTER node content left: ', contentLeft);
-    console.info('ENTER node content right: ', contentRight);
     
     const selectedNodeType = getCaretNodeType();
     // split selectedNodeContent at caret
     const contentLeft = selectedNodeContent.substring(0, range.endOffset);
     const contentRight = selectedNodeContent.substring(range.endOffset);
+    console.info('ENTER node content left: ', contentLeft);
+    console.info('ENTER node content right: ', contentRight);
     
     const selectedNodeMap = this.editPipeline.getNode(selectedNodeId);
     
@@ -374,8 +449,8 @@ export default class EditPost extends React.Component {
      */
     
     if (selectedNodeType === NODE_TYPE_LI) {
-      if (cleanText(contentLeft).length === 0) {
-        // create a P tag after the OL
+      if (cleanText(contentLeft).length === 0 && this.editPipeline.isLastChild(selectedNodeId)) {
+        // create a P tag after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
         const olId = this.editPipeline.getParent(selectedNodeId).get('id');
         this.editPipeline.delete(selectedNodeId);
         focusNodeId = this.editPipeline.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight);
@@ -439,8 +514,9 @@ export default class EditPost extends React.Component {
           meta.set('lines', lines.set(lineIndex, selectedNodeContent))
         )
       );
+    } else {
+      this.editPipeline.update(selectedNodeMap.set('content', selectedNodeContent));
     }
-    this.editPipeline.update(selectedNodeMap.set('content', selectedNodeContent));
     console.info('DOM SYNC ', selectedNode);
     this.saveContentBatchDebounce()
   }
@@ -487,7 +563,8 @@ export default class EditPost extends React.Component {
     console.debug('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleSyncFromDom(evt);
     this.handleCaret(evt);
-    this.manageInsertMenu();
+    this.manageInsertMenu(evt);
+    this.manageFormatSelectionMenu(evt);
   }
   
   handleMouseUp = (evt) => {
@@ -559,6 +636,7 @@ export default class EditPost extends React.Component {
     const selectedNodeId = this.insertMenuSelectedNodeId;
     const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
     const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
+    const wasLastChild = this.editPipeline.isLastChild(selectedNodeId);
     let newSectionId;
     let focusNodeId;
     const { editSectionMeta } = this.state;
@@ -566,11 +644,13 @@ export default class EditPost extends React.Component {
     // lists get added to content sections, keep current section
     if (sectionType === NODE_TYPE_OL) {
       const olId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_OL);
-      focusNodeId = this.editPipeline.insert(olId, NODE_TYPE_LI, 0);
+      focusNodeId = this.editPipeline.insert(olId, NODE_TYPE_LI, 0, ZERO_LENGTH_CHAR);
       this.editPipeline.delete(selectedNodeId);
     } else {
       // splitting the current section even if selectedNodeId is first or last child
-      this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
+      if (!wasLastChild || sectionType === NODE_TYPE_SECTION_CODE) {
+        this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
+      }
       // insert the section
       newSectionId = this.editPipeline.insertSectionAfter(
         selectedSectionId,
@@ -592,7 +672,7 @@ export default class EditPost extends React.Component {
       if (wasOnlyChild) {
         // if the empty P tag was the only child in the content section, delete it
         this.editPipeline.delete(selectedSectionId);
-      } else {
+      } else if (sectionType !== NODE_TYPE_SECTION_CODE) {
         this.editPipeline.delete(selectedNodeId);
       }
       focusNodeId = newSectionId;
@@ -647,10 +727,11 @@ export default class EditPost extends React.Component {
     }
   }
   
-  manageFormatSelectionMenu() {
+  manageFormatSelectionMenu(evt) {
     const range = getRange();
+    const isEscKey = evt && evt.keyCode === ESC_KEY;
     const selectedNode = getCaretNode();
-    if (!range || range.collapsed || !selectedNode) {
+    if (!range || range.collapsed || !selectedNode || isEscKey) {
       this.setState({
         formatSelectionNodeId: null,
         formatSelectionMenuTopOffset: 0,

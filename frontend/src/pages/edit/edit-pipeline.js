@@ -15,7 +15,7 @@ import {
   ROOT_NODE_PARENT_ID,
   NODE_ACTION_UPDATE,
   NODE_ACTION_DELETE,
-  ZERO_LENGTH_CHAR,
+  ZERO_LENGTH_CHAR, NODE_TYPE_LI, NODE_TYPE_OL,
 } from '../../common/constants';
 import {
   cleanText,
@@ -221,7 +221,7 @@ export default class EditPipeline {
     const siblings = this.nodesByParentId.get(sectionId);
     const nodeIdx = siblings.findIndex(s => s.get('id') === nodeId);
     
-    this.delete(nodeId);
+    // this.delete(nodeId);
     // update existing section
     this.nodesByParentId = this.nodesByParentId.set(sectionId, siblings.slice(0, nodeIdx));
     // if all existing nodes moved to the new section, create a new P
@@ -230,23 +230,41 @@ export default class EditPipeline {
     }
     this.updateNodesForParent(sectionId);
     // new section
-    const newSectionid = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
-    this.nodesByParentId = this.nodesByParentId.set(newSectionid, siblings.slice(nodeIdx));
+    const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
+    this.nodesByParentId = this.nodesByParentId.set(newSectionId, siblings.slice(nodeIdx));
     // if all existing nodes stayed in the existing section, create a new P
-    if (this.nodesByParentId.get(newSectionid).size === 0) {
-      this.insert(newSectionid, NODE_TYPE_P, 0);
+    if (this.nodesByParentId.get(newSectionId).size === 0) {
+      this.insert(newSectionId, NODE_TYPE_P, 0);
     }
-    this.updateNodesForParent(newSectionid);
+    this.updateNodesForParent(newSectionId);
   }
   
-  mergeSections(leftSectionId, rightSectionId) {
-    const left = this.getNode(leftSectionId);
-    const right = this.getNode(rightSectionId);
-    if (!(left.get('type') === NODE_TYPE_SECTION_CONTENT && right.get('type') === NODE_TYPE_SECTION_CONTENT)) {
-      console.error('mergeSections', left, right);
-      throw new Error('mergeSections - I only merge CONTENT sections ATM')
+  isParagraphType(nodeId) {
+    return [NODE_TYPE_P, NODE_TYPE_LI].includes(this.getNode(nodeId).get('type'))
+  }
+  
+  mergeParagraphs(leftId, rightId) {
+    if (!(this.isParagraphType(leftId) && this.isParagraphType(rightId))) {
+      console.error('mergeParagraphs - can`t do it!', leftId, rightId);
+      throw new Error('mergeParagraphs - invalid paragraphs')
     }
-    console.info('mergingSections ', left.get('id'), right.get('id'));
+    let left = this.getNode(leftId);
+    const right = this.getNode(rightId);
+    left = left.set('content', `${left.get('content')}${right.get('content')}`);
+    this.update(left);
+    // TODO: merge meta, offset the 'right' selections by left.get('content').length
+    this.delete(rightId);
+  }
+  
+  mergeSections(left, right) {
+    if (!(left.get('type') === NODE_TYPE_SECTION_CONTENT && right.get('type') === NODE_TYPE_SECTION_CONTENT)
+      && !(left.get('type') === NODE_TYPE_OL && right.get('type') === NODE_TYPE_OL)) {
+      console.error('mergeSections', left, right);
+      throw new Error('mergeSections - I only merge CONTENT & OL sections ATM')
+    }
+    const leftSectionId = left.get('id');
+    const rightSectionId = right.get('id');
+    console.info('mergingSections ', leftSectionId, rightSectionId);
     // left or right could be empty because the selectedNode was already deleted
     const rightNodes = this.nodesByParentId.get(rightSectionId, List());
     const leftNodes = this.nodesByParentId.get(leftSectionId, List());
@@ -274,7 +292,7 @@ export default class EditPipeline {
       parent_id: parentId,
       position: index,
       content,
-      meta,
+      meta: meta || Map(),
     });
     this.stageNodeUpdate(newNode.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
@@ -320,9 +338,8 @@ export default class EditPipeline {
     this.nodesByParentId = this.nodesByParentId.delete(nodeId);
     // reindex children and persist changes
     this.updateNodesForParent(parentId);
-    // safe guard against integrity constraint violations
+    // TODO: safe guard against integrity constraint violations, clean up illegal state
     // TODO: add integrity constraints AKA, node type can only have children of type [x,y,z]
-    // this.pruneEmptyAndOrphanedParents();
   }
   
   updateNodesForParent(parentId) {
@@ -355,6 +372,9 @@ export default class EditPipeline {
   
   getPreviousFocusNodeId(nodeId) {
     let focusNodeId;
+    if (nodeId.includes('-')) {
+    
+    }
     if (nodeId === this.rootId || this.isSectionType(nodeId)) {
       let sectionId = nodeId;
       if (nodeId === this.rootId) {
@@ -419,24 +439,5 @@ export default class EditPipeline {
     }
     console.info('getNextFocusNodeId found: ', focusNodeId, ', type: ', this.getNode(focusNodeId).get('type'));
     return focusNodeId;
-  }
-  
-  // TODO: this is a bad idea but, if the DOM gets into an illegal state everything is F!@KED
-  pruneEmptyAndOrphanedParents() {
-    console.warn('pruneEmptyAndOrphanedParents BAD BAD BAD!');
-    return;
-    
-    const idsToDelete = this.nodesByParentId
-      .filterNot(
-        (children, id) => (id === ROOT_NODE_PARENT_ID || (children.size > 0 && this.getNode(id).get('id')))
-      )
-      .map((_, id) => id);
-    
-    if (idsToDelete.size > 0) {
-      console.info('pruneEmptyAndOrphanedParents ', idsToDelete);
-    }
-    idsToDelete.forEach(id => {
-      // this.delete(id);
-    });
   }
 }
