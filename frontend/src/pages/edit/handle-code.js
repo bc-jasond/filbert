@@ -1,7 +1,8 @@
 import { List, Map } from 'immutable';
 import {
   NODE_TYPE_P,
-  NODE_TYPE_SECTION_CODE, NODE_TYPE_SECTION_CONTENT,
+  NODE_TYPE_SECTION_CODE,
+  NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_SPACER,
   ZERO_LENGTH_CHAR
 } from '../../common/constants';
@@ -10,41 +11,45 @@ import { cleanText } from '../../common/utils';
 export function handleBackspaceCode(editPipeline, selectedNodeId) {
   const [selectedSectionId, idx] = selectedNodeId.split('-');
   const lineIdx = parseInt(idx, 10);
+  const prevSection = editPipeline.getPrevSibling(selectedSectionId);
+  let prevFocusNodeId = editPipeline.getPreviousFocusNodeId(selectedSectionId);
   const selectedSection = editPipeline.getNode(selectedSectionId);
-  const nextSection = editPipeline.getNextSibling(selectedSectionId);
   const meta = selectedSection.get('meta');
-  let lines = meta.get('lines');
+  const lines = meta.get('lines');
+  const lineContent = cleanText(lines.get(lineIdx));
+  let prevLineContent = '';
   
-  // remove the section
-  if (lines.size === 1) {
-    // delete the previous section?  Currently, only if SPACER
-    let prevSection = editPipeline.getPrevSibling(selectedSectionId);
-    if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
-      prevSection = editPipeline.getPrevSibling(prevSection.get('id'));
-      editPipeline.delete(prevSection.get('id'))
-    }
-    // TODO: merge content sections?
-    editPipeline.mergeSections(prevSection, nextSection);
-    // delete the section
+  // delete the previous section?  Currently, only if CODE SECTION is empty and previous is a SPACER
+  if (lines.size === 1 && lineContent.length === 0 && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+    prevFocusNodeId = editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
+    editPipeline.delete(prevSection.get('id'))
+  }
+  if (lines.size === 1 && lineContent.length === 0) {
     editPipeline.delete(selectedSectionId);
-  } else {
-    // just delete one line of code
+  } else if (lineIdx > 0) {
+    // merge lines of code
+    prevLineContent = lines.get(lineIdx - 1);
     editPipeline.update(
       selectedSection.set('meta',
         meta.set('lines',
-          lines.delete(lineIdx)
+          lines
+            .delete(lineIdx)
+            .set(lineIdx - 1, `${prevLineContent}${lineContent}`)
         )
       )
-    );
+    )
+  } else {
+    //TODO: support convert/merge into other sections
+    return [];
   }
   
   console.info('BACKSPACE - code section content: ', selectedSectionId, lineIdx);
   if (lineIdx > 0) {
     // a PRE was deleted, focus previous PRE
-    return `${selectedSectionId}-${lineIdx - 1}`;
+    return [`${selectedSectionId}-${lineIdx - 1}`, prevLineContent.length];
   }
   // the CODE_SECTION was deleted, focus previous section
-  return editPipeline.getPreviousFocusNodeId(selectedSectionId);
+  return [prevFocusNodeId, editPipeline.getNode(prevFocusNodeId).get('content').length];
 }
 
 export function handleEnterCode(editPipeline, selectedNode, contentLeft, contentRight) {
@@ -120,9 +125,9 @@ export function insertCodeSection(editPipeline, selectedNodeId) {
     NODE_TYPE_SECTION_CODE,
     Map({ lines: List([ZERO_LENGTH_CHAR]) }),
   );
+  editPipeline.delete(selectedNodeId);
   if (placeholderParagraphWasOnlyChild) {
     editPipeline.delete(selectedSectionId);
   }
-  editPipeline.delete(selectedNodeId);
   return newSectionId;
 }

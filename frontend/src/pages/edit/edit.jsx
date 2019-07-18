@@ -43,7 +43,7 @@ import {
 import ContentNode from '../../common/content-node.component';
 import { handleBackspaceCode, handleDomSyncCode, handleEnterCode, insertCodeSection } from './handle-code';
 import { handleBackspaceList, handleEnterList, insertList } from './handle-list';
-import { handleEnterParagraph } from './handle-paragraph';
+import { handleBackspaceParagraph, handleEnterParagraph } from './handle-paragraph';
 import { insertSpacer } from './handle-spacer';
 import { handleEnterTitle, handleBackspaceTitle, insertH1, insertH2 } from './handle-title';
 import InsertSectionMenu from './insert-section-menu';
@@ -224,23 +224,26 @@ export default class EditPost extends React.Component {
      */
     
     switch (selectedNodeType) {
+      case NODE_TYPE_P: {
+        [focusNodeId, caretOffset] = handleBackspaceParagraph(this.editPipeline, selectedNodeId);
+        
+      }
       case NODE_TYPE_PRE: {
-        const focusNodeId = handleBackspaceCode(this.editPipeline, selectedNodeId);
-        this.commitUpdates(focusNodeId, -1, true);
-        return;
+        [focusNodeId, caretOffset] = handleBackspaceCode(this.editPipeline, selectedNodeId);
+        break;
       }
       case NODE_TYPE_LI: {
-        const [focusNodeId, caretOffset] = handleBackspaceList(this.editPipeline, selectedNodeId);
-        this.commitUpdates(focusNodeId, caretOffset, true);
-        return;
+        [focusNodeId, caretOffset] = handleBackspaceList(this.editPipeline, selectedNodeId);
+        break;
       }
       case NODE_TYPE_SECTION_H1:
       case NODE_TYPE_SECTION_H2: {
-        const [focusNodeId, caretOffset] = handleBackspaceTitle(this.editPipeline, selectedNodeId);
-        this.commitUpdates(focusNodeId, caretOffset, true);
-        return;
+        [focusNodeId, caretOffset] = handleBackspaceTitle(this.editPipeline, selectedNodeId);
+        break;
       }
     }
+    this.commitUpdates(focusNodeId, caretOffset, true);
+    return;
     // save these locally before updates
     const selectedSection = this.editPipeline.getSection(selectedNodeId);
     let prevSection = this.editPipeline.getPrevSibling(selectedSection.get('id'));
