@@ -8,30 +8,40 @@ import {
 import { cleanText } from '../../common/utils';
 
 export function handleBackspaceList(editPipeline, selectedNodeId) {
-  const selectedSection = editPipeline.getParent(selectedNodeId);
+  const selectedOl = editPipeline.getParent(selectedNodeId);
+  let prevSection;
   if (editPipeline.isFirstChild(selectedNodeId)) {
-    let prevSection = editPipeline.getPrevSibling(selectedSection.get('id'));
-    // delete a spacer?
-    if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
-      const spacerSectionId = prevSection.get('id');
-      prevSection = editPipeline.getPrevSibling(spacerSectionId);
-      editPipeline.delete(spacerSectionId);
+    if (editPipeline.isFirstChild(selectedOl.get('id'))) {
+      const selectedSection = editPipeline.getSection(selectedOl.get('id'));
+      prevSection = editPipeline.getPrevSibling(selectedSection.get('id'));
+      // delete a spacer?
+      if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+        const spacerSectionId = prevSection.get('id');
+        prevSection = editPipeline.getPrevSibling(spacerSectionId);
+        editPipeline.delete(spacerSectionId);
+      }
+      // overloading prevSection to mean 'prevParagraph' I know, I know...
+      prevSection = editPipeline.getLastChild(prevSection.get('id'))
     }
     if (prevSection.get('type') === NODE_TYPE_OL) {
       // merge OLs?
-      editPipeline.mergeSections(prevSection, selectedSection);
+      editPipeline.mergeSections(prevSection, selectedOl);
       const lastLi = editPipeline.getLastChild(prevSection.get('id'));
       return [lastLi.get('id'), lastLi.get('content').length];
     }
     // convert 1st LI to P
-    const prevParagraph = editPipeline.getPrevSibling(selectedSection.get('id'));
     const wasOnlyChild = editPipeline.isOnlyChild(selectedNodeId);
-    editPipeline.mergeParagraphs(prevParagraph.get('id'), selectedNodeId);
+    editPipeline.mergeParagraphs(prevSection.get('id'), selectedNodeId);
     if (wasOnlyChild) {
+      const section = editPipeline.getSection(selectedOl.get('id'));
       // delete empty OL
-      editPipeline.delete(selectedSection.get('id'))
+      editPipeline.delete(selectedOl.get('id'))
+      if (editPipeline.isOnlyChild(selectedOl.get('id'))) {
+        // delete empty section
+        editPipeline.delete(section.get('id'))
+      }
     }
-    return [prevParagraph.get('id'), prevParagraph.get('content').length];
+    return [prevSection.get('id'), prevSection.get('content').length];
   }
   const prevSibling = editPipeline.getPrevSibling(selectedNodeId);
   editPipeline.mergeParagraphs(prevSibling.get('id'), selectedNodeId);

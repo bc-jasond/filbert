@@ -15,7 +15,7 @@ import {
   ROOT_NODE_PARENT_ID,
   NODE_ACTION_UPDATE,
   NODE_ACTION_DELETE,
-  NODE_TYPE_LI, NODE_TYPE_OL,
+  NODE_TYPE_LI, NODE_TYPE_OL, NODE_TYPE_PRE,
 } from '../../common/constants';
 import {
   cleanText,
@@ -248,7 +248,12 @@ export default class EditPipeline {
   }
   
   isParagraphType(nodeId) {
-    return [NODE_TYPE_P, NODE_TYPE_LI].includes(this.getNode(nodeId).get('type'))
+    return [
+      NODE_TYPE_P,
+      NODE_TYPE_LI,
+      NODE_TYPE_SECTION_H1,
+      NODE_TYPE_SECTION_H2,
+    ].includes(this.getNode(nodeId).get('type'))
   }
   
   mergeParagraphs(leftId, rightId) {
@@ -375,14 +380,13 @@ export default class EditPipeline {
       NODE_TYPE_SECTION_H1,
       NODE_TYPE_SECTION_H2,
       NODE_TYPE_P,
+      NODE_TYPE_LI,
+      NODE_TYPE_PRE,
     ].includes(this.getNode(nodeId).get('type'));
   }
   
   getPreviousFocusNodeId(nodeId) {
     let focusNodeId;
-    if (nodeId.includes('-')) {
-    
-    }
     if (nodeId === this.rootId || this.isSectionType(nodeId)) {
       let sectionId = nodeId;
       if (nodeId === this.rootId) {
@@ -394,10 +398,16 @@ export default class EditPipeline {
       // TODO: some 'sections' are actually 'subsections' that can be focused - this design is probably a bad idea
       console.info('getPreviousFocusNodeId for SECTION', sectionId);
       if (this.isFirstChild(sectionId) || this.isOnlyChild(sectionId)) {
+        // TODO: this doesn't handle all cases yet
         focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getFirstChild(sectionId).get('id');
       } else {
         const prevSectionId = this.getPrevSibling(sectionId).get('id');
-        focusNodeId = this.canFocusNode(prevSectionId) ? prevSectionId : this.getLastChild(prevSectionId).get('id');
+        if (this.canFocusNode(prevSectionId)) {
+          focusNodeId = prevSectionId;
+        } else {
+          const lastChild = this.getLastChild(prevSectionId);
+          focusNodeId = this.canFocusNode(lastChild.get('id')) ? lastChild.get('id') : this.getLastChild(lastChild.get('id')).get('id')
+        }
       }
     } else {
       // nodeId is a P or bad things
