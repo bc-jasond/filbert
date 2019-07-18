@@ -1,6 +1,53 @@
-import { NODE_TYPE_P, NODE_TYPE_SECTION_CONTENT } from '../../common/constants';
+import {
+  NODE_TYPE_P,
+  NODE_TYPE_SECTION_CODE,
+  NODE_TYPE_SECTION_CONTENT,
+  NODE_TYPE_SECTION_H1,
+  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_SECTION_SPACER
+} from '../../common/constants';
 
-export function handleBackspaceTitle() {}
+export function handleBackspaceTitle(editPipeline, selectedNodeId) {
+  if (editPipeline.isFirstChild(selectedNodeId)) {
+    // don't delete the first section, noop()
+    return;
+  }
+  const selectedNode = editPipeline.getNode(selectedNodeId);
+  let prevSection = editPipeline.getPrevSibling(selectedNodeId);
+  // delete previous section (SPACER, etc)
+  if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+    const spacerId = prevSection.get('id');
+    prevSection = editPipeline.getPrevSibling(spacerId);
+    this.editPipeline.delete(spacerId);
+  }
+  switch (prevSection.get('type')) {
+    case NODE_TYPE_SECTION_H1:
+    case NODE_TYPE_SECTION_H2: {
+      editPipeline.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
+      editPipeline.delete(selectedNodeId);
+      return [prevSection.get('id'), prevSection.get('content').length];
+    }
+    case NODE_TYPE_SECTION_CODE: {
+      const meta = prevSection.get('meta');
+      const lines = meta.get('lines');
+      const lastLine = lines.last();
+      
+      editPipeline.update(
+        prevSection.set('meta',
+          meta.set('lines',
+            lines
+              .pop()
+              .push(`${lastLine}${selectedNode.get('content')}`)
+          )
+        )
+      );
+      editPipeline.delete(selectedNodeId);
+      
+      return [`${prevSection.get('id')}-${lines.size - 1}`, lastLine.length];
+    }
+  }
+}
+
 /**
  * insert a new P tag (and a Content Section if the next section isn't one)
  */
@@ -18,6 +65,22 @@ export function handleEnterTitle(editPipeline, selectedNodeId, contentLeft, cont
   return editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
 }
 
-export function insertH1() {}
+function insertTitle(editPipeline, selectedNodeId, sectionType) {
+  const selectedSectionId = editPipeline.getSection(selectedNodeId).get('id');
+  const placeholderParagraphWasOnlyChild = editPipeline.isOnlyChild(selectedNodeId);
+  if (!editPipeline.isLastChild(selectedNodeId)) {
+    editPipeline.splitSection(selectedSectionId, selectedNodeId);
+  }
+  const newSectionId = editPipeline.insertSectionAfter(
+    selectedSectionId,
+    sectionType,
+  );
+  if (placeholderParagraphWasOnlyChild) {
+    editPipeline.delete(selectedSectionId);
+  }
+  editPipeline.delete(selectedNodeId);
+  return newSectionId;
+}
 
-export function insertH2() {}
+export const insertH1 = (editPipeline, selectedNodeId) => insertTitle(editPipeline, selectedNodeId, NODE_TYPE_SECTION_H1);
+export const insertH2 = (editPipeline, selectedNodeId) => insertTitle(editPipeline, selectedNodeId, NODE_TYPE_SECTION_H2);

@@ -1,4 +1,5 @@
-import { NODE_TYPE_SECTION_SPACER } from '../../common/constants';
+import { List, Map } from 'immutable';
+import { NODE_TYPE_SECTION_CODE, NODE_TYPE_SECTION_SPACER, ZERO_LENGTH_CHAR } from '../../common/constants';
 
 export function handleBackspaceCode(editPipeline, selectedNodeId) {
   const [selectedSectionId, idx] = selectedNodeId.split('-');
@@ -79,4 +80,19 @@ export function handleDomSyncCode(editPipeline, selectedNodeId, selectedNodeCont
   );
 }
 
-export function insertCodeSection() {}
+export function insertCodeSection(editPipeline, selectedNodeId) {
+  const selectedSectionId = editPipeline.getSection(selectedNodeId).get('id');
+  const placeholderParagraphWasOnlyChild = editPipeline.isOnlyChild(selectedNodeId);
+  if (!editPipeline.isLastChild(selectedNodeId)) {
+    editPipeline.splitSection(selectedSectionId, selectedNodeId);
+  }
+  const newSectionId = editPipeline.insertSectionAfter(
+    selectedSectionId,
+    NODE_TYPE_SECTION_CODE,
+    Map({ lines: List([ZERO_LENGTH_CHAR]) }),
+  );
+  if (placeholderParagraphWasOnlyChild) {
+    editPipeline.delete(selectedSectionId);
+  }
+  return newSectionId;
+}

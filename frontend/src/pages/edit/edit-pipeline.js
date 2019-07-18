@@ -15,7 +15,7 @@ import {
   ROOT_NODE_PARENT_ID,
   NODE_ACTION_UPDATE,
   NODE_ACTION_DELETE,
-  ZERO_LENGTH_CHAR, NODE_TYPE_LI, NODE_TYPE_OL,
+  NODE_TYPE_LI, NODE_TYPE_OL,
 } from '../../common/constants';
 import {
   cleanText,
@@ -26,6 +26,7 @@ export default class EditPipeline {
   post;
   root;
   rootId;
+  infiniteLoopCount = 0;
   nodesByParentId = Map();
   nodeUpdates = Map(); // keyed off of nodeId to avoid duplication TODO: add a debounced save timer per element
   
@@ -48,10 +49,14 @@ export default class EditPipeline {
   }
   
   getNode(nodeId) {
+    this.infiniteLoopCount = 0;
     if (this.rootId === nodeId) return this.root;
     
     const queue = [this.rootId];
     while (queue.length) {
+      if (this.infiniteLoopCount++ > 1000) {
+        throw new Error('getNode is Out of Control!!!');
+      }
       const currentList = this.nodesByParentId.get(queue.shift(), List());
       const node = currentList.find(node => node.get('id') === nodeId);
       if (node) {
@@ -73,6 +78,9 @@ export default class EditPipeline {
   getSection(nodeId) {
     let sectionId = nodeId;
     while (!this.isSectionType(sectionId)) {
+      if (this.infiniteLoopCount++ > 1000) {
+        throw new Error('getSection is Out of Control!!!');
+      }
       sectionId = this.getParent(sectionId).get('id');
       if (!sectionId) { break; }
     }

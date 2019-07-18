@@ -41,10 +41,11 @@ import {
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
-import { handleBackspaceCode, handleDomSyncCode, handleEnterCode } from './handle-code';
+import { handleBackspaceCode, handleDomSyncCode, handleEnterCode, insertCodeSection } from './handle-code';
 import { handleBackspaceList, handleEnterList, insertList } from './handle-list';
 import { handleEnterParagraph } from './handle-paragraph';
-import { handleEnterTitle } from './handle-title';
+import { insertSpacer } from './handle-spacer';
+import { handleEnterTitle, handleBackspaceTitle, insertH1, insertH2 } from './handle-title';
 import InsertSectionMenu from './insert-section-menu';
 import EditSectionForm from './edit-section-form';
 import FormatSelectionMenu from './format-selection-menu';
@@ -231,7 +232,13 @@ export default class EditPost extends React.Component {
         return;
       }
       case NODE_TYPE_LI: {
-        const [focusNodeId, caretOffset] = handleBackspaceList(selectedNodeId);
+        const [focusNodeId, caretOffset] = handleBackspaceList(this.editPipeline, selectedNodeId);
+        this.commitUpdates(focusNodeId, caretOffset, true);
+        return;
+      }
+      case NODE_TYPE_SECTION_H1:
+      case NODE_TYPE_SECTION_H2: {
+        const [focusNodeId, caretOffset] = handleBackspaceTitle(this.editPipeline, selectedNodeId);
         this.commitUpdates(focusNodeId, caretOffset, true);
         return;
       }
@@ -496,12 +503,7 @@ export default class EditPost extends React.Component {
    */
   insertSection = async (sectionType) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
-    const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
-    const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
-    const wasLastChild = this.editPipeline.isLastChild(selectedNodeId);
-    let newSectionId;
     let focusNodeId;
-    const { editSectionMeta } = this.state;
     
     // lists get added to content sections, keep current section
     switch (sectionType) {
@@ -510,49 +512,25 @@ export default class EditPost extends React.Component {
         break;
       }
       case NODE_TYPE_SECTION_CODE: {
-      
+        focusNodeId = insertCodeSection(this.editPipeline, selectedNodeId);
+        break;
       }
       case NODE_TYPE_SECTION_SPACER: {
-      
+        focusNodeId = insertSpacer(this.editPipeline, selectedNodeId);
+        break;
       }
-      case NODE_TYPE_SECTION_H1:
+      case NODE_TYPE_SECTION_H1: {
+        focusNodeId = insertH1(this.editPipeline, selectedNodeId);
+        break;
+      }
       case NODE_TYPE_SECTION_H2: {
-      
+        focusNodeId = insertH2(this.editPipeline, selectedNodeId);
+        break;
       }
       case NODE_TYPE_SECTION_IMAGE:
       case NODE_TYPE_SECTION_QUOTE: {
-      
-      }
     
-      // splitting the current section even if selectedNodeId is first or last child
-      if (!wasLastChild || sectionType === NODE_TYPE_SECTION_CODE) {
-        this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
       }
-      // insert the section
-      newSectionId = this.editPipeline.insertSectionAfter(
-        selectedSectionId,
-        sectionType,
-        // meta for custom terminal sections - will be Map() otherwise
-        sectionType === NODE_TYPE_SECTION_CODE
-          ? Map({ lines: List([ZERO_LENGTH_CHAR]) })
-          : editSectionMeta
-      );
-    }
-    
-    if (sectionType === NODE_TYPE_SECTION_SPACER) {
-      // TODO: all 'terminal' sections
-      //  1) move caret ahead to new section
-      // focus *after* new section
-      focusNodeId = this.editPipeline.getNextFocusNodeId(newSectionId);
-    } else {
-      // don't need this empty P tag
-      if (wasOnlyChild) {
-        // if the empty P tag was the only child in the content section, delete it
-        this.editPipeline.delete(selectedSectionId);
-      } else if (sectionType !== NODE_TYPE_SECTION_CODE) {
-        this.editPipeline.delete(selectedNodeId);
-      }
-      focusNodeId = newSectionId;
     }
     
     await this.commitUpdates(focusNodeId);

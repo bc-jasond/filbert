@@ -4,6 +4,8 @@ import {
   DOM_TEXT_NODE_TYPE_ID,
 } from './constants';
 
+let infiniteLoopCount = 0;
+
 export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   const [containerNode] = document.getElementsByName(nodeId);
   if (!containerNode) {
@@ -16,9 +18,13 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   sel.removeAllRanges();
   const range = document.createRange();
   // find text node, if present
+  infiniteLoopCount = 0;
   let textNode;
   const queue = [...containerNode.childNodes];
   while (queue.length) {
+    if (infiniteLoopCount++ > 1000) {
+      throw new Error('setCaret is Out of Control!!!');
+    }
     // find first (queue), find last - (stack) yay!
     const current = shouldFindLastNode ? queue.pop() : queue.shift();
     if (current.nodeType === DOM_TEXT_NODE_TYPE_ID) {
