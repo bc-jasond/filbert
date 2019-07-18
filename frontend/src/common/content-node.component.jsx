@@ -218,14 +218,15 @@ export default class ContentNode extends React.PureComponent {
         const selections = meta
           .get('selections', List([Map()]));
         const getContentForSelection = (selection) => {
+          const content = node.get('content', '');
+          if (content === undefined) {
+            return;
+          }
           const startOffset = selection.get('start', 0);
           const endOffset = selection.get('end', -1) === -1
-            ? node.get('content', '').length
+            ? content.length
             : selection.get('end');
-          const content = node
-            .get('content', '')
-            .substring(startOffset, endOffset);
-          return cleanTextOrZeroLengthPlaceholder(content);
+          return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
         };
   
         return (

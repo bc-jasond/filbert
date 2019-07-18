@@ -87,10 +87,10 @@ function insertTitle(editPipeline, selectedNodeId, sectionType) {
     selectedSectionId,
     sectionType,
   );
+  editPipeline.delete(selectedNodeId);
   if (placeholderParagraphWasOnlyChild) {
     editPipeline.delete(selectedSectionId);
   }
-  editPipeline.delete(selectedNodeId);
   return newSectionId;
 }
 
