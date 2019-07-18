@@ -1,4 +1,5 @@
 import {
+  NODE_TYPE_OL,
   NODE_TYPE_P,
   NODE_TYPE_SECTION_CODE,
   NODE_TYPE_SECTION_CONTENT,
@@ -26,6 +27,17 @@ export function handleBackspaceTitle(editPipeline, selectedNodeId) {
       editPipeline.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
       editPipeline.delete(selectedNodeId);
       return [prevSection.get('id'), prevSection.get('content').length];
+    }
+    case NODE_TYPE_SECTION_CONTENT: {
+      let lastChild = editPipeline.getLastChild(prevSection.get('id'))
+      if (lastChild.get('type') === NODE_TYPE_OL) {
+        // get last LI
+        lastChild = editPipeline.getLastChild(lastChild.get('id'));
+      }
+      // lastChild must be P
+      editPipeline.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
+      editPipeline.delete(selectedNodeId);
+      return [lastChild.get('id'), lastChild.get('content').length];
     }
     case NODE_TYPE_SECTION_CODE: {
       const meta = prevSection.get('meta');

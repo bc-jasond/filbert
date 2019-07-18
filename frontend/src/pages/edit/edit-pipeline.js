@@ -286,11 +286,11 @@ export default class EditPipeline {
     return cleanText(this.getNode(nodeId).get('content', ''));
   }
   
-  insertSubSectionAfter(siblingId, type, content, meta = Map()) {
+  insertSubSectionAfter(siblingId, type, content = '', meta = Map()) {
     const parentId = this.getParent(siblingId).get('id');
     const siblings = this.nodesByParentId.get(parentId, List());
     const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
-    return this.insert(parentId, type, siblingIdx + 1, content = '', meta);
+    return this.insert(parentId, type, siblingIdx + 1, content, meta);
   }
   
   insert(parentId, type, index, content, meta) {

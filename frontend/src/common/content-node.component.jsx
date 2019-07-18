@@ -13,7 +13,8 @@ import {
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_SECTION_POSTLINK,
   NODE_TYPE_ROOT,
-  NODE_TYPE_LI, NODE_TYPE_PRE,
+  NODE_TYPE_LI,
+  NODE_TYPE_PRE,
 } from './constants';
 import {
   H1,

@@ -223,10 +223,8 @@ export default class EditPost extends React.Component {
      * 6) selected node is/was an only-child, delete current section
      */
     
-    // CODE_SECTION - custom 'terminal' section logic
     switch (selectedNodeType) {
       case NODE_TYPE_PRE: {
-        // TODO: support caretOffset AKA merging two lines of code
         const focusNodeId = handleBackspaceCode(this.editPipeline, selectedNodeId);
         this.commitUpdates(focusNodeId, -1, true);
         return;
@@ -360,7 +358,7 @@ export default class EditPost extends React.Component {
         break;
       }
       default: {
-        console.error("Can't handle ENTER!");
+        console.error("Can't handle ENTER!", selectedNodeType);
         return;
       }
     }

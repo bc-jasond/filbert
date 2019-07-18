@@ -1,5 +1,11 @@
 import { List, Map } from 'immutable';
-import { NODE_TYPE_SECTION_CODE, NODE_TYPE_SECTION_SPACER, ZERO_LENGTH_CHAR } from '../../common/constants';
+import {
+  NODE_TYPE_P,
+  NODE_TYPE_SECTION_CODE, NODE_TYPE_SECTION_CONTENT,
+  NODE_TYPE_SECTION_SPACER,
+  ZERO_LENGTH_CHAR
+} from '../../common/constants';
+import { cleanText } from '../../common/utils';
 
 export function handleBackspaceCode(editPipeline, selectedNodeId) {
   const [selectedSectionId, idx] = selectedNodeId.split('-');
@@ -49,6 +55,29 @@ export function handleEnterCode(editPipeline, selectedNode, contentLeft, content
   const meta = selectedSection.get('meta');
   let lines = meta.get('lines');
   
+  if (cleanText(contentLeft).length === 0 && lineIndex === (lines.size - 1)) {
+    // remove last line of code
+    editPipeline.update(
+      selectedSection.set('meta',
+        meta.set('lines',
+          lines.pop()
+        )
+      )
+    );
+    
+    // create a P tag (and optionally a CONTENT SECTION) after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
+    const nextSibling = editPipeline.getNextSibling(selectedSectionId);
+    let nextSiblingId;
+    if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
+      nextSiblingId = nextSibling.get('id');
+    } else {
+      // create a ContentSection
+      nextSiblingId = editPipeline.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_CONTENT);
+    }
+    // add to existing content section
+    return editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
+  }
+  
   editPipeline.update(
     selectedSection.set('meta',
       meta.set('lines',
@@ -94,5 +123,6 @@ export function insertCodeSection(editPipeline, selectedNodeId) {
   if (placeholderParagraphWasOnlyChild) {
     editPipeline.delete(selectedSectionId);
   }
+  editPipeline.delete(selectedNodeId);
   return newSectionId;
 }
