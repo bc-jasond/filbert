@@ -11,7 +11,7 @@ import { cleanText } from '../../common/utils';
 export function handleBackspaceCode(editPipeline, selectedNodeId) {
   const [selectedSectionId, idx] = selectedNodeId.split('-');
   const lineIdx = parseInt(idx, 10);
-  const prevSection = editPipeline.getPrevSibling(selectedSectionId);
+  let prevSection = editPipeline.getPrevSibling(selectedSectionId);
   let prevFocusNodeId = editPipeline.getPreviousFocusNodeId(selectedSectionId);
   const selectedSection = editPipeline.getNode(selectedSectionId);
   const meta = selectedSection.get('meta');
@@ -21,11 +21,18 @@ export function handleBackspaceCode(editPipeline, selectedNodeId) {
   
   // delete the previous section?  Currently, only if CODE SECTION is empty and previous is a SPACER
   if (lines.size === 1 && lineContent.length === 0 && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
-    prevFocusNodeId = editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
-    editPipeline.delete(prevSection.get('id'))
+    const spacerId = prevSection.get('id');
+    prevFocusNodeId = editPipeline.getPreviousFocusNodeId(spacerId);
+    editPipeline.delete(spacerId);
   }
   if (lines.size === 1 && lineContent.length === 0) {
+    // delete CODE section - merge 2 CONTENT sections?
+    prevSection = editPipeline.getPrevSibling(selectedSectionId);
+    const nextSection = editPipeline.getNextSibling(selectedSectionId);
     editPipeline.delete(selectedSectionId);
+    if (prevSection.get('type') === NODE_TYPE_SECTION_CONTENT && nextSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
+      editPipeline.mergeSections(prevSection, nextSection);
+    }
   } else if (lineIdx > 0) {
     // merge lines of code
     prevLineContent = lines.get(lineIdx - 1);
@@ -61,15 +68,16 @@ export function handleEnterCode(editPipeline, selectedNode, contentLeft, content
   let lines = meta.get('lines');
   
   if (cleanText(contentLeft).length === 0 && lineIndex === (lines.size - 1)) {
-    // remove last line of code
-    editPipeline.update(
-      selectedSection.set('meta',
-        meta.set('lines',
-          lines.pop()
+    if (lines.size > 1) {
+      // remove last line of code - leave at least one line
+      editPipeline.update(
+        selectedSection.set('meta',
+          meta.set('lines',
+            lines.pop()
+          )
         )
-      )
-    );
-    
+      );
+    }
     // create a P tag (and optionally a CONTENT SECTION) after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
     const nextSibling = editPipeline.getNextSibling(selectedSectionId);
     let nextSiblingId;

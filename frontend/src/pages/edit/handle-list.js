@@ -55,8 +55,13 @@ export function handleEnterList(editPipeline, selectedNodeId, contentLeft, conte
   if (cleanText(contentLeft).length === 0 && editPipeline.isLastChild(selectedNodeId)) {
     // create a P tag after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
     const olId = editPipeline.getParent(selectedNodeId).get('id');
+    const wasOnlyChild = editPipeline.isOnlyChild(selectedNodeId);
     editPipeline.delete(selectedNodeId);
-    return editPipeline.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight);
+    const pId = editPipeline.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight);
+    if (wasOnlyChild) {
+      editPipeline.delete(olId);
+    }
+    return pId;
   }
   editPipeline.update(editPipeline.getNode(selectedNodeId).set('content', contentLeft));
   return editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight);

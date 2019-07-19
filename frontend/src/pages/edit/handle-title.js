@@ -36,7 +36,11 @@ export function handleBackspaceTitle(editPipeline, selectedNodeId) {
       }
       // lastChild must be P
       editPipeline.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
+      const nextSection = editPipeline.getNextSibling(selectedNodeId);
       editPipeline.delete(selectedNodeId);
+      if (nextSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
+        editPipeline.mergeSections(prevSection, nextSection);
+      }
       return [lastChild.get('id'), lastChild.get('content').length];
     }
     case NODE_TYPE_SECTION_CODE: {
