@@ -199,11 +199,11 @@ export default class EditPost extends React.Component {
     const selectedNode = getCaretNode();
     const selectedNodeType = getCaretNodeType();
     const selectedNodeContent = cleanText(selectedNode.textContent);
-    console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
     if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
       // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
       return
     }
+    console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
     
     evt.stopPropagation();
     evt.preventDefault();
@@ -212,9 +212,9 @@ export default class EditPost extends React.Component {
     /**
      * TODO: make these into sets of atomic commands that are added to a queue,
      *  then make a 'flush' command to process this queue.
-     *  Right now, live updates are happening and it's wack-a-mole galore
+     *  Right now, live updates are happening and it's clobber city
      *
-     * THINGS TO CONSIDER FOR DELETE (in order):
+     * AN INCOMPLETE LIST OF THINGS TO CONSIDER FOR DELETE (in order, maybe):
      * 1) only-child of first section - noop until there's special 'rootIsEmpty' placeholder logic
      * 2) delete the current selected node - always if 'this far'
      * 3) delete the previous section (if it's a SPACER or other terminal node)?
@@ -222,11 +222,12 @@ export default class EditPost extends React.Component {
      * 5) merge the current selected node's text into the previous node?
      * 6) selected node is/was an only-child, delete current section
      */
-    
+    let focusNodeId;
+    let caretOffset;
     switch (selectedNodeType) {
       case NODE_TYPE_P: {
         [focusNodeId, caretOffset] = handleBackspaceParagraph(this.editPipeline, selectedNodeId);
-        
+        break;
       }
       case NODE_TYPE_PRE: {
         [focusNodeId, caretOffset] = handleBackspaceCode(this.editPipeline, selectedNodeId);
@@ -242,71 +243,6 @@ export default class EditPost extends React.Component {
         break;
       }
     }
-    this.commitUpdates(focusNodeId, caretOffset, true);
-    return;
-    // save these locally before updates
-    const selectedSection = this.editPipeline.getSection(selectedNodeId);
-    let prevSection = this.editPipeline.getPrevSibling(selectedSection.get('id'));
-    const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
-    
-    // only child of first section - noop
-    if (wasOnlyChild && prevSection.size === 0) {
-      return;
-    }
-    
-    let prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
-    let didDeletePrevSection = false;
-    
-    // handles CONTENT only
-    const isFirstChild = this.editPipeline.isFirstChild(selectedNodeId);
-    
-    // default previous focusable node
-    let focusNodeId = this.editPipeline.getPreviousFocusNodeId(selectedNodeId);
-  
-    /**
-     * MUTATION START
-     */
-    // delete current node
-    this.editPipeline.delete(selectedNodeId);
-    
-    // delete previous section (SPACER, etc)
-    if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
-      const spacerId = prevSection.get('id');
-      focusNodeId = this.editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
-      prevSection = this.editPipeline.getPrevSibling(spacerId);
-      prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
-      didDeletePrevSection = true;
-      this.editPipeline.delete(spacerId);
-    }
-    
-    // merge current section's children
-    // TODO: merge & convert section types H1 -> Content, Content -> H1, etc.
-    if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
-      this.editPipeline.mergeSections(prevSection, selectedSection);
-      if (!didDeletePrevSection) {
-        // TODO: this is confusing.  Given a sectionId, getPreviousFocusNodeId will look for a previous/next section.  But here, we want to look for the first/last child of current section.  This will already have happened by 'delete previous section' code
-        focusNodeId = this.editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
-      }
-    }
-    
-    let caretOffset = -1;
-    // merge current node's text into previous sibling
-    if (cleanText(selectedNodeContent)) {
-      if (selectedNodeId === selectedSection.get('id')) {
-        // H1 or H2 - aka, sections that have text nodes directly
-        prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
-      }
-      const prevSiblingText = this.editPipeline.getText(prevSibling.get('id'));
-      caretOffset = prevSiblingText.length;
-      this.editPipeline.update(prevSibling.set('content', `${prevSiblingText}${selectedNodeContent}`));
-      focusNodeId = prevSibling.get('id');
-    }
-    
-    // delete section? merging will have already deleted it
-    if (wasOnlyChild) {
-      this.editPipeline.delete(selectedSection.get('id'));
-    }
-    
     this.commitUpdates(focusNodeId, caretOffset, true);
   }
   
