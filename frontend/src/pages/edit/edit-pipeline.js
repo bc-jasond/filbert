@@ -111,7 +111,17 @@ export default class EditPipeline {
     return this.getFirstChild(parentId).get('id') === nodeId;
   }
   
+  /**
+   * @param nodeId
+   * @returns note: returns a Map() with an 'id' for PRE tags - they won't be in the nodesByParentId list
+   */
   getFirstChild(nodeId) {
+    const node = this.getNode(nodeId);
+    if (node.get('type') === NODE_TYPE_SECTION_CODE) {
+      return Map({
+        id: `${nodeId}-0`
+      });
+    }
     const siblings = this.nodesByParentId.get(nodeId, List());
     if (siblings.size === 0) {
       console.warn('getFirstChild - no children! ', nodeId);
@@ -125,7 +135,17 @@ export default class EditPipeline {
     return this.getLastChild(parentId).get('id') === nodeId;
   }
   
+  /**
+   * @param nodeId
+   * @returns note: returns a Map() with an 'id' for PRE tags - they won't be in the nodesByParentId list
+   */
   getLastChild(nodeId) {
+    const node = this.getNode(nodeId);
+    if (node.get('type') === NODE_TYPE_SECTION_CODE) {
+      return Map({
+        id: `${nodeId}-${node.get('meta').get('lines').size - 1}`
+      });
+    }
     const siblings = this.nodesByParentId.get(nodeId, List());
     if (siblings.size === 0) {
       console.warn('getLastChild - no children! ', nodeId);
@@ -441,7 +461,12 @@ export default class EditPipeline {
         focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getLastChild(sectionId).get('id');
       } else {
         const nextSectionId = this.getNextSibling(sectionId).get('id');
-        focusNodeId = this.canFocusNode(nextSectionId) ? nextSectionId : this.getFirstChild(nextSectionId).get('id');
+        if (this.canFocusNode(nextSectionId)) {
+          focusNodeId = nextSectionId;
+        } else {
+          const firstChild = this.getFirstChild(nextSectionId);
+          focusNodeId = this.canFocusNode(firstChild.get('id')) ? firstChild.get('id') : this.getFirstChild(firstChild.get('id')).get('id')
+        }
       }
     } else {
       // nodeId is a P

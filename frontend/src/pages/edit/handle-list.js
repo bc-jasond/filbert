@@ -21,7 +21,9 @@ export function handleBackspaceList(editPipeline, selectedNodeId) {
         editPipeline.delete(spacerSectionId);
       }
       // overloading prevSection to mean 'prevParagraph' I know, I know...
-      prevSection = editPipeline.getLastChild(prevSection.get('id'))
+      if (!editPipeline.canFocusNode(prevSection.get('id'))) {
+        prevSection = editPipeline.getLastChild(prevSection.get('id'))
+      }
     }
     if (prevSection.get('type') === NODE_TYPE_OL) {
       // merge OLs?
@@ -29,7 +31,7 @@ export function handleBackspaceList(editPipeline, selectedNodeId) {
       const lastLi = editPipeline.getLastChild(prevSection.get('id'));
       return [lastLi.get('id'), lastLi.get('content').length];
     }
-    // convert 1st LI to P
+    // convert 1st LI to P, H1, H2
     const wasOnlyChild = editPipeline.isOnlyChild(selectedNodeId);
     editPipeline.mergeParagraphs(prevSection.get('id'), selectedNodeId);
     if (wasOnlyChild) {
@@ -43,6 +45,7 @@ export function handleBackspaceList(editPipeline, selectedNodeId) {
     }
     return [prevSection.get('id'), prevSection.get('content').length];
   }
+  // merge LIs within the same list
   const prevSibling = editPipeline.getPrevSibling(selectedNodeId);
   editPipeline.mergeParagraphs(prevSibling.get('id'), selectedNodeId);
   return [prevSibling.get('id'), prevSibling.get('content').length];

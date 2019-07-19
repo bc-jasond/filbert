@@ -136,12 +136,12 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
       this.editPipeline.init(post, contentNodes);
-      const focusNodeId = this.editPipeline.getNextFocusNodeId(this.editPipeline.rootId);
       this.setState({
         root: this.editPipeline.root,
         nodesByParentId: this.editPipeline.nodesByParentId,
         shouldShow404: false
       }, () => {
+        const focusNodeId = this.editPipeline.getNextFocusNodeId(this.editPipeline.rootId);
         setCaret(focusNodeId, -1, true)
         this.manageInsertMenu();
         window.scrollTo(0, 0);
