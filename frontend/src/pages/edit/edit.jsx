@@ -42,8 +42,10 @@ import {
 
 import ContentNode from '../../common/content-node.component';
 import { handleBackspaceCode, handleDomSyncCode, handleEnterCode, insertCodeSection } from './handle-code';
+import { insertPhoto } from './handle-image';
 import { handleBackspaceList, handleEnterList, insertList } from './handle-list';
 import { handleBackspaceParagraph, handleEnterParagraph } from './handle-paragraph';
+import { insertQuote } from './handle-quote';
 import { insertSpacer } from './handle-spacer';
 import { handleEnterTitle, handleBackspaceTitle, insertH1, insertH2 } from './handle-title';
 import InsertSectionMenu from './insert-section-menu';
@@ -464,9 +466,16 @@ export default class EditPost extends React.Component {
         focusNodeId = insertH2(this.editPipeline, selectedNodeId);
         break;
       }
-      case NODE_TYPE_SECTION_IMAGE:
+      case NODE_TYPE_SECTION_IMAGE: {
+        focusNodeId = insertPhoto(this.editPipeline, selectedNodeId);
+        break;
+      }
       case NODE_TYPE_SECTION_QUOTE: {
-    
+        focusNodeId = insertQuote(this.editPipeline, selectedNodeId);
+        break;
+      }
+      default: {
+        console.error('insertSection - unknown type! ', sectionType);
       }
     }
     
@@ -513,8 +522,9 @@ export default class EditPost extends React.Component {
   }
   sectionDelete = (sectionId) => {
     if (confirm('Delete Section?')) {
+      const focusNodeId = this.editPipeline.getNextFocusNodeId(sectionId);
       this.editPipeline.delete(sectionId);
-      this.commitUpdates(sectionId);
+      this.commitUpdates(focusNodeId);
     }
   }
   

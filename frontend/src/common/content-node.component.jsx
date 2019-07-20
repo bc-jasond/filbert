@@ -28,6 +28,8 @@ import {
   Ol,
   Li,
   LinkStyled,
+  A,
+  ItalicText,
   MiniText,
   Figure,
   ImagePlaceholderContainer,
@@ -140,6 +142,7 @@ export default class ContentNode extends React.PureComponent {
       }
       case NODE_TYPE_SECTION_QUOTE: {
         const meta = node.get('meta', Map());
+        const selection = meta.get('selection', Map())
         return (
           <ContentSection data-type={NODE_TYPE_SECTION_QUOTE} name={node.get('id')} contentEditable={false}>
             <QuoteP
@@ -153,7 +156,7 @@ export default class ContentNode extends React.PureComponent {
               {'💡Remember: '}
               <ItalicText>
                 {meta.get('quote') && `"${meta.get('quote')}" `}
-                <A href={meta.get('url')}>{meta.get('author') && `-${meta.get('author')}`}</A>
+                <A target="_blank" href={meta.get('url')}>{meta.get('author') && `-${meta.get('author')}`}</A>
                 <MiniText>{meta.get('context') && ` ${meta.get('context')}`}</MiniText>
               </ItalicText>
             </QuoteP>
