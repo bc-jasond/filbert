@@ -17,7 +17,7 @@ import {
   NODE_TYPE_PRE,
   ROOT_NODE_PARENT_ID,
   NODE_ACTION_UPDATE,
-  NODE_ACTION_DELETE,
+  NODE_ACTION_DELETE, ZERO_LENGTH_CHAR,
 } from '../../common/constants';
 import {
   cleanText,
@@ -256,7 +256,7 @@ export default class EditPipeline {
     this.nodesByParentId = this.nodesByParentId.set(sectionId, siblings.slice(0, nodeIdx));
     // if all existing nodes moved to the new section, create a new P
     if (this.nodesByParentId.get(sectionId).size === 0) {
-      this.insert(sectionId, NODE_TYPE_P, 0);
+      this.insert(sectionId, NODE_TYPE_P, 0, ZERO_LENGTH_CHAR);
     }
     this.updateNodesForParent(sectionId);
     // new section
@@ -264,7 +264,7 @@ export default class EditPipeline {
     this.nodesByParentId = this.nodesByParentId.set(newSectionId, siblings.slice(nodeIdx));
     // if all existing nodes stayed in the existing section, create a new P
     if (this.nodesByParentId.get(newSectionId).size === 0) {
-      this.insert(newSectionId, NODE_TYPE_P, 0);
+      this.insert(newSectionId, NODE_TYPE_P, 0, ZERO_LENGTH_CHAR);
     }
     this.updateNodesForParent(newSectionId);
   }
