@@ -17,14 +17,14 @@ import {
   NODE_TYPE_PRE,
   ROOT_NODE_PARENT_ID,
   NODE_ACTION_UPDATE,
-  NODE_ACTION_DELETE, ZERO_LENGTH_CHAR,
+  NODE_ACTION_DELETE,
 } from '../../common/constants';
 import {
   cleanText,
   getMapWithId,
 } from '../../common/utils';
 
-export default class EditPipeline {
+export default class EditDocumentModel {
   post;
   root;
   rootId;
@@ -145,7 +145,7 @@ export default class EditPipeline {
     const node = this.getNode(nodeId);
     if (node.get('type') === NODE_TYPE_SECTION_CODE) {
       return Map({
-        id: `${nodeId}-${node.get('meta').get('lines').size - 1}`
+        id: `${nodeId}-${node.get('meta', Map()).get('lines', List()).size - 1}`
       });
     }
     const siblings = this.nodesByParentId.get(nodeId, List());
@@ -256,7 +256,7 @@ export default class EditPipeline {
     this.nodesByParentId = this.nodesByParentId.set(sectionId, siblings.slice(0, nodeIdx));
     // if all existing nodes moved to the new section, create a new P
     if (this.nodesByParentId.get(sectionId).size === 0) {
-      this.insert(sectionId, NODE_TYPE_P, 0, ZERO_LENGTH_CHAR);
+      this.insert(sectionId, NODE_TYPE_P, 0);
     }
     this.updateNodesForParent(sectionId);
     // new section
@@ -264,7 +264,7 @@ export default class EditPipeline {
     this.nodesByParentId = this.nodesByParentId.set(newSectionId, siblings.slice(nodeIdx));
     // if all existing nodes stayed in the existing section, create a new P
     if (this.nodesByParentId.get(newSectionId).size === 0) {
-      this.insert(newSectionId, NODE_TYPE_P, 0, ZERO_LENGTH_CHAR);
+      this.insert(newSectionId, NODE_TYPE_P, 0);
     }
     this.updateNodesForParent(newSectionId);
   }

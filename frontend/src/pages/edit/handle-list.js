@@ -3,7 +3,6 @@ import {
   NODE_TYPE_OL,
   NODE_TYPE_P,
   NODE_TYPE_SECTION_SPACER,
-  ZERO_LENGTH_CHAR
 } from '../../common/constants';
 import { cleanText } from '../../common/utils';
 
@@ -69,7 +68,7 @@ export function handleEnterList(editPipeline, selectedNodeId, contentLeft, conte
 
 export function insertList(editPipeline, selectedNodeId) {
   const olId = editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_OL);
-  const focusNodeId = editPipeline.insert(olId, NODE_TYPE_LI, 0, ZERO_LENGTH_CHAR);
+  const focusNodeId = editPipeline.insert(olId, NODE_TYPE_LI, 0);
   editPipeline.delete(selectedNodeId);
   return focusNodeId;
 }

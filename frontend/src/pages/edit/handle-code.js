@@ -4,7 +4,6 @@ import {
   NODE_TYPE_SECTION_CODE,
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_SPACER,
-  ZERO_LENGTH_CHAR
 } from '../../common/constants';
 import { cleanText } from '../../common/utils';
 
@@ -14,9 +13,9 @@ export function handleBackspaceCode(editPipeline, selectedNodeId) {
   let prevSection = editPipeline.getPrevSibling(selectedSectionId);
   let prevFocusNodeId = editPipeline.getPreviousFocusNodeId(selectedSectionId);
   const selectedSection = editPipeline.getNode(selectedSectionId);
-  const meta = selectedSection.get('meta');
-  const lines = meta.get('lines');
-  const lineContent = cleanText(lines.get(lineIdx));
+  const meta = selectedSection.get('meta', Map());
+  const lines = meta.get('lines', List());
+  const lineContent = cleanText(lines.get(lineIdx, ''));
   let prevLineContent = '';
   
   // delete the previous section?  Currently, only if CODE SECTION is empty and previous is a SPACER
@@ -56,7 +55,7 @@ export function handleBackspaceCode(editPipeline, selectedNodeId) {
     return [`${selectedSectionId}-${lineIdx - 1}`, prevLineContent.length];
   }
   // the CODE_SECTION was deleted, focus previous section
-  return [prevFocusNodeId, editPipeline.getNode(prevFocusNodeId).get('content').length];
+  return [prevFocusNodeId, editPipeline.getNode(prevFocusNodeId).get('content', '').length];
 }
 
 export function handleEnterCode(editPipeline, selectedNode, contentLeft, contentRight) {
@@ -64,8 +63,8 @@ export function handleEnterCode(editPipeline, selectedNode, contentLeft, content
   const [selectedSectionId, idx] = name.split('-');
   const lineIndex = parseInt(idx, 10);
   const selectedSection = editPipeline.getNode(selectedSectionId);
-  const meta = selectedSection.get('meta');
-  let lines = meta.get('lines');
+  const meta = selectedSection.get('meta', Map());
+  let lines = meta.get('lines', List());
   
   if (cleanText(contentLeft).length === 0 && lineIndex === (lines.size - 1)) {
     if (lines.size > 1) {
@@ -131,7 +130,6 @@ export function insertCodeSection(editPipeline, selectedNodeId) {
   const newSectionId = editPipeline.insertSectionAfter(
     selectedSectionId,
     NODE_TYPE_SECTION_CODE,
-    Map({ lines: List([ZERO_LENGTH_CHAR]) }),
   );
   editPipeline.delete(selectedNodeId);
   if (placeholderParagraphWasOnlyChild) {

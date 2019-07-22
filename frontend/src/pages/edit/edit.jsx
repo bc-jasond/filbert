@@ -2,7 +2,7 @@ import React from 'react';
 import { List, Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
-import EditPipeline from './edit-pipeline';
+import EditDocumentModel from './edit-document-model';
 import {
   apiGet,
   apiPost,
@@ -33,7 +33,6 @@ import {
   UP_ARROW,
   NEW_POST_URL_ID,
   ROOT_NODE_PARENT_ID,
-  ZERO_LENGTH_CHAR,
   NODE_TYPE_ROOT,
   NODE_TYPE_P,
   NODE_TYPE_OL,
@@ -88,7 +87,7 @@ export default class EditPost extends React.Component {
     }
   }
   
-  editPipeline = new EditPipeline();
+  editPipeline = new EditDocumentModel();
   commitTimeoutId;
   cancelledEvent; // to coordinate noops between event types keydown, keyup
   

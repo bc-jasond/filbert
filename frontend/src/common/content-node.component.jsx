@@ -110,7 +110,7 @@ export default class ContentNode extends React.PureComponent {
       case NODE_TYPE_SECTION_CODE:
         const lines = node
           .get('meta', Map())
-          .get('lines', List());
+          .get('lines', List([cleanTextOrZeroLengthPlaceholder('')]));
         return (
           <CodeSection data-type={node.get('type')} name={node.get('id')}>
             {lines.map((line, idx) => (<Pre key={`${node.get('id')}-${idx}`}
@@ -221,9 +221,9 @@ export default class ContentNode extends React.PureComponent {
         const selections = meta
           .get('selections', List([Map()]));
         const getContentForSelection = (selection) => {
-          const content = node.get('content', '');
-          if (content === undefined) {
-            return;
+          let content = node.get('content');
+          if (content === undefined || content === null) {
+            content = '';
           }
           const startOffset = selection.get('start', 0);
           const endOffset = selection.get('end', -1) === -1
