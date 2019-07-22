@@ -17,7 +17,7 @@ function getBaseConfig() {
 
 export async function apiGet(url) {
   try {
-    Pace.restart();
+    Pace.start();
     const config = getBaseConfig();
     config.method = 'GET';
     const response = await fetch(`${API_URL}${url}`, config);
@@ -32,7 +32,7 @@ export async function apiGet(url) {
 
 export async function apiPost(url, data) {
   try {
-    Pace.restart();
+    Pace.start();
     const config = getBaseConfig();
     config.method = 'POST';
     config.body = JSON.stringify(data); // body data type must match "Content-Type" header
@@ -51,7 +51,7 @@ export async function apiPost(url, data) {
 
 export async function apiDelete(url) {
   try {
-    Pace.restart();
+    Pace.start();
     const config = getBaseConfig();
     config.method = 'DELETE';
     const response = await fetch(`${API_URL}${url}`, config);
