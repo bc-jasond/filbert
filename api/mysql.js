@@ -41,7 +41,7 @@ async function bulkContentNodeUpsert(records) {
       node.parent_id !== 'null' ? node.parent_id : null,
       node.position,
       node.type,
-      node.content || null,
+      node.content || '',
       JSON.stringify(node.meta || {}),
     ]);
   });

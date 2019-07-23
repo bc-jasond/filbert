@@ -155,6 +155,7 @@ export const ItalicText = styled.em`
 export const StrikeText = styled.span`
   text-decoration: line-through;
 `;
+export const BoldText = styled.strong``;
 const miniText = css`
   font-family: ${sansSerif}, sans-serif;
   font-weight: 300;

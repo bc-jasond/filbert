@@ -24,7 +24,6 @@ import {
   NODE_TYPE_SECTION_H1,
   NODE_TYPE_SECTION_H2,
   NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_IMAGE,
@@ -33,15 +32,25 @@ import {
   UP_ARROW,
   NEW_POST_URL_ID,
   ROOT_NODE_PARENT_ID,
-  ZERO_LENGTH_CHAR,
   NODE_TYPE_ROOT,
   NODE_TYPE_P,
   NODE_TYPE_OL,
   NODE_TYPE_LI,
+  ESC_KEY,
+  NODE_TYPE_PRE,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
 import EditUpdateManager from './edit-update-manager';
+
+import { handleBackspaceCode, handleDomSyncCode, handleEnterCode, insertCodeSection } from './handle-code';
+import { insertPhoto } from './handle-image';
+import { handleBackspaceList, handleEnterList, insertList } from './handle-list';
+import { handleBackspaceParagraph, handleEnterParagraph } from './handle-paragraph';
+import { insertQuote } from './handle-quote';
+import { insertSpacer } from './handle-spacer';
+import { handleEnterTitle, handleBackspaceTitle, insertH1, insertH2 } from './handle-title';
+
 import InsertSectionMenu from './insert-section-menu';
 import EditSectionForm from './edit-section-form';
 import FormatSelectionMenu from './format-selection-menu';
@@ -85,6 +94,7 @@ export default class EditPost extends React.Component {
   editPipeline = new EditDocumentModel();
   updateManager = new EditUpdateManager();
   commitTimeoutId;
+  cancelledEvent; // to coordinate noops between event types keydown, keyup
   
   saveContentBatch = async () => {
     try {
@@ -101,12 +111,14 @@ export default class EditPost extends React.Component {
   
   saveContentBatchDebounce() {
     clearTimeout(this.commitTimeoutId);
-    this.commitTimeoutId = setTimeout(this.saveContentBatch, 250);
+    this.commitTimeoutId = setTimeout(this.saveContentBatch, 500);
   }
   
   newPost() {
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
     this.editPipeline.init(postPlaceholder);
+    this.updateManager.init(postPlaceholder);
+    this.updateManager.stageNodeUpdate(this.editPipeline.rootId);
     const focusNodeId = this.editPipeline.insertSection(NODE_TYPE_SECTION_H1, 0);
     this.setState({
       root: this.editPipeline.nodesByParentId.get(ROOT_NODE_PARENT_ID).first(),
@@ -132,15 +144,15 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
       this.editPipeline.init(post, contentNodes);
-      this.updateManager.post = post;
-      this.updateManager.stageNodeUpdate(this.editPipeline.rootId);
+      this.updateManager.init(post);
       const focusNodeId = this.editPipeline.getPreviousFocusNodeId(this.editPipeline.rootId);
       this.setState({
         root: this.editPipeline.root,
         nodesByParentId: this.editPipeline.nodesByParentId,
         shouldShow404: false
       }, () => {
-        setCaret(focusNodeId)
+        const focusNodeId = this.editPipeline.getNextFocusNodeId(this.editPipeline.rootId);
+        setCaret(focusNodeId, -1, true);
         this.manageInsertMenu();
         window.scrollTo(0, 0);
       })
@@ -184,35 +196,35 @@ export default class EditPost extends React.Component {
     if (evt.keyCode !== BACKSPACE_KEY) {
       return;
     }
-    
     const range = getRange();
     if (!range) {
       console.warn('BACKSPACE no range');
       return;
     }
-    
-    const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
-    
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('BACKSPACE - bad selection, no id ', selectedNode);
       return;
     }
+    const selectedNode = getCaretNode();
+    const selectedNodeType = getCaretNodeType();
     const selectedNodeContent = cleanText(selectedNode.textContent);
-    
-    console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
-    
     if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
       // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
       return
     }
+    console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
     
     evt.stopPropagation();
     evt.preventDefault();
+    this.cancelledEvent = evt;
     
     /**
-     * // TODO: make these into sets of atomic commands that are added to a queue, then make a 'flush' command to process this queue.  Right now, live updates are happening and it's wack-a-mole galore
-     * THINGS TO CONSIDER FOR DELETE (in order):
+     * TODO: make these into sets of atomic commands that are added to a queue,
+     *  then make a 'flush' command to process this queue.
+     *  Right now, live updates are happening and it's clobber city
+     *
+     * AN INCOMPLETE LIST OF THINGS TO CONSIDER FOR DELETE (in order, maybe):
      * 1) only-child of first section - noop until there's special 'rootIsEmpty' placeholder logic
      * 2) delete the current selected node - always if 'this far'
      * 3) delete the previous section (if it's a SPACER or other terminal node)?
@@ -220,93 +232,27 @@ export default class EditPost extends React.Component {
      * 5) merge the current selected node's text into the previous node?
      * 6) selected node is/was an only-child, delete current section
      */
-      
-      
-      // save these locally before updates
-    const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
-    let prevSection = this.editPipeline.getPrevSibling(selectedSectionId);
-    const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
-    
-    // only child of first section - noop
-    if (wasOnlyChild && prevSection.size === 0) {
-      return;
-    }
-    
-    let prevSibling = this.editPipeline.getPrevSibling(selectedNodeId);
-    let didDeletePrevSection = false;
-    
-    // handles CONTENT only
-    const isFirstChild = this.editPipeline.isFirstChild(selectedNodeId);
-    // default previous focusable node
-    let focusNodeId = this.editPipeline.getPreviousFocusNodeId(selectedNodeId);
-    
-    // CodeSection - custom 'terminal' section logic
-    if (selectedNode.tagName === 'PRE') {
-      const name = selectedNode.getAttribute('name');
-      const [selectedSectionId, idx] = name.split('-');
-      const lineIdx = parseInt(idx, 10);
-      const selectedSection = this.editPipeline.getNode(selectedSectionId);
-      const meta = selectedSection.get('meta');
-      let lines = meta.get('lines');
-      
-      if (lines.size === 1) {
-        // delete the section
-        this.editPipeline.delete(selectedSectionId);
-      } else {
-        this.editPipeline.update(
-          selectedSection.set('meta',
-            meta.set('lines',
-              lines.delete(lineIdx)
-            )
-          )
-        );
+    let focusNodeId;
+    let caretOffset;
+    switch (selectedNodeType) {
+      case NODE_TYPE_P: {
+        [focusNodeId, caretOffset] = handleBackspaceParagraph(this.editPipeline, selectedNodeId);
+        break;
       }
-      
-      console.info('BACKSPACE - code section content: ', selectedNodeContent, selectedSectionId, lineIdx);
-      focusNodeId = `${selectedSectionId}-${lineIdx - 1 > 0 ? lineIdx - 1 : 0}`;
-    } else {
-      // delete current node
-      this.editPipeline.delete(selectedNodeId);
-    }
-    
-    // delete previous section (SPACER, etc)
-    if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
-      const spacerId = prevSection.get('id');
-      focusNodeId = this.editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
-      prevSection = this.editPipeline.getPrevSibling(spacerId);
-      prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
-      didDeletePrevSection = true;
-      this.editPipeline.delete(spacerId);
-    }
-    
-    // merge current section's children
-    // TODO: merge & convert section types H1 -> Content, Content -> H1, etc.
-    if (isFirstChild && prevSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
-      this.editPipeline.mergeSections(prevSection.get('id'), selectedSectionId);
-      if (!didDeletePrevSection) {
-        // TODO: this is confusing.  Given a sectionId, getPreviousFocusNodeId will look for a previous/next section.  But here, we want to look for the first/last child of current section.  This will already have happened by 'delete previous section' code
-        focusNodeId = this.editPipeline.getPreviousFocusNodeId(prevSection.get('id'));
+      case NODE_TYPE_PRE: {
+        [focusNodeId, caretOffset] = handleBackspaceCode(this.editPipeline, selectedNodeId);
+        break;
+      }
+      case NODE_TYPE_LI: {
+        [focusNodeId, caretOffset] = handleBackspaceList(this.editPipeline, selectedNodeId);
+        break;
+      }
+      case NODE_TYPE_SECTION_H1:
+      case NODE_TYPE_SECTION_H2: {
+        [focusNodeId, caretOffset] = handleBackspaceTitle(this.editPipeline, selectedNodeId);
+        break;
       }
     }
-    
-    let caretOffset = -1;
-    // merge current node's text into previous sibling
-    if (cleanText(selectedNodeContent)) {
-      if (selectedNodeId === selectedSectionId) {
-        // H1 or H2 - aka, sections that have text nodes directly
-        prevSibling = this.editPipeline.getLastChild(prevSection.get('id'));
-      }
-      const prevSiblingText = this.editPipeline.getText(prevSibling.get('id'));
-      this.editPipeline.replaceTextNode(prevSibling.get('id'), `${prevSiblingText}${selectedNodeContent}`);
-      caretOffset = prevSiblingText.length;
-      focusNodeId = prevSibling.get('id');
-    }
-    
-    // delete section? merging will have already deleted it
-    if (wasOnlyChild) {
-      this.editPipeline.delete(selectedSectionId);
-    }
-    
     this.commitUpdates(focusNodeId, caretOffset, true);
   }
   
@@ -317,146 +263,81 @@ export default class EditPost extends React.Component {
     
     evt.stopPropagation();
     evt.preventDefault();
+    this.cancelledEvent = evt;
     
     const range = getRange();
     if (!range) {
       console.warn('ENTER no range');
       return;
     }
-    
-    const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
-    const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
-    
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('ENTER - bad selection, no id ', selectedNode);
       return;
     }
     
+    const selectedNode = getCaretNode();
     console.info('ENTER node: ', selectedNode);
-    console.info('ENTER node content: ', selectedNodeContent);
+    const selectedNodeType = getCaretNodeType();
+    // split selectedNodeContent at caret
+    const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
+    const contentLeft = selectedNodeContent.substring(0, range.endOffset);
+    const contentRight = selectedNodeContent.substring(range.endOffset);
     console.info('ENTER node content left: ', contentLeft);
     console.info('ENTER node content right: ', contentRight);
     
-    const selectedNodeType = getCaretNodeType();
-    // split selectedNodeContent at caret
-    const contentLeft = selectedNodeContent.substring(0, range.endOffset);
-    const contentRight = selectedNodeContent.substring(range.endOffset);
-    
     let focusNodeId;
     
-    /**
-     * CodeSection
-     */
-    
-    if (selectedNode.tagName === 'PRE') {
-      const name = selectedNode.getAttribute('name');
-      const [selectedSectionId, idx] = name.split('-');
-      const lineIndex = parseInt(idx, 10);
-      const selectedSection = this.editPipeline.getNode(selectedSectionId);
-      const meta = selectedSection.get('meta');
-      let lines = meta.get('lines');
-      
-      this.editPipeline.update(
-        selectedSection.set('meta',
-          meta.set('lines',
-            lines
-              .set(lineIndex, contentLeft)
-              .insert(lineIndex + 1, contentRight)
-          )
-        )
-      );
-      
-      console.info('ENTER - code section content: ', selectedNodeContent, selectedSectionId, lineIndex);
-      focusNodeId = `${selectedSectionId}-${lineIndex + 1}`;
-    }
-    
-    /**
-     * List
-     */
-    
-    if (selectedNodeType === NODE_TYPE_LI) {
-      if (cleanText(contentLeft).length === 0) {
-        // create a P tag after the OL
-        const olId = this.editPipeline.getParent(selectedNodeId).get('id');
-        this.editPipeline.delete(selectedNodeId);
-        const pId = this.editPipeline.insertSubSectionAfter(olId, NODE_TYPE_P);
-        this.editPipeline.replaceTextNode(pId, contentRight);
-        focusNodeId = pId;
-      } else {
-        this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
-        const liId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI);
-        this.editPipeline.replaceTextNode(liId, contentRight);
-        focusNodeId = liId;
+    switch (selectedNodeType) {
+      case NODE_TYPE_PRE: {
+        focusNodeId = handleEnterCode(this.editPipeline, selectedNode, contentLeft, contentRight);
+        break;
       }
-    }
-    
-    /**
-     * insert a new P after the current one
-     */
-    if (selectedNodeType === NODE_TYPE_P) {
-      this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
-      const pId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P);
-      this.editPipeline.replaceTextNode(pId, contentRight);
-      focusNodeId = pId;
-    }
-    /**
-     * insert a new P tag (and a Content Section if the next section isn't one)
-     */
-    if ([NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_H2].includes(selectedNodeType)) {
-      this.editPipeline.replaceTextNode(selectedNodeId, contentLeft);
-      const nextSibling = this.editPipeline.getNextSibling(selectedNodeId);
-      let nextSiblingId;
-      if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
-        nextSiblingId = nextSibling.get('id');
-      } else {
-        // create a ContentSection
-        nextSiblingId = this.editPipeline.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
+      case NODE_TYPE_LI: {
+        focusNodeId = handleEnterList(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        break;
       }
-      // add to existing content section
-      const pId = this.editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0);
-      this.editPipeline.replaceTextNode(pId, contentRight);
-      focusNodeId = pId;
+      case NODE_TYPE_P: {
+        focusNodeId = handleEnterParagraph(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        break;
+      }
+      case NODE_TYPE_SECTION_H1:
+      case NODE_TYPE_SECTION_H2: {
+        focusNodeId = handleEnterTitle(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        break;
+      }
+      default: {
+        console.error("Can't handle ENTER!", selectedNodeType);
+        return;
+      }
     }
     this.commitUpdates(focusNodeId, 0);
   }
   
   handleSyncFromDom = () => {
-    if (this.props.postId === NEW_POST_URL_ID) {
+    if (this.cancelledEvent || this.props.postId === NEW_POST_URL_ID) {
       // doesn't work with a 'new' post
       return;
     }
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
     if (selectedNodeId === 'null' || !selectedNodeId) {
-      console.warn('DOM SYNC - bad selection, no id ', selectedNode);
+      console.error('DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
+    const selectedNodeMap = this.editPipeline.getNode(selectedNodeId);
     const selectedNodeContent = cleanText(selectedNode.textContent);
     if (selectedNode.tagName === 'PRE') {
-      const [selectedSectionId, idx] = selectedNodeId.split('-');
-      const lineIndex = parseInt(idx, 10);
-      const selectedSection = this.editPipeline.getNode(selectedSectionId);
-      const meta = selectedSection.get('meta');
-      let lines = meta.get('lines');
-      const currentLineContent = lines.get(lineIndex);
-      if (currentLineContent === selectedNodeContent) {
-        return;
-      }
-      this.editPipeline.update(
-        selectedSection.set('meta',
-          meta.set('lines', lines.set(lineIndex, selectedNodeContent))
-        )
-      );
-    } else if (!this.editPipeline.replaceTextNode(selectedNodeId, selectedNodeContent)) {
-      return;
+      handleDomSyncCode(this.editPipeline, selectedNodeId, selectedNodeContent);
+    } else {
+      this.editPipeline.update(selectedNodeMap.set('content', selectedNodeContent));
     }
-    console.info('DOM SYNC ', selectedNode);
+    console.debug('DOM SYNC ', selectedNode);
     this.saveContentBatchDebounce()
   }
   
   handleCaret = (evt) => {
-    if (evt.isPropagationStopped()) {
+    if (this.cancelledEvent || evt.isPropagationStopped()) {
       return;
     }
     const domNode = getCaretNode();
@@ -465,13 +346,13 @@ export default class EditPost extends React.Component {
       return;
     }
     const selectedNodeId = getCaretNodeId();
-    const selectedNode = this.editPipeline.getNode(selectedNodeId);
-    if (!selectedNode) {
+    const selectedNodeMap = this.editPipeline.getNode(selectedNodeId);
+    if (!selectedNodeMap) {
       console.warn('CARET no node, bad selection: ', getCaretNode());
       return;
     }
-    console.info('CARET - node', getCaretNode());
-    if (selectedNode.get('type') === NODE_TYPE_SECTION_SPACER) {
+    console.debug('CARET - node', getCaretNode());
+    if (selectedNodeMap.get('type') === NODE_TYPE_SECTION_SPACER) {
       evt.stopPropagation();
       evt.preventDefault();
       const shouldFocusOnPrevious = evt.keyCode === UP_ARROW;
@@ -479,7 +360,7 @@ export default class EditPost extends React.Component {
         ? this.editPipeline.getPreviousFocusNodeId(selectedNodeId)
         : this.editPipeline.getNextFocusNodeId(selectedNodeId);
       setCaret(focusNodeId, -1, shouldFocusOnPrevious);
-    } else if (selectedNode.get('type') === NODE_TYPE_ROOT) {
+    } else if (selectedNodeMap.get('type') === NODE_TYPE_ROOT) {
       evt.stopPropagation();
       evt.preventDefault();
       setCaret(this.editPipeline.getNextFocusNodeId(selectedNodeId));
@@ -497,7 +378,9 @@ export default class EditPost extends React.Component {
     console.debug('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleSyncFromDom(evt);
     this.handleCaret(evt);
-    this.manageInsertMenu();
+    this.manageInsertMenu(evt);
+    this.manageFormatSelectionMenu(evt);
+    this.cancelledEvent = null;
   }
   
   handleMouseUp = (evt) => {
@@ -567,45 +450,41 @@ export default class EditPost extends React.Component {
    */
   insertSection = async (sectionType) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
-    const selectedSectionId = this.editPipeline.getSection(selectedNodeId).get('id');
-    const wasOnlyChild = this.editPipeline.isOnlyChild(selectedNodeId);
-    let newSectionId;
     let focusNodeId;
-    const { editSectionMeta } = this.state;
     
     // lists get added to content sections, keep current section
-    if (sectionType === NODE_TYPE_OL) {
-      const olId = this.editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_OL);
-      focusNodeId = this.editPipeline.insert(olId, NODE_TYPE_LI, 0);
-      this.editPipeline.delete(selectedNodeId);
-    } else {
-      // splitting the current section even if selectedNodeId is first or last child
-      this.editPipeline.splitSection(selectedSectionId, selectedNodeId);
-      // insert the section
-      newSectionId = this.editPipeline.insertSectionAfter(
-        selectedSectionId,
-        sectionType,
-        // meta for custom terminal sections - will be Map() otherwise
-        sectionType === NODE_TYPE_SECTION_CODE
-          ? Map({ lines: List([ZERO_LENGTH_CHAR]) })
-          : editSectionMeta
-      );
-    }
-    
-    if (sectionType === NODE_TYPE_SECTION_SPACER) {
-      // TODO: all 'terminal' sections
-      //  1) move caret ahead to new section
-      // focus *after* new section
-      focusNodeId = this.editPipeline.getNextFocusNodeId(newSectionId);
-    } else {
-      // don't need this empty P tag
-      if (wasOnlyChild) {
-        // if the empty P tag was the only child in the content section, delete it
-        this.editPipeline.delete(selectedSectionId);
-      } else {
-        this.editPipeline.delete(selectedNodeId);
+    switch (sectionType) {
+      case NODE_TYPE_OL: {
+        focusNodeId = insertList(this.editPipeline, selectedNodeId);
+        break;
       }
-      focusNodeId = newSectionId;
+      case NODE_TYPE_SECTION_CODE: {
+        focusNodeId = insertCodeSection(this.editPipeline, selectedNodeId);
+        break;
+      }
+      case NODE_TYPE_SECTION_SPACER: {
+        focusNodeId = insertSpacer(this.editPipeline, selectedNodeId);
+        break;
+      }
+      case NODE_TYPE_SECTION_H1: {
+        focusNodeId = insertH1(this.editPipeline, selectedNodeId);
+        break;
+      }
+      case NODE_TYPE_SECTION_H2: {
+        focusNodeId = insertH2(this.editPipeline, selectedNodeId);
+        break;
+      }
+      case NODE_TYPE_SECTION_IMAGE: {
+        focusNodeId = insertPhoto(this.editPipeline, selectedNodeId);
+        break;
+      }
+      case NODE_TYPE_SECTION_QUOTE: {
+        focusNodeId = insertQuote(this.editPipeline, selectedNodeId);
+        break;
+      }
+      default: {
+        console.error('insertSection - unknown type! ', sectionType);
+      }
     }
     
     await this.commitUpdates(focusNodeId);
@@ -613,7 +492,6 @@ export default class EditPost extends React.Component {
       this.sectionEdit(focusNodeId)
     }
   }
-  
   
   updateMetaProp = (propName, value) => {
     const { editSectionMeta } = this.state;
@@ -652,15 +530,17 @@ export default class EditPost extends React.Component {
   }
   sectionDelete = (sectionId) => {
     if (confirm('Delete Section?')) {
+      const focusNodeId = this.editPipeline.getNextFocusNodeId(sectionId);
       this.editPipeline.delete(sectionId);
-      this.commitUpdates(sectionId);
+      this.commitUpdates(focusNodeId);
     }
   }
   
-  manageFormatSelectionMenu() {
+  manageFormatSelectionMenu(evt) {
     const range = getRange();
+    const isEscKey = evt && evt.keyCode === ESC_KEY;
     const selectedNode = getCaretNode();
-    if (!range || range.collapsed || !selectedNode) {
+    if (!range || range.collapsed || !selectedNode || isEscKey) {
       this.setState({
         formatSelectionNodeId: null,
         formatSelectionMenuTopOffset: 0,

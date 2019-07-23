@@ -12,12 +12,13 @@ import {
   NODE_TYPE_SECTION_POSTLINK,
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER,
-  NODE_TYPE_TEXT,
+  NODE_TYPE_LI,
+  NODE_TYPE_OL,
+  NODE_TYPE_PRE,
   ROOT_NODE_PARENT_ID,
 } from '../../common/constants';
 import {
   cleanText,
-  cleanTextOrZeroLengthPlaceholder,
   getMapWithId,
 } from '../../common/utils';
 
@@ -25,6 +26,7 @@ export default class EditDocumentModel {
   post;
   root;
   rootId;
+  infiniteLoopCount = 0;
   nodesByParentId = Map();
   
   init(post, jsonData = null) {
@@ -74,6 +76,9 @@ export default class EditDocumentModel {
   getSection(nodeId) {
     let sectionId = nodeId;
     while (!this.isSectionType(sectionId)) {
+      if (this.infiniteLoopCount++ > 1000) {
+        throw new Error('getSection is Out of Control!!!');
+      }
       sectionId = this.getParent(sectionId).get('id');
       if (!sectionId) { break; }
     }
@@ -104,7 +109,17 @@ export default class EditDocumentModel {
     return this.getFirstChild(parentId).get('id') === nodeId;
   }
   
+  /**
+   * @param nodeId
+   * @returns note: returns a Map() with an 'id' for PRE tags - they won't be in the nodesByParentId list
+   */
   getFirstChild(nodeId) {
+    const node = this.getNode(nodeId);
+    if (node.get('type') === NODE_TYPE_SECTION_CODE) {
+      return Map({
+        id: `${nodeId}-0`
+      });
+    }
     const siblings = this.nodesByParentId.get(nodeId, List());
     if (siblings.size === 0) {
       console.warn('getFirstChild - no children! ', nodeId);
@@ -118,7 +133,17 @@ export default class EditDocumentModel {
     return this.getLastChild(parentId).get('id') === nodeId;
   }
   
+  /**
+   * @param nodeId
+   * @returns note: returns a Map() with an 'id' for PRE tags - they won't be in the nodesByParentId list
+   */
   getLastChild(nodeId) {
+    const node = this.getNode(nodeId);
+    if (node.get('type') === NODE_TYPE_SECTION_CODE) {
+      return Map({
+        id: `${nodeId}-${node.get('meta', Map()).get('lines', List()).size - 1}`
+      });
+    }
     const siblings = this.nodesByParentId.get(nodeId, List());
     if (siblings.size === 0) {
       console.warn('getLastChild - no children! ', nodeId);
@@ -153,12 +178,12 @@ export default class EditDocumentModel {
       console.error(errorMessage, sectionId);
       throw new Error(errorMessage);
     }
-    return this.insert(this.rootId, type, siblingIndex + 1, meta);
+    return this.insert(this.rootId, type, siblingIndex + 1, '', meta);
   }
   
   insertSection(type, index = -1, meta = Map()) {
     // parent must be root
-    return this.insert(this.rootId, type, index, meta);
+    return this.insert(this.rootId, type, index, '', meta);
   }
   
   splitSection(sectionId, nodeId) {
@@ -170,7 +195,7 @@ export default class EditDocumentModel {
     const siblings = this.nodesByParentId.get(sectionId);
     const nodeIdx = siblings.findIndex(s => s.get('id') === nodeId);
     
-    this.delete(nodeId);
+    // this.delete(nodeId);
     // update existing section
     this.nodesByParentId = this.nodesByParentId.set(sectionId, siblings.slice(0, nodeIdx));
     // if all existing nodes moved to the new section, create a new P
@@ -179,23 +204,46 @@ export default class EditDocumentModel {
     }
     this.updateNodesForParent(sectionId);
     // new section
-    const newSectionid = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
-    this.nodesByParentId = this.nodesByParentId.set(newSectionid, siblings.slice(nodeIdx));
+    const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
+    this.nodesByParentId = this.nodesByParentId.set(newSectionId, siblings.slice(nodeIdx));
     // if all existing nodes stayed in the existing section, create a new P
-    if (this.nodesByParentId.get(newSectionid).size === 0) {
-      this.insert(newSectionid, NODE_TYPE_P, 0);
+    if (this.nodesByParentId.get(newSectionId).size === 0) {
+      this.insert(newSectionId, NODE_TYPE_P, 0);
     }
-    this.updateNodesForParent(newSectionid);
+    this.updateNodesForParent(newSectionId);
   }
   
-  mergeSections(leftSectionId, rightSectionId) {
-    const left = this.getNode(leftSectionId);
-    const right = this.getNode(rightSectionId);
-    if (!(left.get('type') === NODE_TYPE_SECTION_CONTENT && right.get('type') === NODE_TYPE_SECTION_CONTENT)) {
-      console.error('mergeSections', left, right);
-      throw new Error('mergeSections - I only merge CONTENT sections ATM')
+  isParagraphType(nodeId) {
+    return [
+      NODE_TYPE_P,
+      NODE_TYPE_LI,
+      NODE_TYPE_SECTION_H1,
+      NODE_TYPE_SECTION_H2,
+    ].includes(this.getNode(nodeId).get('type'))
+  }
+  
+  mergeParagraphs(leftId, rightId) {
+    if (!(this.isParagraphType(leftId) && this.isParagraphType(rightId))) {
+      console.error('mergeParagraphs - can`t do it!', leftId, rightId);
+      throw new Error('mergeParagraphs - invalid paragraphs')
     }
-    console.info('mergingSections ', left.get('id'), right.get('id'));
+    let left = this.getNode(leftId);
+    const right = this.getNode(rightId);
+    left = left.set('content', `${left.get('content')}${right.get('content')}`);
+    this.update(left);
+    // TODO: merge meta, offset the 'right' selections by left.get('content').length
+    this.delete(rightId);
+  }
+  
+  mergeSections(left, right) {
+    if (!(left.get('type') === NODE_TYPE_SECTION_CONTENT && right.get('type') === NODE_TYPE_SECTION_CONTENT)
+      && !(left.get('type') === NODE_TYPE_OL && right.get('type') === NODE_TYPE_OL)) {
+      console.error('mergeSections', left, right);
+      throw new Error('mergeSections - I only merge CONTENT & OL sections ATM')
+    }
+    const leftSectionId = left.get('id');
+    const rightSectionId = right.get('id');
+    console.info('mergingSections ', leftSectionId, rightSectionId);
     // left or right could be empty because the selectedNode was already deleted
     const rightNodes = this.nodesByParentId.get(rightSectionId, List());
     const leftNodes = this.nodesByParentId.get(leftSectionId, List());
@@ -206,47 +254,24 @@ export default class EditDocumentModel {
   }
   
   getText(nodeId) {
-    return cleanText(this.getFirstChild(nodeId).get('content', ''));
+    return cleanText(this.getNode(nodeId).get('content', ''));
   }
   
-  replaceTextNode(nodeId, contentArg) {
-    const content = cleanTextOrZeroLengthPlaceholder(contentArg);
-    let textNode = this.getFirstChild(nodeId);
-    if (!textNode.get('id')) {
-      // add a new text node
-      textNode = this.getMapWithId({ type: NODE_TYPE_TEXT, parent_id: nodeId, position: 0, content })
-      console.info('replaceTextNode - NEW node: ', textNode)
-    } else {
-      if (textNode.get('type') !== NODE_TYPE_TEXT) {
-        console.warn('replaceTextNode - comparing other node type: ', textNode.toJS());
-        return false;
-      }
-      if (cleanTextOrZeroLengthPlaceholder(textNode.get('content')) === content) {
-        // DOM & model already equal, no update needed
-        return false;
-      }
-      console.info('replaceTextNode - existing node: ', textNode);
-      textNode = textNode.set('content', content);
-    }
-    this.stageNodeUpdate(textNode.get('id'));
-    this.nodesByParentId = this.nodesByParentId.set(nodeId, List([textNode]));
-    return true;
-  }
-  
-  insertSubSectionAfter(siblingId, type, meta = Map()) {
+  insertSubSectionAfter(siblingId, type, content = '', meta = Map()) {
     const parentId = this.getParent(siblingId).get('id');
     const siblings = this.nodesByParentId.get(parentId, List());
     const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
-    return this.insert(parentId, type, siblingIdx + 1, meta);
+    return this.insert(parentId, type, siblingIdx + 1, content, meta);
   }
   
-  insert(parentId, type, index, meta) {
+  insert(parentId, type, index, content, meta) {
     const siblings = this.nodesByParentId.get(parentId, List());
     let newNode = this.getMapWithId({
       type,
       parent_id: parentId,
       position: index,
-      meta,
+      content,
+      meta: meta || Map(),
     });
     this.stageNodeUpdate(newNode.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
@@ -292,9 +317,8 @@ export default class EditDocumentModel {
     this.nodesByParentId = this.nodesByParentId.delete(nodeId);
     // reindex children and persist changes
     this.updateNodesForParent(parentId);
-    // safe guard against integrity constraint violations
+    // TODO: safe guard against integrity constraint violations, clean up illegal state
     // TODO: add integrity constraints AKA, node type can only have children of type [x,y,z]
-    // this.pruneEmptyAndOrphanedParents();
   }
   
   updateNodesForParent(parentId) {
@@ -322,6 +346,8 @@ export default class EditDocumentModel {
       NODE_TYPE_SECTION_H1,
       NODE_TYPE_SECTION_H2,
       NODE_TYPE_P,
+      NODE_TYPE_LI,
+      NODE_TYPE_PRE,
     ].includes(this.getNode(nodeId).get('type'));
   }
   
@@ -338,10 +364,16 @@ export default class EditDocumentModel {
       // TODO: some 'sections' are actually 'subsections' that can be focused - this design is probably a bad idea
       console.info('getPreviousFocusNodeId for SECTION', sectionId);
       if (this.isFirstChild(sectionId) || this.isOnlyChild(sectionId)) {
+        // TODO: this doesn't handle all cases yet
         focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getFirstChild(sectionId).get('id');
       } else {
         const prevSectionId = this.getPrevSibling(sectionId).get('id');
-        focusNodeId = this.canFocusNode(prevSectionId) ? prevSectionId : this.getLastChild(prevSectionId).get('id');
+        if (this.canFocusNode(prevSectionId)) {
+          focusNodeId = prevSectionId;
+        } else {
+          const lastChild = this.getLastChild(prevSectionId);
+          focusNodeId = this.canFocusNode(lastChild.get('id')) ? lastChild.get('id') : this.getLastChild(lastChild.get('id')).get('id')
+        }
       }
     } else {
       // nodeId is a P or bad things
@@ -375,7 +407,12 @@ export default class EditDocumentModel {
         focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getLastChild(sectionId).get('id');
       } else {
         const nextSectionId = this.getNextSibling(sectionId).get('id');
-        focusNodeId = this.canFocusNode(nextSectionId) ? nextSectionId : this.getFirstChild(nextSectionId).get('id');
+        if (this.canFocusNode(nextSectionId)) {
+          focusNodeId = nextSectionId;
+        } else {
+          const firstChild = this.getFirstChild(nextSectionId);
+          focusNodeId = this.canFocusNode(firstChild.get('id')) ? firstChild.get('id') : this.getFirstChild(firstChild.get('id')).get('id')
+        }
       }
     } else {
       // nodeId is a P
@@ -391,24 +428,5 @@ export default class EditDocumentModel {
     }
     console.info('getNextFocusNodeId found: ', focusNodeId, ', type: ', this.getNode(focusNodeId).get('type'));
     return focusNodeId;
-  }
-  
-  // TODO: this is a bad idea but, if the DOM gets into an illegal state everything is F!@KED
-  pruneEmptyAndOrphanedParents() {
-    console.warn('pruneEmptyAndOrphanedParents BAD BAD BAD!');
-    return;
-    
-    const idsToDelete = this.nodesByParentId
-      .filterNot(
-        (children, id) => (id === ROOT_NODE_PARENT_ID || (children.size > 0 && this.getNode(id).get('id')))
-      )
-      .map((_, id) => id);
-    
-    if (idsToDelete.size > 0) {
-      console.info('pruneEmptyAndOrphanedParents ', idsToDelete);
-    }
-    idsToDelete.forEach(id => {
-      // this.delete(id);
-    });
   }
 }

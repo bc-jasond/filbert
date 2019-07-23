@@ -7,7 +7,12 @@ import {
 
 export default class EditUpdateManager {
   post;
-  nodeUpdates = Map(); // keyed off of nodeId to avoid duplication TODO: add a debounced save timer per element
+  nodeUpdates;
+  
+  init(post) {
+    this.post = post;
+    this.nodeUpdates = Map();
+  }
   
   stageNodeUpdate(nodeId) {
     if (nodeId === null || nodeId === 'null') {
