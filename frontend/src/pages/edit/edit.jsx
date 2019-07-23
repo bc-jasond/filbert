@@ -8,7 +8,8 @@ import {
   apiPost,
 } from '../../common/fetch';
 import {
-  cleanText, cleanTextOrZeroLengthPlaceholder,
+  cleanText,
+  cleanTextOrZeroLengthPlaceholder,
 } from '../../common/utils';
 import {
   getRange,
@@ -43,13 +44,30 @@ import {
 import ContentNode from '../../common/content-node.component';
 import EditUpdateManager from './edit-update-manager';
 
-import { handleBackspaceCode, handleDomSyncCode, handleEnterCode, insertCodeSection } from './handle-code';
+import {
+  handleBackspaceCode,
+  handleDomSyncCode,
+  handleEnterCode,
+  insertCodeSection
+} from './handle-code';
 import { insertPhoto } from './handle-image';
-import { handleBackspaceList, handleEnterList, insertList } from './handle-list';
-import { handleBackspaceParagraph, handleEnterParagraph } from './handle-paragraph';
+import {
+  handleBackspaceList,
+  handleEnterList,
+  insertList
+} from './handle-list';
+import {
+  handleBackspaceParagraph,
+  handleEnterParagraph
+} from './handle-paragraph';
 import { insertQuote } from './handle-quote';
 import { insertSpacer } from './handle-spacer';
-import { handleEnterTitle, handleBackspaceTitle, insertH1, insertH2 } from './handle-title';
+import {
+  handleEnterTitle,
+  handleBackspaceTitle,
+  insertH1,
+  insertH2
+} from './handle-title';
 
 import InsertSectionMenu from './insert-section-menu';
 import EditSectionForm from './edit-section-form';
@@ -98,11 +116,11 @@ export default class EditPost extends React.Component {
   
   saveContentBatch = async () => {
     try {
-      const updated = this.editPipeline.updates();
+      const updated = this.updateManager.updates(this.editPipeline);
       if (updated.length === 0) return;
       console.info('Save Batch', updated);
       const result = await apiPost('/content', updated);
-      this.editPipeline.clearUpdates();
+      this.updateManager.clearUpdates();
       console.info('Save Batch result', result);
     } catch (err) {
       console.error('Content Batch Update Error: ', err);
@@ -135,7 +153,7 @@ export default class EditPost extends React.Component {
     // POST to /post
     const { postId } = await apiPost('/post', { title, canonical });
     // update post id for all updates
-    this.editPipeline.addPostIdToUpdates(postId);
+    this.updateManager.addPostIdToUpdates(postId);
     await this.saveContentBatch();
     this.setState({ shouldRedirectWithId: postId })
   }
@@ -236,20 +254,20 @@ export default class EditPost extends React.Component {
     let caretOffset;
     switch (selectedNodeType) {
       case NODE_TYPE_P: {
-        [focusNodeId, caretOffset] = handleBackspaceParagraph(this.editPipeline, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceParagraph(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_PRE: {
-        [focusNodeId, caretOffset] = handleBackspaceCode(this.editPipeline, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceCode(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_LI: {
-        [focusNodeId, caretOffset] = handleBackspaceList(this.editPipeline, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceList(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_H1:
       case NODE_TYPE_SECTION_H2: {
-        [focusNodeId, caretOffset] = handleBackspaceTitle(this.editPipeline, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceTitle(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
     }
@@ -290,20 +308,20 @@ export default class EditPost extends React.Component {
     
     switch (selectedNodeType) {
       case NODE_TYPE_PRE: {
-        focusNodeId = handleEnterCode(this.editPipeline, selectedNode, contentLeft, contentRight);
+        focusNodeId = handleEnterCode(this.editPipeline, this.updateManager, selectedNode, contentLeft, contentRight);
         break;
       }
       case NODE_TYPE_LI: {
-        focusNodeId = handleEnterList(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterList(this.editPipeline, this.updateManager, selectedNodeId, contentLeft, contentRight);
         break;
       }
       case NODE_TYPE_P: {
-        focusNodeId = handleEnterParagraph(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterParagraph(this.editPipeline, this.updateManager, selectedNodeId, contentLeft, contentRight);
         break;
       }
       case NODE_TYPE_SECTION_H1:
       case NODE_TYPE_SECTION_H2: {
-        focusNodeId = handleEnterTitle(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterTitle(this.editPipeline, this.updateManager, selectedNodeId, contentLeft, contentRight);
         break;
       }
       default: {
@@ -330,7 +348,7 @@ export default class EditPost extends React.Component {
     if (selectedNode.tagName === 'PRE') {
       handleDomSyncCode(this.editPipeline, selectedNodeId, selectedNodeContent);
     } else {
-      this.editPipeline.update(selectedNodeMap.set('content', selectedNodeContent));
+      this.updateManager.update(selectedNodeMap.set('content', selectedNodeContent));
     }
     console.debug('DOM SYNC ', selectedNode);
     this.saveContentBatchDebounce()
@@ -398,7 +416,7 @@ export default class EditPost extends React.Component {
       const selectedSection = this.editPipeline.getNode(selectedNodeId);
       const meta = selectedSection.get('meta');
       
-      this.editPipeline.update(
+      this.updateManager.update(
         selectedSection.set('meta',
           meta.set('lines', List(domLines))
         )
@@ -455,31 +473,31 @@ export default class EditPost extends React.Component {
     // lists get added to content sections, keep current section
     switch (sectionType) {
       case NODE_TYPE_OL: {
-        focusNodeId = insertList(this.editPipeline, selectedNodeId);
+        focusNodeId = insertList(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_CODE: {
-        focusNodeId = insertCodeSection(this.editPipeline, selectedNodeId);
+        focusNodeId = insertCodeSection(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_SPACER: {
-        focusNodeId = insertSpacer(this.editPipeline, selectedNodeId);
+        focusNodeId = insertSpacer(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_H1: {
-        focusNodeId = insertH1(this.editPipeline, selectedNodeId);
+        focusNodeId = insertH1(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_H2: {
-        focusNodeId = insertH2(this.editPipeline, selectedNodeId);
+        focusNodeId = insertH2(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_IMAGE: {
-        focusNodeId = insertPhoto(this.editPipeline, selectedNodeId);
+        focusNodeId = insertPhoto(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_QUOTE: {
-        focusNodeId = insertQuote(this.editPipeline, selectedNodeId);
+        focusNodeId = insertQuote(this.editPipeline, this.updateManager, selectedNodeId);
         break;
       }
       default: {
@@ -525,13 +543,13 @@ export default class EditPost extends React.Component {
   sectionSaveMeta = (sectionId) => {
     const { editSectionMeta } = this.state;
     const section = this.editPipeline.getNode(sectionId);
-    this.editPipeline.update(section.set('meta', editSectionMeta));
+    this.updateManager.update(section.set('meta', editSectionMeta));
     this.commitUpdates(sectionId);
   }
   sectionDelete = (sectionId) => {
     if (confirm('Delete Section?')) {
       const focusNodeId = this.editPipeline.getNextFocusNodeId(sectionId);
-      this.editPipeline.delete(sectionId);
+      this.updateManager.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
   }

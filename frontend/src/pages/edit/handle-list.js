@@ -6,69 +6,69 @@ import {
 } from '../../common/constants';
 import { cleanText } from '../../common/utils';
 
-export function handleBackspaceList(editPipeline, selectedNodeId) {
-  const selectedOl = editPipeline.getParent(selectedNodeId);
+export function handleBackspaceList(documentModel, updateManager, selectedNodeId) {
+  const selectedOl = documentModel.getParent(selectedNodeId);
   let prevSection;
-  if (editPipeline.isFirstChild(selectedNodeId)) {
-    if (editPipeline.isFirstChild(selectedOl.get('id'))) {
-      const selectedSection = editPipeline.getSection(selectedOl.get('id'));
-      prevSection = editPipeline.getPrevSibling(selectedSection.get('id'));
+  if (documentModel.isFirstChild(selectedNodeId)) {
+    if (documentModel.isFirstChild(selectedOl.get('id'))) {
+      const selectedSection = documentModel.getSection(selectedOl.get('id'));
+      prevSection = documentModel.getPrevSibling(selectedSection.get('id'));
       // delete a spacer?
       if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
         const spacerSectionId = prevSection.get('id');
-        prevSection = editPipeline.getPrevSibling(spacerSectionId);
-        editPipeline.delete(spacerSectionId);
+        prevSection = documentModel.getPrevSibling(spacerSectionId);
+        updateManager.delete(spacerSectionId);
       }
       // overloading prevSection to mean 'prevParagraph' I know, I know...
-      if (!editPipeline.canFocusNode(prevSection.get('id'))) {
-        prevSection = editPipeline.getLastChild(prevSection.get('id'))
+      if (!documentModel.canFocusNode(prevSection.get('id'))) {
+        prevSection = documentModel.getLastChild(prevSection.get('id'))
       }
     }
     if (prevSection.get('type') === NODE_TYPE_OL) {
       // merge OLs?
-      editPipeline.mergeSections(prevSection, selectedOl);
-      const lastLi = editPipeline.getLastChild(prevSection.get('id'));
+      documentModel.mergeSections(prevSection, selectedOl);
+      const lastLi = documentModel.getLastChild(prevSection.get('id'));
       return [lastLi.get('id'), lastLi.get('content').length];
     }
     // convert 1st LI to P, H1, H2
-    const wasOnlyChild = editPipeline.isOnlyChild(selectedNodeId);
-    editPipeline.mergeParagraphs(prevSection.get('id'), selectedNodeId);
+    const wasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
+    documentModel.mergeParagraphs(prevSection.get('id'), selectedNodeId);
     if (wasOnlyChild) {
-      const section = editPipeline.getSection(selectedOl.get('id'));
+      const section = documentModel.getSection(selectedOl.get('id'));
       // delete empty OL
-      editPipeline.delete(selectedOl.get('id'))
-      if (editPipeline.isOnlyChild(selectedOl.get('id'))) {
+      updateManager.delete(selectedOl.get('id'))
+      if (documentModel.isOnlyChild(selectedOl.get('id'))) {
         // delete empty section
-        editPipeline.delete(section.get('id'))
+        updateManager.delete(section.get('id'))
       }
     }
     return [prevSection.get('id'), prevSection.get('content').length];
   }
   // merge LIs within the same list
-  const prevSibling = editPipeline.getPrevSibling(selectedNodeId);
-  editPipeline.mergeParagraphs(prevSibling.get('id'), selectedNodeId);
+  const prevSibling = documentModel.getPrevSibling(selectedNodeId);
+  documentModel.mergeParagraphs(prevSibling.get('id'), selectedNodeId);
   return [prevSibling.get('id'), prevSibling.get('content').length];
 }
 
-export function handleEnterList(editPipeline, selectedNodeId, contentLeft, contentRight) {
-  if (cleanText(contentLeft).length === 0 && editPipeline.isLastChild(selectedNodeId)) {
+export function handleEnterList(documentModel, updateManager, selectedNodeId, contentLeft, contentRight) {
+  if (cleanText(contentLeft).length === 0 && documentModel.isLastChild(selectedNodeId)) {
     // create a P tag after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
-    const olId = editPipeline.getParent(selectedNodeId).get('id');
-    const wasOnlyChild = editPipeline.isOnlyChild(selectedNodeId);
-    editPipeline.delete(selectedNodeId);
-    const pId = editPipeline.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight);
+    const olId = documentModel.getParent(selectedNodeId).get('id');
+    const wasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
+    updateManager.delete(selectedNodeId);
+    const pId = documentModel.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight);
     if (wasOnlyChild) {
-      editPipeline.delete(olId);
+      updateManager.delete(olId);
     }
     return pId;
   }
-  editPipeline.update(editPipeline.getNode(selectedNodeId).set('content', contentLeft));
-  return editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight);
+  updateManager.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
+  return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight);
 }
 
-export function insertList(editPipeline, selectedNodeId) {
-  const olId = editPipeline.insertSubSectionAfter(selectedNodeId, NODE_TYPE_OL);
-  const focusNodeId = editPipeline.insert(olId, NODE_TYPE_LI, 0);
-  editPipeline.delete(selectedNodeId);
+export function insertList(documentModel, updateManager, selectedNodeId) {
+  const olId = documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_OL);
+  const focusNodeId = documentModel.insert(olId, NODE_TYPE_LI, 0);
+  updateManager.delete(selectedNodeId);
   return focusNodeId;
 }
