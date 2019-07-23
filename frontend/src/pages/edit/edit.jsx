@@ -2,7 +2,7 @@ import React from 'react';
 import { List, Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
-import EditPipeline from './edit-pipeline';
+import EditDocumentModel from './edit-document-model';
 import {
   apiGet,
   apiPost,
@@ -41,6 +41,7 @@ import {
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
+import EditUpdateManager from './edit-update-manager';
 import InsertSectionMenu from './insert-section-menu';
 import EditSectionForm from './edit-section-form';
 import FormatSelectionMenu from './format-selection-menu';
@@ -81,7 +82,8 @@ export default class EditPost extends React.Component {
     }
   }
   
-  editPipeline = new EditPipeline();
+  editPipeline = new EditDocumentModel();
+  updateManager = new EditUpdateManager();
   commitTimeoutId;
   
   saveContentBatch = async () => {
@@ -130,6 +132,8 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
       this.editPipeline.init(post, contentNodes);
+      this.updateManager.post = post;
+      this.updateManager.stageNodeUpdate(this.editPipeline.rootId);
       const focusNodeId = this.editPipeline.getPreviousFocusNodeId(this.editPipeline.rootId);
       this.setState({
         root: this.editPipeline.root,
