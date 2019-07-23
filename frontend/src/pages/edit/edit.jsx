@@ -162,7 +162,7 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
       this.updateManager.init(post);
-      this.documentModel.init(post, this.contentNodes);
+      this.documentModel.init(post, this.updateManager, contentNodes);
       const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
       this.setState({
         root: this.documentModel.root,

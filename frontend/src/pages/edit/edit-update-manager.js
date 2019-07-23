@@ -1,4 +1,4 @@
-import { Map } from 'immutable';
+import Immutable, { Map } from 'immutable';
 
 import {
   NODE_ACTION_UPDATE,
@@ -10,7 +10,7 @@ export default class EditUpdateManager {
   nodeUpdates;
   
   init(post) {
-    this.post = post;
+    this.post = Immutable.fromJS(post);
     this.nodeUpdates = Map();
   }
   
