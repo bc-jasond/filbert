@@ -8,7 +8,7 @@ import {
   NODE_TYPE_SECTION_SPACER
 } from '../../common/constants';
 
-export function handleBackspaceTitle(documentModel, updateManager, selectedNodeId) {
+export function handleBackspaceTitle(documentModel, selectedNodeId) {
   if (documentModel.isFirstChild(selectedNodeId)) {
     // don't delete the first section, noop()
     return;
@@ -19,13 +19,13 @@ export function handleBackspaceTitle(documentModel, updateManager, selectedNodeI
   if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
     const spacerId = prevSection.get('id');
     prevSection = documentModel.getPrevSibling(spacerId);
-    updateManager.delete(spacerId);
+    documentModel.delete(spacerId);
   }
   switch (prevSection.get('type')) {
     case NODE_TYPE_SECTION_H1:
     case NODE_TYPE_SECTION_H2: {
-      updateManager.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
-      updateManager.delete(selectedNodeId);
+      documentModel.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
+      documentModel.delete(selectedNodeId);
       return [prevSection.get('id'), prevSection.get('content').length];
     }
     case NODE_TYPE_SECTION_CONTENT: {
@@ -35,9 +35,9 @@ export function handleBackspaceTitle(documentModel, updateManager, selectedNodeI
         lastChild = documentModel.getLastChild(lastChild.get('id'));
       }
       // lastChild must be P
-      updateManager.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
+      documentModel.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
       const nextSection = documentModel.getNextSibling(selectedNodeId);
-      updateManager.delete(selectedNodeId);
+      documentModel.delete(selectedNodeId);
       if (nextSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
         documentModel.mergeSections(prevSection, nextSection);
       }
@@ -48,7 +48,7 @@ export function handleBackspaceTitle(documentModel, updateManager, selectedNodeI
       const lines = meta.get('lines');
       const lastLine = lines.last();
   
-      updateManager.update(
+      documentModel.update(
         prevSection.set('meta',
           meta.set('lines',
             lines
@@ -57,7 +57,7 @@ export function handleBackspaceTitle(documentModel, updateManager, selectedNodeI
           )
         )
       );
-      updateManager.delete(selectedNodeId);
+      documentModel.delete(selectedNodeId);
       
       return [`${prevSection.get('id')}-${lines.size - 1}`, lastLine.length];
     }
@@ -67,8 +67,8 @@ export function handleBackspaceTitle(documentModel, updateManager, selectedNodeI
 /**
  * insert a new P tag (and a Content Section if the next section isn't one)
  */
-export function handleEnterTitle(documentModel, updateManager, selectedNodeId, contentLeft, contentRight) {
-  updateManager.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
+export function handleEnterTitle(documentModel, selectedNodeId, contentLeft, contentRight) {
+  documentModel.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
   const nextSibling = documentModel.getNextSibling(selectedNodeId);
   let nextSiblingId;
   if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
@@ -81,7 +81,7 @@ export function handleEnterTitle(documentModel, updateManager, selectedNodeId, c
   return documentModel.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
 }
 
-function insertTitle(documentModel, updateManager, selectedNodeId, sectionType) {
+function insertTitle(documentModel, selectedNodeId, sectionType) {
   const selectedSectionId = documentModel.getSection(selectedNodeId).get('id');
   const placeholderParagraphWasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
   if (!documentModel.isLastChild(selectedNodeId)) {
@@ -91,12 +91,12 @@ function insertTitle(documentModel, updateManager, selectedNodeId, sectionType) 
     selectedSectionId,
     sectionType,
   );
-  updateManager.delete(selectedNodeId);
+  documentModel.delete(selectedNodeId);
   if (placeholderParagraphWasOnlyChild) {
-    updateManager.delete(selectedSectionId);
+    documentModel.delete(selectedSectionId);
   }
   return newSectionId;
 }
 
-export const insertH1 = (documentModel, updateManager, selectedNodeId) => insertTitle(documentModel, updateManager, selectedNodeId, NODE_TYPE_SECTION_H1);
-export const insertH2 = (documentModel, updateManager, selectedNodeId) => insertTitle(documentModel, updateManager, selectedNodeId, NODE_TYPE_SECTION_H2);
+export const insertH1 = (documentModel, selectedNodeId) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_SECTION_H1);
+export const insertH2 = (documentModel, selectedNodeId) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_SECTION_H2);

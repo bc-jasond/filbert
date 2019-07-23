@@ -7,7 +7,7 @@ import {
 } from '../../common/constants';
 import { cleanText } from '../../common/utils';
 
-export function handleBackspaceCode(documentModel, updateManager, selectedNodeId) {
+export function handleBackspaceCode(documentModel, selectedNodeId) {
   const [selectedSectionId, idx] = selectedNodeId.split('-');
   const lineIdx = parseInt(idx, 10);
   let prevSection = documentModel.getPrevSibling(selectedSectionId);
@@ -22,20 +22,20 @@ export function handleBackspaceCode(documentModel, updateManager, selectedNodeId
   if (lines.size === 1 && lineContent.length === 0 && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
     const spacerId = prevSection.get('id');
     prevFocusNodeId = documentModel.getPreviousFocusNodeId(spacerId);
-    updateManager.delete(spacerId);
+    documentModel.delete(spacerId);
   }
   if (lines.size === 1 && lineContent.length === 0) {
     // delete CODE section - merge 2 CONTENT sections?
     prevSection = documentModel.getPrevSibling(selectedSectionId);
     const nextSection = documentModel.getNextSibling(selectedSectionId);
-    updateManager.delete(selectedSectionId);
+    documentModel.delete(selectedSectionId);
     if (prevSection.get('type') === NODE_TYPE_SECTION_CONTENT && nextSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
       documentModel.mergeSections(prevSection, nextSection);
     }
   } else if (lineIdx > 0) {
     // merge lines of code
     prevLineContent = lines.get(lineIdx - 1);
-    updateManager.update(
+    documentModel.update(
       selectedSection.set('meta',
         meta.set('lines',
           lines
@@ -58,7 +58,7 @@ export function handleBackspaceCode(documentModel, updateManager, selectedNodeId
   return [prevFocusNodeId, documentModel.getNode(prevFocusNodeId).get('content', '').length];
 }
 
-export function handleEnterCode(documentModel, updateManager, selectedNode, contentLeft, contentRight) {
+export function handleEnterCode(documentModel, selectedNode, contentLeft, contentRight) {
   const name = selectedNode.getAttribute('name');
   const [selectedSectionId, idx] = name.split('-');
   const lineIndex = parseInt(idx, 10);
@@ -69,7 +69,7 @@ export function handleEnterCode(documentModel, updateManager, selectedNode, cont
   if (cleanText(contentLeft).length === 0 && lineIndex === (lines.size - 1)) {
     if (lines.size > 1) {
       // remove last line of code - leave at least one line
-      updateManager.update(
+      documentModel.update(
         selectedSection.set('meta',
           meta.set('lines',
             lines.pop()
@@ -90,7 +90,7 @@ export function handleEnterCode(documentModel, updateManager, selectedNode, cont
     return documentModel.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
   }
   
-  updateManager.update(
+  documentModel.update(
     selectedSection.set('meta',
       meta.set('lines',
         lines
@@ -104,7 +104,7 @@ export function handleEnterCode(documentModel, updateManager, selectedNode, cont
   return `${selectedSectionId}-${lineIndex + 1}`;
 }
 
-export function handleDomSyncCode(documentModel, updateManager, selectedNodeId, selectedNodeContent) {
+export function handleDomSyncCode(documentModel, selectedNodeId, selectedNodeContent) {
   const [selectedSectionId, idx] = selectedNodeId.split('-');
   const lineIndex = parseInt(idx, 10);
   const selectedSection = documentModel.getNode(selectedSectionId);
@@ -114,14 +114,14 @@ export function handleDomSyncCode(documentModel, updateManager, selectedNodeId, 
   if (currentLineContent === selectedNodeContent) {
     return;
   }
-  updateManager.update(
+  documentModel.update(
     selectedSection.set('meta',
       meta.set('lines', lines.set(lineIndex, selectedNodeContent))
     )
   );
 }
 
-export function insertCodeSection(documentModel, updateManager, selectedNodeId) {
+export function insertCodeSection(documentModel, selectedNodeId) {
   const selectedSectionId = documentModel.getSection(selectedNodeId).get('id');
   const placeholderParagraphWasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
   if (!documentModel.isLastChild(selectedNodeId)) {
@@ -131,9 +131,9 @@ export function insertCodeSection(documentModel, updateManager, selectedNodeId) 
     selectedSectionId,
     NODE_TYPE_SECTION_CODE,
   );
-  updateManager.delete(selectedNodeId);
+  documentModel.delete(selectedNodeId);
   if (placeholderParagraphWasOnlyChild) {
-    updateManager.delete(selectedSectionId);
+    documentModel.delete(selectedSectionId);
   }
   return newSectionId;
 }

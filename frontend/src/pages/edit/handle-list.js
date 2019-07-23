@@ -6,7 +6,7 @@ import {
 } from '../../common/constants';
 import { cleanText } from '../../common/utils';
 
-export function handleBackspaceList(documentModel, updateManager, selectedNodeId) {
+export function handleBackspaceList(documentModel, selectedNodeId) {
   const selectedOl = documentModel.getParent(selectedNodeId);
   let prevSection;
   if (documentModel.isFirstChild(selectedNodeId)) {
@@ -17,7 +17,7 @@ export function handleBackspaceList(documentModel, updateManager, selectedNodeId
       if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
         const spacerSectionId = prevSection.get('id');
         prevSection = documentModel.getPrevSibling(spacerSectionId);
-        updateManager.delete(spacerSectionId);
+        documentModel.delete(spacerSectionId);
       }
       // overloading prevSection to mean 'prevParagraph' I know, I know...
       if (!documentModel.canFocusNode(prevSection.get('id'))) {
@@ -36,10 +36,10 @@ export function handleBackspaceList(documentModel, updateManager, selectedNodeId
     if (wasOnlyChild) {
       const section = documentModel.getSection(selectedOl.get('id'));
       // delete empty OL
-      updateManager.delete(selectedOl.get('id'))
+      documentModel.delete(selectedOl.get('id'))
       if (documentModel.isOnlyChild(selectedOl.get('id'))) {
         // delete empty section
-        updateManager.delete(section.get('id'))
+        documentModel.delete(section.get('id'))
       }
     }
     return [prevSection.get('id'), prevSection.get('content').length];
@@ -50,25 +50,25 @@ export function handleBackspaceList(documentModel, updateManager, selectedNodeId
   return [prevSibling.get('id'), prevSibling.get('content').length];
 }
 
-export function handleEnterList(documentModel, updateManager, selectedNodeId, contentLeft, contentRight) {
+export function handleEnterList(documentModel, selectedNodeId, contentLeft, contentRight) {
   if (cleanText(contentLeft).length === 0 && documentModel.isLastChild(selectedNodeId)) {
     // create a P tag after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
     const olId = documentModel.getParent(selectedNodeId).get('id');
     const wasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
-    updateManager.delete(selectedNodeId);
+    documentModel.delete(selectedNodeId);
     const pId = documentModel.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight);
     if (wasOnlyChild) {
-      updateManager.delete(olId);
+      documentModel.delete(olId);
     }
     return pId;
   }
-  updateManager.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
+  documentModel.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
   return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight);
 }
 
-export function insertList(documentModel, updateManager, selectedNodeId) {
+export function insertList(documentModel, selectedNodeId) {
   const olId = documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_OL);
   const focusNodeId = documentModel.insert(olId, NODE_TYPE_LI, 0);
-  updateManager.delete(selectedNodeId);
+  documentModel.delete(selectedNodeId);
   return focusNodeId;
 }

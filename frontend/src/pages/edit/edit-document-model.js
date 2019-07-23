@@ -29,8 +29,12 @@ export default class EditDocumentModel {
   infiniteLoopCount = 0;
   nodesByParentId = Map();
   
-  init(post, jsonData = null) {
+  init(post, updateManager, jsonData = null) {
     this.post = Immutable.fromJS(post);
+    // TODO: ideally this documentModel class doesn't have to know about the updateManager.
+    // But, it's nice to make one call from the consumer (edit.jsx + helpers) that handles the documentModel
+    // and the updateManager behind the scenes, so that orchestration would have to move either out into edit.jsx or into another helper class
+    this.updateManager = updateManager;
     if (jsonData) {
       this.nodesByParentId = Immutable.fromJS(jsonData);
       this.root = this.getFirstChild(ROOT_NODE_PARENT_ID);
@@ -273,7 +277,7 @@ export default class EditDocumentModel {
       content,
       meta: meta || Map(),
     });
-    this.stageNodeUpdate(newNode.get('id'));
+    this.updateManager.stageNodeUpdate(newNode.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
       .insert(newNode.get('position'), newNode)
     );
@@ -287,7 +291,7 @@ export default class EditDocumentModel {
     const parentId = this.getParent(node.get('id')).get('id');
     const siblings = this.nodesByParentId.get(parentId);
     const nodeIdx = siblings.findIndex(n => n.get('id') === node.get('id'));
-    this.stageNodeUpdate(node.get('id'));
+    this.updateManager.stageNodeUpdate(node.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.set(nodeIdx, node))
   }
   
@@ -300,12 +304,12 @@ export default class EditDocumentModel {
       return;
     }
     // check if node is already deleted
-    if (this.nodeHasBeenStagedForDelete(nodeId)) {
+    if (this.updateManager.nodeHasBeenStagedForDelete(nodeId)) {
       console.info('edit pipeline - already deleted ', nodeId);
       return;
     }
     // mark this node deleted
-    this.stageNodeDelete(nodeId);
+    this.updateManager.stageNodeDelete(nodeId);
     const parentId = this.getParent(nodeId).get('id');
     const siblings = this.nodesByParentId.get(parentId);
     // filter this node out of its parent list
@@ -337,7 +341,7 @@ export default class EditDocumentModel {
     // since positions have changed, update all nodes for this parent
     // TODO: make this smarter, maybe it's worth it
     this.nodesByParentId.get(parentId, List()).forEach(node => {
-      this.stageNodeUpdate(node.get('id'));
+      this.updateManager.stageNodeUpdate(node.get('id'));
     });
   }
   

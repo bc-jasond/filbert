@@ -6,7 +6,7 @@ import {
   NODE_TYPE_SECTION_SPACER
 } from '../../common/constants';
 
-export function handleBackspaceParagraph(documentModel, updateManager, selectedNodeId) {
+export function handleBackspaceParagraph(documentModel, selectedNodeId) {
   const selectedSection = documentModel.getSection(selectedNodeId);
   const selectedNode = documentModel.getNode(selectedNodeId);
   const wasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
@@ -17,16 +17,16 @@ export function handleBackspaceParagraph(documentModel, updateManager, selectedN
     if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
       const spacerSectionId = prevSection.get('id');
       prevSection = documentModel.getPrevSibling(spacerSectionId);
-      updateManager.delete(spacerSectionId);
+      documentModel.delete(spacerSectionId);
     }
   
     switch (prevSection.get('type')) {
       case NODE_TYPE_SECTION_H1:
       case NODE_TYPE_SECTION_H2: {
-        updateManager.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
-        updateManager.delete(selectedNodeId);
+        documentModel.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
+        documentModel.delete(selectedNodeId);
         if (wasOnlyChild) {
-          updateManager.delete(selectedSection.get('id'));
+          documentModel.delete(selectedSection.get('id'));
         }
         return [prevSection.get('id'), prevSection.get('content').length];
       }
@@ -38,8 +38,8 @@ export function handleBackspaceParagraph(documentModel, updateManager, selectedN
           lastChild = documentModel.getLastChild(lastChild.get('id'));
         }
         // lastChild must be P
-        updateManager.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
-        updateManager.delete(selectedNodeId);
+        documentModel.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
+        documentModel.delete(selectedNodeId);
         documentModel.mergeSections(prevSection, selectedSection);
         return [lastChild.get('id'), lastChild.get('content').length];
       }
@@ -48,7 +48,7 @@ export function handleBackspaceParagraph(documentModel, updateManager, selectedN
         const lines = meta.get('lines');
         const lastLine = lines.last();
   
-        updateManager.update(
+        documentModel.update(
           prevSection.set('meta',
             meta.set('lines',
               lines
@@ -57,9 +57,9 @@ export function handleBackspaceParagraph(documentModel, updateManager, selectedN
             )
           )
         );
-        updateManager.delete(selectedNodeId);
+        documentModel.delete(selectedNodeId);
         if (wasOnlyChild) {
-          updateManager.delete(selectedSection.get('id'));
+          documentModel.delete(selectedSection.get('id'));
         }
         return [`${prevSection.get('id')}-${lines.size - 1}`, lastLine.length];
       }
@@ -74,7 +74,7 @@ export function handleBackspaceParagraph(documentModel, updateManager, selectedN
   return [prevSibling.get('id'), prevSibling.get('content').length];
 }
 
-export function handleEnterParagraph(documentModel, updateManager, selectedNodeId, contentLeft, contentRight) {
-  updateManager.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
+export function handleEnterParagraph(documentModel, selectedNodeId, contentLeft, contentRight) {
+  documentModel.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
   return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P, contentRight);
 }
