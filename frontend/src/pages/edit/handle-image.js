@@ -1,9 +1,9 @@
 import { NODE_TYPE_SECTION_IMAGE } from '../../common/constants';
 
-export function insertPhoto(editPipeline, selectedNodeId) {
-  const selectedSectionId = editPipeline.getSection(selectedNodeId).get('id');
-  editPipeline.splitSection(selectedSectionId, selectedNodeId);
-  const newSectionId = editPipeline.insertSectionAfter(
+export function insertPhoto(documentModel, selectedNodeId) {
+  const selectedSectionId = documentModel.getSection(selectedNodeId).get('id');
+  documentModel.splitSection(selectedSectionId, selectedNodeId);
+  const newSectionId = documentModel.insertSectionAfter(
     selectedSectionId,
     NODE_TYPE_SECTION_IMAGE,
   );

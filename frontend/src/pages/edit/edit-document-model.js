@@ -16,8 +16,6 @@ import {
   NODE_TYPE_OL,
   NODE_TYPE_PRE,
   ROOT_NODE_PARENT_ID,
-  NODE_ACTION_UPDATE,
-  NODE_ACTION_DELETE,
 } from '../../common/constants';
 import {
   cleanText,
@@ -30,10 +28,13 @@ export default class EditDocumentModel {
   rootId;
   infiniteLoopCount = 0;
   nodesByParentId = Map();
-  nodeUpdates = Map(); // keyed off of nodeId to avoid duplication TODO: add a debounced save timer per element
   
-  init(post, jsonData = null) {
+  init(post, updateManager, jsonData = null) {
     this.post = Immutable.fromJS(post);
+    // TODO: ideally this documentModel class doesn't have to know about the updateManager.
+    // But, it's nice to make one call from the consumer (edit.jsx + helpers) that handles the documentModel
+    // and the updateManager behind the scenes, so that orchestration would have to move either out into edit.jsx or into another helper class
+    this.updateManager = updateManager;
     if (jsonData) {
       this.nodesByParentId = Immutable.fromJS(jsonData);
       this.root = this.getFirstChild(ROOT_NODE_PARENT_ID);
@@ -41,7 +42,6 @@ export default class EditDocumentModel {
     } else {
       this.root = getMapWithId({ type: NODE_TYPE_ROOT, parent_id: ROOT_NODE_PARENT_ID, position: 0 });
       this.rootId = this.root.get('id');
-      this.nodeUpdates = this.nodeUpdates.set(this.rootId, Map({ action: NODE_ACTION_UPDATE }));
       this.nodesByParentId = this.nodesByParentId.set(ROOT_NODE_PARENT_ID, List([this.root]));
     }
   }
@@ -173,58 +173,6 @@ export default class EditDocumentModel {
     ].includes(this.getNode(nodeId).get('type'))
   }
   
-  canHaveChildren(nodeId) {}
-  
-  stageNodeUpdate(nodeId) {
-    if (nodeId === null || nodeId === 'null') {
-      console.error('stageNodeUpdate - trying to update null');
-      return;
-    }
-    if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE) {
-      console.warn('stageNodeUpdate - updating a deleted node');
-    }
-    console.info('stageNodeUpdate ', nodeId);
-    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id') }));
-  }
-  
-  stageNodeDelete(nodeId) {
-    if (nodeId === null || nodeId === 'null') {
-      console.error('stageNodeDelete - trying to update null');
-      return;
-    }
-    if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE) {
-      console.warn('stageNodeDelete - deleting an updated node');
-    }
-    console.info('stageNodeDelete ', nodeId);
-    this.nodeUpdates = this.nodeUpdates.set(nodeId, Map({ action: NODE_ACTION_DELETE, post_id: this.post.get('id') }));
-  }
-  
-  nodeHasBeenStagedForDelete(searchNodeId) {
-    return !!this.nodeUpdates.find((update, nodeId) => nodeId === searchNodeId && update.get('action') === NODE_ACTION_DELETE)
-  }
-  
-  addPostIdToUpdates(postId) {
-    this.nodeUpdates = this.nodeUpdates.map(update => update.set('post_id', postId));
-  }
-  
-  updates() {
-    return Object.entries(
-      this.nodeUpdates
-      // don't send bad updates
-        .filterNot( (update, nodeId) => nodeId === 'null' || !nodeId || (update.get('action') === NODE_ACTION_UPDATE && this.getNode(nodeId).size === 0))
-        // don't look for deleted nodes...
-        .map((update, nodeId) => update.get('action') === NODE_ACTION_DELETE ? update : update.set('node', this.getNode(nodeId)))
-        .toJS()
-    );
-  }
-  
-  clearUpdates() {
-    if (this.nodeUpdates.size > 0) {
-      console.info('clearUpdates - clearing non-empty update pipeline', this.nodeUpdates);
-    }
-    this.nodeUpdates = Map();
-  }
-  
   insertSectionAfter(sectionId, type, meta = Map()) {
     // parent must be root
     const sections = this.nodesByParentId.get(this.rootId, List());
@@ -329,7 +277,7 @@ export default class EditDocumentModel {
       content,
       meta: meta || Map(),
     });
-    this.stageNodeUpdate(newNode.get('id'));
+    this.updateManager.stageNodeUpdate(newNode.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
       .insert(newNode.get('position'), newNode)
     );
@@ -343,7 +291,7 @@ export default class EditDocumentModel {
     const parentId = this.getParent(node.get('id')).get('id');
     const siblings = this.nodesByParentId.get(parentId);
     const nodeIdx = siblings.findIndex(n => n.get('id') === node.get('id'));
-    this.stageNodeUpdate(node.get('id'));
+    this.updateManager.stageNodeUpdate(node.get('id'));
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.set(nodeIdx, node))
   }
   
@@ -356,12 +304,12 @@ export default class EditDocumentModel {
       return;
     }
     // check if node is already deleted
-    if (this.nodeHasBeenStagedForDelete(nodeId)) {
+    if (this.updateManager.nodeHasBeenStagedForDelete(nodeId)) {
       console.info('edit pipeline - already deleted ', nodeId);
       return;
     }
     // mark this node deleted
-    this.stageNodeDelete(nodeId);
+    this.updateManager.stageNodeDelete(nodeId);
     const parentId = this.getParent(nodeId).get('id');
     const siblings = this.nodesByParentId.get(parentId);
     // filter this node out of its parent list
@@ -393,7 +341,7 @@ export default class EditDocumentModel {
     // since positions have changed, update all nodes for this parent
     // TODO: make this smarter, maybe it's worth it
     this.nodesByParentId.get(parentId, List()).forEach(node => {
-      this.stageNodeUpdate(node.get('id'));
+      this.updateManager.stageNodeUpdate(node.get('id'));
     });
   }
   

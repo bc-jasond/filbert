@@ -2,13 +2,13 @@ import React from 'react';
 import { List, Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
-import EditDocumentModel from './edit-document-model';
 import {
   apiGet,
   apiPost,
 } from '../../common/fetch';
 import {
-  cleanText, cleanTextOrZeroLengthPlaceholder,
+  cleanText,
+  cleanTextOrZeroLengthPlaceholder,
 } from '../../common/utils';
 import {
   getRange,
@@ -24,7 +24,6 @@ import {
   NODE_TYPE_SECTION_H1,
   NODE_TYPE_SECTION_H2,
   NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_IMAGE,
@@ -36,17 +35,40 @@ import {
   NODE_TYPE_ROOT,
   NODE_TYPE_P,
   NODE_TYPE_OL,
-  NODE_TYPE_LI, ESC_KEY, NODE_TYPE_PRE,
+  NODE_TYPE_LI,
+  ESC_KEY,
+  NODE_TYPE_PRE,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
-import { handleBackspaceCode, handleDomSyncCode, handleEnterCode, insertCodeSection } from './handle-code';
+import EditDocumentModel from './edit-document-model';
+import EditUpdateManager from './edit-update-manager';
+
+import {
+  handleBackspaceCode,
+  handleDomSyncCode,
+  handleEnterCode,
+  insertCodeSection
+} from './handle-code';
 import { insertPhoto } from './handle-image';
-import { handleBackspaceList, handleEnterList, insertList } from './handle-list';
-import { handleBackspaceParagraph, handleEnterParagraph } from './handle-paragraph';
+import {
+  handleBackspaceList,
+  handleEnterList,
+  insertList
+} from './handle-list';
+import {
+  handleBackspaceParagraph,
+  handleEnterParagraph
+} from './handle-paragraph';
 import { insertQuote } from './handle-quote';
 import { insertSpacer } from './handle-spacer';
-import { handleEnterTitle, handleBackspaceTitle, insertH1, insertH2 } from './handle-title';
+import {
+  handleEnterTitle,
+  handleBackspaceTitle,
+  insertH1,
+  insertH2
+} from './handle-title';
+
 import InsertSectionMenu from './insert-section-menu';
 import EditSectionForm from './edit-section-form';
 import FormatSelectionMenu from './format-selection-menu';
@@ -87,17 +109,18 @@ export default class EditPost extends React.Component {
     }
   }
   
-  editPipeline = new EditDocumentModel();
+  documentModel = new EditDocumentModel();
+  updateManager = new EditUpdateManager();
   commitTimeoutId;
   cancelledEvent; // to coordinate noops between event types keydown, keyup
   
   saveContentBatch = async () => {
     try {
-      const updated = this.editPipeline.updates();
+      const updated = this.updateManager.updates(this.documentModel);
       if (updated.length === 0) return;
       console.info('Save Batch', updated);
       const result = await apiPost('/content', updated);
-      this.editPipeline.clearUpdates();
+      this.updateManager.clearUpdates();
       console.info('Save Batch result', result);
     } catch (err) {
       console.error('Content Batch Update Error: ', err);
@@ -111,11 +134,13 @@ export default class EditPost extends React.Component {
   
   newPost() {
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
-    this.editPipeline.init(postPlaceholder);
-    const focusNodeId = this.editPipeline.insertSection(NODE_TYPE_SECTION_H1, 0);
+    this.updateManager.init(postPlaceholder);
+    this.documentModel.init(postPlaceholder, this.updateManager);
+    this.updateManager.stageNodeUpdate(this.documentModel.rootId);
+    const focusNodeId = this.documentModel.insertSection(NODE_TYPE_SECTION_H1, 0);
     this.setState({
-      root: this.editPipeline.nodesByParentId.get(ROOT_NODE_PARENT_ID).first(),
-      nodesByParentId: this.editPipeline.nodesByParentId,
+      root: this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID).first(),
+      nodesByParentId: this.documentModel.nodesByParentId,
     }, () => {
       setCaret(focusNodeId);
     });
@@ -128,7 +153,7 @@ export default class EditPost extends React.Component {
     // POST to /post
     const { postId } = await apiPost('/post', { title, canonical });
     // update post id for all updates
-    this.editPipeline.addPostIdToUpdates(postId);
+    this.updateManager.addPostIdToUpdates(postId);
     await this.saveContentBatch();
     this.setState({ shouldRedirectWithId: postId })
   }
@@ -136,14 +161,16 @@ export default class EditPost extends React.Component {
   loadPost = async () => {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
-      this.editPipeline.init(post, contentNodes);
+      this.updateManager.init(post);
+      this.documentModel.init(post, this.updateManager, contentNodes);
+      const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
       this.setState({
-        root: this.editPipeline.root,
-        nodesByParentId: this.editPipeline.nodesByParentId,
+        root: this.documentModel.root,
+        nodesByParentId: this.documentModel.nodesByParentId,
         shouldShow404: false
       }, () => {
-        const focusNodeId = this.editPipeline.getNextFocusNodeId(this.editPipeline.rootId);
-        setCaret(focusNodeId, -1, true)
+        const focusNodeId = this.documentModel.getNextFocusNodeId(this.documentModel.rootId);
+        setCaret(focusNodeId, -1, true);
         this.manageInsertMenu();
         window.scrollTo(0, 0);
       })
@@ -165,7 +192,7 @@ export default class EditPost extends React.Component {
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
       this.setState({
-        nodesByParentId: this.editPipeline.nodesByParentId,
+        nodesByParentId: this.documentModel.nodesByParentId,
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,
@@ -227,20 +254,20 @@ export default class EditPost extends React.Component {
     let caretOffset;
     switch (selectedNodeType) {
       case NODE_TYPE_P: {
-        [focusNodeId, caretOffset] = handleBackspaceParagraph(this.editPipeline, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceParagraph(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_PRE: {
-        [focusNodeId, caretOffset] = handleBackspaceCode(this.editPipeline, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceCode(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_LI: {
-        [focusNodeId, caretOffset] = handleBackspaceList(this.editPipeline, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceList(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_H1:
       case NODE_TYPE_SECTION_H2: {
-        [focusNodeId, caretOffset] = handleBackspaceTitle(this.editPipeline, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceTitle(this.documentModel, selectedNodeId);
         break;
       }
     }
@@ -281,20 +308,20 @@ export default class EditPost extends React.Component {
     
     switch (selectedNodeType) {
       case NODE_TYPE_PRE: {
-        focusNodeId = handleEnterCode(this.editPipeline, selectedNode, contentLeft, contentRight);
+        focusNodeId = handleEnterCode(this.documentModel, selectedNode, contentLeft, contentRight);
         break;
       }
       case NODE_TYPE_LI: {
-        focusNodeId = handleEnterList(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterList(this.documentModel, selectedNodeId, contentLeft, contentRight);
         break;
       }
       case NODE_TYPE_P: {
-        focusNodeId = handleEnterParagraph(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterParagraph(this.documentModel, selectedNodeId, contentLeft, contentRight);
         break;
       }
       case NODE_TYPE_SECTION_H1:
       case NODE_TYPE_SECTION_H2: {
-        focusNodeId = handleEnterTitle(this.editPipeline, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterTitle(this.documentModel, selectedNodeId, contentLeft, contentRight);
         break;
       }
       default: {
@@ -316,12 +343,12 @@ export default class EditPost extends React.Component {
       console.error('DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
-    const selectedNodeMap = this.editPipeline.getNode(selectedNodeId);
+    const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     const selectedNodeContent = cleanText(selectedNode.textContent);
     if (selectedNode.tagName === 'PRE') {
-      handleDomSyncCode(this.editPipeline, selectedNodeId, selectedNodeContent);
+      handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContent);
     } else {
-      this.editPipeline.update(selectedNodeMap.set('content', selectedNodeContent));
+      this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
     }
     console.debug('DOM SYNC ', selectedNode);
     this.saveContentBatchDebounce()
@@ -337,7 +364,7 @@ export default class EditPost extends React.Component {
       return;
     }
     const selectedNodeId = getCaretNodeId();
-    const selectedNodeMap = this.editPipeline.getNode(selectedNodeId);
+    const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     if (!selectedNodeMap) {
       console.warn('CARET no node, bad selection: ', getCaretNode());
       return;
@@ -348,13 +375,13 @@ export default class EditPost extends React.Component {
       evt.preventDefault();
       const shouldFocusOnPrevious = evt.keyCode === UP_ARROW;
       const focusNodeId = shouldFocusOnPrevious
-        ? this.editPipeline.getPreviousFocusNodeId(selectedNodeId)
-        : this.editPipeline.getNextFocusNodeId(selectedNodeId);
+        ? this.documentModel.getPreviousFocusNodeId(selectedNodeId)
+        : this.documentModel.getNextFocusNodeId(selectedNodeId);
       setCaret(focusNodeId, -1, shouldFocusOnPrevious);
     } else if (selectedNodeMap.get('type') === NODE_TYPE_ROOT) {
       evt.stopPropagation();
       evt.preventDefault();
-      setCaret(this.editPipeline.getNextFocusNodeId(selectedNodeId));
+      setCaret(this.documentModel.getNextFocusNodeId(selectedNodeId));
     }
   }
   
@@ -386,10 +413,10 @@ export default class EditPost extends React.Component {
     const selectedNodeId = getCaretNodeId();
     const domLines = evt.clipboardData.getData('text/plain').split('\n');
     if (getCaretNodeType() === NODE_TYPE_SECTION_CODE) {
-      const selectedSection = this.editPipeline.getNode(selectedNodeId);
+      const selectedSection = this.documentModel.getNode(selectedNodeId);
       const meta = selectedSection.get('meta');
       
-      this.editPipeline.update(
+      this.documentModel.update(
         selectedSection.set('meta',
           meta.set('lines', List(domLines))
         )
@@ -446,31 +473,31 @@ export default class EditPost extends React.Component {
     // lists get added to content sections, keep current section
     switch (sectionType) {
       case NODE_TYPE_OL: {
-        focusNodeId = insertList(this.editPipeline, selectedNodeId);
+        focusNodeId = insertList(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_CODE: {
-        focusNodeId = insertCodeSection(this.editPipeline, selectedNodeId);
+        focusNodeId = insertCodeSection(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_SPACER: {
-        focusNodeId = insertSpacer(this.editPipeline, selectedNodeId);
+        focusNodeId = insertSpacer(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_H1: {
-        focusNodeId = insertH1(this.editPipeline, selectedNodeId);
+        focusNodeId = insertH1(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_H2: {
-        focusNodeId = insertH2(this.editPipeline, selectedNodeId);
+        focusNodeId = insertH2(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_IMAGE: {
-        focusNodeId = insertPhoto(this.editPipeline, selectedNodeId);
+        focusNodeId = insertPhoto(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_SECTION_QUOTE: {
-        focusNodeId = insertQuote(this.editPipeline, selectedNodeId);
+        focusNodeId = insertQuote(this.documentModel, selectedNodeId);
         break;
       }
       default: {
@@ -491,7 +518,7 @@ export default class EditPost extends React.Component {
   sectionEdit = (sectionId) => {
     console.log('SECTION CALLBACK ', sectionId);
     const [sectionDomNode] = document.getElementsByName(sectionId);
-    const section = this.editPipeline.getNode(sectionId);
+    const section = this.documentModel.getNode(sectionId);
     
     this.setState({
       editSectionId: sectionId,
@@ -515,14 +542,14 @@ export default class EditPost extends React.Component {
   }
   sectionSaveMeta = (sectionId) => {
     const { editSectionMeta } = this.state;
-    const section = this.editPipeline.getNode(sectionId);
-    this.editPipeline.update(section.set('meta', editSectionMeta));
+    const section = this.documentModel.getNode(sectionId);
+    this.documentModel.update(section.set('meta', editSectionMeta));
     this.commitUpdates(sectionId);
   }
   sectionDelete = (sectionId) => {
     if (confirm('Delete Section?')) {
-      const focusNodeId = this.editPipeline.getNextFocusNodeId(sectionId);
-      this.editPipeline.delete(sectionId);
+      const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
+      this.documentModel.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
   }

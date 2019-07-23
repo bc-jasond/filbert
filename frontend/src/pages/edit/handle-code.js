@@ -7,12 +7,12 @@ import {
 } from '../../common/constants';
 import { cleanText } from '../../common/utils';
 
-export function handleBackspaceCode(editPipeline, selectedNodeId) {
+export function handleBackspaceCode(documentModel, selectedNodeId) {
   const [selectedSectionId, idx] = selectedNodeId.split('-');
   const lineIdx = parseInt(idx, 10);
-  let prevSection = editPipeline.getPrevSibling(selectedSectionId);
-  let prevFocusNodeId = editPipeline.getPreviousFocusNodeId(selectedSectionId);
-  const selectedSection = editPipeline.getNode(selectedSectionId);
+  let prevSection = documentModel.getPrevSibling(selectedSectionId);
+  let prevFocusNodeId = documentModel.getPreviousFocusNodeId(selectedSectionId);
+  const selectedSection = documentModel.getNode(selectedSectionId);
   const meta = selectedSection.get('meta', Map());
   const lines = meta.get('lines', List());
   const lineContent = cleanText(lines.get(lineIdx, ''));
@@ -21,21 +21,21 @@ export function handleBackspaceCode(editPipeline, selectedNodeId) {
   // delete the previous section?  Currently, only if CODE SECTION is empty and previous is a SPACER
   if (lines.size === 1 && lineContent.length === 0 && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
     const spacerId = prevSection.get('id');
-    prevFocusNodeId = editPipeline.getPreviousFocusNodeId(spacerId);
-    editPipeline.delete(spacerId);
+    prevFocusNodeId = documentModel.getPreviousFocusNodeId(spacerId);
+    documentModel.delete(spacerId);
   }
   if (lines.size === 1 && lineContent.length === 0) {
     // delete CODE section - merge 2 CONTENT sections?
-    prevSection = editPipeline.getPrevSibling(selectedSectionId);
-    const nextSection = editPipeline.getNextSibling(selectedSectionId);
-    editPipeline.delete(selectedSectionId);
+    prevSection = documentModel.getPrevSibling(selectedSectionId);
+    const nextSection = documentModel.getNextSibling(selectedSectionId);
+    documentModel.delete(selectedSectionId);
     if (prevSection.get('type') === NODE_TYPE_SECTION_CONTENT && nextSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
-      editPipeline.mergeSections(prevSection, nextSection);
+      documentModel.mergeSections(prevSection, nextSection);
     }
   } else if (lineIdx > 0) {
     // merge lines of code
     prevLineContent = lines.get(lineIdx - 1);
-    editPipeline.update(
+    documentModel.update(
       selectedSection.set('meta',
         meta.set('lines',
           lines
@@ -55,21 +55,21 @@ export function handleBackspaceCode(editPipeline, selectedNodeId) {
     return [`${selectedSectionId}-${lineIdx - 1}`, prevLineContent.length];
   }
   // the CODE_SECTION was deleted, focus previous section
-  return [prevFocusNodeId, editPipeline.getNode(prevFocusNodeId).get('content', '').length];
+  return [prevFocusNodeId, documentModel.getNode(prevFocusNodeId).get('content', '').length];
 }
 
-export function handleEnterCode(editPipeline, selectedNode, contentLeft, contentRight) {
+export function handleEnterCode(documentModel, selectedNode, contentLeft, contentRight) {
   const name = selectedNode.getAttribute('name');
   const [selectedSectionId, idx] = name.split('-');
   const lineIndex = parseInt(idx, 10);
-  const selectedSection = editPipeline.getNode(selectedSectionId);
+  const selectedSection = documentModel.getNode(selectedSectionId);
   const meta = selectedSection.get('meta', Map());
   let lines = meta.get('lines', List());
   
   if (cleanText(contentLeft).length === 0 && lineIndex === (lines.size - 1)) {
     if (lines.size > 1) {
       // remove last line of code - leave at least one line
-      editPipeline.update(
+      documentModel.update(
         selectedSection.set('meta',
           meta.set('lines',
             lines.pop()
@@ -78,19 +78,19 @@ export function handleEnterCode(editPipeline, selectedNode, contentLeft, content
       );
     }
     // create a P tag (and optionally a CONTENT SECTION) after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
-    const nextSibling = editPipeline.getNextSibling(selectedSectionId);
+    const nextSibling = documentModel.getNextSibling(selectedSectionId);
     let nextSiblingId;
     if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
       nextSiblingId = nextSibling.get('id');
     } else {
       // create a ContentSection
-      nextSiblingId = editPipeline.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_CONTENT);
+      nextSiblingId = documentModel.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_CONTENT);
     }
     // add to existing content section
-    return editPipeline.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
+    return documentModel.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
   }
   
-  editPipeline.update(
+  documentModel.update(
     selectedSection.set('meta',
       meta.set('lines',
         lines
@@ -104,36 +104,36 @@ export function handleEnterCode(editPipeline, selectedNode, contentLeft, content
   return `${selectedSectionId}-${lineIndex + 1}`;
 }
 
-export function handleDomSyncCode(editPipeline, selectedNodeId, selectedNodeContent) {
+export function handleDomSyncCode(documentModel, selectedNodeId, selectedNodeContent) {
   const [selectedSectionId, idx] = selectedNodeId.split('-');
   const lineIndex = parseInt(idx, 10);
-  const selectedSection = editPipeline.getNode(selectedSectionId);
+  const selectedSection = documentModel.getNode(selectedSectionId);
   const meta = selectedSection.get('meta');
   let lines = meta.get('lines');
   const currentLineContent = lines.get(lineIndex);
   if (currentLineContent === selectedNodeContent) {
     return;
   }
-  editPipeline.update(
+  documentModel.update(
     selectedSection.set('meta',
       meta.set('lines', lines.set(lineIndex, selectedNodeContent))
     )
   );
 }
 
-export function insertCodeSection(editPipeline, selectedNodeId) {
-  const selectedSectionId = editPipeline.getSection(selectedNodeId).get('id');
-  const placeholderParagraphWasOnlyChild = editPipeline.isOnlyChild(selectedNodeId);
-  if (!editPipeline.isLastChild(selectedNodeId)) {
-    editPipeline.splitSection(selectedSectionId, selectedNodeId);
+export function insertCodeSection(documentModel, selectedNodeId) {
+  const selectedSectionId = documentModel.getSection(selectedNodeId).get('id');
+  const placeholderParagraphWasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
+  if (!documentModel.isLastChild(selectedNodeId)) {
+    documentModel.splitSection(selectedSectionId, selectedNodeId);
   }
-  const newSectionId = editPipeline.insertSectionAfter(
+  const newSectionId = documentModel.insertSectionAfter(
     selectedSectionId,
     NODE_TYPE_SECTION_CODE,
   );
-  editPipeline.delete(selectedNodeId);
+  documentModel.delete(selectedNodeId);
   if (placeholderParagraphWasOnlyChild) {
-    editPipeline.delete(selectedSectionId);
+    documentModel.delete(selectedSectionId);
   }
   return newSectionId;
 }
