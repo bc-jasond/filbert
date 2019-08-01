@@ -1,6 +1,15 @@
 import * as React from 'react';
 import styled, { css } from 'styled-components';
 import { blue, darkBlue, darkGrey } from '../../common/css';
+import {
+  SELECTION_ACTION_BOLD,
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_CODE,
+  SELECTION_ACTION_STRIKETHROUGH,
+  SELECTION_ACTION_LINK,
+  SELECTION_ACTION_H1,
+  SELECTION_ACTION_H2,
+} from '../../common/constants';
 
 import IconBoldSvg from '../../../assets/bold.svg';
 import IconItalicSvg from '../../../assets/italic.svg';
@@ -19,6 +28,9 @@ const SvgIconMixin = css`
   &:hover {
     fill: ${blue};
   }
+  ${p => p.selected && `
+    fill: ${darkBlue};
+  `}
 `;
 const IconBold = styled(IconBoldSvg)`
   ${SvgIconMixin};
@@ -34,7 +46,6 @@ const IconStrikethrough = styled(IconStrikethroughSvg)`
 `;
 const IconLink = styled(IconLinkSvg)`
   ${SvgIconMixin};
-  fill: ${darkBlue};
 `;
 const IconH1 = styled(IconH1Svg)`
   ${SvgIconMixin};
@@ -94,29 +105,40 @@ export const Arrow = styled.span`
   transform: rotate(45deg) scale(.5);
 `;
 
-export default ({offsetTop, offsetLeft}) => (
+export default ({
+                  offsetTop,
+                  offsetLeft,
+                  isBold,
+                  isItalic,
+                  isCode,
+                  isStrikethrough,
+                  isLink,
+                  isH1,
+                  isH2,
+                  selectionAction,
+                }) => (
   <FormatSelectionMenu top={offsetTop} left={offsetLeft}>
-    <FormatButton>
-      <IconBold />
+    <FormatButton onClick={() => selectionAction(SELECTION_ACTION_BOLD)}>
+      <IconBold selected={isBold} />
     </FormatButton>
-    <FormatButton>
-      <IconItalic />
+    <FormatButton onClick={() => selectionAction(SELECTION_ACTION_ITALIC)}>
+      <IconItalic selected={isItalic} />
     </FormatButton>
-    <FormatButton>
-      <IconCode />
+    <FormatButton onClick={() => selectionAction(SELECTION_ACTION_CODE)}>
+      <IconCode selected={isCode} />
     </FormatButton>
-    <FormatButton>
-      <IconStrikethrough />
+    <FormatButton onClick={() => selectionAction(SELECTION_ACTION_STRIKETHROUGH)}>
+      <IconStrikethrough selected={isStrikethrough} />
     </FormatButton>
-    <FormatButton>
-      <IconLink />
+    <FormatButton onClick={() => selectionAction(SELECTION_ACTION_LINK)}>
+      <IconLink selected={isLink} />
     </FormatButton>
     <ButtonSeparator />
-    <FormatButton>
-      <IconH1 />
+    <FormatButton onClick={() => selectionAction(SELECTION_ACTION_H1)}>
+      <IconH1 selected={isH1} />
     </FormatButton>
-    <FormatButton>
-      <IconH2 />
+    <FormatButton onClick={() => selectionAction(SELECTION_ACTION_H2)}>
+      <IconH2 selected={isH2} />
     </FormatButton>
     <PointClip>
       <Arrow />

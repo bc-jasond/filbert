@@ -45,6 +45,14 @@ export const DOWN_ARROW = 40;
 export const NODE_ACTION_INSERT = 'insert';
 export const NODE_ACTION_UPDATE = 'update';
 export const NODE_ACTION_DELETE = 'delete';
+// selection actions
+export const SELECTION_ACTION_BOLD = 'selection-bold';
+export const SELECTION_ACTION_ITALIC = 'selection-italic';
+export const SELECTION_ACTION_CODE = 'selection-code';
+export const SELECTION_ACTION_STRIKETHROUGH = 'selection-strikethrough';
+export const SELECTION_ACTION_LINK = 'selection-link';
+export const SELECTION_ACTION_H1 = 'selection-h1';
+export const SELECTION_ACTION_H2 = 'selection-h2';
 
 // ENV
 export const API_URL = process.env.API_URL;

@@ -561,18 +561,32 @@ export default class EditPost extends React.Component {
     if (!range || range.collapsed || !selectedNode || isEscKey) {
       this.setState({
         formatSelectionNodeId: null,
+        formatSelectionModel: Map(),
         formatSelectionMenuTopOffset: 0,
         formatSelectionMenuLeftOffset: 0,
+        formatSelectionStart: 0,
+        formatSelectionEnd: 0,
       })
       return;
     }
     console.info('SELECTION: ', range, range.getBoundingClientRect());
     const rect = range.getBoundingClientRect();
+    const selectedNodeId = getCaretNodeId();
+    const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
+    const selections = selectedNodeModel.get('meta', Map()).get('selections', Map())
+    //const
     this.setState({
-      formatSelectionNodeId: getCaretNodeId(),
+      formatSelectionNodeId: selectedNodeId,
+      formatSelectionModel: Map(),
       formatSelectionMenuTopOffset: selectedNode.offsetTop,
       formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2,
+      formatSelectionStart: range.startOffset,
+      formatSelectionEnd: range.endOffset,
     });
+  }
+  
+  handleSelectionAction = (action, nodeId, start, end) => {
+    console.info('HANDLE SELECTION ACTION: ', action, nodeId, start, end);
   }
   
   render() {
@@ -593,6 +607,8 @@ export default class EditPost extends React.Component {
       formatSelectionNodeId,
       formatSelectionMenuTopOffset,
       formatSelectionMenuLeftOffset,
+      formatSelectionStart,
+      formatSelectionEnd,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
@@ -624,9 +640,20 @@ export default class EditPost extends React.Component {
           close={this.sectionEditClose}
         />)}
         {formatSelectionNodeId && (<FormatSelectionMenu
-          formatSelectionNodeId={formatSelectionNodeId}
           offsetTop={formatSelectionMenuTopOffset}
           offsetLeft={formatSelectionMenuLeftOffset}
+          isBold={false}
+          isItalic={false}
+          isCode={false}
+          isStrikethrough={false}
+          isLink={false}
+          isH1={false}
+          isH2={false}
+          selectionAction={(action) => this.handleSelectionAction(
+            action,
+            formatSelectionNodeId,
+            formatSelectionStart,
+            formatSelectionEnd)}
         />)}
       </React.Fragment>
     );
