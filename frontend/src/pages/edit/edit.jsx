@@ -68,6 +68,13 @@ import {
   insertH1,
   insertH2
 } from './handle-title';
+import {
+  getSelection,
+  createSelection,
+  mergeSelections,
+  adjustSelectionsOffsets,
+  mergeSelectionsWithSameFormats,
+} from './edit-selection-helpers';
 
 import InsertSectionMenu from './insert-section-menu';
 import EditSectionForm from './edit-section-form';
@@ -93,7 +100,8 @@ export default class EditPost extends React.Component {
       editSectionMeta: Map(),
       editSectionMetaFormTopOffset: 0,
       editSectionMetaFormLeftOffset: 0,
-      formatSelectionNodeId: null,
+      formatSelectionNode: Map(),
+      formatSelectionModel: Map(),
     }
   }
   
@@ -196,7 +204,8 @@ export default class EditPost extends React.Component {
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,
-        formatSelectionNodeId: null,
+        formatSelectionNode: Map(),
+        formatSelectionModel: Map(),
       }, () => {
         setCaret(focusNodeId, offset, shouldFocusLastChild);
         this.manageInsertMenu();
@@ -560,7 +569,7 @@ export default class EditPost extends React.Component {
     const selectedNode = getCaretNode();
     if (!range || range.collapsed || !selectedNode || isEscKey) {
       this.setState({
-        formatSelectionNodeId: null,
+        formatSelectionNode: Map(),
         formatSelectionModel: Map(),
         formatSelectionMenuTopOffset: 0,
         formatSelectionMenuLeftOffset: 0,
@@ -576,8 +585,8 @@ export default class EditPost extends React.Component {
     const selections = selectedNodeModel.get('meta', Map()).get('selections', Map())
     //const
     this.setState({
-      formatSelectionNodeId: selectedNodeId,
-      formatSelectionModel: Map(),
+      formatSelectionNode: selectedNodeModel,
+      formatSelectionModel: getSelection(selections, range.startOffset, range.endOffset),
       formatSelectionMenuTopOffset: selectedNode.offsetTop,
       formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2,
       formatSelectionStart: range.startOffset,
@@ -585,7 +594,8 @@ export default class EditPost extends React.Component {
     });
   }
   
-  handleSelectionAction = (action, nodeId, start, end) => {
+  handleSelectionAction = (action, nodeModel, start, end) => {
+    const nodeId = nodeModel.get('id');
     console.info('HANDLE SELECTION ACTION: ', action, nodeId, start, end);
   }
   
@@ -604,11 +614,12 @@ export default class EditPost extends React.Component {
       editSectionMeta,
       editSectionMetaFormTopOffset,
       editSectionMetaFormLeftOffset,
-      formatSelectionNodeId,
+      formatSelectionNode,
       formatSelectionMenuTopOffset,
       formatSelectionMenuLeftOffset,
       formatSelectionStart,
       formatSelectionEnd,
+      formatSelectionModel,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
@@ -639,19 +650,14 @@ export default class EditPost extends React.Component {
           sectionDelete={this.sectionDelete}
           close={this.sectionEditClose}
         />)}
-        {formatSelectionNodeId && (<FormatSelectionMenu
+        {formatSelectionNode.get('id') && (<FormatSelectionMenu
           offsetTop={formatSelectionMenuTopOffset}
           offsetLeft={formatSelectionMenuLeftOffset}
-          isBold={false}
-          isItalic={false}
-          isCode={false}
-          isStrikethrough={false}
-          isLink={false}
-          isH1={false}
-          isH2={false}
+          nodeModel={formatSelectionNode}
+          selectionModel={formatSelectionModel}
           selectionAction={(action) => this.handleSelectionAction(
             action,
-            formatSelectionNodeId,
+            formatSelectionNode,
             formatSelectionStart,
             formatSelectionEnd)}
         />)}

@@ -49,6 +49,7 @@ export const NODE_ACTION_DELETE = 'delete';
 export const SELECTION_ACTION_BOLD = 'selection-bold';
 export const SELECTION_ACTION_ITALIC = 'selection-italic';
 export const SELECTION_ACTION_CODE = 'selection-code';
+export const SELECTION_ACTION_SITEINFO = 'selection-siteinfo';
 export const SELECTION_ACTION_STRIKETHROUGH = 'selection-strikethrough';
 export const SELECTION_ACTION_LINK = 'selection-link';
 export const SELECTION_ACTION_H1 = 'selection-h1';

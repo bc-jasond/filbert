@@ -1,3 +1,9 @@
+import { Map } from 'immutable';
+
+export function getSelection(selections, start, end) {
+  return Map()
+}
+
 /**
  * creating a selection:
  * if first selection in paragraph:

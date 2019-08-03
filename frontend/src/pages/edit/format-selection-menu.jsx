@@ -5,15 +5,17 @@ import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_CODE,
+  SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_H1,
-  SELECTION_ACTION_H2,
+  SELECTION_ACTION_H2, NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_H2,
 } from '../../common/constants';
 
 import IconBoldSvg from '../../../assets/bold.svg';
 import IconItalicSvg from '../../../assets/italic.svg';
 import IconCodeSvg from '../../../assets/code.svg';
+import IconInfoSvg from '../../../assets/info.svg';
 import IconStrikethroughSvg from '../../../assets/strikethrough.svg';
 import IconLinkSvg from '../../../assets/link.svg';
 import IconH1Svg from '../../../assets/h1.svg';
@@ -41,6 +43,9 @@ const IconItalic = styled(IconItalicSvg)`
 const IconCode = styled(IconCodeSvg)`
   ${SvgIconMixin};
 `;
+const IconSiteinfo = styled(IconInfoSvg)`
+  ${SvgIconMixin};
+`;
 const IconStrikethrough = styled(IconStrikethroughSvg)`
   ${SvgIconMixin};
 `;
@@ -57,7 +62,7 @@ const IconH2 = styled(IconH2Svg)`
 export const FormatSelectionMenu = styled.div`
   position: absolute;
   top: ${p => p.top - 50}px;
-  left: ${p => p.left - 146}px; // 146 is half the width of the menu
+  left: ${p => p.left - 165}px; // 165 is half the width of the menu
   z-index: 11;
   background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
   background-repeat: repeat-x;
@@ -108,37 +113,35 @@ export const Arrow = styled.span`
 export default ({
                   offsetTop,
                   offsetLeft,
-                  isBold,
-                  isItalic,
-                  isCode,
-                  isStrikethrough,
-                  isLink,
-                  isH1,
-                  isH2,
+                  nodeModel,
+                  selectionModel,
                   selectionAction,
                 }) => (
   <FormatSelectionMenu top={offsetTop} left={offsetLeft}>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_BOLD)}>
-      <IconBold selected={isBold} />
+      <IconBold selected={selectionModel.get('isBold')} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_ITALIC)}>
-      <IconItalic selected={isItalic} />
+      <IconItalic selected={selectionModel.get('isItalic')} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_CODE)}>
-      <IconCode selected={isCode} />
+      <IconCode selected={selectionModel.get('isCode')} />
+    </FormatButton>
+    <FormatButton onClick={() => selectionAction(SELECTION_ACTION_SITEINFO)}>
+      <IconSiteinfo selected={selectionModel.get('isSiteinfo')} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_STRIKETHROUGH)}>
-      <IconStrikethrough selected={isStrikethrough} />
+      <IconStrikethrough selected={selectionModel.get('isStrikethrough')} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_LINK)}>
-      <IconLink selected={isLink} />
+      <IconLink selected={selectionModel.get('isLink')} />
     </FormatButton>
     <ButtonSeparator />
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_H1)}>
-      <IconH1 selected={isH1} />
+      <IconH1 selected={nodeModel.get('type') === NODE_TYPE_SECTION_H1} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_H2)}>
-      <IconH2 selected={isH2} />
+      <IconH2 selected={nodeModel.get('type') === NODE_TYPE_SECTION_H2} />
     </FormatButton>
     <PointClip>
       <Arrow />
