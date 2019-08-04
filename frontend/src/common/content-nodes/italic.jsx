@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ItalicText,
 } from '../shared-styled-components';
+import { SELECTION_ACTION_ITALIC } from '../constants';
 
 export default class ItalicNode extends React.PureComponent {
   constructor(props) {
@@ -13,7 +14,7 @@ export default class ItalicNode extends React.PureComponent {
       selection,
       children,
     } = this.props;
-    return selection.get('isItalic')
+    return selection.get(SELECTION_ACTION_ITALIC)
       ? (
         <ItalicText>{children}</ItalicText>
       ) : (

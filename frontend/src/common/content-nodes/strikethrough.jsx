@@ -2,6 +2,7 @@ import React from 'react';
 import {
   StrikeText,
 } from '../shared-styled-components';
+import { SELECTION_ACTION_STRIKETHROUGH } from '../constants';
 
 export default class StrikethroughNode extends React.PureComponent {
   constructor(props) {
@@ -13,7 +14,7 @@ export default class StrikethroughNode extends React.PureComponent {
       selection,
       children,
     } = this.props;
-    return selection.get('isStrikethrough')
+    return selection.get(SELECTION_ACTION_STRIKETHROUGH)
       ? (
         <StrikeText>{children}</StrikeText>
       ) : (

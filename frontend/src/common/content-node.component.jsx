@@ -130,8 +130,7 @@ export default class ContentNode extends React.PureComponent {
                   onClick={() => {
                     if (!isEditing) return;
                     isEditing(node.get('id'))
-                  }
-                  }
+                  }}
                   src={meta.get('url')}
                 />
               </ImagePlaceholderContainer>
@@ -225,13 +224,11 @@ export default class ContentNode extends React.PureComponent {
           if (content === undefined || content === null) {
             content = '';
           }
-          const startOffset = selection.get('start', 0);
-          const endOffset = selection.get('end', -1) === -1
-            ? content.length
-            : selection.get('end');
+          const startOffset = selection.get('start');
+          const endOffset = selection.get('end');
           return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
         };
-  
+        
         return (
           <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
             {selections.map((selection, idx) => (

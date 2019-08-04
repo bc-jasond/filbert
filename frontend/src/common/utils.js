@@ -25,11 +25,11 @@ export function getMapWithId(obj) {
 
 export function cleanTextOrZeroLengthPlaceholder(text) {
   const re = new RegExp(ZERO_LENGTH_CHAR);
-  const cleaned = text.trim().replace(re, '');
+  const cleaned = text.replace(re, '');
   return cleaned.length > 0 ? cleaned : ZERO_LENGTH_CHAR;
 }
 
 export function cleanText(text) {
   const re = new RegExp(ZERO_LENGTH_CHAR);
-  return text.trim().replace(re, '');
+  return text.replace(re, '');
 }

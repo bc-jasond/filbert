@@ -18,6 +18,7 @@ import {
   getCaretOffset,
   getFirstHeadingContent,
   setCaret,
+  getOffsetInParentContent,
 } from '../../common/dom';
 
 import {
@@ -37,7 +38,7 @@ import {
   NODE_TYPE_OL,
   NODE_TYPE_LI,
   ESC_KEY,
-  NODE_TYPE_PRE,
+  NODE_TYPE_PRE, SELECTION_ACTION_H1, SELECTION_ACTION_H2,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -70,10 +71,7 @@ import {
 } from './handle-title';
 import {
   getSelection,
-  createSelection,
-  mergeSelections,
-  adjustSelectionsOffsets,
-  mergeSelectionsWithSameFormats,
+  upsertSelection,
 } from './edit-selection-helpers';
 
 import InsertSectionMenu from './insert-section-menu';
@@ -573,30 +571,56 @@ export default class EditPost extends React.Component {
         formatSelectionModel: Map(),
         formatSelectionMenuTopOffset: 0,
         formatSelectionMenuLeftOffset: 0,
-        formatSelectionStart: 0,
-        formatSelectionEnd: 0,
       })
       return;
     }
-    console.info('SELECTION: ', range, range.getBoundingClientRect());
+    const [startOffset, endOffset] = getOffsetInParentContent();
+    console.info('SELECTION: ', startOffset, endOffset, range, range.getBoundingClientRect());
+    
     const rect = range.getBoundingClientRect();
     const selectedNodeId = getCaretNodeId();
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
-    const selections = selectedNodeModel.get('meta', Map()).get('selections', Map())
+    const selections = selectedNodeModel
+      .get('meta', Map())
+      .get('selections', List());
     //const
     this.setState({
       formatSelectionNode: selectedNodeModel,
-      formatSelectionModel: getSelection(selections, range.startOffset, range.endOffset),
+      formatSelectionModel: getSelection(selections, startOffset, endOffset),
       formatSelectionMenuTopOffset: selectedNode.offsetTop,
       formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2,
-      formatSelectionStart: range.startOffset,
-      formatSelectionEnd: range.endOffset,
     });
   }
   
-  handleSelectionAction = (action, nodeModel, start, end) => {
-    const nodeId = nodeModel.get('id');
-    console.info('HANDLE SELECTION ACTION: ', action, nodeId, start, end);
+  handleSelectionAction = (action) => {
+    const {
+      formatSelectionModel,
+      formatSelectionNode,
+    } = this.state;
+    const previousActionValue = formatSelectionModel.get(action, false);
+    const meta = formatSelectionNode.get('meta', Map());
+    const selections = meta.get('selections', List());
+    
+    console.info('HANDLE SELECTION ACTION: ', action, formatSelectionModel.toJS());
+    
+    if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
+      return; // TODO
+    }
+    
+    this.documentModel.update(
+      formatSelectionNode.set(
+        'meta',
+        meta.set(
+          'selections',
+          upsertSelection(
+            selections,
+            formatSelectionModel.set(action, !previousActionValue),
+            formatSelectionNode.get('content', '').length
+          )
+        )
+      )
+    );
+    this.commitUpdates()
   }
   
   render() {
@@ -617,8 +641,6 @@ export default class EditPost extends React.Component {
       formatSelectionNode,
       formatSelectionMenuTopOffset,
       formatSelectionMenuLeftOffset,
-      formatSelectionStart,
-      formatSelectionEnd,
       formatSelectionModel,
     } = this.state;
     
@@ -655,11 +677,7 @@ export default class EditPost extends React.Component {
           offsetLeft={formatSelectionMenuLeftOffset}
           nodeModel={formatSelectionNode}
           selectionModel={formatSelectionModel}
-          selectionAction={(action) => this.handleSelectionAction(
-            action,
-            formatSelectionNode,
-            formatSelectionStart,
-            formatSelectionEnd)}
+          selectionAction={this.handleSelectionAction}
         />)}
       </React.Fragment>
     );

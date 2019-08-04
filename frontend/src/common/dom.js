@@ -54,6 +54,42 @@ export function getRange() {
   return sel.getRangeAt(0);
 }
 
+/**
+ * Once formatting is applied to a paragraph, subsequent selections could yield a child formatting element <em>, <strong>, etc. as the Range commonAncestorContainer
+ * But, we need to process selections based on the offset within the parent (AKA first ancestor with a 'name' attribute) content
+ */
+export function getOffsetInParentContent() {
+  const range = getRange();
+  if (!range || range.collapsed) {
+    return;
+  }
+  const rangeStartOffset = range.startOffset;
+  let rangeEndOffset = range.endOffset;
+  const selectedText = window.getSelection().toString();
+  const paragraph = getCaretNode();
+  // range offsets could be relative to a child of the paragraph - but, we need them to be offset based on the paragraph itself
+  let rangeNode = range.commonAncestorContainer;
+  // if the commonAncestorContainer is the paragraph, multiple childNodes have been selected
+  if (rangeNode === paragraph) {
+    rangeNode = range.startContainer;
+    // use selectedText length here because endOffset will be relative to another child of paragraph
+    rangeEndOffset = rangeStartOffset + selectedText.length;
+  }
+  while (rangeNode.parentElement !== paragraph) {
+    // find the first immediate child of the paragraph - we could be nested inside several formatting tags at this point
+    rangeNode = rangeNode.parentElement;
+  }
+  // find the index of the immediate child
+  const rangeIdx = Array.prototype.indexOf.call(paragraph.childNodes, rangeNode);
+  let offset = 0;
+  for (let i = 0; i < rangeIdx; i++) {
+    // for each child of the paragraph that precedes our current range - add the length of it's content to the offset
+    offset += paragraph.childNodes[i].textContent.length;
+  }
+  // now we'll have the correct positioning of the selected text inside the paragraph (the node that holds the 'content' saved to the DB) text as a whole no matter what formatting tags have been applied
+  return [rangeStartOffset + offset, rangeEndOffset + offset];
+}
+
 export function getCaretNode() {
   const range = getRange();
   if (!range) {
@@ -61,7 +97,11 @@ export function getCaretNode() {
   }
   let { commonAncestorContainer } = range;
   if (commonAncestorContainer.nodeType > 1) {
-    return commonAncestorContainer.parentElement
+    let current = commonAncestorContainer.parentElement;
+    while (!current.getAttribute('name')) {
+      current = current.parentElement;
+    }
+    return current;
   }
   if (commonAncestorContainer.dataset.type === NODE_TYPE_SECTION_CONTENT) {
     return commonAncestorContainer.lastChild;

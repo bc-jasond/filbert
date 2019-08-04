@@ -119,22 +119,22 @@ export default ({
                 }) => (
   <FormatSelectionMenu top={offsetTop} left={offsetLeft}>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_BOLD)}>
-      <IconBold selected={selectionModel.get('isBold')} />
+      <IconBold selected={selectionModel.get(SELECTION_ACTION_BOLD)} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_ITALIC)}>
-      <IconItalic selected={selectionModel.get('isItalic')} />
+      <IconItalic selected={selectionModel.get(SELECTION_ACTION_ITALIC)} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_CODE)}>
-      <IconCode selected={selectionModel.get('isCode')} />
+      <IconCode selected={selectionModel.get(SELECTION_ACTION_CODE)} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_SITEINFO)}>
-      <IconSiteinfo selected={selectionModel.get('isSiteinfo')} />
+      <IconSiteinfo selected={selectionModel.get(SELECTION_ACTION_SITEINFO)} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_STRIKETHROUGH)}>
-      <IconStrikethrough selected={selectionModel.get('isStrikethrough')} />
+      <IconStrikethrough selected={selectionModel.get(SELECTION_ACTION_STRIKETHROUGH)} />
     </FormatButton>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_LINK)}>
-      <IconLink selected={selectionModel.get('isLink')} />
+      <IconLink selected={selectionModel.get(SELECTION_ACTION_LINK)} />
     </FormatButton>
     <ButtonSeparator />
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_H1)}>

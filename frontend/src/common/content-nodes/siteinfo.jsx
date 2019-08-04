@@ -2,6 +2,7 @@ import React from 'react';
 import {
   SiteInfo,
 } from '../shared-styled-components';
+import { SELECTION_ACTION_SITEINFO } from '../constants';
 
 export default class SiteInfoNode extends React.PureComponent {
   constructor(props) {
@@ -13,7 +14,7 @@ export default class SiteInfoNode extends React.PureComponent {
       selection,
       children,
     } = this.props;
-    return selection.get('isSiteInfo')
+    return selection.get(SELECTION_ACTION_SITEINFO)
       ? (
         <SiteInfo>{children}</SiteInfo>
       ) : (

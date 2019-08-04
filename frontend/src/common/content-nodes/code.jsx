@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Code,
 } from '../shared-styled-components';
+import { SELECTION_ACTION_CODE } from '../constants';
 
 export default class CodeNode extends React.PureComponent {
   constructor(props) {
@@ -13,7 +14,7 @@ export default class CodeNode extends React.PureComponent {
       selection,
       children,
     } = this.props;
-    return selection.get('isCode')
+    return selection.get(SELECTION_ACTION_CODE)
       ? (
         <Code>{children}</Code>
       ) : (
