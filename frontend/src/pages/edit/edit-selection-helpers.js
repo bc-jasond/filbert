@@ -65,44 +65,59 @@ export function adjustSelectionsOffsets(selections, start, count) {
 
 export function applyFormatsOfOverlappingSelections(selections, current) {
   return selections
-    .filter(s => (s.get('start') >= current.get('start') && s.get('start') < current.get('end'))
-      || (s.get('end') > current.get('start') && s.get('end') < current.get('end')))
-    .reduce((acc, selection) => acc.mergeWith((oldVal, newVal) => newVal || oldVal, selection), current)
+    .filter(s =>
+      // current overlaps s to the right
+      (current.get('start') >= s.get('start') && current.get('start') <= s.get('end'))
+      // current overlaps s to the left
+      || (current.get('end') >= s.get('start') && current.get('end') <= s.get('end'))
+      // current envelops s completely
+      || (current.get('start') < s.get('start') && current.get('end') > s.get('end')))
+    .reduce((acc, selection) => acc.mergeWith(
+      (oldVal, newVal, key) => {
+        // don't blow away non-formatting related values like start or end
+        if (!key.includes('selection')) { return oldVal }
+        return newVal || oldVal
+      },
+      selection), current)
 }
 
 export function mergeOverlappingSelections(selections, newSelection) {
+  let didPushNewSelection = false;
   let newSelections = List();
   if (selections.size === 0) {
     return newSelections.push(newSelection);
   }
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
-    // section doesn't overlap - push it
-    if (current.get('start') > newSelection.get('end') || current.get('end') < newSelection.get('start')) {
+    // current selection IS newSelection
+    if (current.get('start') === newSelection.get('start') && current.get('end') === newSelection.get('end')) {
+      newSelections = newSelections.push(newSelection);
+      didPushNewSelection = true;
+      continue;
+    }
+    // current selection doesn't overlap - push it
+    if (current.get('end') <= newSelection.get('start') || current.get('start') >= newSelection.get('end')) {
       newSelections = newSelections.push(current);
       continue;
     }
-    // section split left
-    if (current.get('start') < newSelection.get('start') && current.get('end') >= newSelection.get('start')) {
+    // current selection overlaps to the left
+    if (current.get('start') < newSelection.get('start')) {
       newSelections = newSelections
         .push(current.set('end', newSelection.get('start')))
-        .push(newSelection);
-      continue;
     }
-    // section split right
-    if (current.get('start') <= newSelection.get('end') && current.get('end') > newSelection.get('end')) {
-      newSelections = newSelections.push(current.set('start', newSelection.get('end') + 1));
-      continue;
+    // push new selection
+    if (!didPushNewSelection) {
+      newSelections = newSelections.push(newSelection);
+      didPushNewSelection = true;
     }
-    // section split middle
-    if (current.get('start') < newSelection.get('start') && current.get('end') > newSelection.get('end')) {
-      newSelections = newSelections
-        .push(current.set('end', newSelection.get('start')))
-        .push(newSelection)
-        .push(current.set('start', newSelection.get('end')));
-      continue;
+    // current selection overlaps to the right
+    if (current.get('end') > newSelection.get('end')) {
+      newSelections = newSelections.push(current.set('start', newSelection.get('end')));
     }
-    // section falls completely within newSelection - skip (noop)
+    // current selection falls completely within newSelection - skip since it's styles have already been merged with `applyFormatsOfOverlappingSelections` (noop)
+    // if (current.get('start') >= newSelection.get('start') && current.get('end') <= newSelection.get('end')) {
+    //   continue;
+    // }
   }
   
   return newSelections;
@@ -140,6 +155,6 @@ export function fillEnds(selections, contentLength) {
  *   current = next
  */
 export function mergeAdjacentSelectionsWithSameFormats(selections) {
-  // TODO: this will adjust all affected selection offsets as new characters are typed/pasted in
+  
   return selections
 }

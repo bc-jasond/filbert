@@ -154,8 +154,11 @@ export const ItalicText = styled.em`
 `;
 export const StrikeText = styled.span`
   text-decoration: line-through;
+  font-family: inherit;
 `;
-export const BoldText = styled.strong``;
+export const BoldText = styled.strong`
+  font-weight: 700;
+`;
 const miniText = css`
   font-family: ${sansSerif}, sans-serif;
   font-weight: 300;
