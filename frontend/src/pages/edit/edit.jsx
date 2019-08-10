@@ -19,6 +19,7 @@ import {
   getFirstHeadingContent,
   setCaret,
   getOffsetInParentContent,
+  isControlKey,
 } from '../../common/dom';
 
 import {
@@ -28,17 +29,22 @@ import {
   NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_IMAGE,
-  ENTER_KEY,
-  BACKSPACE_KEY,
-  UP_ARROW,
+  KEYCODE_ENTER,
+  KEYCODE_BACKSPACE,
+  KEYCODE_UP_ARROW,
+  KEYCODE_DOWN_ARROW,
+  KEYCODE_LEFT_ARROW,
+  KEYCODE_RIGHT_ARROW,
+  KEYCODE_ESC,
   NEW_POST_URL_ID,
   ROOT_NODE_PARENT_ID,
   NODE_TYPE_ROOT,
   NODE_TYPE_P,
   NODE_TYPE_OL,
   NODE_TYPE_LI,
-  ESC_KEY,
-  NODE_TYPE_PRE, SELECTION_ACTION_H1, SELECTION_ACTION_H2,
+  NODE_TYPE_PRE,
+  SELECTION_ACTION_H1,
+  SELECTION_ACTION_H2, KEYCODE_DEL,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -70,6 +76,7 @@ import {
   insertH2
 } from './handle-title';
 import {
+  adjustSelectionOffsets,
   getSelection,
   upsertSelection,
 } from './edit-selection-helpers';
@@ -100,6 +107,7 @@ export default class EditPost extends React.Component {
       editSectionMetaFormLeftOffset: 0,
       formatSelectionNode: Map(),
       formatSelectionModel: Map(),
+      caretPosition: -1,
     }
   }
   
@@ -217,8 +225,8 @@ export default class EditPost extends React.Component {
     return cleaned.length > 0;
   }
   
-  handleBackspace = (evt) => {
-    if (evt.keyCode !== BACKSPACE_KEY) {
+  handleBackspace(evt) {
+    if (evt.keyCode !== KEYCODE_BACKSPACE) {
       return;
     }
     const range = getRange();
@@ -281,8 +289,8 @@ export default class EditPost extends React.Component {
     this.commitUpdates(focusNodeId, caretOffset, true);
   }
   
-  handleEnter = (evt) => {
-    if (evt.keyCode !== ENTER_KEY) {
+  handleEnter(evt) {
+    if (evt.keyCode !== KEYCODE_ENTER) {
       return;
     }
     
@@ -339,9 +347,15 @@ export default class EditPost extends React.Component {
     this.commitUpdates(focusNodeId, 0);
   }
   
-  handleSyncFromDom = () => {
-    if (this.cancelledEvent || this.props.postId === NEW_POST_URL_ID) {
+  handleSyncFromDom(evt) {
+    if (
+      // cross event type cancellation keyDown -> keyUp, etc
+      this.cancelledEvent
+      // don't send updates for control keys
+      // TODO: this should probably use a diff strategy instead of key detection
+      || isControlKey(evt.keyCode)
       // doesn't work with a 'new' post
+      || this.props.postId === NEW_POST_URL_ID) {
       return;
     }
     const selectedNode = getCaretNode();
@@ -350,18 +364,37 @@ export default class EditPost extends React.Component {
       console.error('DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
-    const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
+    let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     const selectedNodeContent = cleanText(selectedNode.textContent);
     if (selectedNode.tagName === 'PRE') {
       handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContent);
-    } else {
-      this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
+      console.debug('DOM SYNC PRE ', selectedNode);
+      this.saveContentBatchDebounce();
+      return;
     }
+    // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
+    const { caretPosition } = this.state;
+    // TODO: handle cut/paste
+    // update count: +/- 1 here because we're either addding or removing one char at a time
+    const count = [KEYCODE_BACKSPACE, KEYCODE_DEL].includes(evt.keyCode) ? -1 : 1;
+    const meta = selectedNodeMap.get('meta', Map());
+    const selections = meta.get('selections', List());
+    if (selections.size) {
+      selectedNodeMap = selectedNodeMap.set(
+        'meta',
+        meta.set(
+          'selections',
+          adjustSelectionOffsets(selections, caretPosition, count)
+        )
+      );
+    }
+    this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
+    
     console.debug('DOM SYNC ', selectedNode);
     this.saveContentBatchDebounce()
   }
   
-  handleCaret = (evt) => {
+  handleCaret(evt) {
     if (this.cancelledEvent || evt.isPropagationStopped()) {
       return;
     }
@@ -380,7 +413,7 @@ export default class EditPost extends React.Component {
     if (selectedNodeMap.get('type') === NODE_TYPE_SECTION_SPACER) {
       evt.stopPropagation();
       evt.preventDefault();
-      const shouldFocusOnPrevious = evt.keyCode === UP_ARROW;
+      const shouldFocusOnPrevious = evt.keyCode === KEYCODE_UP_ARROW;
       const focusNodeId = shouldFocusOnPrevious
         ? this.documentModel.getPreviousFocusNodeId(selectedNodeId)
         : this.documentModel.getNextFocusNodeId(selectedNodeId);
@@ -393,10 +426,9 @@ export default class EditPost extends React.Component {
   }
   
   handleKeyDown = (evt) => {
-    console.debug('KeyDown Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    console.debug('KeyDown code: ', evt.keyCode, 'Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleBackspace(evt);
     this.handleEnter(evt);
-    // this.handleCaret(evt);
   }
   
   handleKeyUp = (evt) => {
@@ -405,6 +437,7 @@ export default class EditPost extends React.Component {
     this.handleCaret(evt);
     this.manageInsertMenu(evt);
     this.manageFormatSelectionMenu(evt);
+    this.setCaretPositionInParagraph(evt);
     this.cancelledEvent = null;
   }
   
@@ -413,6 +446,7 @@ export default class EditPost extends React.Component {
     this.handleCaret(evt);
     this.manageInsertMenu();
     this.manageFormatSelectionMenu();
+    this.setCaretPositionInParagraph(evt);
   }
   
   handlePaste = (evt) => {
@@ -561,9 +595,32 @@ export default class EditPost extends React.Component {
     }
   }
   
+  setCaretPositionInParagraph(evt) {
+    // only set position on mouse clicks and arrow keys
+    if (!(evt.type === 'mouseup'
+      || (evt.type === 'keyup' && [
+        KEYCODE_UP_ARROW,
+        KEYCODE_DOWN_ARROW,
+        KEYCODE_LEFT_ARROW,
+        KEYCODE_RIGHT_ARROW
+      ].includes(evt.keyCode))
+    )) {
+      return;
+    }
+    const range = getRange();
+    const selectedNode = getCaretNode();
+    if (!range || !selectedNode) {
+      this.setState({ caretPosition: -1 });
+      return;
+    }
+    const [startOffset] = getOffsetInParentContent();
+    console.info('CARET POSITION: ', startOffset, selectedNode, range);
+    this.setState({ caretPosition: startOffset });
+  }
+  
   manageFormatSelectionMenu(evt) {
     const range = getRange();
-    const isEscKey = evt && evt.keyCode === ESC_KEY;
+    const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
     const selectedNode = getCaretNode();
     if (!range || range.collapsed || !selectedNode || isEscKey) {
       this.setState({
@@ -654,9 +711,14 @@ export default class EditPost extends React.Component {
     
     return root && (
       <React.Fragment>
-        <div onKeyDown={this.handleKeyDown} onKeyUp={this.handleKeyUp} onMouseUp={this.handleMouseUp}
-             onPaste={this.handlePaste}
-             contentEditable={true} suppressContentEditableWarning={true}>
+        <div
+          contentEditable={true}
+          suppressContentEditableWarning={true}
+          onKeyDown={this.handleKeyDown}
+          onKeyUp={this.handleKeyUp}
+          onMouseUp={this.handleMouseUp}
+          onPaste={this.handlePaste}
+        >
           <ContentNode node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
         </div>
         {shouldShowInsertMenu && (<InsertSectionMenu

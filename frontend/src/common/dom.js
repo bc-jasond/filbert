@@ -2,6 +2,35 @@ import {
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_H1,
   DOM_TEXT_NODE_TYPE_ID,
+  KEYCODE_TAB,
+  KEYCODE_SHIFT_RIGHT,
+  KEYCODE_SHIFT_OR_COMMAND_LEFT,
+  KEYCODE_COMMAND_RIGHT,
+  KEYCODE_CTRL,
+  KEYCODE_ALT,
+  KEYCODE_CAPS_LOCK,
+  KEYCODE_ESC,
+  KEYCODE_PAGE_UP,
+  KEYCODE_PAGE_DOWN,
+  KEYCODE_END,
+  KEYCODE_HOME,
+  KEYCODE_LEFT_ARROW,
+  KEYCODE_UP_ARROW,
+  KEYCODE_RIGHT_ARROW,
+  KEYCODE_DOWN_ARROW,
+  KEYCODE_F1,
+  KEYCODE_F2,
+  KEYCODE_F3,
+  KEYCODE_F4,
+  KEYCODE_F5,
+  KEYCODE_F6,
+  KEYCODE_F7,
+  KEYCODE_F8,
+  KEYCODE_F9,
+  KEYCODE_F10,
+  KEYCODE_F11,
+  KEYCODE_F12,
+  KEYCODE_PRINT_SCREEN,
 } from './constants';
 
 let infiniteLoopCount = 0;
@@ -60,7 +89,7 @@ export function getRange() {
  */
 export function getOffsetInParentContent() {
   const range = getRange();
-  if (!range || range.collapsed) {
+  if (!range) {
     return;
   }
   const rangeStartOffset = range.startOffset;
@@ -130,4 +159,38 @@ export function getCaretNodeId() {
 export function getFirstHeadingContent() {
   const [h1] = document.querySelectorAll(`[data-type='${NODE_TYPE_SECTION_H1}']`);
   return h1 ? h1.textContent : '';
+}
+
+export function isControlKey(code) {
+  return [
+    KEYCODE_TAB,
+    KEYCODE_SHIFT_RIGHT,
+    KEYCODE_SHIFT_OR_COMMAND_LEFT,
+    KEYCODE_COMMAND_RIGHT,
+    KEYCODE_ALT,
+    KEYCODE_CTRL,
+    KEYCODE_CAPS_LOCK,
+    KEYCODE_ESC,
+    KEYCODE_PAGE_UP,
+    KEYCODE_PAGE_DOWN,
+    KEYCODE_END,
+    KEYCODE_HOME,
+    KEYCODE_LEFT_ARROW,
+    KEYCODE_UP_ARROW,
+    KEYCODE_RIGHT_ARROW,
+    KEYCODE_DOWN_ARROW,
+    KEYCODE_F1,
+    KEYCODE_F2,
+    KEYCODE_F3,
+    KEYCODE_F4,
+    KEYCODE_F5,
+    KEYCODE_F6,
+    KEYCODE_F7,
+    KEYCODE_F8,
+    KEYCODE_F9,
+    KEYCODE_F10,
+    KEYCODE_F11,
+    KEYCODE_F12,
+    KEYCODE_PRINT_SCREEN,
+  ].includes(code);
 }

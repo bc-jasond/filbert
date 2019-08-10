@@ -60,8 +60,19 @@ export function upsertSelection(selections, newSelection, contentLength) {
  *   - start = oldStart += newKeyStrokesCount
  *   - end (if > -1) = oldEnd += newKeyStrokesCount
  */
-export function adjustSelectionsOffsets(selections, start, count) {
-
+export function adjustSelectionOffsets(selections, start, count) {
+  let newSelections = List();
+  for (let i = 0; i < selections.size; i++) {
+    let current = selections.get(i);
+    if (current.get('start') > start) {
+      current = current.set('start', current.get('start') + count)
+    }
+    if (current.get('end') >= start) {
+      current = current.set('end', current.get('end') + count)
+    }
+    newSelections = newSelections.push(current);
+  }
+  return newSelections;
 }
 
 export function applyFormatsOfOverlappingSelections(selections, current) {
@@ -176,6 +187,10 @@ export function mergeAdjacentSelectionsWithSameFormats(selections) {
     return List();
   }
   return newSelections;
+}
+
+export function removeEmptySelections(selections) {
+
 }
 
 function selectionsHaveDifferentFormats(left, right) {
