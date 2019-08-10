@@ -47,6 +47,7 @@ export function getSelection(selections, start, end) {
  */
 export function upsertSelection(selections, newSelection, contentLength) {
   selections = mergeOverlappingSelections(selections, newSelection);
+  // TODO: this function wouldn't be needed if there was always at least 1 selection
   selections = fillEnds(selections, contentLength);
   selections = mergeAdjacentSelectionsWithSameFormats(selections);
   return selections;
@@ -75,7 +76,9 @@ export function applyFormatsOfOverlappingSelections(selections, current) {
     .reduce((acc, selection) => acc.mergeWith(
       (oldVal, newVal, key) => {
         // don't blow away non-formatting related values like start or end
-        if (!key.includes('selection')) { return oldVal }
+        if (!key.includes('selection')) {
+          return oldVal
+        }
         return newVal || oldVal
       },
       selection), current)
@@ -155,6 +158,34 @@ export function fillEnds(selections, contentLength) {
  *   current = next
  */
 export function mergeAdjacentSelectionsWithSameFormats(selections) {
-  
-  return selections
+  let newSelections = List();
+  let current = selections.first();
+  for (let i = 1; i < selections.size; i++) {
+    const next = selections.get(i, Selection());
+    if (current === selections.last() || selectionsHaveDifferentFormats(current, next)) {
+      newSelections = newSelections.push(current);
+      current = next;
+    } else {
+      // if the formats are the same, just extend the current selection
+      current = current.set('end', next.get('end'));
+    }
+  }
+  newSelections = newSelections.push(current);
+  // if there's only one Selection and it's empty - clear it out
+  if (newSelections.size === 1 && !selectionsHaveDifferentFormats(newSelections.get(0), Selection())) {
+    return List();
+  }
+  return newSelections;
+}
+
+function selectionsHaveDifferentFormats(left, right) {
+  return [
+    SELECTION_ACTION_BOLD,
+    SELECTION_ACTION_ITALIC,
+    SELECTION_ACTION_CODE,
+    SELECTION_ACTION_STRIKETHROUGH,
+    SELECTION_ACTION_SITEINFO,
+    SELECTION_ACTION_LINK,
+    'linkUrl',
+  ].reduce((acc, key) => acc || left.get(key) !== right.get(key), false);
 }

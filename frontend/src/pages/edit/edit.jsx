@@ -607,19 +607,24 @@ export default class EditPost extends React.Component {
       return; // TODO
     }
     
-    this.documentModel.update(
-      formatSelectionNode.set(
-        'meta',
-        meta.set(
-          'selections',
-          upsertSelection(
-            selections,
-            formatSelectionModel.set(action, !previousActionValue),
-            formatSelectionNode.get('content', '').length
-          )
-        )
-      )
+    const updatedSelections = upsertSelection(
+      selections,
+      formatSelectionModel.set(action, !previousActionValue),
+      formatSelectionNode.get('content', '').length
     );
+    if (updatedSelections.size > 0) {
+      this.documentModel.update(
+        formatSelectionNode.set(
+          'meta',
+          meta.set('selections', updatedSelections)
+        )
+      );
+    } else {
+      this.documentModel.update(
+        formatSelectionNode.set('meta', Map())
+      );
+    }
+    
     this.commitUpdates()
   }
   
