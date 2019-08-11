@@ -60,10 +60,21 @@ export function upsertSelection(selections, newSelection, contentLength) {
  *   - start = oldStart += newKeyStrokesCount
  *   - end (if > -1) = oldEnd += newKeyStrokesCount
  */
-export function adjustSelectionOffsets(selections, start, count) {
+export function adjustSelectionOffsets(selections, contentLength, start, count) {
   let newSelections = List();
   for (let i = 0; i < selections.size; i++) {
     let current = selections.get(i);
+    // TODO: remove these OOB safeties?
+    if (current.get('start') >= contentLength) {
+      const lastSelection = newSelections.last();
+      newSelections = newSelections.pop();
+      newSelections = newSelections.push(lastSelection.set('end', contentLength));
+      break;
+    }
+    if (current.get('end') > contentLength) {
+      newSelections = newSelections.push(current.set('end', contentLength));
+      break;
+    }
     if (current.get('start') >= start) {
       current = current.set('start', current.get('start') + count)
     }
@@ -80,7 +91,7 @@ export function adjustSelectionOffsets(selections, start, count) {
       newSelections = newSelections.push(lastSelection.set('end', lastSelection.get('end') + 1))
     }
   }
-  console.log('ADJUST', start, count, newSelections.reduce((acc, v) => `${acc} | start: ${v.get('start')}, end: ${v.get('end')}`, ''));
+  console.log('ADJUST', contentLength, start, count, newSelections.reduce((acc, v) => `${acc} | start: ${v.get('start')}, end: ${v.get('end')}`, ''));
   return newSelections;
 }
 
@@ -196,10 +207,6 @@ export function mergeAdjacentSelectionsWithSameFormats(selections) {
     return List();
   }
   return newSelections;
-}
-
-export function removeEmptySelections(selections) {
-
 }
 
 function selectionsHaveDifferentFormats(left, right) {

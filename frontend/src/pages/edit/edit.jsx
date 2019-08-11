@@ -390,7 +390,7 @@ export default class EditPost extends React.Component {
         'meta',
         meta.set(
           'selections',
-          adjustSelectionOffsets(selections, caretPosition, count)
+          adjustSelectionOffsets(selections, selectedNodeContent.length, caretPosition, count)
         )
       );
     }
