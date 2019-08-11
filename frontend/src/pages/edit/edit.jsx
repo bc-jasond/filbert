@@ -244,6 +244,11 @@ export default class EditPost extends React.Component {
     const selectedNodeContent = cleanText(selectedNode.textContent);
     if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
       // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
+      // decrement the caretPosition!
+      const { caretPosition } = this.state;
+      if (caretPosition >= 0) {
+        this.setState({ caretPosition: caretPosition - 1 })
+      }
       return
     }
     console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
@@ -375,6 +380,7 @@ export default class EditPost extends React.Component {
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
     const { caretPosition } = this.state;
     // TODO: handle cut/paste
+    // TODO: 'Del' doesn't work at the edge of 2 selections
     // update count: +/- 1 here because we're either addding or removing one char at a time
     const count = [KEYCODE_BACKSPACE, KEYCODE_DEL].includes(evt.keyCode) ? -1 : 1;
     const meta = selectedNodeMap.get('meta', Map());
@@ -390,7 +396,7 @@ export default class EditPost extends React.Component {
     }
     this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
     
-    console.debug('DOM SYNC ', selectedNode);
+    console.log('DOM SYNC ', selectedNodeContent.length);
     this.saveContentBatchDebounce()
   }
   

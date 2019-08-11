@@ -64,14 +64,23 @@ export function adjustSelectionOffsets(selections, start, count) {
   let newSelections = List();
   for (let i = 0; i < selections.size; i++) {
     let current = selections.get(i);
-    if (current.get('start') > start) {
+    if (current.get('start') >= start) {
       current = current.set('start', current.get('start') + count)
     }
     if (current.get('end') >= start) {
       current = current.set('end', current.get('end') + count)
     }
-    newSelections = newSelections.push(current);
+    // for deleting characters: don't push empty selections
+    if (current.get('end') > current.get('start')) {
+      newSelections = newSelections.push(current);
+    } else {
+      // HACK: Assuming the user hit backspace: if we're skipping an empty selection, we've also decremented the end of the previous selection by one.  We don't want to do both, add that guy back
+      const lastSelection = newSelections.last();
+      newSelections = newSelections.pop();
+      newSelections = newSelections.push(lastSelection.set('end', lastSelection.get('end') + 1))
+    }
   }
+  console.log('ADJUST', start, count, newSelections.reduce((acc, v) => `${acc} | start: ${v.get('start')}, end: ${v.get('end')}`, ''));
   return newSelections;
 }
 
@@ -86,7 +95,7 @@ export function applyFormatsOfOverlappingSelections(selections, current) {
       || (current.get('start') < s.get('start') && current.get('end') > s.get('end')))
     .reduce((acc, selection) => acc.mergeWith(
       (oldVal, newVal, key) => {
-        // don't blow away non-formatting related values like start or end
+        // don't blow away non-formatting related values like 'start' or 'end'
         if (!key.includes('selection')) {
           return oldVal
         }
@@ -182,7 +191,7 @@ export function mergeAdjacentSelectionsWithSameFormats(selections) {
     }
   }
   newSelections = newSelections.push(current);
-  // if there's only one Selection and it's empty - clear it out
+  // SUPER PERFORMANCE OPTIMIZATION: if there's only one Selection and it's empty - clear it out
   if (newSelections.size === 1 && !selectionsHaveDifferentFormats(newSelections.get(0), Selection())) {
     return List();
   }
