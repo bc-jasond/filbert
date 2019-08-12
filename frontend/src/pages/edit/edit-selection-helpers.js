@@ -1,4 +1,4 @@
-import { Map, List, Record } from 'immutable';
+import { List, Record } from 'immutable';
 
 import {
   SELECTION_ACTION_BOLD,
@@ -180,7 +180,8 @@ export function fillEnds(selections, contentLength) {
 /**
  * current = first selection
  * for each selection
- *   next = getNextSelection(current)
+ *   next = getNextSelection
+ *   (current)
  *   if current formats === next formats
  *     merged
  *     current = merged
@@ -205,6 +206,58 @@ export function mergeAdjacentSelectionsWithSameFormats(selections) {
   // SUPER PERFORMANCE OPTIMIZATION: if there's only one Selection and it's empty - clear it out
   if (newSelections.size === 1 && !selectionsHaveDifferentFormats(newSelections.get(0), Selection())) {
     return List();
+  }
+  return newSelections;
+}
+
+export function splitSelectionsAtCaretOffset(selections, caretOffset) {
+  let left = List();
+  let right = List();
+  for (let i = 0; i < selections.size; i++) {
+    const current = selections.get(i);
+    if (current.get('end') <= caretOffset) {
+      left = left.push(current);
+      continue;
+    }
+    if (current.get('start') >= caretOffset) {
+      right = right.push(current
+        .set('start', current.get('start') - caretOffset)
+        .set('end', current.get('end') - caretOffset)
+      );
+      continue;
+    }
+    // caretOffset must be in the middle of a selection, split
+    left = left.push(current
+      .set('end', caretOffset));
+    right = right.push(current
+      .set('start', 0)
+      .set('end', current.get('end') - caretOffset)
+    );
+  }
+  return [left, right];
+}
+
+export function concatSelections(left, right) {
+  let newSelections = left.slice();
+  const leftOffset = left.last().get('end');
+  if (!selectionsHaveDifferentFormats(left.last(), right.first())) {
+    newSelections = newSelections
+      .pop()
+      .push(left
+        .last()
+        .set('end', right
+          .first()
+          .get('end') + leftOffset
+        )
+      );
+    right = right.shift();
+  }
+  for (let i = 0; i < right.size; i++) {
+    const current = right.get(i);
+    newSelections = newSelections.push(current
+      .set('start', current.get('start') + leftOffset)
+      .set('end', current.get('end') + leftOffset)
+    )
   }
   return newSelections;
 }

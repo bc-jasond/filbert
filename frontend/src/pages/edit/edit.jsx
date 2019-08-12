@@ -314,13 +314,14 @@ export default class EditPost extends React.Component {
       return;
     }
     
+    const { caretPosition } = this.state;
     const selectedNode = getCaretNode();
-    console.info('ENTER node: ', selectedNode);
+    console.info('ENTER node: ', selectedNode, caretPosition);
     const selectedNodeType = getCaretNodeType();
     // split selectedNodeContent at caret
     const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
-    const contentLeft = selectedNodeContent.substring(0, range.endOffset);
-    const contentRight = selectedNodeContent.substring(range.endOffset);
+    const contentLeft = selectedNodeContent.substring(0, caretPosition);
+    const contentRight = selectedNodeContent.substring(caretPosition);
     console.info('ENTER node content left: ', contentLeft);
     console.info('ENTER node content right: ', contentRight);
     
