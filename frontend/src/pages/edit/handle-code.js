@@ -1,4 +1,4 @@
-import { List, Map } from 'immutable';
+import { List } from 'immutable';
 import {
   NODE_TYPE_P,
   NODE_TYPE_SECTION_CODE,
@@ -13,8 +13,7 @@ export function handleBackspaceCode(documentModel, selectedNodeId) {
   let prevSection = documentModel.getPrevSibling(selectedSectionId);
   let prevFocusNodeId = documentModel.getPreviousFocusNodeId(selectedSectionId);
   const selectedSection = documentModel.getNode(selectedSectionId);
-  const meta = selectedSection.get('meta', Map());
-  const lines = meta.get('lines', List());
+  const lines = selectedSection.getIn(['meta', 'lines'], List());
   const lineContent = cleanText(lines.get(lineIdx, ''));
   let prevLineContent = '';
   
@@ -36,12 +35,10 @@ export function handleBackspaceCode(documentModel, selectedNodeId) {
     // merge lines of code
     prevLineContent = lines.get(lineIdx - 1);
     documentModel.update(
-      selectedSection.set('meta',
-        meta.set('lines',
-          lines
-            .delete(lineIdx)
-            .set(lineIdx - 1, `${prevLineContent}${lineContent}`)
-        )
+      selectedSection.setIn(['meta', 'lines'],
+        lines
+          .delete(lineIdx)
+          .set(lineIdx - 1, `${prevLineContent}${lineContent}`)
       )
     )
   } else {
@@ -52,10 +49,10 @@ export function handleBackspaceCode(documentModel, selectedNodeId) {
   console.info('BACKSPACE - code section content: ', selectedSectionId, lineIdx);
   if (lineIdx > 0) {
     // a PRE was deleted, focus previous PRE
-    return [`${selectedSectionId}-${lineIdx - 1}`, prevLineContent.length];
+    return [`${selectedSectionId}-${lineIdx - 1}`, -1];
   }
   // the CODE_SECTION was deleted, focus previous section
-  return [prevFocusNodeId, documentModel.getNode(prevFocusNodeId).get('content', '').length];
+  return [prevFocusNodeId, -1];
 }
 
 export function handleEnterCode(documentModel, selectedNode, contentLeft, contentRight) {
@@ -63,18 +60,13 @@ export function handleEnterCode(documentModel, selectedNode, contentLeft, conten
   const [selectedSectionId, idx] = name.split('-');
   const lineIndex = parseInt(idx, 10);
   const selectedSection = documentModel.getNode(selectedSectionId);
-  const meta = selectedSection.get('meta', Map());
-  let lines = meta.get('lines', List());
+  let lines = selectedSection.getIn(['meta', 'lines'], List());
   
   if (cleanText(contentLeft).length === 0 && lineIndex === (lines.size - 1)) {
     if (lines.size > 1) {
       // remove last line of code - leave at least one line
       documentModel.update(
-        selectedSection.set('meta',
-          meta.set('lines',
-            lines.pop()
-          )
-        )
+        selectedSection.setIn(['meta', 'lines'], lines.pop())
       );
     }
     // create a P tag (and optionally a CONTENT SECTION) after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
@@ -91,12 +83,11 @@ export function handleEnterCode(documentModel, selectedNode, contentLeft, conten
   }
   
   documentModel.update(
-    selectedSection.set('meta',
-      meta.set('lines',
-        lines
-          .set(lineIndex, contentLeft)
-          .insert(lineIndex + 1, contentRight)
-      )
+    selectedSection.setIn(
+      ['meta', 'lines'],
+      lines
+        .set(lineIndex, contentLeft)
+        .insert(lineIndex + 1, contentRight)
     )
   );
   
@@ -108,16 +99,13 @@ export function handleDomSyncCode(documentModel, selectedNodeId, selectedNodeCon
   const [selectedSectionId, idx] = selectedNodeId.split('-');
   const lineIndex = parseInt(idx, 10);
   const selectedSection = documentModel.getNode(selectedSectionId);
-  const meta = selectedSection.get('meta');
-  let lines = meta.get('lines');
+  let lines = selectedSection.getIn(['meta', 'lines'], List());
   const currentLineContent = lines.get(lineIndex);
   if (currentLineContent === selectedNodeContent) {
     return;
   }
   documentModel.update(
-    selectedSection.set('meta',
-      meta.set('lines', lines.set(lineIndex, selectedNodeContent))
-    )
+    selectedSection.setIn(['meta', 'lines'], lines.set(lineIndex, selectedNodeContent))
   );
 }
 

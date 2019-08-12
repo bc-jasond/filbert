@@ -1,3 +1,4 @@
+import { List } from 'immutable';
 import {
   NODE_TYPE_OL,
   NODE_TYPE_P,
@@ -44,17 +45,15 @@ export function handleBackspaceTitle(documentModel, selectedNodeId) {
       return [lastChild.get('id'), lastChild.get('content').length];
     }
     case NODE_TYPE_SECTION_CODE: {
-      const meta = prevSection.get('meta');
-      const lines = meta.get('lines');
+      const lines = prevSection.getIn(['meta', 'lines'], List());
       const lastLine = lines.last();
-  
+      
       documentModel.update(
-        prevSection.set('meta',
-          meta.set('lines',
-            lines
-              .pop()
-              .push(`${lastLine}${selectedNode.get('content')}`)
-          )
+        prevSection.setIn(
+          ['meta', 'lines'],
+          lines
+            .pop()
+            .push(`${lastLine}${selectedNode.get('content')}`)
         )
       );
       documentModel.delete(selectedNodeId);

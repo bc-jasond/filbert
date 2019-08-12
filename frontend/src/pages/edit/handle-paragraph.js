@@ -1,3 +1,5 @@
+import { List } from 'immutable';
+
 import {
   NODE_TYPE_OL,
   NODE_TYPE_P, NODE_TYPE_SECTION_CODE, NODE_TYPE_SECTION_CONTENT,
@@ -19,7 +21,7 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
       prevSection = documentModel.getPrevSibling(spacerSectionId);
       documentModel.delete(spacerSectionId);
     }
-  
+    
     switch (prevSection.get('type')) {
       case NODE_TYPE_SECTION_H1:
       case NODE_TYPE_SECTION_H2: {
@@ -28,11 +30,11 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
         if (wasOnlyChild) {
           documentModel.delete(selectedSection.get('id'));
         }
-        return [prevSection.get('id'), prevSection.get('content').length];
+        return [prevSection.get('id'), -1];
       }
       case NODE_TYPE_SECTION_CONTENT: {
         // TODO: merge CONTENT sections
-        let lastChild = documentModel.getLastChild(prevSection.get('id'))
+        let lastChild = documentModel.getLastChild(prevSection.get('id'));
         if (lastChild.get('type') === NODE_TYPE_OL) {
           // get last LI
           lastChild = documentModel.getLastChild(lastChild.get('id'));
@@ -41,27 +43,25 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
         documentModel.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
         documentModel.delete(selectedNodeId);
         documentModel.mergeSections(prevSection, selectedSection);
-        return [lastChild.get('id'), lastChild.get('content').length];
+        return [lastChild.get('id'), -1];
       }
       case NODE_TYPE_SECTION_CODE: {
-        const meta = prevSection.get('meta');
-        const lines = meta.get('lines');
+        const lines = prevSection.getIn(['meta', 'lines'], List());
         const lastLine = lines.last();
-  
+        
         documentModel.update(
-          prevSection.set('meta',
-            meta.set('lines',
-              lines
-                .pop()
-                .push(`${lastLine}${selectedNode.get('content')}`)
-            )
+          prevSection.setIn(
+            ['meta', 'lines'],
+            lines
+              .pop()
+              .push(`${lastLine}${selectedNode.get('content')}`)
           )
         );
         documentModel.delete(selectedNodeId);
         if (wasOnlyChild) {
           documentModel.delete(selectedSection.get('id'));
         }
-        return [`${prevSection.get('id')}-${lines.size - 1}`, lastLine.length];
+        return [`${prevSection.get('id')}-${lines.size - 1}`, -1];
       }
     }
   }
@@ -71,7 +71,7 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
     prevSibling = documentModel.getLastChild(prevSibling.get('id'));
   }
   documentModel.mergeParagraphs(prevSibling.get('id'), selectedNodeId);
-  return [prevSibling.get('id'), prevSibling.get('content').length];
+  return [prevSibling.get('id'), -1];
 }
 
 export function handleEnterParagraph(documentModel, selectedNodeId, contentLeft, contentRight) {

@@ -109,8 +109,7 @@ export default class ContentNode extends React.PureComponent {
         return (<SpacerSection data-type={NODE_TYPE_SECTION_SPACER} name={node.get('id')} contentEditable={false} />);
       case NODE_TYPE_SECTION_CODE:
         const lines = node
-          .get('meta', Map())
-          .get('lines', List([cleanTextOrZeroLengthPlaceholder('')]));
+          .getIn(['meta', 'lines'], List([cleanTextOrZeroLengthPlaceholder('')]));
         return (
           <CodeSection data-type={node.get('type')} name={node.get('id')}>
             {lines.map((line, idx) => (<Pre key={`${node.get('id')}-${idx}`}
@@ -141,7 +140,6 @@ export default class ContentNode extends React.PureComponent {
       }
       case NODE_TYPE_SECTION_QUOTE: {
         const meta = node.get('meta', Map());
-        const selection = meta.get('selection', Map())
         return (
           <ContentSection data-type={NODE_TYPE_SECTION_QUOTE} name={node.get('id')} contentEditable={false}>
             <QuoteP
@@ -164,7 +162,7 @@ export default class ContentNode extends React.PureComponent {
       }
       // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout
       case NODE_TYPE_SECTION_POSTLINK: {
-        const to = node.get('meta', Map()).get('to');
+        const to = node.getIn(['meta', 'to']);
         const Centered = styled.div`
           text-align: center;
         `;

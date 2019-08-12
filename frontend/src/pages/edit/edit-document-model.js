@@ -145,7 +145,7 @@ export default class EditDocumentModel {
     const node = this.getNode(nodeId);
     if (node.get('type') === NODE_TYPE_SECTION_CODE) {
       return Map({
-        id: `${nodeId}-${node.get('meta', Map()).get('lines', List()).size - 1}`
+        id: `${nodeId}-${node.getIn(['meta', 'lines'], List()).size - 1}`
       });
     }
     const siblings = this.nodesByParentId.get(nodeId, List());

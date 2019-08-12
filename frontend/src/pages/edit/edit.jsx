@@ -79,6 +79,7 @@ import {
   adjustSelectionOffsets,
   getSelection,
   upsertSelection,
+  splitSelectionsAtCaretOffset,
 } from './edit-selection-helpers';
 
 import InsertSectionMenu from './insert-section-menu';
@@ -384,15 +385,11 @@ export default class EditPost extends React.Component {
     // TODO: 'Del' doesn't work at the edge of 2 selections
     // update count: +/- 1 here because we're either addding or removing one char at a time
     const count = [KEYCODE_BACKSPACE, KEYCODE_DEL].includes(evt.keyCode) ? -1 : 1;
-    const meta = selectedNodeMap.get('meta', Map());
-    const selections = meta.get('selections', List());
+    const selections = selectedNodeMap.getIn(['meta', 'selections'], List());
     if (selections.size) {
-      selectedNodeMap = selectedNodeMap.set(
-        'meta',
-        meta.set(
-          'selections',
-          adjustSelectionOffsets(selections, selectedNodeContent.length, caretPosition, count)
-        )
+      selectedNodeMap = selectedNodeMap.setIn(
+        ['meta', 'selections'],
+        adjustSelectionOffsets(selections, selectedNodeContent.length, caretPosition, count)
       );
     }
     this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
@@ -462,12 +459,9 @@ export default class EditPost extends React.Component {
     const domLines = evt.clipboardData.getData('text/plain').split('\n');
     if (getCaretNodeType() === NODE_TYPE_SECTION_CODE) {
       const selectedSection = this.documentModel.getNode(selectedNodeId);
-      const meta = selectedSection.get('meta');
       
       this.documentModel.update(
-        selectedSection.set('meta',
-          meta.set('lines', List(domLines))
-        )
+        selectedSection.setIn(['meta', 'lines'], List(domLines))
       );
       this.commitUpdates();
     }
@@ -645,8 +639,7 @@ export default class EditPost extends React.Component {
     const selectedNodeId = getCaretNodeId();
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
     const selections = selectedNodeModel
-      .get('meta', Map())
-      .get('selections', List());
+      .getIn(['meta', 'selections'], List());
     //const
     this.setState({
       formatSelectionNode: selectedNodeModel,
@@ -662,8 +655,7 @@ export default class EditPost extends React.Component {
       formatSelectionNode,
     } = this.state;
     const previousActionValue = formatSelectionModel.get(action, false);
-    const meta = formatSelectionNode.get('meta', Map());
-    const selections = meta.get('selections', List());
+    const selections = formatSelectionNode.getIn(['meta', 'selections'], List());
     
     console.info('HANDLE SELECTION ACTION: ', action, formatSelectionModel.toJS());
     
@@ -678,10 +670,7 @@ export default class EditPost extends React.Component {
     );
     if (updatedSelections.size > 0) {
       this.documentModel.update(
-        formatSelectionNode.set(
-          'meta',
-          meta.set('selections', updatedSelections)
-        )
+        formatSelectionNode.setIn(['meta', 'selections'], updatedSelections)
       );
     } else {
       this.documentModel.update(
