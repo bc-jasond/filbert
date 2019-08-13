@@ -204,6 +204,7 @@ export function mergeAdjacentSelectionsWithSameFormats(selections) {
   }
   newSelections = newSelections.push(current);
   // SUPER PERFORMANCE OPTIMIZATION: if there's only one Selection and it's empty - clear it out
+  // TODO: have this function take the content node model itself so it can clean 'meta' if it has an empty 'selections' list
   if (newSelections.size === 1 && !selectionsHaveDifferentFormats(newSelections.get(0), Selection())) {
     return List();
   }

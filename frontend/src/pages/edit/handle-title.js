@@ -66,7 +66,10 @@ export function handleBackspaceTitle(documentModel, selectedNodeId) {
 /**
  * insert a new P tag (and a Content Section if the next section isn't one)
  */
-export function handleEnterTitle(documentModel, selectedNodeId, contentLeft, contentRight) {
+export function handleEnterTitle(documentModel, selectedNodeId, caretPosition, content) {
+  const contentLeft = content.substring(0, caretPosition);
+  const contentRight = content.substring(caretPosition);
+  console.info('ENTER "title" content left: ', contentLeft, 'content right: ', contentRight);
   documentModel.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
   const nextSibling = documentModel.getNextSibling(selectedNodeId);
   let nextSiblingId;

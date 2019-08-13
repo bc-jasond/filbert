@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Map } from 'immutable';
 
 import {
   NODE_TYPE_OL,
@@ -7,6 +7,7 @@ import {
   NODE_TYPE_SECTION_H2,
   NODE_TYPE_SECTION_SPACER
 } from '../../common/constants';
+import { splitSelectionsAtCaretOffset } from './edit-selection-helpers';
 
 export function handleBackspaceParagraph(documentModel, selectedNodeId) {
   const selectedSection = documentModel.getSection(selectedNodeId);
@@ -74,7 +75,22 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
   return [prevSibling.get('id'), -1];
 }
 
-export function handleEnterParagraph(documentModel, selectedNodeId, contentLeft, contentRight) {
-  documentModel.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
-  return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P, contentRight);
+export function handleEnterParagraph(documentModel, selectedNodeId, caretPosition, content) {
+  const contentLeft = content.substring(0, caretPosition);
+  const contentRight = content.substring(caretPosition);
+  const selections = documentModel.getNode(selectedNodeId).getIn(['meta', 'selections'], List());
+  const [leftSelections, rightSelections] = splitSelectionsAtCaretOffset(selections, caretPosition);
+  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftSelections, 'right selections: ', rightSelections);
+  let left = documentModel.getNode(selectedNodeId)
+    .set('content', contentLeft);
+  // TODO: make a more standard 'one place' to
+  if (leftSelections.size > 0) {
+    left.setIn(['meta', 'selections'], leftSelections)
+  }
+  documentModel.update(left);
+  let rightMeta = Map();
+  if (rightSelections.size > 0) {
+    rightMeta = rightMeta.set('selections', rightSelections)
+  }
+  return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P, contentRight, rightMeta);
 }

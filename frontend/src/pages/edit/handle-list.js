@@ -1,3 +1,4 @@
+import { List, Map } from 'immutable';
 import {
   NODE_TYPE_LI,
   NODE_TYPE_OL,
@@ -5,6 +6,7 @@ import {
   NODE_TYPE_SECTION_SPACER,
 } from '../../common/constants';
 import { cleanText } from '../../common/utils';
+import { splitSelectionsAtCaretOffset } from './edit-selection-helpers';
 
 export function handleBackspaceList(documentModel, selectedNodeId) {
   const selectedOl = documentModel.getParent(selectedNodeId);
@@ -50,7 +52,10 @@ export function handleBackspaceList(documentModel, selectedNodeId) {
   return [prevSibling.get('id'), -1];
 }
 
-export function handleEnterList(documentModel, selectedNodeId, contentLeft, contentRight) {
+export function handleEnterList(documentModel, selectedNodeId, caretPosition, content) {
+  const contentLeft = content.substring(0, caretPosition);
+  const contentRight = content.substring(caretPosition);
+  console.info('ENTER "list" content left: ', contentLeft, 'content right: ', contentRight);
   if (cleanText(contentLeft).length === 0 && documentModel.isLastChild(selectedNodeId)) {
     // create a P tag after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
     const olId = documentModel.getParent(selectedNodeId).get('id');
@@ -62,8 +67,20 @@ export function handleEnterList(documentModel, selectedNodeId, contentLeft, cont
     }
     return pId;
   }
-  documentModel.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
-  return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight);
+  const selections = documentModel.getNode(selectedNodeId).getIn(['meta', 'selections'], List());
+  const [leftSelections, rightSelections] = splitSelectionsAtCaretOffset(selections, caretPosition);
+  let left = documentModel.getNode(selectedNodeId)
+    .set('content', contentLeft);
+  // TODO: make a more standard 'one place' to
+  if (leftSelections.size > 0) {
+    left.setIn(['meta', 'selections'], leftSelections)
+  }
+  documentModel.update(left);
+  let rightMeta = Map();
+  if (rightSelections.size > 0) {
+    rightMeta = rightMeta.set('selections', rightSelections)
+  }
+  return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight, rightMeta);
 }
 
 export function insertList(documentModel, selectedNodeId) {

@@ -321,29 +321,24 @@ export default class EditPost extends React.Component {
     const selectedNodeType = getCaretNodeType();
     // split selectedNodeContent at caret
     const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
-    const contentLeft = selectedNodeContent.substring(0, caretPosition);
-    const contentRight = selectedNodeContent.substring(caretPosition);
-    console.info('ENTER node content left: ', contentLeft);
-    console.info('ENTER node content right: ', contentRight);
-    
     let focusNodeId;
     
     switch (selectedNodeType) {
       case NODE_TYPE_PRE: {
-        focusNodeId = handleEnterCode(this.documentModel, selectedNode, contentLeft, contentRight);
+        focusNodeId = handleEnterCode(this.documentModel, selectedNode, caretPosition, selectedNodeContent);
         break;
       }
       case NODE_TYPE_LI: {
-        focusNodeId = handleEnterList(this.documentModel, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterList(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
         break;
       }
       case NODE_TYPE_P: {
-        focusNodeId = handleEnterParagraph(this.documentModel, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterParagraph(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
         break;
       }
       case NODE_TYPE_SECTION_H1:
       case NODE_TYPE_SECTION_H2: {
-        focusNodeId = handleEnterTitle(this.documentModel, selectedNodeId, contentLeft, contentRight);
+        focusNodeId = handleEnterTitle(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
         break;
       }
       default: {
@@ -392,9 +387,10 @@ export default class EditPost extends React.Component {
         adjustSelectionOffsets(selections, selectedNodeContent.length, caretPosition, count)
       );
     }
+    this.setState({ caretPosition: caretPosition + count });
     this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
     
-    console.log('DOM SYNC ', selectedNodeContent.length);
+    console.log('DOM SYNC ', caretPosition + count, 'content length ', selectedNodeContent.length);
     this.saveContentBatchDebounce()
   }
   

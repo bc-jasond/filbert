@@ -55,7 +55,10 @@ export function handleBackspaceCode(documentModel, selectedNodeId) {
   return [prevFocusNodeId, -1];
 }
 
-export function handleEnterCode(documentModel, selectedNode, contentLeft, contentRight) {
+export function handleEnterCode(documentModel, selectedNode, caretPosition, content) {
+  const contentLeft = content.substring(0, caretPosition);
+  const contentRight = content.substring(caretPosition);
+  console.info('ENTER "code section" content left: ', contentLeft, 'content right: ', contentRight);
   const name = selectedNode.getAttribute('name');
   const [selectedSectionId, idx] = name.split('-');
   const lineIndex = parseInt(idx, 10);
