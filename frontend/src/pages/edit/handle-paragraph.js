@@ -31,7 +31,7 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
         if (wasOnlyChild) {
           documentModel.delete(selectedSection.get('id'));
         }
-        return [prevSection.get('id'), -1];
+        return [prevSection.get('id'), prevSection.get('content').length];
       }
       case NODE_TYPE_SECTION_CONTENT: {
         // TODO: merge CONTENT sections
@@ -41,10 +41,9 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
           lastChild = documentModel.getLastChild(lastChild.get('id'));
         }
         // lastChild must be P
-        documentModel.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
-        documentModel.delete(selectedNodeId);
+        documentModel.mergeParagraphs(lastChild.get('id'), selectedNodeId);
         documentModel.mergeSections(prevSection, selectedSection);
-        return [lastChild.get('id'), -1];
+        return [lastChild.get('id'), lastChild.get('content').length];
       }
       case NODE_TYPE_SECTION_CODE: {
         const lines = prevSection.getIn(['meta', 'lines'], List());
@@ -62,7 +61,7 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
         if (wasOnlyChild) {
           documentModel.delete(selectedSection.get('id'));
         }
-        return [`${prevSection.get('id')}-${lines.size - 1}`, -1];
+        return [`${prevSection.get('id')}-${lines.size - 1}`, lastLine.length];
       }
     }
   }
@@ -72,7 +71,7 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
     prevSibling = documentModel.getLastChild(prevSibling.get('id'));
   }
   documentModel.mergeParagraphs(prevSibling.get('id'), selectedNodeId);
-  return [prevSibling.get('id'), -1];
+  return [prevSibling.get('id'), prevSibling.get('content').length];
 }
 
 export function handleEnterParagraph(documentModel, selectedNodeId, caretPosition, content) {
@@ -80,7 +79,7 @@ export function handleEnterParagraph(documentModel, selectedNodeId, caretPositio
   const contentRight = content.substring(caretPosition);
   const selections = documentModel.getNode(selectedNodeId).getIn(['meta', 'selections'], List());
   const [leftSelections, rightSelections] = splitSelectionsAtCaretOffset(selections, caretPosition);
-  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftSelections, 'right selections: ', rightSelections);
+  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftSelections.toJS(), 'right selections: ', rightSelections.toJS());
   let left = documentModel.getNode(selectedNodeId)
     .set('content', contentLeft);
   // TODO: make a more standard 'one place' to

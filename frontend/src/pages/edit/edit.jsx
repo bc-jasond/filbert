@@ -108,7 +108,6 @@ export default class EditPost extends React.Component {
       editSectionMetaFormLeftOffset: 0,
       formatSelectionNode: Map(),
       formatSelectionModel: Map(),
-      caretPosition: -1,
     }
   }
   
@@ -245,11 +244,6 @@ export default class EditPost extends React.Component {
     const selectedNodeContent = cleanText(selectedNode.textContent);
     if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
       // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
-      // decrement the caretPosition!
-      const { caretPosition } = this.state;
-      if (caretPosition >= 0) {
-        this.setState({ caretPosition: caretPosition - 1 })
-      }
       return
     }
     console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
@@ -315,7 +309,7 @@ export default class EditPost extends React.Component {
       return;
     }
     
-    const { caretPosition } = this.state;
+    const [caretPosition] = getOffsetInParentContent();
     const selectedNode = getCaretNode();
     console.info('ENTER node: ', selectedNode, caretPosition);
     const selectedNodeType = getCaretNodeType();
@@ -375,7 +369,7 @@ export default class EditPost extends React.Component {
       return;
     }
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
-    const { caretPosition } = this.state;
+    const [caretPosition] = getOffsetInParentContent();
     // TODO: handle cut/paste
     // TODO: 'Del' doesn't work at the edge of 2 selections
     // update count: +/- 1 here because we're either addding or removing one char at a time
@@ -387,7 +381,6 @@ export default class EditPost extends React.Component {
         adjustSelectionOffsets(selections, selectedNodeContent.length, caretPosition, count)
       );
     }
-    this.setState({ caretPosition: caretPosition + count });
     this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
     
     console.log('DOM SYNC ', caretPosition + count, 'content length ', selectedNodeContent.length);
@@ -437,7 +430,6 @@ export default class EditPost extends React.Component {
     this.handleCaret(evt);
     this.manageInsertMenu(evt);
     this.manageFormatSelectionMenu(evt);
-    this.setCaretPositionInParagraph(evt);
     this.cancelledEvent = null;
   }
   
@@ -446,7 +438,6 @@ export default class EditPost extends React.Component {
     this.handleCaret(evt);
     this.manageInsertMenu();
     this.manageFormatSelectionMenu();
-    this.setCaretPositionInParagraph(evt);
   }
   
   handlePaste = (evt) => {
@@ -590,29 +581,6 @@ export default class EditPost extends React.Component {
       this.documentModel.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
-  }
-  
-  setCaretPositionInParagraph(evt) {
-    // only set position on mouse clicks and arrow keys
-    if (!(evt.type === 'mouseup'
-      || (evt.type === 'keyup' && [
-        KEYCODE_UP_ARROW,
-        KEYCODE_DOWN_ARROW,
-        KEYCODE_LEFT_ARROW,
-        KEYCODE_RIGHT_ARROW
-      ].includes(evt.keyCode))
-    )) {
-      return;
-    }
-    const range = getRange();
-    const selectedNode = getCaretNode();
-    if (!range || !selectedNode) {
-      this.setState({ caretPosition: -1 });
-      return;
-    }
-    const [startOffset] = getOffsetInParentContent();
-    console.info('CARET POSITION: ', startOffset, selectedNode, range);
-    this.setState({ caretPosition: startOffset });
   }
   
   manageFormatSelectionMenu(evt) {

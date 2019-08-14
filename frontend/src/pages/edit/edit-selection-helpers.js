@@ -60,7 +60,7 @@ export function upsertSelection(selections, newSelection, contentLength) {
  *   - start = oldStart += newKeyStrokesCount
  *   - end (if > -1) = oldEnd += newKeyStrokesCount
  */
-export function adjustSelectionOffsets(selections, contentLength, start, count) {
+export function adjustSelectionOffsets(selections, contentLength, start = 0, count = 0) {
   let newSelections = List();
   for (let i = 0; i < selections.size; i++) {
     let current = selections.get(i);
@@ -260,7 +260,7 @@ export function concatSelections(left, right) {
       .set('end', current.get('end') + leftOffset)
     )
   }
-  return newSelections;
+  return adjustSelectionOffsets(newSelections);
 }
 
 function selectionsHaveDifferentFormats(left, right) {

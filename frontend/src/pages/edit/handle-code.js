@@ -49,10 +49,10 @@ export function handleBackspaceCode(documentModel, selectedNodeId) {
   console.info('BACKSPACE - code section content: ', selectedSectionId, lineIdx);
   if (lineIdx > 0) {
     // a PRE was deleted, focus previous PRE
-    return [`${selectedSectionId}-${lineIdx - 1}`, -1];
+    return [`${selectedSectionId}-${lineIdx - 1}`, prevLineContent.length];
   }
   // the CODE_SECTION was deleted, focus previous section
-  return [prevFocusNodeId, -1];
+  return [prevFocusNodeId, documentModel.getNode(prevFocusNodeId).get('content', '').length];
 }
 
 export function handleEnterCode(documentModel, selectedNode, caretPosition, content) {

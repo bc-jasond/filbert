@@ -21,6 +21,7 @@ import {
   cleanText,
   getMapWithId,
 } from '../../common/utils';
+import { concatSelections } from './edit-selection-helpers';
 
 export default class EditDocumentModel {
   post;
@@ -234,8 +235,14 @@ export default class EditDocumentModel {
     let left = this.getNode(leftId);
     const right = this.getNode(rightId);
     left = left.set('content', `${left.get('content')}${right.get('content')}`);
+    const selections = concatSelections(
+      left.getIn(['meta', 'selections'], List()),
+      right.getIn(['meta', 'selections'], List())
+    );
+    if (selections.size > 0) {
+      left = left.setIn(['meta', 'selections'], selections);
+    }
     this.update(left);
-    // TODO: merge meta, offset the 'right' selections by left.get('content').length
     this.delete(rightId);
   }
   

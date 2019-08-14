@@ -30,7 +30,7 @@ export function handleBackspaceList(documentModel, selectedNodeId) {
       // merge OLs?
       documentModel.mergeSections(prevSection, selectedOl);
       const lastLi = documentModel.getLastChild(prevSection.get('id'));
-      return [lastLi.get('id'), -1];
+      return [lastLi.get('id'), lastLi.get('content').length];
     }
     // convert 1st LI to P, H1, H2
     const wasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
@@ -44,12 +44,12 @@ export function handleBackspaceList(documentModel, selectedNodeId) {
         documentModel.delete(section.get('id'))
       }
     }
-    return [prevSection.get('id'), -1];
+    return [prevSection.get('id'), prevSection.get('content').length];
   }
   // merge LIs within the same list
   const prevSibling = documentModel.getPrevSibling(selectedNodeId);
   documentModel.mergeParagraphs(prevSibling.get('id'), selectedNodeId);
-  return [prevSibling.get('id'), -1];
+  return [prevSibling.get('id'), prevSibling.get('content').length];
 }
 
 export function handleEnterList(documentModel, selectedNodeId, caretPosition, content) {

@@ -30,7 +30,7 @@ import {
   KEYCODE_F10,
   KEYCODE_F11,
   KEYCODE_F12,
-  KEYCODE_PRINT_SCREEN,
+  KEYCODE_PRINT_SCREEN, NODE_TYPE_P, NODE_TYPE_LI,
 } from './constants';
 
 let infiniteLoopCount = 0;
@@ -49,19 +49,23 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   // find text node, if present
   infiniteLoopCount = 0;
   let textNode;
-  const queue = [...containerNode.childNodes];
-  while (queue.length) {
-    if (infiniteLoopCount++ > 1000) {
-      throw new Error('setCaret is Out of Control!!!');
-    }
-    // find first (queue), find last - (stack) yay!
-    const current = shouldFindLastNode ? queue.pop() : queue.shift();
-    if (current.nodeType === DOM_TEXT_NODE_TYPE_ID) {
-      textNode = current;
-      break;
-    }
-    if (current.childNodes.length) {
-      queue.push(...current.childNodes);
+  if ([NODE_TYPE_P, NODE_TYPE_LI].includes(containerNode.dataset.type)) {
+    [textNode, offset] = getChildTextNodeAndOffsetFromParentOffset(containerNode, offset);
+  } else {
+    const queue = [...containerNode.childNodes];
+    while (queue.length) {
+      if (infiniteLoopCount++ > 1000) {
+        throw new Error('setCaret is Out of Control!!!');
+      }
+      // find first (queue), find last - (stack) yay!
+      const current = shouldFindLastNode ? queue.pop() : queue.shift();
+      if (current.nodeType === DOM_TEXT_NODE_TYPE_ID) {
+        textNode = current;
+        break;
+      }
+      if (current.childNodes.length) {
+        queue.push(...current.childNodes);
+      }
     }
   }
   if (textNode) {
@@ -117,6 +121,33 @@ export function getOffsetInParentContent() {
   }
   // now we'll have the correct positioning of the selected text inside the paragraph (the node that holds the 'content' saved to the DB) text as a whole no matter what formatting tags have been applied
   return [rangeStartOffset + offset, rangeEndOffset + offset];
+}
+
+/**
+ * given an offset in a parent 'paragraph', return a child text node and child offset
+ */
+export function getChildTextNodeAndOffsetFromParentOffset(parent, parentOffset) {
+  let childOffset = parentOffset === -1 ? parent.textContent.length : parentOffset;
+  const textNodesOnlyFlattened = [];
+  const queue = [...parent.childNodes];
+  while (queue.length) {
+    const currentNode = queue.shift();
+    if (currentNode.nodeType === DOM_TEXT_NODE_TYPE_ID) {
+      textNodesOnlyFlattened.push(currentNode);
+    }
+    queue.push(...currentNode.childNodes);
+  }
+  let childNode;
+  // assume 'parent' is a 'paragraph' with an id
+  for (let i = 0; i < textNodesOnlyFlattened.length; i++) {
+    childNode = textNodesOnlyFlattened[i];
+    // assume max depth level one for text nodes AKA no tags within tags here for formatting
+    if (childNode.textContent.length >= childOffset) {
+      break;
+    }
+    childOffset -= childNode.textContent.length;
+  }
+  return [childNode, childOffset];
 }
 
 export function getCaretNode() {
