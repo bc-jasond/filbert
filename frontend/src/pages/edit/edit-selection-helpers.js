@@ -9,7 +9,7 @@ import {
   SELECTION_ACTION_LINK,
 } from '../../common/constants';
 
-export const Selection = Record({
+const Selection = Record({
   start: 0,
   end: -1,
   [SELECTION_ACTION_BOLD]: false,
@@ -21,105 +21,49 @@ export const Selection = Record({
   linkUrl: '',
 });
 
-export function getSelection(selections, start, end) {
-  let selection = selections.find(s => s.get('start') === start && s.get('end') === end, null, Selection());
-  // selection already exists?
-  if (selection.get('end') === end) {
-    return selection;
-  }
-  selection = selection
-    .set('start', start)
-    .set('end', end);
-  return applyFormatsOfOverlappingSelections(selections, selection);
-}
-
 /**
- * creating a selection:
- * if first selection in paragraph:
- * 1) create one selection the total length of textContent
- *    OR two selections starting at position 0 or ending at textContent.length - 1
- *    OR 3 selections, an empty one in beginning, one in the middle and another empty one at the end
- * An unformatted paragraph can have no selections but, if it has 1 or more, it can't have any gaps
- *
- * 1) add attributes from overlapping selections if they have formats (might be empty)
- * 2) merge overlapping selections - adjust start or end positions of overlapping selections,
- * guarantee no overlaps at rest
+ * PRIVATE HELPERS
  */
-export function upsertSelection(selections, newSelection, contentLength) {
-  selections = mergeOverlappingSelections(selections, newSelection);
-  // TODO: this function wouldn't be needed if there was always at least 1 selection
-  selections = fillEnds(selections, contentLength);
-  selections = mergeAdjacentSelectionsWithSameFormats(selections);
-  return selections;
+function selectionsHaveDifferentFormats(left, right) {
+  return [
+    SELECTION_ACTION_BOLD,
+    SELECTION_ACTION_ITALIC,
+    SELECTION_ACTION_CODE,
+    SELECTION_ACTION_STRIKETHROUGH,
+    SELECTION_ACTION_SITEINFO,
+    SELECTION_ACTION_LINK,
+    'linkUrl',
+  ].reduce((acc, key) => acc || left.get(key) !== right.get(key), false);
 }
-
-/**
- * if the user places the caret in the middle of a paragraph with existing selections:
- * 1) if caret in middle of selection - end = oldEnd += newKeyStrokesCount
- * 2) if exist selections that start after the current caret position
- *   - start = oldStart += newKeyStrokesCount
- *   - end (if > -1) = oldEnd += newKeyStrokesCount
- */
-export function adjustSelectionOffsets(selections, contentLength, start = 0, count = 0) {
-  let newSelections = List();
-  for (let i = 0; i < selections.size; i++) {
-    let current = selections.get(i);
-    // TODO: remove these OOB safeties?
-    if (current.get('start') >= contentLength) {
-      const lastSelection = newSelections.last();
-      newSelections = newSelections.pop();
-      newSelections = newSelections.push(lastSelection.set('end', contentLength));
-      break;
-    }
-    if (current.get('end') > contentLength) {
-      newSelections = newSelections.push(current.set('end', contentLength));
-      break;
-    }
-    if (current.get('start') >= start) {
-      current = current.set('start', current.get('start') + count)
-    }
-    if (current.get('end') >= start) {
-      current = current.set('end', current.get('end') + count)
-    }
-    // for deleting characters: don't push empty selections
-    if (current.get('end') > current.get('start')) {
-      newSelections = newSelections.push(current);
-    } else {
-      // HACK: Assuming the user hit backspace: if we're skipping an empty selection, we've also decremented the end of the previous selection by one.  We don't want to do both, add that guy back
-      const lastSelection = newSelections.last();
-      newSelections = newSelections.pop();
-      newSelections = newSelections.push(lastSelection.set('end', lastSelection.get('end') + 1))
-    }
-  }
-  console.log('ADJUST', contentLength, start, count, newSelections.reduce((acc, v) => `${acc} | start: ${v.get('start')}, end: ${v.get('end')}`, ''));
-  return newSelections;
+function applyFormatsOfOverlappingSelections(nodeModel, newSelection) {
+  const selections = nodeModel.getIn(['meta', 'selections'], List());
+  return nodeModel.setIn(
+    ['meta', 'selections'],
+    selections
+      .filter(s =>
+        // newSelection overlaps s to the right
+        (newSelection.get('start') >= s.get('start') && newSelection.get('start') <= s.get('end'))
+        // newSelection overlaps s to the left
+        || (newSelection.get('end') >= s.get('start') && newSelection.get('end') <= s.get('end'))
+        // newSelection envelops s completely
+        || (newSelection.get('start') < s.get('start') && newSelection.get('end') > s.get('end')))
+      .reduce((acc, selection) => acc.mergeWith(
+        (oldVal, newVal, key) => {
+          // don't blow away non-formatting related values like 'start' or 'end'
+          if (!key.includes('selection')) {
+            return oldVal
+          }
+          return newVal || oldVal
+        },
+        selection), newSelection)
+  )
 }
-
-export function applyFormatsOfOverlappingSelections(selections, current) {
-  return selections
-    .filter(s =>
-      // current overlaps s to the right
-      (current.get('start') >= s.get('start') && current.get('start') <= s.get('end'))
-      // current overlaps s to the left
-      || (current.get('end') >= s.get('start') && current.get('end') <= s.get('end'))
-      // current envelops s completely
-      || (current.get('start') < s.get('start') && current.get('end') > s.get('end')))
-    .reduce((acc, selection) => acc.mergeWith(
-      (oldVal, newVal, key) => {
-        // don't blow away non-formatting related values like 'start' or 'end'
-        if (!key.includes('selection')) {
-          return oldVal
-        }
-        return newVal || oldVal
-      },
-      selection), current)
-}
-
-export function mergeOverlappingSelections(selections, newSelection) {
+function mergeOverlappingSelections(nodeModel, newSelection) {
   let didPushNewSelection = false;
   let newSelections = List();
+  const selections = nodeModel.getIn(['meta', 'selections'], List());
   if (selections.size === 0) {
-    return newSelections.push(newSelection);
+    newSelections = newSelections.push(newSelection);
   }
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
@@ -154,14 +98,15 @@ export function mergeOverlappingSelections(selections, newSelection) {
     // }
   }
   
-  return newSelections;
+  return nodeModel.setIn(['meta', 'selections'], newSelections);
 }
-
 /**
  * make sure that all characters in the paragraph are in a selection
  * @param selections
  */
-export function fillEnds(selections, contentLength) {
+function fillEnds(nodeModel) {
+  let selections = nodeModel.getIn(['meta', 'selections'], List());
+  const contentLength = nodeModel.get('content', '').length;
   let minStart = contentLength;
   let maxEnd = 0;
   selections.forEach(s => {
@@ -174,9 +119,8 @@ export function fillEnds(selections, contentLength) {
   if (maxEnd < contentLength) {
     selections = selections.push(Selection({ 'start': maxEnd, 'end': contentLength }))
   }
-  return selections;
+  return nodeModel.setIn(['meta','selections'], selections);
 }
-
 /**
  * current = first selection
  * for each selection
@@ -189,8 +133,9 @@ export function fillEnds(selections, contentLength) {
  *
  *   current = next
  */
-export function mergeAdjacentSelectionsWithSameFormats(selections) {
+function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
   let newSelections = List();
+  const selections = nodeModel.getIn(['meta', 'selections'], List());
   let current = selections.first();
   for (let i = 1; i < selections.size; i++) {
     const next = selections.get(i, Selection());
@@ -206,14 +151,112 @@ export function mergeAdjacentSelectionsWithSameFormats(selections) {
   // SUPER PERFORMANCE OPTIMIZATION: if there's only one Selection and it's empty - clear it out
   // TODO: have this function take the content node model itself so it can clean 'meta' if it has an empty 'selections' list
   if (newSelections.size === 1 && !selectionsHaveDifferentFormats(newSelections.get(0), Selection())) {
-    return List();
+    newSelections = List();
   }
-  return newSelections;
+  return nodeModel.setIn(['meta', 'selections'], newSelections);
 }
 
-export function splitSelectionsAtCaretOffset(selections, caretOffset) {
+/**
+ * PUBLIC API
+ */
+/**
+ * Every public export calls this to keep shit on the level
+ *
+ * if the user places the caret in the middle of a paragraph with existing selections:
+ * 1) if caret in middle of selection - end = oldEnd += newKeyStrokesCount
+ * 2) if exist selections that start after the current caret position
+ *   - start = oldStart += newKeyStrokesCount
+ *   - end (if > -1) = oldEnd += newKeyStrokesCount
+ *
+ * ALSO, this function doesn't allow out of bounds selection offsets (greater than the length of the content)
+ */
+export function adjustSelectionOffsetsAndCleanup(nodeModel, start = 0, count = 0) {
+  const selections = nodeModel.getIn(['meta', 'selections'], List());
+  if (selections.size === 0) {
+    return nodeModel.deleteIn(['meta', 'selections']);
+  }
+  let newSelections = List();
+  // TODO: might need to account for the 'placeholder' character here...
+  const contentLength = nodeModel.get('content', '').length;
+  for (let i = 0; i < selections.size; i++) {
+    let current = selections.get(i);
+    // TODO: remove these OOB safeties?
+    if (current.get('start') >= contentLength) {
+      const lastSelection = newSelections.last();
+      newSelections = newSelections.pop();
+      newSelections = newSelections.push(lastSelection.set('end', contentLength));
+      break;
+    }
+    if (current.get('end') > contentLength) {
+      newSelections = newSelections.push(current.set('end', contentLength));
+      break;
+    }
+    if (current.get('start') >= start) {
+      current = current.set('start', current.get('start') + count)
+    }
+    if (current.get('end') >= start) {
+      current = current.set('end', current.get('end') + count)
+    }
+    // for deleting characters: don't push empty selections
+    if (current.get('end') > current.get('start')) {
+      newSelections = newSelections.push(current);
+    } else {
+      // HACK: Assuming the user hit backspace: if we're skipping an empty selection, we've also decremented the end of the previous selection by one.  We don't want to do both, add that guy back
+      const lastSelection = newSelections.last();
+      newSelections = newSelections.pop();
+      newSelections = newSelections.push(lastSelection.set('end', lastSelection.get('end') + 1))
+    }
+  }
+  console.log('ADJUST', nodeModel.toJS(), contentLength, start, count, newSelections.reduce((acc, v) => `${acc} | start: ${v.get('start')}, end: ${v.get('end')}`, ''));
+  return nodeModel.setIn(['meta', 'selections'], newSelections);
+}
+
+export function getSelection(nodeModel, start, end) {
+  const selections = nodeModel.getIn(['meta', 'selections'], List());
+  let selection = selections.find(s => s.get('start') === start && s.get('end') === end, null, Selection());
+  // selection already exists?
+  if (selection.get('end') === end) {
+    return selection;
+  }
+  selection = selection
+    .set('start', start)
+    .set('end', end);
+  nodeModel = applyFormatsOfOverlappingSelections(nodeModel, selection);
+  return adjustSelectionOffsetsAndCleanup(nodeModel);
+}
+
+/**
+ * creating a selection:
+ * if first selection in paragraph:
+ * 1) create one selection the total length of textContent
+ *    OR two selections starting at position 0 or ending at textContent.length - 1
+ *    OR 3 selections, an empty one in beginning, one in the middle and another empty one at the end
+ * An unformatted paragraph can have no selections but, if it has 1 or more, it can't have any gaps
+ *
+ * 1) add attributes from overlapping selections if they have formats (might be empty)
+ * 2) merge overlapping selections - adjust start or end positions of overlapping selections,
+ * guarantee no overlaps at rest
+ */
+export function upsertSelection(nodeModel, newSelection) {
+  nodeModel = mergeOverlappingSelections(nodeModel, newSelection);
+  // TODO: this function wouldn't be needed if there was always at least 1 selection
+  nodeModel = fillEnds(nodeModel, contentLength);
+  nodeModel = mergeAdjacentSelectionsWithSameFormats(nodeModel);
+  return adjustSelectionOffsetsAndCleanup(nodeModel);
+}
+
+/**
+ * NOTE: this function returns an array of Left & Right selections List()s NOT a document model
+ * the reason is because we don't have a Right model (don't have an id) yet.  I could make this so but, it seems reach-outy
+ *
+ * @param nodeModel
+ * @param caretOffset
+ * @returns {List<any>[]}
+ */
+export function splitSelectionsAtCaretOffset(leftNodeModel, rightNodeModel, caretOffset) {
   let left = List();
   let right = List();
+  const selections = leftNodeModel.getIn(['meta', 'selections'], List());
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
     if (current.get('end') <= caretOffset) {
@@ -235,12 +278,19 @@ export function splitSelectionsAtCaretOffset(selections, caretOffset) {
       .set('end', current.get('end') - caretOffset)
     );
   }
-  return [left, right];
+  leftNodeModel = leftNodeModel.setIn(['meta', 'selections'], left);
+  leftNodeModel = adjustSelectionOffsetsAndCleanup(leftNodeModel);
+  rightNodeModel = rightNodeModel.setIn(['meta', 'selections'], right);
+  rightNodeModel = adjustSelectionOffsetsAndCleanup(rightNodeModel);
+  return [leftNodeModel, rightNodeModel];
 }
 
-export function concatSelections(left, right) {
+export function concatSelections(leftModel, rightModel) {
+  const left = leftModel.getIn(['meta', 'selections'], List());
+  let right = rightModel.getIn(['meta', 'selections'], List());
   let newSelections = left.slice();
-  const leftOffset = left.last().get('end');
+  const leftOffset = left.last(Map()).get('end');
+  // if the formats for the last left and first right selections are the same, merge them
   if (!selectionsHaveDifferentFormats(left.last(), right.first())) {
     newSelections = newSelections
       .pop()
@@ -253,6 +303,7 @@ export function concatSelections(left, right) {
       );
     right = right.shift();
   }
+  // add all right selections with left offsets
   for (let i = 0; i < right.size; i++) {
     const current = right.get(i);
     newSelections = newSelections.push(current
@@ -260,17 +311,6 @@ export function concatSelections(left, right) {
       .set('end', current.get('end') + leftOffset)
     )
   }
-  return adjustSelectionOffsets(newSelections);
-}
-
-function selectionsHaveDifferentFormats(left, right) {
-  return [
-    SELECTION_ACTION_BOLD,
-    SELECTION_ACTION_ITALIC,
-    SELECTION_ACTION_CODE,
-    SELECTION_ACTION_STRIKETHROUGH,
-    SELECTION_ACTION_SITEINFO,
-    SELECTION_ACTION_LINK,
-    'linkUrl',
-  ].reduce((acc, key) => acc || left.get(key) !== right.get(key), false);
+  leftModel = leftModel.setIn(['meta','selections'], newSelections);
+  return adjustSelectionOffsetsAndCleanup(leftModel);
 }

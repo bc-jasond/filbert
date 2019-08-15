@@ -77,19 +77,13 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
 export function handleEnterParagraph(documentModel, selectedNodeId, caretPosition, content) {
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
-  const selections = documentModel.getNode(selectedNodeId).getIn(['meta', 'selections'], List());
-  const [leftSelections, rightSelections] = splitSelectionsAtCaretOffset(selections, caretPosition);
-  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftSelections.toJS(), 'right selections: ', rightSelections.toJS());
-  let left = documentModel.getNode(selectedNodeId)
-    .set('content', contentLeft);
-  // TODO: make a more standard 'one place' to
-  if (leftSelections.size > 0) {
-    left.setIn(['meta', 'selections'], leftSelections)
-  }
-  documentModel.update(left);
-  let rightMeta = Map();
-  if (rightSelections.size > 0) {
-    rightMeta = rightMeta.set('selections', rightSelections)
-  }
-  return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P, contentRight, rightMeta);
+  const rightNodeId = documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P, contentRight);
+  
+  let leftNode = documentModel.getNode(selectedNodeId);
+  let rightNode = documentModel.getNode(rightNodeId);
+  [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
+  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftNode.getIn(['meta', 'selections']).toJS(), 'right selections: ', rightNode.getIn(['meta', 'selections']).toJS());
+  documentModel.update(leftNode);
+  documentModel.update(rightNode);
+  return rightNodeId;
 }

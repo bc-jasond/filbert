@@ -57,30 +57,25 @@ export function handleEnterList(documentModel, selectedNodeId, caretPosition, co
   const contentRight = content.substring(caretPosition);
   console.info('ENTER "list" content left: ', contentLeft, 'content right: ', contentRight);
   if (cleanText(contentLeft).length === 0 && documentModel.isLastChild(selectedNodeId)) {
-    // create a P tag after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
+    // user hits enter with caret at position 0 on last list item - move all text (if any) into a P tag below the list
+    // create a P tag after the OL - (allows empty LIs in the middle of list)
     const olId = documentModel.getParent(selectedNodeId).get('id');
     const wasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
+    const selectedNode = documentModel.getNode(selectedNodeId);
     documentModel.delete(selectedNodeId);
-    const pId = documentModel.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight);
+    const pId = documentModel.insertSubSectionAfter(olId, NODE_TYPE_P, contentRight, selectedNode.get('meta', Map()));
     if (wasOnlyChild) {
       documentModel.delete(olId);
     }
     return pId;
   }
-  const selections = documentModel.getNode(selectedNodeId).getIn(['meta', 'selections'], List());
-  const [leftSelections, rightSelections] = splitSelectionsAtCaretOffset(selections, caretPosition);
-  let left = documentModel.getNode(selectedNodeId)
-    .set('content', contentLeft);
-  // TODO: make a more standard 'one place' to
-  if (leftSelections.size > 0) {
-    left.setIn(['meta', 'selections'], leftSelections)
-  }
-  documentModel.update(left);
-  let rightMeta = Map();
-  if (rightSelections.size > 0) {
-    rightMeta = rightMeta.set('selections', rightSelections)
-  }
-  return documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight, rightMeta);
+  const rightNodeId = documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight);
+  let leftNode = documentModel.getNode(selectedNodeId);
+  let rightNode = documentModel.getNode(rightNodeId);
+  [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
+  documentModel.update(leftNode);
+  documentModel.update(rightNode);
+  return rightNodeId;
 }
 
 export function insertList(documentModel, selectedNodeId) {

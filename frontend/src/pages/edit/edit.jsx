@@ -76,10 +76,9 @@ import {
   insertH2
 } from './handle-title';
 import {
-  adjustSelectionOffsets,
+  adjustSelectionOffsetsAndCleanup,
   getSelection,
   upsertSelection,
-  splitSelectionsAtCaretOffset,
 } from './edit-selection-helpers';
 
 import InsertSectionMenu from './insert-section-menu';
@@ -374,13 +373,7 @@ export default class EditPost extends React.Component {
     // TODO: 'Del' doesn't work at the edge of 2 selections
     // update count: +/- 1 here because we're either addding or removing one char at a time
     const count = [KEYCODE_BACKSPACE, KEYCODE_DEL].includes(evt.keyCode) ? -1 : 1;
-    const selections = selectedNodeMap.getIn(['meta', 'selections'], List());
-    if (selections.size) {
-      selectedNodeMap = selectedNodeMap.setIn(
-        ['meta', 'selections'],
-        adjustSelectionOffsets(selections, selectedNodeContent.length, caretPosition, count)
-      );
-    }
+    selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPosition, count);
     this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
     
     console.log('DOM SYNC ', caretPosition + count, 'content length ', selectedNodeContent.length);
@@ -602,12 +595,10 @@ export default class EditPost extends React.Component {
     const rect = range.getBoundingClientRect();
     const selectedNodeId = getCaretNodeId();
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
-    const selections = selectedNodeModel
-      .getIn(['meta', 'selections'], List());
     //const
     this.setState({
       formatSelectionNode: selectedNodeModel,
-      formatSelectionModel: getSelection(selections, startOffset, endOffset),
+      formatSelectionModel: getSelection(selectedNodeModel, startOffset, endOffset),
       formatSelectionMenuTopOffset: selectedNode.offsetTop,
       formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2,
     });
@@ -619,7 +610,6 @@ export default class EditPost extends React.Component {
       formatSelectionNode,
     } = this.state;
     const previousActionValue = formatSelectionModel.get(action, false);
-    const selections = formatSelectionNode.getIn(['meta', 'selections'], List());
     
     console.info('HANDLE SELECTION ACTION: ', action, formatSelectionModel.toJS());
     
@@ -627,22 +617,12 @@ export default class EditPost extends React.Component {
       return; // TODO
     }
     
-    const updatedSelections = upsertSelection(
-      selections,
-      formatSelectionModel.set(action, !previousActionValue),
-      formatSelectionNode.get('content', '').length
+    const updatedNode = upsertSelection(
+      formatSelectionNode,
+      formatSelectionModel.set(action, !previousActionValue)
     );
-    if (updatedSelections.size > 0) {
-      this.documentModel.update(
-        formatSelectionNode.setIn(['meta', 'selections'], updatedSelections)
-      );
-    } else {
-      this.documentModel.update(
-        formatSelectionNode.set('meta', Map())
-      );
-    }
-    
-    this.commitUpdates()
+    this.documentModel.update(updatedNode);
+    this.commitUpdates();
   }
   
   render() {
