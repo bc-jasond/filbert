@@ -82,8 +82,8 @@ export function handleEnterParagraph(documentModel, selectedNodeId, caretPositio
   let leftNode = documentModel.getNode(selectedNodeId);
   let rightNode = documentModel.getNode(rightNodeId);
   [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
-  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftNode.getIn(['meta', 'selections']).toJS(), 'right selections: ', rightNode.getIn(['meta', 'selections']).toJS());
-  documentModel.update(leftNode);
+  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftNode.getIn(['meta', 'selections'], List()).toJS(), 'right selections: ', rightNode.getIn(['meta', 'selections'], List()).toJS());
+  documentModel.update(leftNode.set('content', contentLeft));
   documentModel.update(rightNode);
   return rightNodeId;
 }

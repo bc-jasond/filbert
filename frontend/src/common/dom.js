@@ -135,7 +135,7 @@ export function getChildTextNodeAndOffsetFromParentOffset(parent, parentOffset) 
     if (currentNode.nodeType === DOM_TEXT_NODE_TYPE_ID) {
       textNodesOnlyFlattened.push(currentNode);
     }
-    queue.push(...currentNode.childNodes);
+    queue.unshift(...currentNode.childNodes);
   }
   let childNode;
   // assume 'parent' is a 'paragraph' with an id

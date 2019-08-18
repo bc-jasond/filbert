@@ -235,13 +235,7 @@ export default class EditDocumentModel {
     let left = this.getNode(leftId);
     const right = this.getNode(rightId);
     left = left.set('content', `${left.get('content')}${right.get('content')}`);
-    const selections = concatSelections(
-      left.getIn(['meta', 'selections'], List()),
-      right.getIn(['meta', 'selections'], List())
-    );
-    if (selections.size > 0) {
-      left = left.setIn(['meta', 'selections'], selections);
-    }
+    left = concatSelections(left, right);
     this.update(left);
     this.delete(rightId);
   }

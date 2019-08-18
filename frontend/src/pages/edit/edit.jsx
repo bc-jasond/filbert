@@ -9,6 +9,7 @@ import {
 import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
+  getDiffStartAndLength,
 } from '../../common/utils';
 import {
   getRange,
@@ -76,6 +77,7 @@ import {
   insertH2
 } from './handle-title';
 import {
+  Selection,
   adjustSelectionOffsetsAndCleanup,
   getSelection,
   upsertSelection,
@@ -106,7 +108,7 @@ export default class EditPost extends React.Component {
       editSectionMetaFormTopOffset: 0,
       editSectionMetaFormLeftOffset: 0,
       formatSelectionNode: Map(),
-      formatSelectionModel: Map(),
+      formatSelectionModel: Selection(),
     }
   }
   
@@ -198,10 +200,10 @@ export default class EditPost extends React.Component {
       await this.saveNewPost();
       return;
     } else {
-      // optimistically save updated nodes - look ma, no errors!
+      // TODO: optimistically save updated nodes - look ma, no errors!
       await this.saveContentBatchDebounce();
     }
-    
+    const { formatSelectionNode } = this.state;
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
       this.setState({
@@ -209,10 +211,10 @@ export default class EditPost extends React.Component {
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,
-        formatSelectionNode: Map(),
-        formatSelectionModel: Map(),
       }, () => {
-        setCaret(focusNodeId, offset, shouldFocusLastChild);
+        if (!formatSelectionNode.get('id')) {
+          setCaret(focusNodeId, offset, shouldFocusLastChild);
+        }
         this.manageInsertMenu();
         resolve();
       });
@@ -368,15 +370,18 @@ export default class EditPost extends React.Component {
       return;
     }
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
-    const [caretPosition] = getOffsetInParentContent();
-    // TODO: handle cut/paste
-    // TODO: 'Del' doesn't work at the edge of 2 selections
-    // update count: +/- 1 here because we're either addding or removing one char at a time
-    const count = [KEYCODE_BACKSPACE, KEYCODE_DEL].includes(evt.keyCode) ? -1 : 1;
-    selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPosition, count);
-    this.documentModel.update(selectedNodeMap.set('content', selectedNodeContent));
+    const [diffStart, diffLength] = getDiffStartAndLength(selectedNodeMap.get('content', ''), selectedNodeContent);
+    // TODO: handle cut/paste?
+    // TODO: handle select & type or select & delete
+    // TODO: 'Del' does it work at the edge of 2 selections?
+    if (diffLength === 0) {
+      return;
+    }
+    selectedNodeMap = selectedNodeMap.set('content', selectedNodeContent);
+    selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, diffStart, diffLength);
+    this.documentModel.update(selectedNodeMap);
     
-    console.log('DOM SYNC ', caretPosition + count, 'content length ', selectedNodeContent.length);
+    console.log('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContent.length);
     this.saveContentBatchDebounce()
   }
   
@@ -583,7 +588,7 @@ export default class EditPost extends React.Component {
     if (!range || range.collapsed || !selectedNode || isEscKey) {
       this.setState({
         formatSelectionNode: Map(),
-        formatSelectionModel: Map(),
+        formatSelectionModel: Selection(),
         formatSelectionMenuTopOffset: 0,
         formatSelectionMenuLeftOffset: 0,
       })
@@ -604,25 +609,29 @@ export default class EditPost extends React.Component {
     });
   }
   
-  handleSelectionAction = (action) => {
+  handleSelectionAction = async (action) => {
     const {
       formatSelectionModel,
       formatSelectionNode,
     } = this.state;
-    const previousActionValue = formatSelectionModel.get(action, false);
+    const previousActionValue = formatSelectionModel.get(action);
     
     console.info('HANDLE SELECTION ACTION: ', action, formatSelectionModel.toJS());
     
     if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
       return; // TODO
     }
-    
+    const updatedSelectionModel = formatSelectionModel.set(action, !previousActionValue);
     const updatedNode = upsertSelection(
       formatSelectionNode,
-      formatSelectionModel.set(action, !previousActionValue)
+      updatedSelectionModel,
     );
     this.documentModel.update(updatedNode);
-    this.commitUpdates();
+    await this.commitUpdates();
+    this.setState({
+      formatSelectionNode: updatedNode,
+      formatSelectionModel: updatedSelectionModel
+    })
   }
   
   render() {
