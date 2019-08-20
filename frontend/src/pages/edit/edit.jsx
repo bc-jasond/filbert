@@ -32,6 +32,7 @@ import {
   NODE_TYPE_SECTION_IMAGE,
   KEYCODE_ENTER,
   KEYCODE_BACKSPACE,
+  KEYCODE_DEL,
   KEYCODE_UP_ARROW,
   KEYCODE_DOWN_ARROW,
   KEYCODE_LEFT_ARROW,
@@ -45,7 +46,9 @@ import {
   NODE_TYPE_LI,
   NODE_TYPE_PRE,
   SELECTION_ACTION_H1,
-  SELECTION_ACTION_H2, KEYCODE_DEL,
+  SELECTION_ACTION_H2,
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_SITEINFO,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -621,7 +624,14 @@ export default class EditPost extends React.Component {
     if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
       return; // TODO
     }
-    const updatedSelectionModel = formatSelectionModel.set(action, !previousActionValue);
+    let updatedSelectionModel = formatSelectionModel.set(action, !previousActionValue);
+    // selection can be either italic or siteinfo, not both
+    if (action === SELECTION_ACTION_ITALIC && !previousActionValue) {
+      updatedSelectionModel = updatedSelectionModel.set(SELECTION_ACTION_SITEINFO, false);
+    }
+    if (action === SELECTION_ACTION_SITEINFO && !previousActionValue) {
+      updatedSelectionModel = updatedSelectionModel.set(SELECTION_ACTION_ITALIC, false);
+    }
     const updatedNode = upsertSelection(
       formatSelectionNode,
       updatedSelectionModel,
