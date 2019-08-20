@@ -80,6 +80,7 @@ export const SELECTION_ACTION_STRIKETHROUGH = 'selection-strikethrough';
 export const SELECTION_ACTION_LINK = 'selection-link';
 export const SELECTION_ACTION_H1 = 'selection-h1';
 export const SELECTION_ACTION_H2 = 'selection-h2';
+export const SELECTION_LINK_URL = 'linkUrl';
 
 // ENV
 export const API_URL = process.env.API_URL;

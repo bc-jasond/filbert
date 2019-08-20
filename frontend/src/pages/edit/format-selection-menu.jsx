@@ -8,8 +8,11 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_ACTION_LINK,
+  SELECTION_LINK_URL,
   SELECTION_ACTION_H1,
-  SELECTION_ACTION_H2, NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_H2,
+  SELECTION_ACTION_H2,
+  NODE_TYPE_SECTION_H1,
+  NODE_TYPE_SECTION_H2,
 } from '../../common/constants';
 
 import IconBoldSvg from '../../../assets/bold.svg';
@@ -61,7 +64,8 @@ const IconH2 = styled(IconH2Svg)`
 
 export const FormatSelectionMenu = styled.div`
   position: absolute;
-  top: ${p => p.top - 50}px;
+  transition: .1s top;
+  top: ${p => p.top - (p.shouldShowUrl ? 80 : 50)}px;
   left: ${p => p.left - 165}px; // 165 is half the width of the menu
   z-index: 11;
   background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
@@ -95,6 +99,27 @@ export const ButtonSeparator = styled.div`
   height: 24px;
   background: rgba(255,255,255,.2);
 `;
+export const LinkInput = styled.input`
+  background: rgba(0,0,0,0);
+  display: block;
+  height: 0;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+  border: none;
+  outline: 0;
+  font-size: 16px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  appearance: none;
+  transition: .05s height;
+  ${p => p.selected && `
+    padding: 12px;
+    padding-top: 0;
+    height: 30px;
+  `}
+`;
 export const PointClip = styled.div`
   position: absolute;
   bottom: -10px;
@@ -116,8 +141,9 @@ export default ({
                   nodeModel,
                   selectionModel,
                   selectionAction,
+                  updateLinkUrl,
                 }) => (
-  <FormatSelectionMenu top={offsetTop} left={offsetLeft}>
+  <FormatSelectionMenu shouldShowUrl={selectionModel.get(SELECTION_ACTION_LINK)} top={offsetTop} left={offsetLeft}>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_BOLD)}>
       <IconBold selected={selectionModel.get(SELECTION_ACTION_BOLD)} />
     </FormatButton>
@@ -143,6 +169,12 @@ export default ({
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_H2)}>
       <IconH2 selected={nodeModel.get('type') === NODE_TYPE_SECTION_H2} />
     </FormatButton>
+    <LinkInput
+      placeholder="Enter URL here..."
+      selected={selectionModel.get(SELECTION_ACTION_LINK)}
+      onChange={(e) => updateLinkUrl(e.target.value)}
+      value={selectionModel.get(SELECTION_LINK_URL)}
+    />
     <PointClip>
       <Arrow />
     </PointClip>

@@ -644,6 +644,13 @@ export default class EditPost extends React.Component {
     })
   }
   
+  updateLinkUrl = (value) => {
+    const {
+      formatSelectionNode,
+      formatSelectionModel,
+    } = this.state;
+  }
+  
   render() {
     const {
       root,
@@ -704,6 +711,7 @@ export default class EditPost extends React.Component {
           nodeModel={formatSelectionNode}
           selectionModel={formatSelectionModel}
           selectionAction={this.handleSelectionAction}
+          updateLinkUrl={this.updateLinkUrl}
         />)}
       </React.Fragment>
     );

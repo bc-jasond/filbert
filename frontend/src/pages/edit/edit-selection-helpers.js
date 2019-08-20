@@ -7,6 +7,7 @@ import {
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
+  SELECTION_LINK_URL,
 } from '../../common/constants';
 
 export const Selection = Record({
@@ -18,7 +19,7 @@ export const Selection = Record({
   [SELECTION_ACTION_STRIKETHROUGH]: false,
   [SELECTION_ACTION_SITEINFO]: false,
   [SELECTION_ACTION_LINK]: false,
-  linkUrl: '',
+  [SELECTION_LINK_URL]: '',
 });
 
 /**
