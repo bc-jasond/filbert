@@ -133,6 +133,7 @@ export default class EditPost extends React.Component {
   updateManager = new EditUpdateManager();
   commitTimeoutId;
   cancelledEvent; // to coordinate noops between event types keydown, keyup
+  linkUrlInputRef;
   
   saveContentBatch = async () => {
     try {
@@ -637,11 +638,15 @@ export default class EditPost extends React.Component {
     }
     let updatedSelectionModel = formatSelectionModel.set(action, !previousActionValue);
     // selection can be either italic or siteinfo, not both
-    if (action === SELECTION_ACTION_ITALIC && !previousActionValue) {
-      updatedSelectionModel = updatedSelectionModel.set(SELECTION_ACTION_SITEINFO, false);
+    if (action === SELECTION_ACTION_ITALIC && updatedSelectionModel.get(SELECTION_ACTION_ITALIC)) {
+      updatedSelectionModel = updatedSelectionModel.remove(SELECTION_ACTION_SITEINFO);
     }
-    if (action === SELECTION_ACTION_SITEINFO && !previousActionValue) {
-      updatedSelectionModel = updatedSelectionModel.set(SELECTION_ACTION_ITALIC, false);
+    if (action === SELECTION_ACTION_SITEINFO && updatedSelectionModel.get(SELECTION_ACTION_SITEINFO)) {
+      updatedSelectionModel = updatedSelectionModel.remove(SELECTION_ACTION_ITALIC);
+    }
+    // clear URL text if not link anymore
+    if (action === SELECTION_ACTION_LINK && !updatedSelectionModel.get(SELECTION_ACTION_LINK)) {
+      updatedSelectionModel = updatedSelectionModel.remove(SELECTION_LINK_URL);
     }
     const updatedNode = upsertSelection(
       formatSelectionNode,

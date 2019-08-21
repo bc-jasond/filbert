@@ -1,4 +1,4 @@
-import Immutable, { List, Map } from 'immutable';
+import Immutable, { isKeyed, List, Map } from 'immutable';
 
 import {
   NEW_POST_URL_ID,
@@ -21,7 +21,10 @@ import {
   cleanText,
   getMapWithId,
 } from '../../common/utils';
-import { concatSelections } from './edit-selection-helpers';
+import {
+  concatSelections,
+  selectionReviver,
+} from './edit-selection-helpers';
 
 export default class EditDocumentModel {
   post;
@@ -37,7 +40,11 @@ export default class EditDocumentModel {
     // and the updateManager behind the scenes, so that orchestration would have to move either out into edit.jsx or into another helper class
     this.updateManager = updateManager;
     if (jsonData) {
-      this.nodesByParentId = Immutable.fromJS(jsonData);
+      this.nodesByParentId = Immutable.fromJS(jsonData, (key, value) => {
+        return selectionReviver(key, value)
+          // ImmutableJS default behavior
+          || (isKeyed(value) ? value.toMap() : value.toList())
+      });
       this.root = this.getFirstChild(ROOT_NODE_PARENT_ID);
       this.rootId = this.root.get('id');
     } else {

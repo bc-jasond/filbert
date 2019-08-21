@@ -22,6 +22,12 @@ export const Selection = Record({
   [SELECTION_LINK_URL]: '',
 });
 
+export function selectionReviver(key, value) {
+  if (value.has('start') && value.has('end')) {
+    return new Selection(value)
+  }
+}
+
 /**
  * PRIVATE HELPERS
  */
