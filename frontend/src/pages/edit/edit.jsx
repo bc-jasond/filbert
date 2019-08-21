@@ -49,6 +49,8 @@ import {
   SELECTION_ACTION_H2,
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_LINK,
+  SELECTION_LINK_URL,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -612,6 +614,15 @@ export default class EditPost extends React.Component {
     });
   }
   
+  getLinkUrlForwardedRef = (ref) => {
+    if (!ref) return;
+    this.linkUrlInputRef = ref;
+    const { formatSelectionModel } = this.state;
+    if (formatSelectionModel.get(SELECTION_ACTION_LINK)) {
+      ref.focus();
+    }
+  }
+  
   handleSelectionAction = async (action) => {
     const {
       formatSelectionModel,
@@ -641,14 +652,29 @@ export default class EditPost extends React.Component {
     this.setState({
       formatSelectionNode: updatedNode,
       formatSelectionModel: updatedSelectionModel
+    }, () => {
+      if (updatedSelectionModel.get(SELECTION_ACTION_LINK) && this.linkUrlInputRef) {
+        this.linkUrlInputRef.focus();
+      }
     })
   }
   
-  updateLinkUrl = (value) => {
+  updateLinkUrl = async (value) => {
     const {
       formatSelectionNode,
       formatSelectionModel,
     } = this.state;
+    const updatedSelectionModel = formatSelectionModel.set(SELECTION_LINK_URL, value);
+    const updatedNode = upsertSelection(
+      formatSelectionNode,
+      updatedSelectionModel,
+    );
+    this.documentModel.update(updatedNode);
+    await this.commitUpdates();
+    this.setState({
+      formatSelectionNode: updatedNode,
+      formatSelectionModel: updatedSelectionModel
+    })
   }
   
   render() {
@@ -712,6 +738,7 @@ export default class EditPost extends React.Component {
           selectionModel={formatSelectionModel}
           selectionAction={this.handleSelectionAction}
           updateLinkUrl={this.updateLinkUrl}
+          forwardRef={this.getLinkUrlForwardedRef}
         />)}
       </React.Fragment>
     );

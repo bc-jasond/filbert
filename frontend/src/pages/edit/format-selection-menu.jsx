@@ -142,6 +142,7 @@ export default ({
                   selectionModel,
                   selectionAction,
                   updateLinkUrl,
+                  forwardRef,
                 }) => (
   <FormatSelectionMenu shouldShowUrl={selectionModel.get(SELECTION_ACTION_LINK)} top={offsetTop} left={offsetLeft}>
     <FormatButton onClick={() => selectionAction(SELECTION_ACTION_BOLD)}>
@@ -170,6 +171,7 @@ export default ({
       <IconH2 selected={nodeModel.get('type') === NODE_TYPE_SECTION_H2} />
     </FormatButton>
     <LinkInput
+      ref={forwardRef}
       placeholder="Enter URL here..."
       selected={selectionModel.get(SELECTION_ACTION_LINK)}
       onChange={(e) => updateLinkUrl(e.target.value)}
