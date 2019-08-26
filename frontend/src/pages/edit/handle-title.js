@@ -1,4 +1,4 @@
-import { List } from 'immutable';
+import { List, Map } from 'immutable';
 import {
   NODE_TYPE_OL,
   NODE_TYPE_P,
@@ -77,21 +77,25 @@ export function handleEnterTitle(documentModel, selectedNodeId, caretPosition, c
     nextSiblingId = nextSibling.get('id');
   } else {
     // create a ContentSection
-    nextSiblingId = documentModel.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
+    nextSiblingId = documentModel.inserSectionBeforeOrAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
   }
   // add to existing content section
   return documentModel.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
 }
 
-function insertTitle(documentModel, selectedNodeId, sectionType) {
+function insertTitle(documentModel, selectedNodeId, sectionType, shouldCopyContent) {
   const selectedSectionId = documentModel.getSection(selectedNodeId).get('id');
   const placeholderParagraphWasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
+  const content = documentModel
+    .getNode(selectedNodeId, Map())
+    .get('content', '');
   if (!documentModel.isLastChild(selectedNodeId)) {
     documentModel.splitSection(selectedSectionId, selectedNodeId);
   }
-  const newSectionId = documentModel.insertSectionAfter(
+  const newSectionId = documentModel.inserSectionBeforeOrAfter(
     selectedSectionId,
     sectionType,
+    shouldCopyContent ? content : '',
   );
   documentModel.delete(selectedNodeId);
   if (placeholderParagraphWasOnlyChild) {
@@ -100,5 +104,5 @@ function insertTitle(documentModel, selectedNodeId, sectionType) {
   return newSectionId;
 }
 
-export const insertH1 = (documentModel, selectedNodeId) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_SECTION_H1);
-export const insertH2 = (documentModel, selectedNodeId) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_SECTION_H2);
+export const insertH1 = (documentModel, selectedNodeId, shouldCopyContent = false) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_SECTION_H1);
+export const insertH2 = (documentModel, selectedNodeId, shouldCopyContent = false) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_SECTION_H2);

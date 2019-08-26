@@ -633,8 +633,14 @@ export default class EditPost extends React.Component {
     
     console.info('HANDLE SELECTION ACTION: ', action, formatSelectionModel.toJS());
     
-    if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
-      return; // TODO
+    if (action === SELECTION_ACTION_H1) {
+      if (!previousActionValue) {
+        insertH1(this.documentModel, formatSelectionNode.get('id'), true)
+      }
+      return;
+    }
+    if (action === SELECTION_ACTION_H2) {
+    
     }
     let updatedSelectionModel = formatSelectionModel.set(action, !previousActionValue);
     // selection can be either italic or siteinfo, not both

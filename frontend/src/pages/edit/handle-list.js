@@ -1,4 +1,4 @@
-import { List, Map } from 'immutable';
+import { Map } from 'immutable';
 import {
   NODE_TYPE_LI,
   NODE_TYPE_OL,
@@ -83,4 +83,63 @@ export function insertList(documentModel, selectedNodeId) {
   const focusNodeId = documentModel.insert(olId, NODE_TYPE_LI, 0);
   documentModel.delete(selectedNodeId);
   return focusNodeId;
+}
+
+
+/**
+ * split a list into two at a list item (selectedNodeId) - not including the list item
+ */
+function splitList(documentModel, selectedNodeId) {
+  const listId = documentModel.getParent(selectedNodeId).get('id');
+  const listItems = documentModel.getChildren(listId);
+  const nodeIdx = listItems.findIndex(s => s.get('id') === selectedNodeId);
+  
+  // update existing list
+  const leftListItems = listItems.slice(0, nodeIdx);
+  if (leftListItems.size === 0) {
+    documentModel.delete(listId);
+  } else {
+    documentModel.setChildren(listId, leftListItems);
+    documentModel.updateNodesForParent(listId);
+  }
+  
+  // new list
+  // NOTE: skipping selectedNode with + 1 here intentionally
+  const rightListItems = listItems.slice(nodeIdx + 1);
+  if (rightListItems.size > 0) {
+    const newListId = this.insertSubSectionAfter(listId, NODE_TYPE_OL);
+    documentModel.setChildren(newListId, rightListItems);
+    documentModel.updateNodesForParent(newListId);
+  }
+  
+  return [leftListItems.size, rightListItems.size];
+}
+
+/**
+ * For the Format Selection menu on a list item -> H1 or H2
+ */
+export function splitListAndReplaceListItemWithSection(documentModel, selectedNodeId, sectionType) {
+  const content = documentModel.getNode(selectedNodeId).get('content');
+  const sectionId = documentModel.getSection(selectedNodeId).get('id');
+  
+  const [leftItemsCount, rightItemsCount] = splitList(documentModel, selectedNodeId);
+  
+  // if (documentModel.isOnlyChild(selectedNodeId)) {
+  //   const focusNodeId = documentModel.inserSectionBeforeOrAfter(sectionId, sectionType, content);
+  //   documentModel.delete(sectionId);
+  //   return focusNodeId;
+  // }
+  // if (documentModel.isFirstChild(selectedNodeId)) {
+  //   const focusNodeId = documentModel.inserSectionBeforeOrAfter(sectionId, sectionType, false, content)
+  //   documentModel.delete(selectedNodeId);
+  //   return focusNodeId;
+  // }
+  // if (documentModel.isLastChild(selectedNodeId)) {
+  //   const focusNodeId = documentModel.inserSectionBeforeOrAfter(sectionId, sectionType, content);
+  //   documentModel.delete(selectedNodeId);
+  //   return focusNodeId;
+  // }
+  // split the list somewhere in the middle
+  
+  
 }

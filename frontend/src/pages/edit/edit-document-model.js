@@ -85,6 +85,15 @@ export default class EditDocumentModel {
     return node.get('parent_id') ? this.getNode(node.get('parent_id')) : node;
   }
   
+  getChildren(nodeId) {
+    return this.nodesByParentId.get(nodeId, List())
+  }
+  
+  setChildren(nodeId, children) {
+    this.nodesByParentId = this.nodesByParentId.set(nodeId, children);
+    return this;
+  }
+  
   getSection(nodeId) {
     let sectionId = nodeId;
     while (!this.isSectionType(sectionId)) {
@@ -92,7 +101,9 @@ export default class EditDocumentModel {
         throw new Error('getSection is Out of Control!!!');
       }
       sectionId = this.getParent(sectionId).get('id');
-      if (!sectionId) { break; }
+      if (!sectionId) {
+        break;
+      }
     }
     return this.getNode(sectionId);
   }
@@ -181,21 +192,22 @@ export default class EditDocumentModel {
     ].includes(this.getNode(nodeId).get('type'))
   }
   
-  insertSectionAfter(sectionId, type, meta = Map()) {
+  inserSectionBeforeOrAfter(sectionId, type, shouldInsertAfter = true, content = '', meta = Map()) {
     // parent must be root
     const sections = this.nodesByParentId.get(this.rootId, List());
     const siblingIndex = sections.findIndex(s => s.get('id') === sectionId);
     if (siblingIndex === -1) {
-      const errorMessage = 'insertSectionAfter - sibling section not found';
+      const errorMessage = 'inserSectionBeforeOrAfter - sibling section not found';
       console.error(errorMessage, sectionId);
       throw new Error(errorMessage);
     }
-    return this.insert(this.rootId, type, siblingIndex + 1, '', meta);
+    const newIdx = shouldInsertAfter ? siblingIndex + 1 : siblingIndex;
+    return this.insert(this.rootId, type, newIdx, content, meta);
   }
   
-  insertSection(type, index = -1, meta = Map()) {
+  insertSection(type, index = -1, content = '', meta = Map()) {
     // parent must be root
-    return this.insert(this.rootId, type, index, '', meta);
+    return this.insert(this.rootId, type, index, content, meta);
   }
   
   splitSection(sectionId, nodeId) {
@@ -207,7 +219,6 @@ export default class EditDocumentModel {
     const siblings = this.nodesByParentId.get(sectionId);
     const nodeIdx = siblings.findIndex(s => s.get('id') === nodeId);
     
-    // this.delete(nodeId);
     // update existing section
     this.nodesByParentId = this.nodesByParentId.set(sectionId, siblings.slice(0, nodeIdx));
     // if all existing nodes moved to the new section, create a new P
@@ -216,7 +227,7 @@ export default class EditDocumentModel {
     }
     this.updateNodesForParent(sectionId);
     // new section
-    const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
+    const newSectionId = this.inserSectionBeforeOrAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
     this.nodesByParentId = this.nodesByParentId.set(newSectionId, siblings.slice(nodeIdx));
     // if all existing nodes stayed in the existing section, create a new P
     if (this.nodesByParentId.get(newSectionId).size === 0) {
