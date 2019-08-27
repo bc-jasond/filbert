@@ -79,7 +79,7 @@ export function handleEnterCode(documentModel, selectedNode, caretPosition, cont
       nextSiblingId = nextSibling.get('id');
     } else {
       // create a ContentSection
-      nextSiblingId = documentModel.inserSectionBeforeOrAfter(selectedSectionId, NODE_TYPE_SECTION_CONTENT);
+      nextSiblingId = documentModel.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_CONTENT);
     }
     // add to existing content section
     return documentModel.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
@@ -118,7 +118,7 @@ export function insertCodeSection(documentModel, selectedNodeId) {
   if (!documentModel.isLastChild(selectedNodeId)) {
     documentModel.splitSection(selectedSectionId, selectedNodeId);
   }
-  const newSectionId = documentModel.inserSectionBeforeOrAfter(
+  const newSectionId = documentModel.insertSectionAfter(
     selectedSectionId,
     NODE_TYPE_SECTION_CODE,
   );

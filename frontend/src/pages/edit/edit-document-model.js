@@ -192,17 +192,28 @@ export default class EditDocumentModel {
     ].includes(this.getNode(nodeId).get('type'))
   }
   
-  inserSectionBeforeOrAfter(sectionId, type, shouldInsertAfter = true, content = '', meta = Map()) {
+  insertSectionAfter(sectionId, type, content = '', meta = Map()) {
     // parent must be root
     const sections = this.nodesByParentId.get(this.rootId, List());
     const siblingIndex = sections.findIndex(s => s.get('id') === sectionId);
     if (siblingIndex === -1) {
-      const errorMessage = 'inserSectionBeforeOrAfter - sibling section not found';
+      const errorMessage = 'insertSectionAfter - sibling section not found';
       console.error(errorMessage, sectionId);
       throw new Error(errorMessage);
     }
-    const newIdx = shouldInsertAfter ? siblingIndex + 1 : siblingIndex;
-    return this.insert(this.rootId, type, newIdx, content, meta);
+    return this.insertSection(type, siblingIndex + 1, content, meta);
+  }
+  
+  insertSectionBefore(sectionId, type, content = '', meta = Map()) {
+    // parent must be root
+    const sections = this.nodesByParentId.get(this.rootId, List());
+    const siblingIndex = sections.findIndex(s => s.get('id') === sectionId);
+    if (siblingIndex === -1) {
+      const errorMessage = 'insertSectionBefore - sibling section not found';
+      console.error(errorMessage, sectionId);
+      throw new Error(errorMessage);
+    }
+    return this.insert(this.rootId, type, siblingIndex, content, meta);
   }
   
   insertSection(type, index = -1, content = '', meta = Map()) {
@@ -227,13 +238,42 @@ export default class EditDocumentModel {
     }
     this.updateNodesForParent(sectionId);
     // new section
-    const newSectionId = this.inserSectionBeforeOrAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
+    const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
     this.nodesByParentId = this.nodesByParentId.set(newSectionId, siblings.slice(nodeIdx));
     // if all existing nodes stayed in the existing section, create a new P
     if (this.nodesByParentId.get(newSectionId).size === 0) {
       this.insert(newSectionId, NODE_TYPE_P, 0);
     }
     this.updateNodesForParent(newSectionId);
+  }
+  
+  /**
+   * NOTE: this splits a content section into two and *removes* nodeId
+   */
+  splitSectionAtNode(sectionId, nodeId) {
+    const subSections = this.getChildren(sectionId);
+    const nodeIdx = subSections.findIndex(s => s.get('id') === nodeId);
+    
+    // update existing list
+    const leftSubSections = subSections.slice(0, nodeIdx);
+    if (leftSubSections.size === 0) {
+      this.delete(sectionId);
+    } else {
+      this.setChildren(sectionId, leftSubSections);
+      this.updateNodesForParent(sectionId);
+    }
+    
+    // new list
+    // NOTE: skipping selectedNode with + 1 here intentionally
+    const rightSubSections = subSections.slice(nodeIdx + 1);
+    let newSectionId;
+    if (rightSubSections.size > 0) {
+      newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
+      this.setChildren(newSectionId, rightSubSections);
+      this.updateNodesForParent(newSectionId);
+    }
+    
+    return [leftSubSections.size, rightSubSections.size, newSectionId];
   }
   
   isParagraphType(nodeId) {

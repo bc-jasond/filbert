@@ -106,40 +106,36 @@ function splitList(documentModel, selectedNodeId) {
   // new list
   // NOTE: skipping selectedNode with + 1 here intentionally
   const rightListItems = listItems.slice(nodeIdx + 1);
+  let newListId;
   if (rightListItems.size > 0) {
-    const newListId = this.insertSubSectionAfter(listId, NODE_TYPE_OL);
+    newListId = this.insertSubSectionAfter(listId, NODE_TYPE_OL);
     documentModel.setChildren(newListId, rightListItems);
     documentModel.updateNodesForParent(newListId);
   }
   
-  return [leftListItems.size, rightListItems.size];
+  return [leftListItems.size, rightListItems.size, newListId];
 }
 
 /**
  * For the Format Selection menu on a list item -> H1 or H2
  */
-export function splitListAndReplaceListItemWithSection(documentModel, selectedNodeId, sectionType) {
+export function splitListReplaceListItemWithSection(documentModel, selectedNodeId, sectionType) {
   const content = documentModel.getNode(selectedNodeId).get('content');
+  const listId = documentModel.getParent(selectedNodeId).get('id');
   const sectionId = documentModel.getSection(selectedNodeId).get('id');
   
-  const [leftItemsCount, rightItemsCount] = splitList(documentModel, selectedNodeId);
+  const [leftListItemsCount, rightListItemsCount, newListId] = splitList(documentModel, selectedNodeId);
+  const [leftSubSectionsCount, rightSubSectionsCount, newSectionId] = documentModel.splitSectionAtNode(
+    // existing list has no items? it was deleted by splitList.  split section on newListId
+    leftListItemsCount === 0
+      ? newListId
+      : listId,
+    listId);
   
-  // if (documentModel.isOnlyChild(selectedNodeId)) {
-  //   const focusNodeId = documentModel.inserSectionBeforeOrAfter(sectionId, sectionType, content);
-  //   documentModel.delete(sectionId);
-  //   return focusNodeId;
-  // }
-  // if (documentModel.isFirstChild(selectedNodeId)) {
-  //   const focusNodeId = documentModel.inserSectionBeforeOrAfter(sectionId, sectionType, false, content)
-  //   documentModel.delete(selectedNodeId);
-  //   return focusNodeId;
-  // }
-  // if (documentModel.isLastChild(selectedNodeId)) {
-  //   const focusNodeId = documentModel.inserSectionBeforeOrAfter(sectionId, sectionType, content);
-  //   documentModel.delete(selectedNodeId);
-  //   return focusNodeId;
-  // }
-  // split the list somewhere in the middle
-  
-  
+  // existing section is empty? it was deleted by splitSectionAtNode.  insert H1 or H2 *before* newSectionId
+  if (leftSubSectionsCount === 0) {
+    return documentModel.insertSectionBefore(newSectionId, sectionType, false, content);
+  }
+  // existing section isn't empty - list has items or was not first SubSection of sectionId.  insert *after*
+  return documentModel.insertSectionAfter(sectionId, sectionType, true, content);
 }

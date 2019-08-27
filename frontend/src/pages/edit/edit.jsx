@@ -67,7 +67,8 @@ import { insertPhoto } from './handle-image';
 import {
   handleBackspaceList,
   handleEnterList,
-  insertList
+  insertList,
+  splitListReplaceListItemWithSection,
 } from './handle-list';
 import {
   handleBackspaceParagraph,
@@ -633,15 +634,21 @@ export default class EditPost extends React.Component {
     
     console.info('HANDLE SELECTION ACTION: ', action, formatSelectionModel.toJS());
     
-    if (action === SELECTION_ACTION_H1) {
-      if (!previousActionValue) {
-        insertH1(this.documentModel, formatSelectionNode.get('id'), true)
+    if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
+      const sectionType = action === SELECTION_ACTION_H1 ? NODE_TYPE_SECTION_H1 : NODE_TYPE_SECTION_H2;
+      const selectedNodeId = formatSelectionNode.get('id');
+      let focusNodeId;
+      if (formatSelectionNode.get('type') === NODE_TYPE_LI) {
+        focusNodeId = splitListReplaceListItemWithSection(this.documentModel, selectedNodeId, sectionType);
       }
+      await this.commitUpdates(focusNodeId);
+      this.setState({
+        formatSelectionNode: Map(),
+        formatSelectionModel: Selection(),
+      })
       return;
     }
-    if (action === SELECTION_ACTION_H2) {
     
-    }
     let updatedSelectionModel = formatSelectionModel.set(action, !previousActionValue);
     // selection can be either italic or siteinfo, not both
     if (action === SELECTION_ACTION_ITALIC && updatedSelectionModel.get(SELECTION_ACTION_ITALIC)) {

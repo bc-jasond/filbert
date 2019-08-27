@@ -77,7 +77,7 @@ export function handleEnterTitle(documentModel, selectedNodeId, caretPosition, c
     nextSiblingId = nextSibling.get('id');
   } else {
     // create a ContentSection
-    nextSiblingId = documentModel.inserSectionBeforeOrAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
+    nextSiblingId = documentModel.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
   }
   // add to existing content section
   return documentModel.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
@@ -92,7 +92,7 @@ function insertTitle(documentModel, selectedNodeId, sectionType, shouldCopyConte
   if (!documentModel.isLastChild(selectedNodeId)) {
     documentModel.splitSection(selectedSectionId, selectedNodeId);
   }
-  const newSectionId = documentModel.inserSectionBeforeOrAfter(
+  const newSectionId = documentModel.insertSectionAfter(
     selectedSectionId,
     sectionType,
     shouldCopyContent ? content : '',
