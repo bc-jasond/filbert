@@ -250,9 +250,8 @@ export default class EditDocumentModel {
   /**
    * NOTE: this splits a content section into two and *removes* nodeId
    */
-  splitSectionAtNode(sectionId, nodeId) {
+  splitSectionForFormatChange(sectionId, nodeIdx) {
     const subSections = this.getChildren(sectionId);
-    const nodeIdx = subSections.findIndex(s => s.get('id') === nodeId);
     
     // update existing list
     const leftSubSections = subSections.slice(0, nodeIdx);
@@ -264,8 +263,7 @@ export default class EditDocumentModel {
     }
     
     // new list
-    // NOTE: skipping selectedNode with + 1 here intentionally
-    const rightSubSections = subSections.slice(nodeIdx + 1);
+    const rightSubSections = subSections.slice(nodeIdx);
     let newSectionId;
     if (rightSubSections.size > 0) {
       newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
@@ -273,7 +271,8 @@ export default class EditDocumentModel {
       this.updateNodesForParent(newSectionId);
     }
     
-    return [leftSubSections.size, rightSubSections.size, newSectionId];
+    // return offset to insert after or before
+    return leftSubSections.size > 0 ? 1 : 0;
   }
   
   isParagraphType(nodeId) {
@@ -347,11 +346,13 @@ export default class EditDocumentModel {
   }
   
   update(node) {
-    const parentId = this.getParent(node.get('id')).get('id');
+    const nodeId = node.get('id');
+    const parentId = this.getParent(nodeId).get('id');
     const siblings = this.nodesByParentId.get(parentId);
-    const nodeIdx = siblings.findIndex(n => n.get('id') === node.get('id'));
-    this.updateManager.stageNodeUpdate(node.get('id'));
+    const nodeIdx = siblings.findIndex(n => n.get('id') === nodeId);
+    this.updateManager.stageNodeUpdate(nodeId);
     this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.set(nodeIdx, node))
+    return nodeId
   }
   
   /**

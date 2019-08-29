@@ -369,26 +369,27 @@ export default class EditPost extends React.Component {
       return;
     }
     let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-    const selectedNodeContent = cleanText(selectedNode.textContent);
+    const selectedNodeContentDom = cleanText(selectedNode.textContent);
     if (selectedNode.tagName === 'PRE') {
-      handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContent);
+      handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContentDom);
       console.debug('DOM SYNC PRE ', selectedNode);
       this.saveContentBatchDebounce();
       return;
     }
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
-    const [diffStart, diffLength] = getDiffStartAndLength(selectedNodeMap.get('content', ''), selectedNodeContent);
+    const selectedNodeContentMap = selectedNodeMap.get('content') || '';
+    const [diffStart, diffLength] = getDiffStartAndLength(selectedNodeContentMap, selectedNodeContentDom);
     // TODO: handle cut/paste?
     // TODO: handle select & type or select & delete
     // TODO: 'Del' does it work at the edge of 2 selections?
     if (diffLength === 0) {
       return;
     }
-    selectedNodeMap = selectedNodeMap.set('content', selectedNodeContent);
+    selectedNodeMap = selectedNodeMap.set('content', selectedNodeContentDom);
     selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, diffStart, diffLength);
     this.documentModel.update(selectedNodeMap);
     
-    console.log('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContent.length);
+    console.log('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
     this.saveContentBatchDebounce()
   }
   

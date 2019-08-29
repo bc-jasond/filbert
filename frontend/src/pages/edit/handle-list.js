@@ -108,12 +108,13 @@ function splitList(documentModel, selectedNodeId) {
   const rightListItems = listItems.slice(nodeIdx + 1);
   let newListId;
   if (rightListItems.size > 0) {
-    newListId = this.insertSubSectionAfter(listId, NODE_TYPE_OL);
+    newListId = documentModel.insertSubSectionAfter(listId, NODE_TYPE_OL);
     documentModel.setChildren(newListId, rightListItems);
     documentModel.updateNodesForParent(newListId);
   }
   
-  return [leftListItems.size, rightListItems.size, newListId];
+  // return an offset to split after before
+  return leftListItems.size > 0 ? 1 : 0;
 }
 
 /**
@@ -122,20 +123,27 @@ function splitList(documentModel, selectedNodeId) {
 export function splitListReplaceListItemWithSection(documentModel, selectedNodeId, sectionType) {
   const content = documentModel.getNode(selectedNodeId).get('content');
   const listId = documentModel.getParent(selectedNodeId).get('id');
-  const sectionId = documentModel.getSection(selectedNodeId).get('id');
+  const section = documentModel.getSection(selectedNodeId);
+  const sectionId = section.get('id');
+  const listItemWasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
+  const listWasOnlyChild = documentModel.isOnlyChild(listId);
+  const listIdx = documentModel
+    .getChildren(sectionId)
+    .findIndex(s => s.get('id') === listId);
+  const sectionIdx = documentModel
+    .getChildren(documentModel.rootId)
+    .findIndex(s => s.get('id') === sectionId);
   
-  const [leftListItemsCount, rightListItemsCount, newListId] = splitList(documentModel, selectedNodeId);
-  const [leftSubSectionsCount, rightSubSectionsCount, newSectionId] = documentModel.splitSectionAtNode(
-    // existing list has no items? it was deleted by splitList.  split section on newListId
-    leftListItemsCount === 0
-      ? newListId
-      : listId,
-    listId);
-  
-  // existing section is empty? it was deleted by splitSectionAtNode.  insert H1 or H2 *before* newSectionId
-  if (leftSubSectionsCount === 0) {
-    return documentModel.insertSectionBefore(newSectionId, sectionType, false, content);
+  // non-split scenario - just update existing section
+  if (listItemWasOnlyChild && listWasOnlyChild) {
+    return documentModel.update(section
+      .set('type', sectionType)
+      .set('content', content)
+    );
   }
-  // existing section isn't empty - list has items or was not first SubSection of sectionId.  insert *after*
-  return documentModel.insertSectionAfter(sectionId, sectionType, true, content);
+  
+  const listOffset = splitList(documentModel, selectedNodeId);
+  const sectionOffset = documentModel.splitSectionForFormatChange(sectionId, listIdx + listOffset);
+  
+  return documentModel.insertSection(sectionType, sectionIdx + sectionOffset, content);
 }
