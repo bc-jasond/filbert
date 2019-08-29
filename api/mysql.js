@@ -28,6 +28,7 @@ async function bulkContentNodeUpsert(records) {
     ON DUPLICATE KEY UPDATE
     parent_id = VALUES(parent_id),
     position = VALUES(position),
+    type = VALUES(type),
     content = VALUES(content),
     meta = VALUES(meta)`;
   

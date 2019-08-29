@@ -87,3 +87,36 @@ export function handleEnterParagraph(documentModel, selectedNodeId, caretPositio
   documentModel.update(rightNode);
   return rightNodeId;
 }
+
+export function titleToParagraph(documentModel, selectedNodeId) {
+  const titleSection = documentModel.getNode(selectedNodeId);
+  // change title section to content section
+  documentModel.update(titleSection.set('type', NODE_TYPE_SECTION_CONTENT));
+  // insert paragraph
+  return documentModel.insert(selectedNodeId, NODE_TYPE_P, 0, titleSection.get('content'));
+}
+
+export function paragraphToTitle(documentModel, selectedNodeId, sectionType) {
+  const paragraph = documentModel.getNode(selectedNodeId);
+  const section = documentModel.getSection(selectedNodeId);
+  const sectionId = section.get('id');
+  const content = paragraph.get('content');
+  const paragraphWasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
+  const paragraphIdx = documentModel
+    .getChildren(sectionId)
+    .findIndex(s => s.get('id') === selectedNodeId);
+  const sectionIdx = documentModel
+    .getChildren(documentModel.rootId)
+    .findIndex(s => s.get('id') === sectionId);
+  
+  documentModel.delete(selectedNodeId);
+  // non-split scenario - just update existing section
+  if (paragraphWasOnlyChild) {
+    return documentModel.update(section
+      .set('type', sectionType)
+      .set('content', content)
+    );
+  }
+  const sectionOffset = documentModel.splitSectionForFormatChange(sectionId, paragraphIdx);
+  return documentModel.insertSection(sectionType, sectionIdx + sectionOffset, content);
+}

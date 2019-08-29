@@ -248,7 +248,11 @@ export default class EditDocumentModel {
   }
   
   /**
-   * NOTE: this splits a content section into two and *removes* nodeId
+   * NOTE: this splits a content section but is different from splitSection in these ways:
+   *  1) it takes an index as a split point instead of a node
+   *  2) it doesn't add placeholder Ps
+   *  3) it deletes the existing section if there aren't any subsections
+   *  4) it optionally creates the 2nd section (if there are subsections)
    */
   splitSectionForFormatChange(sectionId, nodeIdx) {
     const subSections = this.getChildren(sectionId);

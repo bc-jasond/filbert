@@ -136,6 +136,8 @@ export function splitListReplaceListItemWithSection(documentModel, selectedNodeI
   
   // non-split scenario - just update existing section
   if (listItemWasOnlyChild && listWasOnlyChild) {
+    documentModel.delete(selectedNodeId);
+    documentModel.delete(listId);
     return documentModel.update(section
       .set('type', sectionType)
       .set('content', content)

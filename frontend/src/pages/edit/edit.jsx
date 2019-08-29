@@ -72,7 +72,9 @@ import {
 } from './handle-list';
 import {
   handleBackspaceParagraph,
-  handleEnterParagraph
+  handleEnterParagraph,
+  paragraphToTitle,
+  titleToParagraph,
 } from './handle-paragraph';
 import { insertQuote } from './handle-quote';
 import { insertSpacer } from './handle-spacer';
@@ -639,14 +641,24 @@ export default class EditPost extends React.Component {
       const sectionType = action === SELECTION_ACTION_H1 ? NODE_TYPE_SECTION_H1 : NODE_TYPE_SECTION_H2;
       const selectedNodeId = formatSelectionNode.get('id');
       let focusNodeId;
+      // list item -> H1 or H2
       if (formatSelectionNode.get('type') === NODE_TYPE_LI) {
         focusNodeId = splitListReplaceListItemWithSection(this.documentModel, selectedNodeId, sectionType);
+      } else if (formatSelectionNode.get('type') === NODE_TYPE_P) {
+        // paragraph -> H1 or H2
+        focusNodeId = paragraphToTitle(this.documentModel, selectedNodeId, sectionType);
+      } else if (formatSelectionNode.get('type') === sectionType) {
+        // H1 or H2 -> paragraph
+        focusNodeId = titleToParagraph(this.documentModel, selectedNodeId);
+      } else {
+        // H1 -> H2 or H2 -> H1
+        focusNodeId = this.documentModel.update(formatSelectionNode.set('type', sectionType));
       }
       await this.commitUpdates(focusNodeId);
       this.setState({
         formatSelectionNode: Map(),
         formatSelectionModel: Selection(),
-      })
+      });
       return;
     }
     
