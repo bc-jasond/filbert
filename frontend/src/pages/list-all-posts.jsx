@@ -1,9 +1,11 @@
 import React from 'react';
+import { Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { grey, darkGrey } from '../common/css';
 
 import {
   apiGet,
+  apiPost,
   apiDelete,
 } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
@@ -74,7 +76,7 @@ const AuthorExpand = styled.span`
     cursor: pointer;
   }
 `;
-const DeletePost = styled.span`
+const PostAction = styled.span`
   ${MetaContent};
   cursor: pointer;
   font-weight: bolder;
@@ -85,6 +87,7 @@ export default class AllPosts extends React.Component {
     super(props);
     
     this.state = {
+      redirectPostCanonical: null,
       posts: [],
     }
   }
@@ -115,46 +118,65 @@ export default class AllPosts extends React.Component {
     }
   }
   
+  publishDraft = async (post) => {
+    if (confirm(`Publish draft ${post.title}?`)) {
+      try {
+        await apiPost(`/publish/${post.id}`)
+        this.setState({redirectPostCanonical: post.canonical})
+        await this.loadPosts();
+      } catch (err) {
+        console.error('Publish draft error:', err)
+      }
+    }
+  }
+  
   render() {
-    const { posts } = this.state;
+    const {
+      posts,
+      redirectPostCanonical,
+    } = this.state;
     const { draftsOnly } = this.props;
     
-    return (
-      <React.Fragment>
-        <PostRow>
-          <StyledH2>{`Recent ${draftsOnly ? 'Drafts' : 'Articles'}`}</StyledH2>
-        </PostRow>
-        {posts.map(post => (
-          <PostRow key={`${post.id}${post.canonical}`}>
-            <StyledHeadingA href={draftsOnly ? `/edit/${post.id}` : `/posts/${post.canonical}`}>
-              {post.title}
-            </StyledHeadingA>
-            <PostAbstractRow>
-              <StyledA href={draftsOnly ? `/edit/${post.id}` : `/posts/${post.canonical}`}>
-                {post.abstract}
-              </StyledA>
-            </PostAbstractRow>
-            <PostMetaRow>
-              <PostMetaContentFirst>{draftsOnly ? post.updated : post.published}</PostMetaContentFirst>
-              {draftsOnly ? (
-                <React.Fragment>
-                  <PostMetaContent>|</PostMetaContent>
-                  <DeletePost onClick={() => this.deleteDraft(post)}>X</DeletePost>
-                </React.Fragment>
-              ) : (
-                <React.Fragment>
-                  {/*TODO: Ajax calls in a loop - yay!  This will be optimized when a server rendered solution is in place like Next.js*/}
-                  <EditPostButton postCanonical={post.canonical}>edit</EditPostButton>
-                  <PostMetaContent>|</PostMetaContent>
-                  <DeletePost onClick={() => this.deleteDraft(post)}>X</DeletePost>
-                  <PostMetaContent>|</PostMetaContent>
-                  <AuthorExpand>{post.username}</AuthorExpand>
-                </React.Fragment>
-              )}
-            </PostMetaRow>
+    return redirectPostCanonical
+      ? (<Redirect to={`/posts/${redirectPostCanonical}`} />)
+      : (
+        <React.Fragment>
+          <PostRow>
+            <StyledH2>{`Recent ${draftsOnly ? 'Drafts' : 'Articles'}`}</StyledH2>
           </PostRow>
-        ))}
-      </React.Fragment>
-    );
+          {posts.map(post => (
+            <PostRow key={`${post.id}${post.canonical}`}>
+              <StyledHeadingA href={draftsOnly ? `/edit/${post.id}` : `/posts/${post.canonical}`}>
+                {post.title}
+              </StyledHeadingA>
+              <PostAbstractRow>
+                <StyledA href={draftsOnly ? `/edit/${post.id}` : `/posts/${post.canonical}`}>
+                  {post.abstract}
+                </StyledA>
+              </PostAbstractRow>
+              <PostMetaRow>
+                <PostMetaContentFirst>{draftsOnly ? post.updated : post.published}</PostMetaContentFirst>
+                {draftsOnly ? (
+                  <React.Fragment>
+                    <PostMetaContent>|</PostMetaContent>
+                    <PostAction onClick={() => this.publishDraft(post)}>publish</PostAction>
+                    <PostMetaContent>|</PostMetaContent>
+                    <PostAction onClick={() => this.deleteDraft(post)}>X</PostAction>
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>
+                    {/*TODO: Ajax calls in a loop - yay!  This will be optimized when a server rendered solution is in place like Next.js*/}
+                    <EditPostButton postCanonical={post.canonical}>edit</EditPostButton>
+                    <PostMetaContent>|</PostMetaContent>
+                    <PostAction onClick={() => this.deleteDraft(post)}>X</PostAction>
+                    <PostMetaContent>|</PostMetaContent>
+                    <AuthorExpand>{post.username}</AuthorExpand>
+                  </React.Fragment>
+                )}
+              </PostMetaRow>
+            </PostRow>
+          ))}
+        </React.Fragment>
+      );
   }
 }

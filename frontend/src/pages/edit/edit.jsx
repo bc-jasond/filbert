@@ -10,6 +10,7 @@ import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
   getDiffStartAndLength,
+  getCanonicalFromTitle,
 } from '../../common/utils';
 import {
   getRange,
@@ -172,8 +173,8 @@ export default class EditPost extends React.Component {
   
   saveNewPost = async () => {
     const title = getFirstHeadingContent();
-    // get canonical
-    const canonical = title;
+    // get canonical - chop title, add hash
+    const canonical = getCanonicalFromTitle(title);
     // POST to /post
     const { postId } = await apiPost('/post', { title, canonical });
     // update post id for all updates

@@ -61,3 +61,18 @@ export function getDiffStartAndLength(oldStr, newStr) {
   // strings are the same!
   return [-1, 0];
 }
+
+export function getCanonicalFromTitle(title) {
+  let canonical = title
+    // take first 25 chars
+    .substring(0, 25)
+    .toLowerCase()
+    // remove all whitespace, replace with hyphen
+    .replace(/\s+/g, "-")
+    // keep only alpha numeric chars
+    .replace(/[^0-9a-z-]/g, "");
+  // append a hash
+  canonical += '-' + s4();
+  // dedupe hyphens
+  return canonical.replace(/-+/g, "-");
+}

@@ -252,6 +252,10 @@ async function main() {
         res.status(404).send({});
         return;
       }
+      if (!post.canonical) {
+        res.status(400).send({message: "Error: Can't publish a draft with no canonical URL"});
+        return;
+      }
       await knex('post')
         .update({published: getMysqlDatetime()})
         .where({
