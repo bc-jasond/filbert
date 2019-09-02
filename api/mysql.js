@@ -13,7 +13,7 @@ async function getKnex() {
         database: 'dubaniewicz'
       },
       asyncStackTraces: true,
-      debug: false,
+      debug: true,
     });
   }
   return knexConnection;
