@@ -9,6 +9,7 @@ const {
   getKnex,
   bulkContentNodeUpsert,
   bulkContentNodeDelete,
+  getMysqlDatetime,
 } = require('./mysql');
 const { checkPassword } = require('./user');
 const { encrypt, decrypt } = require('./cipher');
@@ -91,17 +92,13 @@ async function main() {
     
     app.get('/post/:id', async (req, res) => {
       const { id } = req.params;
-      
       const [post] = await knex('post')
         .where('canonical', id);
-      
       if (!post) {
         res.status(404).send({});
         return;
       }
-      
       const contentNodes = await getNodes(knex, post.id);
-      
       res.send({ post, contentNodes });
     })
     
@@ -123,40 +120,60 @@ async function main() {
     })
     
     /**
-     * creates a new post for logged in user
+     * creates a new draft for logged in user
      */
     app.post('/post', async (req, res) => {
       const user_id = req.loggedInUser.id;
       const { title, canonical } = req.body;
-      
       const knex = await getKnex();
-      
       const [postId] = await knex
         .insert({ user_id, title, canonical })
         .into('post');
-      
       res.send({ postId });
     })
-    
+  
+    /**
+     * delete a post
+     */
+    app.delete('/post/:id', async (req, res) => {
+      const { id } = req.params;
+      const [post] = await knex('post')
+        .whereNotNull('published')
+        .andWhere({
+          'user_id': req.loggedInUser.id,
+          id,
+        });
+      if (!post) {
+        res.status(404).send({});
+        return;
+      }
+      /**
+       * DANGER ZONE!!!
+       */
+      await knex('content_node')
+        .where('post_id', id)
+        .del();
+      await knex('post')
+        .where('id', id)
+        .del();
+      res.status(204).send({});
+    })
+  
     /**
      * get post for editing
      */
     app.get('/edit/:id', async (req, res) => {
       const { id } = req.params;
-      
       const [post] = await knex('post')
         .where({
           'id': id,
           'user_id': req.loggedInUser.id,
         });
-      
       if (!post) {
         res.status(404).send({});
         return;
       }
-      
       const contentNodes = await getNodes(knex, post.id);
-      
       res.send({ post, contentNodes });
     })
     
@@ -218,6 +235,30 @@ async function main() {
         .orderBy('post.created', 'desc');
       
       res.send(posts);
+    })
+  
+    /**
+     * publish a draft - this is a one-time operation
+     */
+    app.post('/publish/:id', async (req, res) => {
+      const { id } = req.params;
+      const [post] = await knex('post')
+        .whereNull('published')
+        .andWhere({
+          'user_id': req.loggedInUser.id,
+          id,
+        });
+      if (!post) {
+        res.status(404).send({});
+        return;
+      }
+      await knex('post')
+        .update({published: getMysqlDatetime()})
+        .where({
+          user_id: req.loggedInUser.id,
+          id,
+        })
+      res.send({});
     })
     
     /**
