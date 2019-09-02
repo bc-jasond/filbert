@@ -41,15 +41,15 @@ const App = () => (
           (
             // https://stackoverflow.com/a/49441836/1991322
             // changing the 'key' prop will cause the component to unmount and therefore reload data for new blog post id
-            <PageLayout key={props.match.params.id} {...props}>
+            <PageLayout key={props.match.params.id} postId={props.match.params.id} {...props}>
               <ViewPost postId={props.match.params.id}/>
             </PageLayout>
           )}
         />
         <Route path="/edit/:id" render={(props) =>
-           (
+          (
             <PageLayout key={props.match.params.id} {...props}>
-              <EditPost postId={props.match.params.id}/>
+              <EditPost postId={props.match.params.id} />
             </PageLayout>
           )}
         />

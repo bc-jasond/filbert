@@ -1,5 +1,5 @@
 import { AUTH_TOKEN_KEY, SESSION_KEY } from './constants';
-import { apiPost } from './fetch';
+import { apiGet, apiPost } from './fetch';
 
 export async function signin(username, password) {
   const { token, session } = await apiPost('/signin', { username, password });
@@ -25,4 +25,12 @@ export function getSession() {
 export function getUserName() {
   const session = getSession();
   return session ? session.username : null;
+}
+
+export async function userCanEditPost(postId) {
+  if (!getSession()) {
+    return false;
+  }
+  const { id } = await apiGet(`/can-edit/${postId}`);
+  return id;
 }

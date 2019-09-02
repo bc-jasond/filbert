@@ -21,6 +21,11 @@ export async function apiGet(url) {
     const config = getBaseConfig();
     config.method = 'GET';
     const response = await fetch(`${API_URL}${url}`, config);
+    // HACK: string parsing for 2XX level status code!
+    // DUMB: don't use throw for control flow.  Return the whole response and let the client figure it out
+    if (response.status.toString(10).charAt(0) !== '2') {
+      throw new Error(`${response.status} - ${response.statusText}`);
+    }
     Pace.stop();
     return response.json();
   } catch (err) {
@@ -37,6 +42,8 @@ export async function apiPost(url, data) {
     config.method = 'POST';
     config.body = JSON.stringify(data); // body data type must match "Content-Type" header
     const response = await fetch(`${API_URL}${url}`, config);
+    // HACK: string parsing for 2XX level status code!
+    // DUMB: don't use throw for control flow.  Return the whole response and let the client figure it out
     if (response.status.toString(10).charAt(0) !== '2') {
       throw new Error(`${response.status} - ${response.statusText}`);
     }

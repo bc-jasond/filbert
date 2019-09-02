@@ -1,17 +1,21 @@
 import React from 'react';
 import styled from 'styled-components';
-import { sansSerif } from '../common/fonts.css';
 import { grey, darkGrey } from '../common/css';
 
-import { apiGet, apiDelete } from '../common/fetch';
+import {
+  apiGet,
+  apiDelete,
+} from '../common/fetch';
 import { formatPostDate } from '../common/utils';
 
 import {
-  H2
+  H2,
+  MetaContent,
 } from '../common/shared-styled-components';
 import {
   A,
 } from '../common/layout-styled-components';
+import EditPostButton from './edit-post-button';
 
 const StyledH2 = styled(H2)`
   margin-left: 0;
@@ -55,18 +59,14 @@ const PostMetaRow = styled.div`
   margin-top: 8px;
 `;
 const PostMetaContent = styled.span`
-  color: ${grey};
-  letter-spacing: 0px;
-  font-size: 15.8px;
-  line-height: 20px;
-  font-style: normal;
-  font-family: ${sansSerif};
-  padding-left: 4px;
-  &:first-of-type {
-    padding-left: 0;
-  }
+  ${MetaContent};
 `;
-const AuthorExpand = styled(PostMetaContent)`
+const PostMetaContentFirst = styled.span`
+  ${MetaContent};
+  padding-left: 0;
+`;
+const AuthorExpand = styled.span`
+  ${MetaContent};
   transition: letter-spacing 0.125s, color 0.125s;
   &:hover {
     letter-spacing: 8px;
@@ -74,7 +74,8 @@ const AuthorExpand = styled(PostMetaContent)`
     cursor: pointer;
   }
 `;
-const DeletePost = styled(PostMetaContent)`
+const DeletePost = styled.span`
+  ${MetaContent};
   cursor: pointer;
   font-weight: bolder;
 `;
@@ -134,9 +135,22 @@ export default class AllPosts extends React.Component {
               </StyledA>
             </PostAbstractRow>
             <PostMetaRow>
-              <PostMetaContent>{draftsOnly ? post.updated : post.published}</PostMetaContent>
-              <PostMetaContent>|</PostMetaContent>
-              {draftsOnly ? (<DeletePost onClick={() => this.deleteDraft(post)}>X</DeletePost>) : (<AuthorExpand>{post.username}</AuthorExpand>)}
+              <PostMetaContentFirst>{draftsOnly ? post.updated : post.published}</PostMetaContentFirst>
+              {draftsOnly ? (
+                <React.Fragment>
+                  <PostMetaContent>|</PostMetaContent>
+                  <DeletePost onClick={() => this.deleteDraft(post)}>X</DeletePost>
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  {/*TODO: Ajax calls in a loop - yay!  This will be optimized when a server rendered solution is in place like Next.js*/}
+                  <EditPostButton postCanonical={post.canonical}>edit</EditPostButton>
+                  <PostMetaContent>|</PostMetaContent>
+                  <DeletePost onClick={() => this.deleteDraft(post)}>X</DeletePost>
+                  <PostMetaContent>|</PostMetaContent>
+                  <AuthorExpand>{post.username}</AuthorExpand>
+                </React.Fragment>
+              )}
             </PostMetaRow>
           </PostRow>
         ))}

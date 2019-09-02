@@ -63,7 +63,7 @@ async function main() {
         });
       } catch (err) {
         console.error('Signin Error: ', err)
-        res.send({}).status(401)
+        res.status(401).send({})
       }
     })
     
@@ -84,6 +84,7 @@ async function main() {
         .innerJoin('user', 'post.user_id', 'user.id')
         .whereNotNull('published')
         .orderBy('published', 'desc');
+        // TODO: limit!
       
       res.send(posts);
     })
@@ -95,7 +96,7 @@ async function main() {
         .where('canonical', id);
       
       if (!post) {
-        res.send({}).status(404);
+        res.status(404).send({});
         return;
       }
       
@@ -117,7 +118,7 @@ async function main() {
         next();
       } catch (err) {
         console.error('Authorization header Error', err);
-        res.send({}).status(401)
+        res.status(401).send({});
       }
     })
     
@@ -150,13 +151,30 @@ async function main() {
         });
       
       if (!post) {
-        res.send({}).status(404);
+        res.status(404).send({});
         return;
       }
       
       const contentNodes = await getNodes(knex, post.id);
       
       res.send({ post, contentNodes });
+    })
+    
+    /**
+     * to show/hide the 'edit' button on the View page - note: uses canonical string id, not int
+     */
+    app.get('/can-edit/:canonical', async (req, res) => {
+      const { canonical } = req.params;
+      const [post] = await knex('post')
+        .where({
+          'canonical': canonical,
+          'user_id': req.loggedInUser.id,
+        });
+      if (!post) {
+        res.status(404).send({});
+        return;
+      }
+      res.send({ id: post.id })
     })
     
     /**
@@ -173,7 +191,7 @@ async function main() {
         res.send({ updateResult, deleteResult });
       } catch (err) {
         console.error('POST /content Error: ', err);
-        res.send({}).status(500);
+        res.status(500).send({})
       }
     })
     
@@ -215,7 +233,7 @@ async function main() {
         });
       
       if (!post) {
-        res.send({}).status(404);
+        res.status(404).send({});
         return;
       }
       /**
@@ -228,7 +246,7 @@ async function main() {
         .where('id', id)
         .del();
       
-      res.send({}).status(204);
+      res.status(204).send({});
     })
     
     app.listen(3001)

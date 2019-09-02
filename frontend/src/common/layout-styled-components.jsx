@@ -66,6 +66,9 @@ export const HeaderButtonMixin = css`
     background-color: ${lightBlue};
   `}
 `;
+export const EditPost = styled(LinkStyled)`
+  ${HeaderButtonMixin};
+`;
 export const NewPost = styled(LinkStyled)`
   ${HeaderButtonMixin};
 `;
