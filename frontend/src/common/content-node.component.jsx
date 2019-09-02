@@ -31,6 +31,7 @@ import {
   A,
   ItalicText,
   MiniText,
+  SiteInfo,
   Figure,
   ImagePlaceholderContainer,
   ImagePlaceholderFill,
@@ -230,7 +231,7 @@ export default class ContentNode extends React.PureComponent {
         return (
           <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
             {selections.map((selection, idx) => (
-              <LinkNode key={`${node.get('id')}-${idx}`} href={meta.get('href')} selection={selection}>
+              <LinkNode key={`${node.get('id')}-${idx}`} selection={selection}>
                 <BoldNode selection={selection}>
                   <CodeNode selection={selection}>
                     <ItalicNode selection={selection}>

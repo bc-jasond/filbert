@@ -13,7 +13,7 @@ async function getKnex() {
         database: 'dubaniewicz'
       },
       asyncStackTraces: true,
-      debug: true,
+      debug: false,
     });
   }
   return knexConnection;
@@ -39,6 +39,7 @@ async function bulkContentNodeUpsert(records) {
     values.push([
       post_id,
       nodeId,
+      // HACK: 'null' string for root node
       node.parent_id !== 'null' ? node.parent_id : null,
       node.position,
       node.type,

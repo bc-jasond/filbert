@@ -11,10 +11,10 @@ export default class LinkNode extends React.PureComponent {
   
   render() {
     const {
-      href,
       selection,
       children,
     } = this.props;
+    const href = selection.get('linkUrl');
     return selection.get(SELECTION_ACTION_LINK)
       ? (
         <A href={href}>{children}</A>
