@@ -7,6 +7,9 @@ import { userCanEditPost } from '../common/session';
 
 const EditA = styled(A)`
   ${MetaContent};
+  &:hover {
+    font-weight: bolder;
+  }
 `;
 const PostMetaContent = styled.span`
   ${MetaContent};

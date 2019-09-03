@@ -34,3 +34,11 @@ export async function userCanEditPost(postId) {
   const { id } = await apiGet(`/can-edit/${postId}`);
   return id;
 }
+
+export async function userCanDeletePost(postId) {
+  if (!getSession()) {
+    return false;
+  }
+  const { id } = await apiGet(`/can-delete/${postId}`);
+  return id;
+}

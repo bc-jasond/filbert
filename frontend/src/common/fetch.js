@@ -63,7 +63,7 @@ export async function apiDelete(url) {
     config.method = 'DELETE';
     const response = await fetch(`${API_URL}${url}`, config);
     Pace.stop();
-    return response.json();
+    return true;
   } catch (err) {
     Pace.stop();
     console.error('Fetch DELETE Error: ', err);

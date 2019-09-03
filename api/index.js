@@ -85,15 +85,15 @@ async function main() {
         .innerJoin('user', 'post.user_id', 'user.id')
         .whereNotNull('published')
         .orderBy('published', 'desc');
-        // TODO: limit!
+      // TODO: limit!
       
       res.send(posts);
     })
     
-    app.get('/post/:id', async (req, res) => {
-      const { id } = req.params;
+    app.get('/post/:canonical', async (req, res) => {
+      const { canonical } = req.params;
       const [post] = await knex('post')
-        .where('canonical', id);
+        .where({ canonical });
       if (!post) {
         res.status(404).send({});
         return;
@@ -131,17 +131,17 @@ async function main() {
         .into('post');
       res.send({ postId });
     })
-  
+    
     /**
      * delete a post
      */
-    app.delete('/post/:id', async (req, res) => {
-      const { id } = req.params;
+    app.delete('/post/:canonical', async (req, res) => {
+      const { canonical } = req.params;
       const [post] = await knex('post')
         .whereNotNull('published')
         .andWhere({
           'user_id': req.loggedInUser.id,
-          id,
+          canonical,
         });
       if (!post) {
         res.status(404).send({});
@@ -151,14 +151,14 @@ async function main() {
        * DANGER ZONE!!!
        */
       await knex('content_node')
-        .where('post_id', id)
+        .where('post_id', post.id)
         .del();
       await knex('post')
-        .where('id', id)
+        .where('id', post.id)
         .del();
       res.status(204).send({});
     })
-  
+    
     /**
      * get post for editing
      */
@@ -178,9 +178,28 @@ async function main() {
     })
     
     /**
-     * to show/hide the 'edit' button on the View page - note: uses canonical string id, not int
+     * to show/hide the 'edit' button on the View/List pages
+     * note: uses canonical string id, not int
      */
     app.get('/can-edit/:canonical', async (req, res) => {
+      const { canonical } = req.params;
+      const [post] = await knex('post')
+        .where({
+          'canonical': canonical,
+          'user_id': req.loggedInUser.id,
+        });
+      if (!post) {
+        res.status(404).send({});
+        return;
+      }
+      res.send({ id: post.id })
+    })
+    
+    /**
+     * to show/hide the 'delete' button on the View/List pages
+     * note: uses canonical string id, not int
+     */
+    app.get('/can-delete/:canonical', async (req, res) => {
       const { canonical } = req.params;
       const [post] = await knex('post')
         .where({
@@ -236,7 +255,7 @@ async function main() {
       
       res.send(posts);
     })
-  
+    
     /**
      * publish a draft - this is a one-time operation
      */
@@ -253,11 +272,11 @@ async function main() {
         return;
       }
       if (!post.canonical) {
-        res.status(400).send({message: "Error: Can't publish a draft with no canonical URL"});
+        res.status(400).send({ message: "Error: Can't publish a draft with no canonical URL" });
         return;
       }
       await knex('post')
-        .update({published: getMysqlDatetime()})
+        .update({ published: getMysqlDatetime() })
         .where({
           user_id: req.loggedInUser.id,
           id,

@@ -17,6 +17,7 @@ import {
 import {
   A,
 } from '../common/layout-styled-components';
+import DeletePostSpan from './delete-post-span';
 import EditPostButton from './edit-post-button';
 
 const StyledH2 = styled(H2)`
@@ -79,7 +80,9 @@ const AuthorExpand = styled.span`
 const PostAction = styled.span`
   ${MetaContent};
   cursor: pointer;
-  font-weight: bolder;
+  &:hover {
+    font-weight: bolder;
+  }
 `;
 
 export default class AllPosts extends React.Component {
@@ -96,7 +99,7 @@ export default class AllPosts extends React.Component {
     this.loadPosts();
   }
   
-  async loadPosts() {
+  loadPosts = async () => {
     const { draftsOnly } = this.props;
     const posts = await apiGet(draftsOnly ? '/draft' : '/post');
     const postsFormatted = posts.map(post => {
@@ -161,14 +164,19 @@ export default class AllPosts extends React.Component {
                     <PostMetaContent>|</PostMetaContent>
                     <PostAction onClick={() => this.publishDraft(post)}>publish</PostAction>
                     <PostMetaContent>|</PostMetaContent>
-                    <PostAction onClick={() => this.deleteDraft(post)}>X</PostAction>
+                    <PostAction onClick={() => this.deleteDraft(post)}>delete</PostAction>
                   </React.Fragment>
                 ) : (
                   <React.Fragment>
                     {/*TODO: Ajax calls in a loop - yay!  This will be optimized when a server rendered solution is in place like Next.js*/}
                     <EditPostButton postCanonical={post.canonical}>edit</EditPostButton>
-                    <PostMetaContent>|</PostMetaContent>
-                    <PostAction onClick={() => this.deleteDraft(post)}>X</PostAction>
+                    <DeletePostSpan
+                      postCanonical={post.canonical}
+                      postTitle={post.title}
+                      afterDeleteCallback={this.loadPosts}
+                    >
+                      delete
+                    </DeletePostSpan>
                     <PostMetaContent>|</PostMetaContent>
                     <AuthorExpand>{post.username}</AuthorExpand>
                   </React.Fragment>

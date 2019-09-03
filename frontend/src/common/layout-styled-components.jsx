@@ -69,6 +69,9 @@ export const HeaderButtonMixin = css`
 export const EditPost = styled(LinkStyled)`
   ${HeaderButtonMixin};
 `;
+export const DeletePost = styled.span`
+  ${HeaderButtonMixin};
+`;
 export const NewPost = styled(LinkStyled)`
   ${HeaderButtonMixin};
 `;
