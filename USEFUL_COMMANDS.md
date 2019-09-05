@@ -1,6 +1,15 @@
 # Useful Commands
 #### Docker
 ```
+# Rebuild/Restart frontend & api (not db)
+# needs the following env vars set:
+export FRONTEND_PORT=80 # <-- remember to set to 80 for prod!
+export API_PORT=3001
+export DATABASE_HOSTNAME=database # <-- the 'default' bridge network db host alias name
+export MYSQL_ROOT_PASSWORD= # <-- set for prod!
+export ENCRYPTION_KEY= # <-- set for prod! must be 32 characters
+docker-compose up --detach --build frontend api # <-- note, this doesn't rebuild the db container
+
 # DB start
 docker-compose up -d db
 

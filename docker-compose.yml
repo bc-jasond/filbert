@@ -12,6 +12,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD
       - DATABASE_HOSTNAME
+      - ENCRYPTION_KEY
     ports:
       - ${API_PORT}:3001
     networks:
