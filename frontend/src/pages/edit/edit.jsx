@@ -1,9 +1,10 @@
 import React from 'react';
-import { List, Map } from 'immutable';
+import { List, Map, fromJS } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
 import {
   apiGet,
+  apiPatch,
   apiPost,
 } from '../../common/fetch';
 import {
@@ -95,6 +96,7 @@ import {
 import InsertSectionMenu from './insert-section-menu';
 import EditSectionForm from './edit-section-form';
 import FormatSelectionMenu from './format-selection-menu';
+import PublishPostForm from './edit-publish-post-form';
 
 import Page404 from '../404';
 
@@ -103,10 +105,11 @@ export default class EditPost extends React.Component {
     super(props);
     
     this.state = {
+      post: Map(),
       nodesByParentId: Map(),
       root: null,
       shouldShow404: false,
-      shouldRedirectWithId: false,
+      shouldRedirectToEditWithId: false,
       shouldShowInsertMenu: false,
       insertMenuIsOpen: false,
       insertMenuTopOffset: 0,
@@ -118,6 +121,10 @@ export default class EditPost extends React.Component {
       editSectionMetaFormLeftOffset: 0,
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
+      shouldShowPublishPostMenu: false,
+      shouldRedirectToPublishedPostId: false,
+      shouldShowPostError: null,
+      shouldShowPostSuccess: null,
     }
   }
   
@@ -143,12 +150,12 @@ export default class EditPost extends React.Component {
     try {
       const updated = this.updateManager.updates(this.documentModel);
       if (updated.length === 0) return;
-      console.info('Save Batch', updated);
+      // console.info('Save Batch', updated);
       const result = await apiPost('/content', updated);
       this.updateManager.clearUpdates();
       console.info('Save Batch result', result);
     } catch (err) {
-      console.error('Content Batch Update Error: ', err);
+      // console.error('Content Batch Update Error: ', err);
     }
   }
   
@@ -164,6 +171,7 @@ export default class EditPost extends React.Component {
     this.updateManager.stageNodeUpdate(this.documentModel.rootId);
     const focusNodeId = this.documentModel.insertSection(NODE_TYPE_SECTION_H1, 0);
     this.setState({
+      post: Map(),
       root: this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID).first(),
       nodesByParentId: this.documentModel.nodesByParentId,
     }, () => {
@@ -171,7 +179,7 @@ export default class EditPost extends React.Component {
     });
   }
   
-  saveNewPost = async () => {
+  createNewPost = async () => {
     const title = getFirstHeadingContent();
     // get canonical - chop title, add hash
     const canonical = getCanonicalFromTitle(title);
@@ -180,7 +188,7 @@ export default class EditPost extends React.Component {
     // update post id for all updates
     this.updateManager.addPostIdToUpdates(postId);
     await this.saveContentBatch();
-    this.setState({ shouldRedirectWithId: postId })
+    this.setState({ shouldRedirectToEditWithId: postId })
   }
   
   loadPost = async () => {
@@ -190,6 +198,7 @@ export default class EditPost extends React.Component {
       this.documentModel.init(post, this.updateManager, contentNodes);
       const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
       this.setState({
+        post: fromJS(post),
         root: this.documentModel.root,
         nodesByParentId: this.documentModel.nodesByParentId,
         shouldShow404: false
@@ -200,14 +209,57 @@ export default class EditPost extends React.Component {
         window.scrollTo(0, 0);
       })
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       this.setState({ root: null, nodesByParentId: Map(), shouldShow404: true })
     }
+  }
+  updatePost = (fieldName, value) => {
+    const { post } = this.state;
+    this.setState({
+      post: post.set(fieldName, value),
+      shouldShowPostError: null,
+      shouldShowPostSuccess: null,
+    })
+  }
+  savePost = async () => {
+    try {
+      const { post } = this.state;
+      await apiPatch(`/post/${post.get('id')}`, {
+        title: post.get('title'),
+        canonical: post.get('canonical'),
+        abstract: post.get('abstract'),
+      });
+      this.setState({
+        shouldShowPostSuccess: true,
+        shouldShowPostError: null,
+      })
+    } catch (err) {
+      this.setState({ shouldShowPostError: true })
+    }
+  }
+  publishPost = () => {
+    const { post } = this.state;
+    window.confirm('Publish this post?  This makes it public.', async () => {
+      try {
+        await apiPost('/publish', { id: post.get('id') })
+        this.setState({
+          shouldShowPostSuccess: true,
+          shouldShowPostError: null,
+        }, () => {
+          setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('id') }), 1000);
+        });
+      } catch (err) {
+        this.setState({ shouldShowPostError: true })
+      }
+    })
+  }
+  closePostMenu = () => {
+    this.setState({ shouldShowPublishPostMenu: false })
   }
   
   commitUpdates = async (focusNodeId, offset = -1, shouldFocusLastChild) => {
     if (this.props.postId === NEW_POST_URL_ID) {
-      await this.saveNewPost();
+      await this.createNewPost();
       return;
     } else {
       // TODO: optimistically save updated nodes - look ma, no errors!
@@ -711,10 +763,11 @@ export default class EditPost extends React.Component {
   
   render() {
     const {
+      post,
       root,
       nodesByParentId,
       shouldShow404,
-      shouldRedirectWithId,
+      shouldRedirectToEditWithId,
       shouldShowInsertMenu,
       insertMenuIsOpen,
       insertMenuTopOffset,
@@ -728,13 +781,27 @@ export default class EditPost extends React.Component {
       formatSelectionMenuTopOffset,
       formatSelectionMenuLeftOffset,
       formatSelectionModel,
+      shouldShowPublishPostMenu,
+      shouldRedirectToPublishedPostId,
+      shouldShowPostError,
+      shouldShowPostSuccess,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
-    if (shouldRedirectWithId) return (<Redirect to={`/edit/${shouldRedirectWithId}`} />);
-    
+    if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
+    if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
+  
     return root && (
       <React.Fragment>
+        {shouldShowPublishPostMenu && (<PublishPostForm
+          post={post}
+          updatePost={this.updatePost}
+          publishPost={this.publishPost}
+          savePost={this.savePost}
+          close={this.closePostMenu}
+          successMessage={shouldShowPostSuccess}
+          errorMessage={shouldShowPostError}
+        />)}
         <div
           contentEditable={true}
           suppressContentEditableWarning={true}

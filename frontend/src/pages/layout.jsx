@@ -24,6 +24,7 @@ import {
 
 import EditPostButton from './edit-post-button';
 import DeletePostSpan from './delete-post-span';
+import PublishPostSpan from './publish-post-span';
 
 export default class Layout extends React.Component {
   constructor(props) {
@@ -37,8 +38,13 @@ export default class Layout extends React.Component {
     this.setState({ redirectUrl: '/' })
   }
   
+  afterPublishCallback = () => {
+    const { postId } = this.props;
+    this.setState( { redirectUrl: `/posts/${postId}`})
+  }
+  
   render() {
-    const { children, postId } = this.props;
+    const { children, postCanonical, postId } = this.props;
     const { redirectUrl } = this.state;
     return redirectUrl
       ? (<Redirect to={redirectUrl} />)
@@ -51,9 +57,11 @@ export default class Layout extends React.Component {
                 {getSession()
                   ? (
                     <React.Fragment>
-                      <EditPostButton postCanonical={postId} shouldUseLargeButton={true}>edit</EditPostButton>
+                      <PublishPostSpan postId={postId} afterPublishCallback={this.afterPublishCallback}>publish</PublishPostSpan>
+                      <EditPostButton postCanonical={postCanonical} shouldUseLargeButton={true}>edit</EditPostButton>
                       <DeletePostSpan
-                        postCanonical={postId}
+                        postCanonical={postCanonical}
+                        postId={postId}
                         shouldUseLargeButton={true}
                         afterDeleteCallback={this.afterDeleteCallback}
                       >

@@ -4,9 +4,6 @@ import { Link, Redirect } from 'react-router-dom';
 
 import { signin } from '../common/session';
 
-import { blue } from '../common/css';
-import { monospaced } from '../common/fonts.css';
-
 import {
   H1,
   H3,
@@ -16,6 +13,7 @@ import {
   Label,
   SuccessMessage,
   ErrorMessage,
+  MessageContainer,
   Button,
   ButtonSpan,
   CancelButton,
@@ -47,17 +45,10 @@ const StyledLinkStyled = styled(LinkStyled)`
   position: static;
   padding-bottom: 24px;
 `;
-const MessageContainer = styled.div`
-  min-height: 36px;
-  text-align: center;
-  font-family: ${monospaced};
-`;
 const LinkStyled2 = styled(Link)`
   text-decoration: none;
 `;
-const StyledA = styled(A)`
-  // color: ${blue};
-`;
+const StyledA = styled(A)``;
 
 
 export default class SignIn extends React.Component {

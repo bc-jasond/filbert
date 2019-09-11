@@ -20,7 +20,7 @@ export default class ViewPost extends React.Component {
   
   async componentDidMount() {
     try {
-      const { post, contentNodes } = await apiGet(`/post/${this.props.postId}`);
+      const { post, contentNodes } = await apiGet(`/post/${this.props.postCanonical}`);
       const nodesByParentId = Immutable.fromJS(contentNodes);
       // TODO: don't use 'null' as root node indicator
       const root = nodesByParentId.get(ROOT_NODE_PARENT_ID).get(0);

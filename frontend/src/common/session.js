@@ -27,18 +27,26 @@ export function getUserName() {
   return session ? session.username : null;
 }
 
-export async function userCanEditPost(postId) {
+export async function userCanEditPost(postCanonical) {
   if (!getSession()) {
     return false;
   }
-  const { id } = await apiGet(`/can-edit/${postId}`);
+  const { id } = await apiGet(`/can-edit/${postCanonical}`);
   return id;
 }
 
-export async function userCanDeletePost(postId) {
+export async function userCanDeletePost(postCanonical) {
   if (!getSession()) {
     return false;
   }
-  const { id } = await apiGet(`/can-delete/${postId}`);
+  const { id } = await apiGet(`/can-delete/${postCanonical}`);
+  return id;
+}
+
+export async function userCanPublishPost(postId) {
+  if (!getSession()) {
+    return false;
+  }
+  const { id } = await apiGet(`/can-publish/${postId}`);
   return id;
 }

@@ -7,7 +7,7 @@
   "author": "Jason Dubaniewicz <jasondebo@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "watch": "MYSQL_ROOT_PASSWORD=example nodemon ./index.js localhost 3001",
+    "watch": ". ../dev.env && nodemon ./index.js localhost 3001",
     "start": "node ./index.js",
     "docker-build": "docker build --tag=dubaniewicz-api:`git log -1 --pretty=format:%h` .",
     "docker-run": "docker run -p 3001:3001 dubaniewicz-api:`git log -1 --pretty=format:%h`"

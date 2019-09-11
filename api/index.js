@@ -125,13 +125,36 @@ async function main() {
     app.post('/post', async (req, res) => {
       const user_id = req.loggedInUser.id;
       const { title, canonical } = req.body;
-      const knex = await getKnex();
       const [postId] = await knex
         .insert({ user_id, title, canonical })
         .into('post');
       res.send({ postId });
     })
-    
+  
+    /**
+     * save post fields - like title, canonical & abstract
+     */
+    app.patch('/post/:id', async (req, res) => {
+      const { id } = req.params;
+      const { title, canonical, abstract } = req.body;
+      const [post] = await knex('post')
+        .where({
+          user_id: req.loggedInUser.id,
+          id,
+        });
+      if (!post) {
+        res.status(404).send({});
+        return;
+      }
+      const result = await knex('post')
+        .update({ title, canonical, abstract })
+        .where({
+          user_id: req.loggedInUser.id,
+          id,
+        })
+      res.send({})
+    })
+  
     /**
      * delete a post
      */
@@ -140,7 +163,7 @@ async function main() {
       const [post] = await knex('post')
         .whereNotNull('published')
         .andWhere({
-          'user_id': req.loggedInUser.id,
+          user_id: req.loggedInUser.id,
           canonical,
         });
       if (!post) {
@@ -166,8 +189,8 @@ async function main() {
       const { id } = req.params;
       const [post] = await knex('post')
         .where({
-          'id': id,
-          'user_id': req.loggedInUser.id,
+          id,
+          user_id: req.loggedInUser.id,
         });
       if (!post) {
         res.status(404).send({});
@@ -185,8 +208,8 @@ async function main() {
       const { canonical } = req.params;
       const [post] = await knex('post')
         .where({
-          'canonical': canonical,
-          'user_id': req.loggedInUser.id,
+          canonical,
+          user_id: req.loggedInUser.id,
         });
       if (!post) {
         res.status(404).send({});
@@ -196,16 +219,40 @@ async function main() {
     })
     
     /**
-     * to show/hide the 'delete' button on the View/List pages
+     * to show/hide the 'delete' button on the Edit/View/List pages
      * note: uses canonical string id, not int
      */
-    app.get('/can-delete/:canonical', async (req, res) => {
-      const { canonical } = req.params;
+    app.get('/can-delete/:id', async (req, res) => {
+      const { id } = req.params;
+      const whereClause = { user_id: req.loggedInUser.id };
+      const idAsInt = parseInt(id, 10);
+      if (Number.isInteger(idAsInt)) {
+        whereClause.id = idAsInt;
+      } else {
+        whereClause.canonical = id;
+      }
+      const [post] = await knex('post')
+        .where(whereClause);
+      if (!post) {
+        res.status(404).send({});
+        return;
+      }
+      res.send({ id: post.id })
+    })
+    
+    /**
+     * to show/hide the 'publish' button on the Edit/View/List pages
+     * note: uses canonical string id, not int
+     */
+    app.get('/can-publish/:id', async (req, res) => {
+      const { id } = req.params;
       const [post] = await knex('post')
         .where({
-          'canonical': canonical,
-          'user_id': req.loggedInUser.id,
+          id,
+          user_id: req.loggedInUser.id,
+          published: null,
         });
+        
       if (!post) {
         res.status(404).send({});
         return;
@@ -264,7 +311,7 @@ async function main() {
       const [post] = await knex('post')
         .whereNull('published')
         .andWhere({
-          'user_id': req.loggedInUser.id,
+          user_id: req.loggedInUser.id,
           id,
         });
       if (!post) {
@@ -292,7 +339,7 @@ async function main() {
       const [post] = await knex('post')
         .whereNull('published')
         .andWhere({
-          'user_id': req.loggedInUser.id,
+          user_id: req.loggedInUser.id,
           id,
         });
       

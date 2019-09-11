@@ -56,6 +56,27 @@ export async function apiPost(url, data) {
   }
 }
 
+export async function apiPatch(url, data) {
+  try {
+    Pace.start();
+    const config = getBaseConfig();
+    config.method = 'PATCH';
+    config.body = JSON.stringify(data); // body data type must match "Content-Type" header
+    const response = await fetch(`${API_URL}${url}`, config);
+    // HACK: string parsing for 2XX level status code!
+    // DUMB: don't use throw for control flow.  Return the whole response and let the client figure it out
+    if (response.status.toString(10).charAt(0) !== '2') {
+      throw new Error(`${response.status} - ${response.statusText}`);
+    }
+    Pace.stop();
+    return response.json();
+  } catch (err) {
+    Pace.stop();
+    console.error('Fetch PATCH Error: ', err);
+    throw err;
+  }
+}
+
 export async function apiDelete(url) {
   try {
     Pace.start();

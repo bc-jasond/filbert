@@ -231,6 +231,19 @@ export const Input = styled.input`
     border-color: ${error};
   `}
 `;
+export const TextArea = styled.textarea`
+  font-size: 18px;
+  font-weight: 400;
+  font-family: ${monospaced};
+  line-height: 36px;
+  border-radius: 2px;
+  border: 1px solid ${grey};
+  padding: 2px 8px;
+  min-height: 200px;
+  ${p => p.error && css`
+    border-color: ${error};
+  `}
+`;
 export const Label = styled.label`
   text-transform: capitalize;
   margin-bottom: 4px;
@@ -246,6 +259,11 @@ export const SuccessMessage = styled.span`
 export const ErrorMessage = styled.span`
   font-family: inherit;
   color: ${error};
+`;
+export const MessageContainer = styled.div`
+  min-height: 36px;
+  text-align: center;
+  font-family: ${monospaced};
 `;
 export const Button = styled.button`
   display: block;
