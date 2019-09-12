@@ -4,8 +4,27 @@ import React from 'react';
 import {
   apiGet,
 } from '../common/fetch';
+
+import {
+  getSession,
+  getUserName,
+  signout
+} from '../common/session';
 import { formatPostDate } from '../common/utils';
 
+import Footer from './footer'
+import {
+  Article,
+  Header,
+  HeaderContentContainer,
+  HeaderLinksContainer,
+  HeaderSpacer,
+  LinkStyled,
+  LinkStyledSignIn,
+  ListDrafts,
+  NewPost,
+  SignedInUser,
+} from '../common/layout-styled-components';
 import {
   StyledH2,
   PostRow,
@@ -48,41 +67,71 @@ export default class AllPosts extends React.Component {
       posts,
     } = this.state;
     
-    return posts.size > 0 && (
+    return (
       <React.Fragment>
-        <PostRow>
-          <StyledH2>Recent Articles</StyledH2>
-        </PostRow>
-        {posts.map(post => (
-          <PostRow key={`${post.get('id')}${post.get('canonical')}`}>
-            <StyledHeadingA href={`/posts/${post.get('canonical')}`}>
-              {post.get('title')}
-            </StyledHeadingA>
-            <PostAbstractRow>
-              <StyledA href={`/posts/${post.get('canonical')}`}>
-                {post.get('abstract')}
-              </StyledA>
-            </PostAbstractRow>
-            <PostMetaRow>
-              <PostMetaContentFirst>{post.get('published')}</PostMetaContentFirst>
-              {post.get('canEdit') && (
-                <React.Fragment>
-                  <PostMetaContent>|</PostMetaContent>
-                  <PostActionA href={`/edit/${postId}`}>edit</PostActionA>
-                </React.Fragment>
-              )}
-              {post.get('canDelete') && (
-                <React.Fragment>
-                  <PostMetaContent>|</PostMetaContent>
-                  <PostAction>delete</PostAction>
-                </React.Fragment>
-              )}
-              <PostMetaContent>|</PostMetaContent>
-              <AuthorExpand>{post.get('username')}</AuthorExpand>
-            </PostMetaRow>
-          </PostRow>
-        ))}
+        <Header>
+          <HeaderContentContainer>
+            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <HeaderLinksContainer>
+              {getSession()
+                ? (
+                  <React.Fragment>
+                    <NewPost to="/edit/new">new</NewPost>
+                    <ListDrafts to="/drafts">drafts</ListDrafts>
+                    <SignedInUser onClick={() => {
+                      if (confirm('Logout?')) {
+                        signout();
+                        // TODO: do something with state/props here
+                        window.location.reload();
+                      }
+                    }}>{getUserName()}</SignedInUser>
+                  </React.Fragment>)
+                : (
+                  <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
+                )}
+            </HeaderLinksContainer>
+          </HeaderContentContainer>
+        </Header>
+        <HeaderSpacer />
+        <Article>
+          {posts.size > 0 && (
+            <React.Fragment>
+              <PostRow>
+                <StyledH2>Recent Articles</StyledH2>
+              </PostRow>
+              {posts.map(post => (
+                <PostRow key={`${post.get('id')}${post.get('canonical')}`}>
+                  <StyledHeadingA href={`/posts/${post.get('canonical')}`}>
+                    {post.get('title')}
+                  </StyledHeadingA>
+                  <PostAbstractRow>
+                    <StyledA href={`/posts/${post.get('canonical')}`}>
+                      {post.get('abstract')}
+                    </StyledA>
+                  </PostAbstractRow>
+                  <PostMetaRow>
+                    <PostMetaContentFirst>{post.get('published')}</PostMetaContentFirst>
+                    {post.get('canEdit') && (
+                      <React.Fragment>
+                        <PostMetaContent>|</PostMetaContent>
+                        <PostActionA href={`/edit/${postId}`}>edit</PostActionA>
+                      </React.Fragment>
+                    )}
+                    {post.get('canDelete') && (
+                      <React.Fragment>
+                        <PostMetaContent>|</PostMetaContent>
+                        <PostAction>delete</PostAction>
+                      </React.Fragment>
+                    )}
+                    <PostMetaContent>|</PostMetaContent>
+                    <AuthorExpand>{post.get('username')}</AuthorExpand>
+                  </PostMetaRow>
+                </PostRow>
+              ))}
+            </React.Fragment>)}
+        </Article>
+        <Footer />
       </React.Fragment>
-    );
+    )
   }
 }

@@ -10,6 +10,6 @@ Pace();
 console.debug = () => {};
 
 ReactDOM.render(
-  <AppWithHot />,
+  process.env.isProduction ? <App /> : <AppWithHot />,
   document.getElementById('app'),
 );

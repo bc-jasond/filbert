@@ -8,6 +8,22 @@ import {
   apiPost,
 } from '../../common/fetch';
 import {
+  Article,
+  DeletePost,
+  Header,
+  HeaderContentContainer,
+  HeaderLinksContainer,
+  HeaderSpacer,
+  LinkStyled,
+  ListDrafts,
+  NewPost,
+  PublishPost,
+  SignedInUser,
+} from '../../common/layout-styled-components';
+import Footer from '../footer';
+
+import { getUserName, signout } from '../../common/session';
+import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
   getDiffStartAndLength,
@@ -130,8 +146,7 @@ export default class EditPost extends React.Component {
   
   async componentDidMount() {
     try {
-      const { postId } = this.props;
-      if (postId === NEW_POST_URL_ID) {
+      if (this.props.match.params.id === NEW_POST_URL_ID) {
         return this.newPost();
       }
       return this.loadPost();
@@ -193,7 +208,7 @@ export default class EditPost extends React.Component {
   
   loadPost = async () => {
     try {
-      const { post, contentNodes } = await apiGet(`/edit/${this.props.postId}`);
+      const { post, contentNodes } = await apiGet(`/edit/${this.props.match.params.id}`);
       this.updateManager.init(post);
       this.documentModel.init(post, this.updateManager, contentNodes);
       const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
@@ -261,7 +276,7 @@ export default class EditPost extends React.Component {
   }
   
   commitUpdates = async (focusNodeId, offset = -1, shouldFocusLastChild) => {
-    if (this.props.postId === NEW_POST_URL_ID) {
+    if (this.props.match.params.id === NEW_POST_URL_ID) {
       await this.createNewPost();
       return;
     } else {
@@ -417,7 +432,7 @@ export default class EditPost extends React.Component {
       // TODO: this should probably use a diff strategy instead of key detection
       || isControlKey(evt.keyCode)
       // doesn't work with a 'new' post
-      || this.props.postId === NEW_POST_URL_ID) {
+      || this.props.match.params.id === NEW_POST_URL_ID) {
       return;
     }
     const selectedNode = getCaretNode();
@@ -791,58 +806,85 @@ export default class EditPost extends React.Component {
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
+    // huh, aren't we on /edit? - this is for coming from /edit/new...
     if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
     if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
-  
-    return root && (
+    
+    return (
       <React.Fragment>
-        {shouldShowPublishPostMenu && (<PublishPostForm
-          post={post}
-          updatePost={this.updatePost}
-          publishPost={this.publishPost}
-          savePost={this.savePost}
-          close={this.closePostMenu}
-          successMessage={shouldShowPostSuccess}
-          errorMessage={shouldShowPostError}
-        />)}
-        <div
-          contentEditable={true}
-          suppressContentEditableWarning={true}
-          onKeyDown={this.handleKeyDown}
-          onKeyUp={this.handleKeyUp}
-          onMouseUp={this.handleMouseUp}
-          onPaste={this.handlePaste}
-        >
-          <ContentNode node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
-        </div>
-        {shouldShowInsertMenu && (<InsertSectionMenu
-          insertMenuTopOffset={insertMenuTopOffset}
-          insertMenuLeftOffset={insertMenuLeftOffset}
-          toggleInsertMenu={this.toggleInsertMenu}
-          insertMenuIsOpen={insertMenuIsOpen}
-          insertSection={this.insertSection}
-        />)}
-        {editSectionId && (<EditSectionForm
-          editSectionId={editSectionId}
-          editSectionType={editSectionType}
-          editSectionMeta={editSectionMeta}
-          editSectionMetaFormTopOffset={editSectionMetaFormTopOffset}
-          editSectionMetaFormLeftOffset={editSectionMetaFormLeftOffset}
-          updateMetaProp={this.updateMetaProp}
-          sectionSaveMeta={this.sectionSaveMeta}
-          sectionDelete={this.sectionDelete}
-          close={this.sectionEditClose}
-        />)}
-        {formatSelectionNode.get('id') && (<FormatSelectionMenu
-          offsetTop={formatSelectionMenuTopOffset}
-          offsetLeft={formatSelectionMenuLeftOffset}
-          nodeModel={formatSelectionNode}
-          selectionModel={formatSelectionModel}
-          selectionAction={this.handleSelectionAction}
-          updateLinkUrl={this.updateLinkUrl}
-          forwardRef={this.getLinkUrlForwardedRef}
-        />)}
+        <Header>
+          <HeaderContentContainer>
+            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <HeaderLinksContainer>
+              <PublishPost>publish</PublishPost>
+              <DeletePost>delete</DeletePost>
+              <NewPost to="/edit/new">new</NewPost>
+              <ListDrafts to="/drafts">drafts</ListDrafts>
+              <SignedInUser onClick={() => {
+                if (confirm('Logout?')) {
+                  signout();
+                  // TODO: do something with state/props here?
+                  window.location.reload();
+                }
+              }}>{getUserName()}</SignedInUser>
+            </HeaderLinksContainer>
+          </HeaderContentContainer>
+        </Header>
+        <HeaderSpacer />
+        <Article>
+          {root && (
+            <React.Fragment>
+              {shouldShowPublishPostMenu && (<PublishPostForm
+                post={post}
+                updatePost={this.updatePost}
+                publishPost={this.publishPost}
+                savePost={this.savePost}
+                close={this.closePostMenu}
+                successMessage={shouldShowPostSuccess}
+                errorMessage={shouldShowPostError}
+              />)}
+              <div
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onKeyDown={this.handleKeyDown}
+                onKeyUp={this.handleKeyUp}
+                onMouseUp={this.handleMouseUp}
+                onPaste={this.handlePaste}
+              >
+                <ContentNode node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
+              </div>
+              {shouldShowInsertMenu && (<InsertSectionMenu
+                insertMenuTopOffset={insertMenuTopOffset}
+                insertMenuLeftOffset={insertMenuLeftOffset}
+                toggleInsertMenu={this.toggleInsertMenu}
+                insertMenuIsOpen={insertMenuIsOpen}
+                insertSection={this.insertSection}
+              />)}
+              {editSectionId && (<EditSectionForm
+                editSectionId={editSectionId}
+                editSectionType={editSectionType}
+                editSectionMeta={editSectionMeta}
+                editSectionMetaFormTopOffset={editSectionMetaFormTopOffset}
+                editSectionMetaFormLeftOffset={editSectionMetaFormLeftOffset}
+                updateMetaProp={this.updateMetaProp}
+                sectionSaveMeta={this.sectionSaveMeta}
+                sectionDelete={this.sectionDelete}
+                close={this.sectionEditClose}
+              />)}
+              {formatSelectionNode.get('id') && (<FormatSelectionMenu
+                offsetTop={formatSelectionMenuTopOffset}
+                offsetLeft={formatSelectionMenuLeftOffset}
+                nodeModel={formatSelectionNode}
+                selectionModel={formatSelectionModel}
+                selectionAction={this.handleSelectionAction}
+                updateLinkUrl={this.updateLinkUrl}
+                forwardRef={this.getLinkUrlForwardedRef}
+              />)}
+            </React.Fragment>
+          )}
+        </Article>
+        <Footer />
       </React.Fragment>
-    );
+    )
   }
 }

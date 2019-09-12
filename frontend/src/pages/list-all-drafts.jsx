@@ -1,14 +1,26 @@
 import { fromJS, List } from 'immutable';
 import React from 'react';
-import { Redirect } from 'react-router-dom';
 
 import {
   apiGet,
   apiPost,
   apiDelete, apiPatch,
 } from '../common/fetch';
+import { getSession, getUserName, signout } from '../common/session';
 import { formatPostDate } from '../common/utils';
 
+import Footer from './footer';
+import {
+  Article,
+  Header,
+  HeaderContentContainer,
+  HeaderLinksContainer,
+  HeaderSpacer,
+  LinkStyled,
+  LinkStyledSignIn,
+  NewPost,
+  SignedInUser,
+} from '../common/layout-styled-components';
 import {
   StyledH2,
   PostRow,
@@ -27,7 +39,6 @@ export default class AllPosts extends React.Component {
     super(props);
     
     this.state = {
-      redirectPostCanonical: null,
       shouldShowPublishPostMenu: false,
       shouldShowPostError: null,
       shouldShowPostSuccess: null,
@@ -65,7 +76,6 @@ export default class AllPosts extends React.Component {
     if (confirm(`Publish draft ${draft.get('title')}? This makes it public.`)) {
       try {
         await apiPost(`/publish/${draft.get('id')}`)
-        // this.setState({redirectPostCanonical: draft.canonical})
         await this.loadDrafts();
         this.setState({
           shouldShowPostSuccess: true,
@@ -119,48 +129,75 @@ export default class AllPosts extends React.Component {
   render() {
     const {
       drafts,
-      redirectPostCanonical,
       shouldShowPublishPostMenu,
       shouldShowPostError,
       shouldShowPostSuccess,
     } = this.state;
     
-    return redirectPostCanonical
-      ? (<Redirect to={`/posts/${redirectPostCanonical}`} />)
-      : drafts.size > 0 && (
-        <React.Fragment>
-          {shouldShowPublishPostMenu && (<PublishPostForm
-            post={shouldShowPublishPostMenu}
-            updatePost={this.updatePost}
-            publishPost={this.publishDraft}
-            savePost={this.savePost}
-            close={this.closePostMenu}
-            successMessage={shouldShowPostSuccess}
-            errorMessage={shouldShowPostError}
-          />)}
-          <PostRow>
-            <StyledH2>Recent Drafts</StyledH2>
-          </PostRow>
-          {drafts.map(draft => (
-            <PostRow key={`${draft.get('id')}${draft.get('canonical')}`}>
-              <StyledHeadingA href={`/edit/${draft.get('id')}`}>
-                {draft.get('title')}
-              </StyledHeadingA>
-              <PostAbstractRow>
-                <StyledA href={`/edit/${draft.get('id')}`}>
-                  {draft.get('abstract')}
-                </StyledA>
-              </PostAbstractRow>
-              <PostMetaRow>
-                <PostMetaContentFirst>{draft.get('updated')}</PostMetaContentFirst>
-                <PostMetaContent>|</PostMetaContent>
-                <PostAction onClick={() => this.openPostMenu(draft)}>publish</PostAction>
-                <PostMetaContent>|</PostMetaContent>
-                <PostAction onClick={() => this.deleteDraft(draft)}>delete</PostAction>
-              </PostMetaRow>
-            </PostRow>
-          ))}
-        </React.Fragment>
-      );
+    return (
+      <React.Fragment>
+        <Header>
+          <HeaderContentContainer>
+            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <HeaderLinksContainer>
+              {getSession()
+                ? (
+                  <React.Fragment>
+                    <NewPost to="/edit/new">new</NewPost>
+                    <SignedInUser onClick={() => {
+                      if (confirm('Logout?')) {
+                        signout();
+                        // TODO: do something with state/props here?
+                        window.location.reload();
+                      }
+                    }}>{getUserName()}</SignedInUser>
+                  </React.Fragment>)
+                : (
+                  <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
+                )}
+            </HeaderLinksContainer>
+          </HeaderContentContainer>
+        </Header>
+        <HeaderSpacer />
+        <Article>
+          {drafts.size > 0 && (
+            <React.Fragment>
+              {shouldShowPublishPostMenu && (<PublishPostForm
+                post={shouldShowPublishPostMenu}
+                updatePost={this.updatePost}
+                publishPost={this.publishDraft}
+                savePost={this.savePost}
+                close={this.closePostMenu}
+                successMessage={shouldShowPostSuccess}
+                errorMessage={shouldShowPostError}
+              />)}
+              <PostRow>
+                <StyledH2>Recent Drafts</StyledH2>
+              </PostRow>
+              {drafts.map(draft => (
+                <PostRow key={`${draft.get('id')}${draft.get('canonical')}`}>
+                  <StyledHeadingA href={`/edit/${draft.get('id')}`}>
+                    {draft.get('title')}
+                  </StyledHeadingA>
+                  <PostAbstractRow>
+                    <StyledA href={`/edit/${draft.get('id')}`}>
+                      {draft.get('abstract')}
+                    </StyledA>
+                  </PostAbstractRow>
+                  <PostMetaRow>
+                    <PostMetaContentFirst>{draft.get('updated')}</PostMetaContentFirst>
+                    <PostMetaContent>|</PostMetaContent>
+                    <PostAction onClick={() => this.openPostMenu(draft)}>publish</PostAction>
+                    <PostMetaContent>|</PostMetaContent>
+                    <PostAction onClick={() => this.deleteDraft(draft)}>delete</PostAction>
+                  </PostMetaRow>
+                </PostRow>
+              ))}
+            </React.Fragment>
+          )}
+        </Article>
+        <Footer />
+      </React.Fragment>
+    )
   }
 }
