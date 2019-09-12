@@ -91,7 +91,7 @@ export default class AllPosts extends React.Component {
   savePost = async () => {
     try {
       const { shouldShowPublishPostMenu: draft } = this.state;
-      await apiPatch(`/draft/${draft.get('id')}`, {
+      await apiPatch(`/post/${draft.get('id')}`, {
         title: draft.get('title'),
         canonical: draft.get('canonical'),
         abstract: draft.get('abstract'),
@@ -127,10 +127,10 @@ export default class AllPosts extends React.Component {
     
     return redirectPostCanonical
       ? (<Redirect to={`/posts/${redirectPostCanonical}`} />)
-      : (
+      : drafts.size > 0 && (
         <React.Fragment>
           {shouldShowPublishPostMenu && (<PublishPostForm
-            draft={shouldShowPublishPostMenu}
+            post={shouldShowPublishPostMenu}
             updatePost={this.updatePost}
             publishPost={this.publishDraft}
             savePost={this.savePost}

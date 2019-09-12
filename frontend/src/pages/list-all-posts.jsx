@@ -15,19 +15,16 @@ import {
   PostMetaRow,
   PostMetaContent,
   PostMetaContentFirst,
+  PostAction,
+  AuthorExpand,
+  PostActionA,
 } from '../common/list-all-styled-components';
-import DeletePostSpan from './delete-post-span';
-import EditPostButton from './edit-post-button';
 
 export default class AllPosts extends React.Component {
   constructor(props) {
     super(props);
     
     this.state = {
-      redirectPostCanonical: null,
-      shouldShowPublishPostMenu: false,
-      shouldShowPostError: null,
-      shouldShowPostSuccess: null,
       posts: List(),
     }
   }
@@ -51,7 +48,7 @@ export default class AllPosts extends React.Component {
       posts,
     } = this.state;
     
-    return (
+    return posts.size > 0 && (
       <React.Fragment>
         <PostRow>
           <StyledH2>Recent Articles</StyledH2>
@@ -68,15 +65,18 @@ export default class AllPosts extends React.Component {
             </PostAbstractRow>
             <PostMetaRow>
               <PostMetaContentFirst>{post.get('published')}</PostMetaContentFirst>
-              {/*TODO: Ajax calls in a loop - yay!  This can be optimized after features are complete*/}
-              <EditPostButton postCanonical={post.get('canonical')}>edit</EditPostButton>
-              <DeletePostSpan
-                postCanonical={post.get('canonical')}
-                postTitle={post.get('title')}
-                afterDeleteCallback={this.loadPosts}
-              >
-                delete
-              </DeletePostSpan>
+              {post.get('canEdit') && (
+                <React.Fragment>
+                  <PostMetaContent>|</PostMetaContent>
+                  <PostActionA href={`/edit/${postId}`}>edit</PostActionA>
+                </React.Fragment>
+              )}
+              {post.get('canDelete') && (
+                <React.Fragment>
+                  <PostMetaContent>|</PostMetaContent>
+                  <PostAction>delete</PostAction>
+                </React.Fragment>
+              )}
               <PostMetaContent>|</PostMetaContent>
               <AuthorExpand>{post.get('username')}</AuthorExpand>
             </PostMetaRow>

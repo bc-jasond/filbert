@@ -302,14 +302,3 @@ export const ButtonSpan = styled.span`
   color: white;
   font-family: ${sansSerif};
 `;
-
-// POSTS LIST
-export const MetaContent = css`
-  color: ${grey};
-  letter-spacing: 0px;
-  font-size: 15.8px;
-  line-height: 20px;
-  font-style: normal;
-  font-family: ${sansSerif};
-  padding-left: 6px;
-`;

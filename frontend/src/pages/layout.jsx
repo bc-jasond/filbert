@@ -14,17 +14,12 @@ import {
   ListDrafts,
   HeaderSpacer,
   Article,
-  Footer,
-  SocialLinksContainer,
-  A,
-  GitHubStyled,
-  LinkedInStyled,
-  InfoStyled,
+  PublishPost,
+  DeletePost,
+  EditPost,
 } from '../common/layout-styled-components';
 
-import EditPostButton from './edit-post-button';
-import DeletePostSpan from './delete-post-span';
-import PublishPostSpan from './publish-post-span';
+import Footer from './footer';
 
 export default class Layout extends React.Component {
   constructor(props) {
@@ -40,7 +35,7 @@ export default class Layout extends React.Component {
   
   afterPublishCallback = () => {
     const { postId } = this.props;
-    this.setState( { redirectUrl: `/posts/${postId}`})
+    this.setState({ redirectUrl: `/posts/${postId}` })
   }
   
   render() {
@@ -54,31 +49,19 @@ export default class Layout extends React.Component {
             <HeaderContentContainer>
               <LinkStyled to="/">dubaniewi.cz</LinkStyled>
               <HeaderLinksContainer>
-                {getSession()
-                  ? (
-                    <React.Fragment>
-                      <PublishPostSpan postId={postId} afterPublishCallback={this.afterPublishCallback}>publish</PublishPostSpan>
-                      <EditPostButton postCanonical={postCanonical} shouldUseLargeButton={true}>edit</EditPostButton>
-                      <DeletePostSpan
-                        postCanonical={postCanonical}
-                        postId={postId}
-                        shouldUseLargeButton={true}
-                        afterDeleteCallback={this.afterDeleteCallback}
-                      >
-                        delete
-                      </DeletePostSpan>
-                      <NewPost to="/edit/new">new</NewPost>
-                      <ListDrafts to="/drafts">drafts</ListDrafts>
-                      <SignedInUser onClick={() => {
-                        if (confirm('Logout?')) {
-                          signout();
-                          // TODO: do something with state/props here?
-                          window.location.reload();
-                        }
-                      }}>{getUserName()}</SignedInUser>
-                    </React.Fragment>
-                  )
-                  : (<LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>)}
+                <PublishPost>publish</PublishPost>
+                <EditPost to="/foo">edit</EditPost>
+                <DeletePost>delete</DeletePost>
+                <NewPost to="/edit/new">new</NewPost>
+                <ListDrafts to="/drafts">drafts</ListDrafts>
+                <SignedInUser onClick={() => {
+                  if (confirm('Logout?')) {
+                    signout();
+                    // TODO: do something with state/props here?
+                    window.location.reload();
+                  }
+                }}>{getUserName()}</SignedInUser>
+                <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
               </HeaderLinksContainer>
             </HeaderContentContainer>
           </Header>
@@ -86,14 +69,7 @@ export default class Layout extends React.Component {
           <Article>
             {children}
           </Article>
-          <Footer>
-            🚚 1/4/2019
-            <SocialLinksContainer>
-              <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
-              <A href="https://www.linkedin.com/in/jasondubaniewicz/"><LinkedInStyled /></A>
-              <LinkStyled to="/about"><InfoStyled /></LinkStyled>
-            </SocialLinksContainer>
-          </Footer>
+          <Footer />
         </React.Fragment>
       )
   }

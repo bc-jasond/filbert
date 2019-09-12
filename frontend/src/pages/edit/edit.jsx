@@ -253,6 +253,9 @@ export default class EditPost extends React.Component {
       }
     })
   }
+  openPostMenu = () => {
+    this.setState({ shouldShowPublishPostMenu: true })
+  }
   closePostMenu = () => {
     this.setState({ shouldShowPublishPostMenu: false })
   }

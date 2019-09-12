@@ -86,6 +86,7 @@ async function main() {
         .whereNotNull('published')
         .orderBy('published', 'desc');
       // TODO: limit!
+      // TODO: add canDelete, canEdit, canPublish fields to each
       
       res.send(posts);
     })

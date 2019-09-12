@@ -1,7 +1,8 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { darkGrey, grey } from './css';
+import { sansSerif } from './fonts.css';
 import { A } from './layout-styled-components';
-import { H2, MetaContent } from './shared-styled-components';
+import { H2 } from './shared-styled-components';
 
 export const StyledH2 = styled(H2)`
   margin-left: 0;
@@ -44,6 +45,16 @@ export const PostMetaRow = styled.div`
   align-items: flex-end;
   margin-top: 8px;
 `;
+// POSTS LIST
+export const MetaContent = css`
+  color: ${grey};
+  letter-spacing: 0px;
+  font-size: 15.8px;
+  line-height: 20px;
+  font-style: normal;
+  font-family: ${sansSerif};
+  padding-left: 6px;
+`;
 export const PostMetaContent = styled.span`
   ${MetaContent};
 `;
@@ -63,6 +74,12 @@ export const AuthorExpand = styled.span`
 export const PostAction = styled.span`
   ${MetaContent};
   cursor: pointer;
+  &:hover {
+    font-weight: bolder;
+  }
+`;
+export const PostActionA = styled(A)`
+  ${MetaContent};
   &:hover {
     font-weight: bolder;
   }
