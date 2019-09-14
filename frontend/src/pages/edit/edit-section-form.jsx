@@ -20,6 +20,7 @@ const sectionFieldsByType = {
 }
 
 const EditSectionForm = styled.div`
+  z-index: 3;
   padding: 20px;
   background-color: white;
   position: absolute;

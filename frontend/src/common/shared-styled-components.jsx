@@ -283,6 +283,12 @@ export const Button = styled.button`
   &:hover {
     background: ${darkBlue};
   }
+  ${p => p.disabled && css`
+    background: ${mediumGrey};
+    &:hover {
+      background: ${mediumGrey};
+    }
+  `}
 `;
 export const CancelButton = styled(Button)`
   background: ${mediumGrey};

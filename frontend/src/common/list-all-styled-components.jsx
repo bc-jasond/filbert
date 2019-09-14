@@ -70,6 +70,7 @@ export const PostMetaContentFirst = styled.span`
 `;
 export const AuthorExpand = styled.span`
   ${MetaContent};
+  padding-left: 9px;
   transition: letter-spacing 0.125s, color 0.125s;
   &:hover {
     letter-spacing: 8px;

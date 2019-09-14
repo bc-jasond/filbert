@@ -1,7 +1,10 @@
 import React from 'react';
+import { Redirect } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
 import { ROOT_NODE_PARENT_ID } from '../common/constants';
-import { apiGet } from '../common/fetch';
+import { apiDelete, apiGet } from '../common/fetch';
+import { confirmPromise } from '../common/utils';
+import { getSession, getUserName, signout } from '../common/session';
 
 import Footer from './footer';
 import {
@@ -16,10 +19,8 @@ import {
   LinkStyledSignIn,
   ListDrafts,
   NewPost,
-  PublishPost,
   SignedInUser,
 } from '../common/layout-styled-components';
-import { getSession, getUserName, signout } from '../common/session';
 
 import Page404 from './404';
 
@@ -34,6 +35,7 @@ export default class ViewPost extends React.Component {
       root: null,
       nodesByParentId: {},
       shouldShow404: false,
+      shouldRedirectToHome: false,
     }
   }
   
@@ -50,15 +52,28 @@ export default class ViewPost extends React.Component {
     }
   }
   
+  deletePost = async () => {
+    const { post } = this.state;
+    try {
+      await confirmPromise(`Delete post ${post.get('title')}?`);
+      await apiDelete(`/post/${post.get('id')}`);
+      this.setState({ shouldRedirectToHome: true });
+    } catch (err) {
+      console.error('Delete post error:', err)
+    }
+  }
+  
   render() {
     const {
       post,
       root,
       nodesByParentId,
       shouldShow404,
+      shouldRedirectToHome,
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
+    if (shouldRedirectToHome) return (<Redirect to="/" />);
     
     return (
       <React.Fragment>
@@ -69,8 +84,7 @@ export default class ViewPost extends React.Component {
               {getSession()
                 ? (
                   <React.Fragment>
-                    <EditPost to={`/edit/${post.get('id')}`}>edit</EditPost>
-                    <DeletePost>delete</DeletePost>
+                    {post.get('canEdit') && (<EditPost to={`/edit/${post.get('id')}`}>edit</EditPost>)}
                     <NewPost to="/edit/new">new</NewPost>
                     <ListDrafts to="/drafts">drafts</ListDrafts>
                     <SignedInUser onClick={() => {

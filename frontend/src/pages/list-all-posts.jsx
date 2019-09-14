@@ -113,7 +113,7 @@ export default class AllPosts extends React.Component {
                     <PostMetaContentFirst>{post.get('published')}</PostMetaContentFirst>
                     {post.get('canEdit') && (
                       <React.Fragment>
-                        <PostActionA href={`/edit/${postId}`}>edit</PostActionA>
+                        <PostActionA href={`/edit/${post.get('id')}`}>edit</PostActionA>
                       </React.Fragment>
                     )}
                     {post.get('canDelete') && (

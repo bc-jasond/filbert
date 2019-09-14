@@ -37,6 +37,26 @@ async function main() {
     app.use(express.json());
     app.use(cors(/* TODO: whitelist *.dubaniewi.cz in PRODUCTION */))
     
+    /**
+     * parse Authorization header, add logged in user to req object
+     */
+    app.use(async (req, res, next) => {
+      try {
+        const { headers: { authorization } } = req;
+        // decrypt Authorization header
+        // assign 'loggedInUser' session to req for all routes
+        if (authorization) {
+          // TODO: add expiry time
+          // TODO: add refresh token & flow
+          req.loggedInUser = JSON.parse(decrypt(authorization));
+        }
+        next();
+      } catch (err) {
+        console.error('Authorization header Error, continuing anyway...', err);
+        next();
+      }
+    })
+    
     app.post('/signin', async (req, res) => {
       try {
         const { username, password } = req.body;
@@ -69,6 +89,7 @@ async function main() {
     })
     
     app.get('/post', async (req, res) => {
+      const { loggedInUser } = req;
       const posts = await knex('post')
         .select(
           'post.id',
@@ -84,14 +105,26 @@ async function main() {
         )
         .innerJoin('user', 'post.user_id', 'user.id')
         .whereNotNull('published')
-        .orderBy('published', 'desc');
-      // TODO: limit!
-      // TODO: add canDelete, canEdit, canPublish fields to each
+        .orderBy('published', 'desc')
+        .limit(250);
       
-      res.send(posts);
+      if (!loggedInUser) {
+        res.send(posts);
+        return;
+      }
+      
+      res.send(
+        posts.map(post => {
+          post.canEdit = loggedInUser.id === post.user_id;
+          post.canDelete = loggedInUser.id === post.user_id;
+          post.canPublish = loggedInUser.id === post.user_id;
+          return post;
+        })
+      );
     })
     
     app.get('/post/:canonical', async (req, res) => {
+      const { loggedInUser } = req;
       const { canonical } = req.params;
       const [post] = await knex('post')
         .where({ canonical });
@@ -100,24 +133,24 @@ async function main() {
         return;
       }
       const contentNodes = await getNodes(knex, post.id);
+      if (loggedInUser) {
+        post.canEdit = loggedInUser.id === post.user_id;
+        post.canDelete = loggedInUser.id === post.user_id;
+        post.canPublish = loggedInUser.id === post.user_id;
+      }
       res.send({ post, contentNodes });
     })
     
     /**
-     * authenticated routes - all routes defined after this middleware will assume a logged in user
+     * authenticated routes - all routes defined after this middleware require a logged in user
      */
     app.use(async (req, res, next) => {
-      try {
-        const { headers: { authorization } } = req;
-        // decrypt Authorization header
-        // assign 'loggedInUser' session to req for all authenticated routes
-        req.loggedInUser = JSON.parse(decrypt(authorization));
-        // return 401 on failure
-        next();
-      } catch (err) {
-        console.error('Authorization header Error', err);
+      if (!req.loggedInUser) {
+        console.error('No User Found', req);
         res.status(401).send({});
+        return;
       }
+      next();
     })
     
     /**
@@ -131,7 +164,7 @@ async function main() {
         .into('post');
       res.send({ postId });
     })
-  
+    
     /**
      * save post fields - like title, canonical & abstract
      */
@@ -155,17 +188,17 @@ async function main() {
         })
       res.send({})
     })
-  
+    
     /**
      * delete a post
      */
-    app.delete('/post/:canonical', async (req, res) => {
-      const { canonical } = req.params;
+    app.delete('/post/:id', async (req, res) => {
+      const { id } = req.params;
       const [post] = await knex('post')
         .whereNotNull('published')
         .andWhere({
           user_id: req.loggedInUser.id,
-          canonical,
+          id,
         });
       if (!post) {
         res.status(404).send({});
@@ -199,66 +232,6 @@ async function main() {
       }
       const contentNodes = await getNodes(knex, post.id);
       res.send({ post, contentNodes });
-    })
-    
-    /**
-     * to show/hide the 'edit' button on the View/List pages
-     * note: uses canonical string id, not int
-     */
-    app.get('/can-edit/:canonical', async (req, res) => {
-      const { canonical } = req.params;
-      const [post] = await knex('post')
-        .where({
-          canonical,
-          user_id: req.loggedInUser.id,
-        });
-      if (!post) {
-        res.status(404).send({});
-        return;
-      }
-      res.send({ id: post.id })
-    })
-    
-    /**
-     * to show/hide the 'delete' button on the Edit/View/List pages
-     * note: uses canonical string id, not int
-     */
-    app.get('/can-delete/:id', async (req, res) => {
-      const { id } = req.params;
-      const whereClause = { user_id: req.loggedInUser.id };
-      const idAsInt = parseInt(id, 10);
-      if (Number.isInteger(idAsInt)) {
-        whereClause.id = idAsInt;
-      } else {
-        whereClause.canonical = id;
-      }
-      const [post] = await knex('post')
-        .where(whereClause);
-      if (!post) {
-        res.status(404).send({});
-        return;
-      }
-      res.send({ id: post.id })
-    })
-    
-    /**
-     * to show/hide the 'publish' button on the Edit/View/List pages
-     * note: uses canonical string id, not int
-     */
-    app.get('/can-publish/:id', async (req, res) => {
-      const { id } = req.params;
-      const [post] = await knex('post')
-        .where({
-          id,
-          user_id: req.loggedInUser.id,
-          published: null,
-        });
-        
-      if (!post) {
-        res.status(404).send({});
-        return;
-      }
-      res.send({ id: post.id })
     })
     
     /**
@@ -299,7 +272,8 @@ async function main() {
         .innerJoin('user', 'post.user_id', 'user.id')
         .whereNull('published')
         .andWhere('post.user_id', req.loggedInUser.id)
-        .orderBy('post.created', 'desc');
+        .orderBy('post.created', 'desc')
+        .limit(250);
       
       res.send(posts);
     })

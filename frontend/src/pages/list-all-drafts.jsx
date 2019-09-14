@@ -4,7 +4,8 @@ import React from 'react';
 import {
   apiGet,
   apiPost,
-  apiDelete, apiPatch,
+  apiDelete,
+  apiPatch,
 } from '../common/fetch';
 import { getSession, getUserName, signout } from '../common/session';
 import { formatPostDate } from '../common/utils';
@@ -28,7 +29,6 @@ import {
   StyledHeadingA,
   StyledA,
   PostMetaRow,
-  PostMetaContent,
   PostMetaContentFirst,
   PostAction,
 } from '../common/list-all-styled-components';
@@ -53,7 +53,6 @@ export default class AllPosts extends React.Component {
   loadDrafts = async () => {
     const drafts = await apiGet('/draft');
     const postsFormatted = fromJS(drafts.map(draft => {
-      draft.published = formatPostDate(draft.published);
       draft.updated = formatPostDate(draft.updated);
       return draft;
     }))
@@ -172,7 +171,7 @@ export default class AllPosts extends React.Component {
                 errorMessage={shouldShowPostError}
               />)}
               <PostRow>
-                <StyledH2>Recent Drafts</StyledH2>
+                <StyledH2>My Recent Drafts</StyledH2>
               </PostRow>
               {drafts.map(draft => (
                 <PostRow key={`${draft.get('id')}${draft.get('canonical')}`}>

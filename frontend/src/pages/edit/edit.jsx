@@ -3,6 +3,7 @@ import { List, Map, fromJS } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
 import {
+  apiDelete,
   apiGet,
   apiPatch,
   apiPost,
@@ -127,6 +128,7 @@ export default class EditPost extends React.Component {
       root: null,
       shouldShow404: false,
       shouldRedirectToHome: false,
+      shouldRedirectToDrafts: false,
       shouldRedirectToEditWithId: false,
       shouldShowInsertMenu: false,
       insertMenuIsOpen: false,
@@ -277,7 +279,7 @@ export default class EditPost extends React.Component {
     const { post } = this.state;
     
     try {
-      await confirmPromise('Publish this post?  This makes it TEST.');
+      await confirmPromise('Publish this post?  This makes it public.');
       await this.savePost();
       await apiPost(`/publish/${post.get('id')}`);
       this.setState({
@@ -290,20 +292,35 @@ export default class EditPost extends React.Component {
       this.setState({ shouldShowPostError: true })
     }
   }
-  openPostMenu = () => {
-    this.setState({ shouldShowPublishPostMenu: true })
+  deletePost = async () => {
+    const { post } = this.state;
+    try {
+      if (post.get('published')) {
+        await confirmPromise(`Delete post ${post.get('title')}?`);
+        await apiDelete(`/post/${post.get('id')}`);
+        // if editing a published post - assume redirect to published posts list
+        this.setState({ shouldRedirectToHome: true });
+        return;
+      }
+      await confirmPromise(`Delete draft ${post.get('title')}?`);
+      await apiDelete(`/draft/${post.get('id')}`);
+      this.setState({ shouldRedirectToDrafts: true });
+    } catch (err) {
+      console.error('Delete post error:', err)
+    }
   }
-  closePostMenu = () => {
-    this.setState({ shouldShowPublishPostMenu: false })
+  togglePostMenu = () => {
+    const { shouldShowPublishPostMenu: oldVal } = this.state;
+    this.setState({ shouldShowPublishPostMenu: !oldVal })
   }
   
   commitUpdates = async (focusNodeId, offset = -1, shouldFocusLastChild) => {
     if (this.props.match.params.id === NEW_POST_URL_ID) {
       return this.createNewPost();
-    } else {
-      // TODO: optimistically save updated nodes - look ma, no errors!
-      await this.saveContentBatchDebounce();
     }
+    
+    // TODO: optimistically save updated nodes - look ma, no errors!
+    await this.saveContentBatchDebounce();
     const { formatSelectionNode } = this.state;
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
@@ -807,6 +824,7 @@ export default class EditPost extends React.Component {
       nodesByParentId,
       shouldShow404,
       shouldRedirectToHome,
+      shouldRedirectToDrafts,
       shouldRedirectToEditWithId,
       shouldShowInsertMenu,
       insertMenuIsOpen,
@@ -829,6 +847,7 @@ export default class EditPost extends React.Component {
     
     if (shouldShow404) return (<Page404 />);
     if (shouldRedirectToHome) return (<Redirect to="/" />);
+    if (shouldRedirectToDrafts) return (<Redirect to="/drafts" />);
     // huh, aren't we on /edit? - this is for coming from /edit/new...
     if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
     if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
@@ -839,8 +858,8 @@ export default class EditPost extends React.Component {
           <HeaderContentContainer>
             <LogoLinkStyled to="/">dubaniewi.cz</LogoLinkStyled>
             <HeaderLinksContainer>
-              <PublishPost onClick={this.openPostMenu}>publish</PublishPost>
-              <DeletePost>delete</DeletePost>
+              <PublishPost onClick={this.togglePostMenu}>publish</PublishPost>
+              <DeletePost onClick={this.deletePost}>delete</DeletePost>
               <NewPost to="/edit/new">new</NewPost>
               <ListDrafts to="/drafts">drafts</ListDrafts>
               <SignedInUser onClick={() => {
@@ -861,7 +880,7 @@ export default class EditPost extends React.Component {
                 updatePost={this.updatePost}
                 publishPost={this.publishPost}
                 savePost={this.savePost}
-                close={this.closePostMenu}
+                close={this.togglePostMenu}
                 successMessage={shouldShowPostSuccess}
                 errorMessage={shouldShowPostError}
               />)}

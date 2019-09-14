@@ -14,16 +14,21 @@ import {
   MessageContainer,
 } from '../../common/shared-styled-components';
 
+import { formatPostDate } from '../../common/utils';
+
 const publishPostFields = [
   {
     fieldName: 'title',
     StyledComponent: Input,
+    disabled: () => false,
   }, {
     fieldName: 'canonical',
     StyledComponent: Input,
+    disabled: post => { console.log(post.get('published')); return post.get('published') },
   }, {
     fieldName: 'abstract',
     StyledComponent: TextArea,
+    disabled: () => false,
   }
 ];
 
@@ -53,11 +58,12 @@ export default ({
                 }) => (
   <PublishPostFormContainer>
     <PublishPostForm>
-      <H1>Update Post Details & Publish</H1>
-      {publishPostFields.map(({ fieldName, StyledComponent }, idx) => (
+      <H1>{`${post.get('published') ? 'Post' : 'Draft'}: Details & Publish`}</H1>
+      {publishPostFields.map(({ fieldName, StyledComponent, disabled }, idx) => (
         <InputContainer key={idx}>
           <Label htmlFor={fieldName} error={false /*TODO*/}>{fieldName}</Label>
           <StyledComponent name={fieldName} type="text" value={post.get(fieldName, '')}
+                           disabled={disabled(post) && 'disabled'}
                            onChange={(e) => {
                              updatePost(fieldName, e.target.value)
                            }}
@@ -76,8 +82,8 @@ export default ({
       <CancelButton onClick={close}>
         <ButtonSpan>Close</ButtonSpan>
       </CancelButton>
-      <Button onClick={publishPost}>
-        <ButtonSpan>Publish</ButtonSpan>
+      <Button onClick={publishPost} disabled={post.get('published') && 'disabled'}>
+        <ButtonSpan>{`${post.get('published') ? `Published on ${formatPostDate(post.get('published'))}` : 'Publish'}`}</ButtonSpan>
       </Button>
     </PublishPostForm>
   </PublishPostFormContainer>
