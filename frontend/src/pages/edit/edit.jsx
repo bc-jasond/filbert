@@ -270,6 +270,8 @@ export default class EditPost extends React.Component {
       this.setState({
         shouldShowPostSuccess: true,
         shouldShowPostError: null,
+      }, () => {
+        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), 1000);
       })
     } catch (err) {
       this.setState({ shouldShowPostError: true })

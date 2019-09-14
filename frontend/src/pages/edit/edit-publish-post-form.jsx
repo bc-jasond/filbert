@@ -71,8 +71,8 @@ export default ({
         </InputContainer>
       ))}
       <MessageContainer>
-        {errorMessage && (<ErrorMessage>Error. 🤷‍</ErrorMessage>)}
-        {successMessage && (<SuccessMessage>Saved. 👍</SuccessMessage>)}
+        {errorMessage && (<ErrorMessage>Error 🤷‍</ErrorMessage>)}
+        {successMessage && (<SuccessMessage>Saved 👍</SuccessMessage>)}
       </MessageContainer>
       <Button onClick={savePost}>
         <ButtonSpan>
