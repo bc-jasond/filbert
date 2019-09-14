@@ -16,7 +16,7 @@ import {
   HeaderContentContainer,
   HeaderLinksContainer,
   HeaderSpacer,
-  LinkStyled,
+  LogoLinkStyled,
   LinkStyledSignIn,
   NewPost,
   SignedInUser,
@@ -138,7 +138,7 @@ export default class AllPosts extends React.Component {
       <React.Fragment>
         <Header>
           <HeaderContentContainer>
-            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <LogoLinkStyled to="/">dubaniewi.cz</LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession()
                 ? (
@@ -186,9 +186,7 @@ export default class AllPosts extends React.Component {
                   </PostAbstractRow>
                   <PostMetaRow>
                     <PostMetaContentFirst>{draft.get('updated')}</PostMetaContentFirst>
-                    <PostMetaContent>|</PostMetaContent>
                     <PostAction onClick={() => this.openPostMenu(draft)}>publish</PostAction>
-                    <PostMetaContent>|</PostMetaContent>
                     <PostAction onClick={() => this.deleteDraft(draft)}>delete</PostAction>
                   </PostMetaRow>
                 </PostRow>

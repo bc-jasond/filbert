@@ -5,6 +5,7 @@ import LinkedInSvg from '../../assets/linkedin-logo.svg';
 import InfoSvg from '../../assets/info.svg';
 import { darkGrey, grey, lightBlue, lightGrey } from './css';
 import { monospaced, sansSerif } from './fonts.css';
+import { NavButtonMixin } from './shared-styled-components';
 
 export const Header = styled.header`
   position: fixed;
@@ -39,53 +40,33 @@ export const LinkStyled = styled(Link)`
   font-size: 24px;
   color: ${grey};
   text-decoration: none;
+`;
+export const LogoLinkStyled = styled(LinkStyled)`
   transition: font-size 0.125s;
   &:hover {
     font-size: 28px;
   }
 `;
-export const HeaderButtonMixin = css`
-  font-family: ${monospaced}, monospaced;
-  color: ${grey};
-  cursor: pointer;
-  text-decoration: none;
-  font-size: 18px;
-  line-height: 24px;
-  padding: 14px 18px;
-  border-radius: 26px;
-  border: 1px solid transparent;
-  transition: background-color 0.125s, color 0.125s;
-  &:hover {
-    font-size: 18px;
-    color: white;
-    background-color: ${lightBlue};
-  }
-  ${p => p.isOpen && `
-    font-size: 18px;
-    color: white;
-    background-color: ${lightBlue};
-  `}
-`;
 export const EditPost = styled(LinkStyled)`
-  ${HeaderButtonMixin};
+  ${NavButtonMixin};
 `;
 export const DeletePost = styled.span`
-  ${HeaderButtonMixin};
+  ${NavButtonMixin};
 `;
 export const PublishPost = styled.span`
-  ${HeaderButtonMixin};
+  ${NavButtonMixin};
 `;
 export const NewPost = styled(LinkStyled)`
-  ${HeaderButtonMixin};
+  ${NavButtonMixin};
 `;
 export const ListDrafts = styled(LinkStyled)`
-  ${HeaderButtonMixin};
+  ${NavButtonMixin};
 `;
 export const SignedInUser = styled.div`
-  ${HeaderButtonMixin};
+  ${NavButtonMixin};
 `;
 export const LinkStyledSignIn = styled(LinkStyled)`
-  ${HeaderButtonMixin};
+  ${NavButtonMixin};
 `;
 export const HeaderSpacer = styled.div`
   z-index: 9;

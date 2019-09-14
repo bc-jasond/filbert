@@ -302,3 +302,23 @@ export const ButtonSpan = styled.span`
   color: white;
   font-family: ${sansSerif};
 `;
+export const NavButtonMixin = css`
+  font-family: ${monospaced}, monospaced;
+  color: ${grey};
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 18px;
+  line-height: 24px;
+  padding: 14px 18px;
+  border-radius: 26px;
+  border: 1px solid transparent;
+  transition: background-color 0.125s, color 0.125s;
+  &:hover {
+    color: white;
+    background-color: ${lightBlue};
+  }
+  ${p => p.isOpen && `
+    color: white;
+    background-color: ${lightBlue};
+  `}
+`;

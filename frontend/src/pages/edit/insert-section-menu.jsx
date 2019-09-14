@@ -11,7 +11,7 @@ import {
 
 import styled, { css } from 'styled-components';
 import { grey } from '../../common/css';
-import { HeaderButtonMixin } from '../../common/layout-styled-components';
+import { NavButtonMixin } from '../../common/shared-styled-components';
 
 const InsertSectionMenu = styled.div`
   position: absolute;
@@ -70,7 +70,7 @@ const InsertSectionMenuItemsContainer = styled.div`
   `}
 `;
 const InsertSectionItem = styled.span`
-  ${HeaderButtonMixin};
+  ${NavButtonMixin};
 `;
 
 export default ({

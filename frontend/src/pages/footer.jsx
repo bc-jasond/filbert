@@ -4,7 +4,7 @@ import {
   GitHubStyled,
   InfoStyled,
   LinkedInStyled,
-  LinkStyled,
+  LogoLinkStyled,
   SocialLinksContainer
 } from '../common/layout-styled-components';
 
@@ -14,7 +14,7 @@ export default () => (
     <SocialLinksContainer>
       <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
       <A href="https://www.linkedin.com/in/jasondubaniewicz/"><LinkedInStyled /></A>
-      <LinkStyled to="/about"><InfoStyled /></LinkStyled>
+      <LogoLinkStyled to="/about"><InfoStyled /></LogoLinkStyled>
     </SocialLinksContainer>
   </Footer>
 )

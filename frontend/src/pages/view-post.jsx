@@ -1,5 +1,5 @@
 import React from 'react';
-import { fromJS } from 'immutable';
+import { fromJS, Map } from 'immutable';
 import { ROOT_NODE_PARENT_ID } from '../common/constants';
 import { apiGet } from '../common/fetch';
 
@@ -12,7 +12,7 @@ import {
   HeaderContentContainer,
   HeaderLinksContainer,
   HeaderSpacer,
-  LinkStyled,
+  LogoLinkStyled,
   LinkStyledSignIn,
   ListDrafts,
   NewPost,
@@ -30,6 +30,7 @@ export default class ViewPost extends React.Component {
     super(props);
     
     this.state = {
+      post: Map(),
       root: null,
       nodesByParentId: {},
       shouldShow404: false,
@@ -42,7 +43,7 @@ export default class ViewPost extends React.Component {
       const nodesByParentId = fromJS(contentNodes);
       // TODO: don't use 'null' as root node indicator
       const root = nodesByParentId.get(ROOT_NODE_PARENT_ID).get(0);
-      this.setState({ root, nodesByParentId, shouldShow404: false })
+      this.setState({ post: fromJS(post), root, nodesByParentId, shouldShow404: false })
     } catch (err) {
       console.error(err);
       this.setState({ pageContent: null, shouldShow404: true })
@@ -51,6 +52,7 @@ export default class ViewPost extends React.Component {
   
   render() {
     const {
+      post,
       root,
       nodesByParentId,
       shouldShow404,
@@ -62,13 +64,12 @@ export default class ViewPost extends React.Component {
       <React.Fragment>
         <Header>
           <HeaderContentContainer>
-            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <LogoLinkStyled to="/">dubaniewi.cz</LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession()
                 ? (
                   <React.Fragment>
-                    <PublishPost>publish</PublishPost>
-                    <EditPost to="/foo">edit</EditPost>
+                    <EditPost to={`/edit/${post.get('id')}`}>edit</EditPost>
                     <DeletePost>delete</DeletePost>
                     <NewPost to="/edit/new">new</NewPost>
                     <ListDrafts to="/drafts">drafts</ListDrafts>

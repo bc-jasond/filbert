@@ -2,6 +2,12 @@ import { Map } from 'immutable';
 
 import { ZERO_LENGTH_CHAR } from './constants';
 
+export function confirmPromise(msg) {
+  return new Promise((resolve, reject) => {
+    confirm(msg) ? resolve() : reject();
+  })
+}
+
 export function formatPostDate(dateStr) {
   const publishedDate = new Date(dateStr);
   return publishedDate.toLocaleDateString('en-us', {

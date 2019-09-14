@@ -14,7 +14,7 @@ import {
   HeaderContentContainer,
   HeaderLinksContainer,
   HeaderSpacer,
-  LinkStyled,
+  LogoLinkStyled,
   ListDrafts,
   NewPost,
   PublishPost,
@@ -24,6 +24,7 @@ import Footer from '../footer';
 
 import { getUserName, signout } from '../../common/session';
 import {
+  confirmPromise,
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
   getDiffStartAndLength,
@@ -125,6 +126,7 @@ export default class EditPost extends React.Component {
       nodesByParentId: Map(),
       root: null,
       shouldShow404: false,
+      shouldRedirectToHome: false,
       shouldRedirectToEditWithId: false,
       shouldShowInsertMenu: false,
       insertMenuIsOpen: false,
@@ -149,7 +151,26 @@ export default class EditPost extends React.Component {
       if (this.props.match.params.id === NEW_POST_URL_ID) {
         return this.newPost();
       }
-      return this.loadPost();
+      await this.loadPost();
+    } catch (err) {
+      console.error('EDIT - load post error:', err);
+    }
+  }
+  
+  async componentDidUpdate(prevProps) {
+    try {
+      if (this.props.match.params.id === prevProps.match.params.id) {
+        return;
+      }
+      
+      this.setState({
+        shouldRedirectToEditWithId: false,
+        shouldShowInsertMenu: false,
+      })
+      if (this.props.match.params.id === NEW_POST_URL_ID) {
+        return this.newPost();
+      }
+      await this.loadPost();
     } catch (err) {
       console.error('EDIT - load post error:', err);
     }
@@ -252,21 +273,22 @@ export default class EditPost extends React.Component {
       this.setState({ shouldShowPostError: true })
     }
   }
-  publishPost = () => {
+  publishPost = async () => {
     const { post } = this.state;
-    window.confirm('Publish this post?  This makes it public.', async () => {
-      try {
-        await apiPost('/publish', { id: post.get('id') })
-        this.setState({
-          shouldShowPostSuccess: true,
-          shouldShowPostError: null,
-        }, () => {
-          setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('id') }), 1000);
-        });
-      } catch (err) {
-        this.setState({ shouldShowPostError: true })
-      }
-    })
+    
+    try {
+      await confirmPromise('Publish this post?  This makes it TEST.');
+      await this.savePost();
+      await apiPost(`/publish/${post.get('id')}`);
+      this.setState({
+        shouldShowPostSuccess: true,
+        shouldShowPostError: null,
+      }, () => {
+        setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('canonical') }), 1000);
+      });
+    } catch (err) {
+      this.setState({ shouldShowPostError: true })
+    }
   }
   openPostMenu = () => {
     this.setState({ shouldShowPublishPostMenu: true })
@@ -277,8 +299,7 @@ export default class EditPost extends React.Component {
   
   commitUpdates = async (focusNodeId, offset = -1, shouldFocusLastChild) => {
     if (this.props.match.params.id === NEW_POST_URL_ID) {
-      await this.createNewPost();
-      return;
+      return this.createNewPost();
     } else {
       // TODO: optimistically save updated nodes - look ma, no errors!
       await this.saveContentBatchDebounce();
@@ -785,6 +806,7 @@ export default class EditPost extends React.Component {
       root,
       nodesByParentId,
       shouldShow404,
+      shouldRedirectToHome,
       shouldRedirectToEditWithId,
       shouldShowInsertMenu,
       insertMenuIsOpen,
@@ -806,6 +828,7 @@ export default class EditPost extends React.Component {
     } = this.state;
     
     if (shouldShow404) return (<Page404 />);
+    if (shouldRedirectToHome) return (<Redirect to="/" />);
     // huh, aren't we on /edit? - this is for coming from /edit/new...
     if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
     if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
@@ -814,17 +837,16 @@ export default class EditPost extends React.Component {
       <React.Fragment>
         <Header>
           <HeaderContentContainer>
-            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <LogoLinkStyled to="/">dubaniewi.cz</LogoLinkStyled>
             <HeaderLinksContainer>
-              <PublishPost>publish</PublishPost>
+              <PublishPost onClick={this.openPostMenu}>publish</PublishPost>
               <DeletePost>delete</DeletePost>
               <NewPost to="/edit/new">new</NewPost>
               <ListDrafts to="/drafts">drafts</ListDrafts>
               <SignedInUser onClick={() => {
                 if (confirm('Logout?')) {
                   signout();
-                  // TODO: do something with state/props here?
-                  window.location.reload();
+                  this.setState({ shouldRedirectToHome: true })
                 }
               }}>{getUserName()}</SignedInUser>
             </HeaderLinksContainer>

@@ -19,7 +19,7 @@ import {
   HeaderContentContainer,
   HeaderLinksContainer,
   HeaderSpacer,
-  LinkStyled,
+  LogoLinkStyled,
   LinkStyledSignIn,
   ListDrafts,
   NewPost,
@@ -71,7 +71,7 @@ export default class AllPosts extends React.Component {
       <React.Fragment>
         <Header>
           <HeaderContentContainer>
-            <LinkStyled to="/">dubaniewi.cz</LinkStyled>
+            <LogoLinkStyled to="/">dubaniewi.cz</LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession()
                 ? (
@@ -113,17 +113,14 @@ export default class AllPosts extends React.Component {
                     <PostMetaContentFirst>{post.get('published')}</PostMetaContentFirst>
                     {post.get('canEdit') && (
                       <React.Fragment>
-                        <PostMetaContent>|</PostMetaContent>
                         <PostActionA href={`/edit/${postId}`}>edit</PostActionA>
                       </React.Fragment>
                     )}
                     {post.get('canDelete') && (
                       <React.Fragment>
-                        <PostMetaContent>|</PostMetaContent>
                         <PostAction>delete</PostAction>
                       </React.Fragment>
                     )}
-                    <PostMetaContent>|</PostMetaContent>
                     <AuthorExpand>{post.get('username')}</AuthorExpand>
                   </PostMetaRow>
                 </PostRow>

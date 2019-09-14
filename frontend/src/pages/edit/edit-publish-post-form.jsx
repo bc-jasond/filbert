@@ -5,7 +5,6 @@ import {
   Button,
   ButtonSpan,
   CancelButton,
-  DeleteButton,
   Input,
   TextArea,
   InputContainer,
@@ -77,9 +76,9 @@ export default ({
       <CancelButton onClick={close}>
         <ButtonSpan>Close</ButtonSpan>
       </CancelButton>
-      <DeleteButton onClick={publishPost}>
+      <Button onClick={publishPost}>
         <ButtonSpan>Publish</ButtonSpan>
-      </DeleteButton>
+      </Button>
     </PublishPostForm>
   </PublishPostFormContainer>
 )

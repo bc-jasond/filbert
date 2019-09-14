@@ -19,7 +19,7 @@ import {
   CancelButton,
 } from '../common/shared-styled-components';
 import {
-  LinkStyled,
+  LogoLinkStyled,
 } from '../common/layout-styled-components';
 
 const Container = styled.div`
@@ -40,7 +40,7 @@ const SignInForm = styled.form`
   background-color: white;
   border-radius: 2px;
 `;
-const StyledLinkStyled = styled(LinkStyled)`
+const StyledLinkStyled = styled(LogoLinkStyled)`
   display: block;
   position: static;
   padding-bottom: 24px;
