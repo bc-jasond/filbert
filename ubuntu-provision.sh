@@ -25,11 +25,17 @@ sudo apt-get update ;
 sudo apt-get install docker-ce docker-ce-cli containerd.io ;
 
 
-
 # install docker-compose
 sudo curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose ;
 
 
-
 # install Dropbox
 cd ~ && wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf - ;
+
+
+# Certbot / Let's Encrypt
+sudo apt-get install software-properties-common
+sudo add-apt-repository universe
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt-get update
+sudo apt-get install certbot python-certbot-nginx

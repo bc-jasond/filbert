@@ -3,7 +3,7 @@
 ```
 # Rebuild/Restart frontend & api (not db)
 # needs the following env vars set:
-export FRONTEND_PORT=80 # <-- remember to set to 80 for prod!
+export FRONTEND_PORT=8080 # <-- remember to set to 80 for prod!
 export API_PORT=3001
 export DATABASE_HOSTNAME=database # <-- the 'default' bridge network db host alias name
 export MYSQL_ROOT_PASSWORD=example # <-- set for prod!
