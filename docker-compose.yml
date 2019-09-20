@@ -6,7 +6,7 @@ services:
     build: ./frontend
     ports:
       - ${FRONTEND_PORT}:80
-    - volumes:
+    volumes:
         - ./data/certbot/conf:/etc/letsencrypt
         - ./data/certbot/www:/var/www/certbot
 
