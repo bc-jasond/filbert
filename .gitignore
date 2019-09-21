@@ -13,6 +13,7 @@ pids
 
 # build artifacts
 dist/
+data/
 
 # Dependency directories
 node_modules/
