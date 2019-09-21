@@ -32,6 +32,10 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-
 # install Dropbox
 cd ~ && wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf - ;
 
+# open firewall
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
 
 # Certbot / Let's Encrypt
 sudo apt-get install software-properties-common
