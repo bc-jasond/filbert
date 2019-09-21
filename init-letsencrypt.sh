@@ -5,7 +5,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(dubaniewi.cz *.dubaniewi.cz)
+domains=(dubaniewi.cz api.dubaniewi.cz)
 rsa_key_size=4096
 data_path="./data/certbot"
 email="jasondebo@gmail.com" # Adding a valid address is strongly recommended
@@ -39,7 +39,7 @@ echo
 
 
 echo "### Starting nginx ..."
-docker-compose up --force-recreate -d frontend
+docker-compose up --detach --build frontend
 echo
 
 echo "### Deleting dummy certificate for $domains ..."
