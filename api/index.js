@@ -146,7 +146,7 @@ async function main() {
      */
     app.use(async (req, res, next) => {
       if (!req.loggedInUser) {
-        console.error('No User Found', req);
+        console.error('No User Found', req.method, req.url, req.headers);
         res.status(401).send({});
         return;
       }
