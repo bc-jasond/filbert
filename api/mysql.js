@@ -7,7 +7,7 @@ async function getKnex() {
     knexConnection = knex({
       client: 'mysql2',
       connection: {
-        host: 'docker_host_database',
+        host: 'db', // docker-compose.yml service name
         user: 'root',
         password: process.env.MYSQL_ROOT_PASSWORD,
         database: 'dubaniewicz'
