@@ -3,9 +3,6 @@
 ```
 # Rebuild/Restart frontend & api (not db)
 # needs the following env vars set:
-export FRONTEND_PORT=8080                                # <-- container port
-export API_PORT=3001                                     # <-- container port
-export DATABASE_HOSTNAME=database                        # <-- the 'default' bridge network db host alias name
 export MYSQL_ROOT_PASSWORD=example                       # <-- set for prod!
 export ENCRYPTION_KEY="a41c6ce9ba97c0bfb50c3d67b8a81f9d" # <-- set for prod! rotate! must be 32 characters
 docker-compose up --detach --build frontend api          # <-- note, this doesn't rebuild the db container
