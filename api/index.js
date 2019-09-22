@@ -45,7 +45,8 @@ async function main() {
         const { headers: { authorization } } = req;
         // decrypt Authorization header
         // assign 'loggedInUser' session to req for all routes
-        if (authorization) {
+        // TODO: json encoded string 'null'?
+        if (authorization && authorization != 'null') {
           console.info('Authorization Header: ', authorization, typeof authorization);
           // TODO: add expiry time
           // TODO: add refresh token & flow
