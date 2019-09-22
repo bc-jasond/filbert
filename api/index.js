@@ -46,6 +46,7 @@ async function main() {
         // decrypt Authorization header
         // assign 'loggedInUser' session to req for all routes
         if (authorization) {
+          console.info('Authorization Header: ', authorization);
           // TODO: add expiry time
           // TODO: add refresh token & flow
           req.loggedInUser = JSON.parse(decrypt(authorization));
