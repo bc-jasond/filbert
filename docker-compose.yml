@@ -16,16 +16,16 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD
       - ENCRYPTION_KEY
-    ports:
-      - 3001:3001
+    # ports:
+    #  - 3001:3001
 
   db:
     image: percona
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD
-    ports:
-      - 3306:3306
+    # ports:
+    #  - 3306:3306
 
   certbot:
     image: certbot/certbot
