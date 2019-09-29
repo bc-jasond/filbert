@@ -563,18 +563,16 @@ export default class EditPost extends React.Component {
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
     const domLines = evt.clipboardData.getData('text/plain').split('\n');
-    if (getCaretNodeType() === NODE_TYPE_SECTION_CODE) {
-      const selectedSection = this.documentModel.getNode(selectedNodeId);
-      
+    if (selectedNode.tagName === 'PRE') {
+      console.log('PASTE ', domLines, selectedNode);
+      const [selectedSectionId, selectedLineIdx] = selectedNodeId.split('-');
+      const selectedSection = this.documentModel.getNode(selectedSectionId);
+      const lines = selectedSection.getIn(['meta', 'lines'], List());
       this.documentModel.update(
-        selectedSection.setIn(['meta', 'lines'], List(domLines))
+        selectedSection.setIn(['meta', 'lines'], lines.splice(selectedLineIdx, 0, ...domLines))
       );
       this.commitUpdates();
     }
-    if (selectedNode.tagName === 'PRE') {
-    
-    }
-    console.log('PASTE ', domLines, selectedNode);
     evt.stopPropagation();
     evt.preventDefault();
   }
