@@ -7,9 +7,16 @@ import {
 } from '../../common/constants';
 import { cleanText } from '../../common/utils';
 
+function getPreCodeSectionIdAndIndex(selectedNodeId) {
+  if (!selectedNodeId.includes('-')) {
+    throw new Error(`CodeSection -> Pre id malformed: ${selectedNodeId}`);
+  }
+  const [sectionId, lineIdx] = selectedNodeId.split('-');
+  return [sectionId, parseInt(lineIdx, 10)];
+}
+
 export function handleBackspaceCode(documentModel, selectedNodeId) {
-  const [selectedSectionId, idx] = selectedNodeId.split('-');
-  const lineIdx = parseInt(idx, 10);
+  const [selectedSectionId, lineIdx] = getPreCodeSectionIdAndIndex(selectedNodeId);
   let prevSection = documentModel.getPrevSibling(selectedSectionId);
   let prevFocusNodeId = documentModel.getPreviousFocusNodeId(selectedSectionId);
   const selectedSection = documentModel.getNode(selectedSectionId);
@@ -55,13 +62,11 @@ export function handleBackspaceCode(documentModel, selectedNodeId) {
   return [prevFocusNodeId, documentModel.getNode(prevFocusNodeId).get('content', '').length];
 }
 
-export function handleEnterCode(documentModel, selectedNode, caretPosition, content) {
+export function handleEnterCode(documentModel, selectedNodeId, caretPosition, content) {
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
   console.info('ENTER "code section" content left: ', contentLeft, 'content right: ', contentRight);
-  const name = selectedNode.getAttribute('name');
-  const [selectedSectionId, idx] = name.split('-');
-  const lineIndex = parseInt(idx, 10);
+  const [selectedSectionId, lineIndex] = getPreCodeSectionIdAndIndex(selectedNodeId);
   const selectedSection = documentModel.getNode(selectedSectionId);
   let lines = selectedSection.getIn(['meta', 'lines'], List());
   
@@ -98,9 +103,41 @@ export function handleEnterCode(documentModel, selectedNode, caretPosition, cont
   return `${selectedSectionId}-${lineIndex + 1}`;
 }
 
+export function handlePasteCode(documentModel, selectedNodeId, caretPosition, content, domLines) {
+  const contentLeft = content.substring(0, caretPosition);
+  const contentRight = content.substring(caretPosition);
+  const [selectedSectionId, selectedLineIdx] = getPreCodeSectionIdAndIndex(selectedNodeId);
+  const selectedSection = documentModel.getNode(selectedSectionId);
+  const lines = selectedSection.getIn(['meta', 'lines'], List());
+  console.info('PASTE - code section content: ', contentLeft, contentRight, selectedSectionId, selectedLineIdx, domLines);
+  if (domLines.length === 1) {
+    documentModel.update(
+      selectedSection.setIn(
+        ['meta', 'lines'],
+        lines
+          .set(selectedLineIdx, `${contentLeft}${domLines[0]}${contentRight}`)
+      )
+    );
+    return [`${selectedSectionId}-${selectedLineIdx}`, contentLeft.length + domLines[0].length];
+  }
+  // domLines.length > 1
+  const firstDomLine = domLines.shift();
+  const lastDomLine = domLines.pop();
+  documentModel.update(
+    selectedSection.setIn(
+      ['meta', 'lines'],
+      lines
+        .set(selectedLineIdx, `${contentLeft}${firstDomLine}`)
+        // delete the empty line
+        .splice(selectedLineIdx + 1, content.length > 0 ? 0 : 1, ...domLines)
+        .insert(selectedLineIdx + domLines.length + 1, `${lastDomLine}${contentRight}`)
+    )
+  );
+  return [`${selectedSectionId}-${selectedLineIdx + domLines.length + 1}`, lastDomLine.length];
+}
+
 export function handleDomSyncCode(documentModel, selectedNodeId, selectedNodeContent) {
-  const [selectedSectionId, idx] = selectedNodeId.split('-');
-  const lineIndex = parseInt(idx, 10);
+  const [selectedSectionId, lineIndex] = getPreCodeSectionIdAndIndex(selectedNodeId);
   const selectedSection = documentModel.getNode(selectedSectionId);
   let lines = selectedSection.getIn(['meta', 'lines'], List());
   const currentLineContent = lines.get(lineIndex);

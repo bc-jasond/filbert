@@ -81,6 +81,7 @@ import {
   handleBackspaceCode,
   handleDomSyncCode,
   handleEnterCode,
+  handlePasteCode,
   insertCodeSection
 } from './handle-code';
 import { insertPhoto } from './handle-image';
@@ -378,6 +379,9 @@ export default class EditPost extends React.Component {
      *  then make a 'flush' command to process this queue.
      *  Right now, live updates are happening and it's clobber city
      *
+     *  UPDATE: immutablejs has helped make this situation more predictable but,
+     *  it still isn't conducive to an undo/redo workflow, so leaving the TODO
+     *
      * AN INCOMPLETE LIST OF THINGS TO CONSIDER FOR DELETE (in order, maybe):
      * 1) only-child of first section - noop until there's special 'rootIsEmpty' placeholder logic
      * 2) delete the current selected node - always if 'this far'
@@ -440,7 +444,7 @@ export default class EditPost extends React.Component {
     
     switch (selectedNodeType) {
       case NODE_TYPE_PRE: {
-        focusNodeId = handleEnterCode(this.documentModel, selectedNode, caretPosition, selectedNodeContent);
+        focusNodeId = handleEnterCode(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
         break;
       }
       case NODE_TYPE_LI: {
@@ -561,20 +565,29 @@ export default class EditPost extends React.Component {
   
   handlePaste = (evt) => {
     const selectedNode = getCaretNode();
+    const selectedNodeType = getCaretNodeType();
     const selectedNodeId = getCaretNodeId();
+  
+    const [caretPosition] = getOffsetInParentContent();
+    // split selectedNodeContent at caret
+    const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
     const domLines = evt.clipboardData.getData('text/plain').split('\n');
-    if (selectedNode.tagName === 'PRE') {
-      console.log('PASTE ', domLines, selectedNode);
-      const [selectedSectionId, selectedLineIdx] = selectedNodeId.split('-');
-      const selectedSection = this.documentModel.getNode(selectedSectionId);
-      const lines = selectedSection.getIn(['meta', 'lines'], List());
-      this.documentModel.update(
-        selectedSection.setIn(['meta', 'lines'], lines.splice(selectedLineIdx, 0, ...domLines))
-      );
-      this.commitUpdates();
-    }
+  
     evt.stopPropagation();
     evt.preventDefault();
+    
+    let focusNodeId;
+    let focusIdx = selectedNodeContent.length;
+    switch (selectedNodeType) {
+      case NODE_TYPE_PRE: {
+        [focusNodeId, focusIdx] = handlePasteCode(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent, domLines);
+        break;
+      }
+      default: { /*NOOP*/ }
+    }
+    if (focusNodeId) {
+      this.commitUpdates(focusNodeId, focusIdx);
+    }
   }
   
   manageInsertMenu() {
