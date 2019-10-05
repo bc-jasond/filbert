@@ -24,8 +24,11 @@ services:
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD
-    # ports:
-    #  - 3306:3306
+    volumes:
+      # to share mysqld.cnf overrides
+      - ./mysql:/etc/mysql
+    ports:
+      - 3306:3306
 
   certbot:
     image: certbot/certbot

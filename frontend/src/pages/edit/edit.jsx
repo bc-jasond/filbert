@@ -6,7 +6,7 @@ import {
   apiDelete,
   apiGet,
   apiPatch,
-  apiPost,
+  apiPost, uploadImage,
 } from '../../common/fetch';
 import {
   Article,
@@ -184,6 +184,7 @@ export default class EditPost extends React.Component {
   commitTimeoutId;
   cancelledEvent; // to coordinate noops between event types keydown, keyup
   linkUrlInputRef;
+  sectionEditInputRef;
   
   saveContentBatch = async () => {
     try {
@@ -670,7 +671,17 @@ export default class EditPost extends React.Component {
     }
   }
   
-  updateMetaProp = (propName, value) => {
+  updateMetaProp = async (propName, value) => {
+    if (propName === 'file') {
+      const { post } = this.state;
+      const [file] = value;
+      const formData = new FormData();
+      formData.append('postId', post.get('id'));
+      formData.append('id', 'optionalUpToSha512HashAsHexHere');
+      formData.append('fileData', file);
+      await uploadImage(formData);
+      return;
+    }
     const { editSectionMeta } = this.state;
     this.setState({ editSectionMeta: editSectionMeta.set(propName, value) })
   }
@@ -685,12 +696,21 @@ export default class EditPost extends React.Component {
       editSectionMeta: section.get('meta', Map()),
       editSectionMetaFormTopOffset: sectionDomNode.offsetTop,
       editSectionMetaFormLeftOffset: sectionDomNode.offsetLeft,
+    }, () => {
+      if (this.sectionEditInputRef) {
+        this.sectionEditInputRef.focus();
+      }
     });
     
     // 1. open edit menu
     // 2. position it based on the section
     // 3. save and close
     // 4. cancel and close
+  }
+  getSectionEditForwardedRef = (ref) => {
+    if (!ref) return;
+    this.sectionEditInputRef = ref;
+    ref.focus();
   }
   sectionEditClose = () => {
     this.setState({
@@ -924,6 +944,7 @@ export default class EditPost extends React.Component {
                 sectionSaveMeta={this.sectionSaveMeta}
                 sectionDelete={this.sectionDelete}
                 close={this.sectionEditClose}
+                forwardRef={this.getSectionEditForwardedRef}
               />)}
               {formatSelectionNode.get('id') && (<FormatSelectionMenu
                 offsetTop={formatSelectionMenuTopOffset}

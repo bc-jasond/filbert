@@ -16,7 +16,7 @@ import {
 
 const sectionFieldsByType = {
   [NODE_TYPE_SECTION_QUOTE]: ['quote', 'url', 'author', 'context'],
-  [NODE_TYPE_SECTION_IMAGE]: ['width', 'height', 'url', 'caption'],
+  [NODE_TYPE_SECTION_IMAGE]: ['file', 'width', 'height', 'url', 'caption'],
 }
 
 const EditSectionForm = styled.div`
@@ -24,9 +24,9 @@ const EditSectionForm = styled.div`
   padding: 20px;
   background-color: white;
   position: absolute;
-  width: 755px;
+  width: 50%;
+  left: 25%;
   top: ${p => p.topOffset}px;
-  left: ${p => p.leftOffset}px;
 `;
 
 export default ({
@@ -34,24 +34,24 @@ export default ({
                   editSectionMeta,
                   editSectionType,
                   editSectionMetaFormTopOffset,
-                  editSectionMetaFormLeftOffset,
                   updateMetaProp,
                   sectionSaveMeta,
                   sectionDelete,
                   close,
+                  forwardRef,
                 }) => (
   <EditSectionForm
     topOffset={editSectionMetaFormTopOffset}
-    leftOffset={editSectionMetaFormLeftOffset}
   >
     {sectionFieldsByType[editSectionType].map((type, idx) => (
       <InputContainer key={idx}>
         <Label htmlFor={type} error={false /*TODO*/}>{type}</Label>
-        <Input name={type} type="text" value={editSectionMeta.get(type, '')}
+        <Input name={type} type={type === 'file' ? 'file' : 'text'} value={editSectionMeta.get(type, '')}
                onChange={(e) => {
-                 updateMetaProp(type, e.target.value)
+                 updateMetaProp(type, type === 'file' ? e.target.files : e.target.value)
                }}
-               error={false /*TODO*/} />
+               error={false /*TODO*/}
+               ref={idx === 0 ? forwardRef : () => {}}/>
       </InputContainer>
     ))}
     <Button onClick={() => {

@@ -2,6 +2,15 @@
 require = require('esm')(module/*, options*/);
 
 const express = require('express');
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage, // store in memory as Buffer
+  //dest: './uploads/', // store in filesystem
+  limits: { // busboy option
+    fileSize: 16777216, // 16MB in bytes
+  }
+});
 const cors = require('cors');
 // const util = require('util');  for util.inspect()
 
@@ -143,6 +152,18 @@ async function main() {
       res.send({ post, contentNodes });
     })
     
+    app.get('/image/:id', async (req, res) => {
+      const { id } = req.params;
+      const [image] = await knex('image')
+        .where({ id });
+      if (!image) {
+        res.status(404).send({});
+        return;
+      }
+      res.contentType(image.mime_type);
+      res.send(image.file_data);
+    })
+    
     /**
      * authenticated routes - all routes defined after this middleware require a logged in user
      */
@@ -250,6 +271,32 @@ async function main() {
         res.send({ updateResult, deleteResult });
       } catch (err) {
         console.error('POST /content Error: ', err);
+        res.status(500).send({})
+      }
+    })
+    
+    /**
+     * save image!
+     */
+    app.post('/image', upload.single('fileData'), async (req, res) => {
+      try {
+        const {
+          body,
+          file,
+        } = req;
+        const imageId = await knex('image')
+          .insert({
+            post_id: body.postId,
+            id: file.originalname,
+            mime_type: file.mimetype,
+            file_data: file.buffer,
+            encoding: file.encoding,
+            size: file.size,
+          });
+        res.status(201).send({ imageId })
+      } catch (err) {
+        delete req.file; // free this up now!
+        console.error('POST /image Error: ', err);
         res.status(500).send({})
       }
     })
