@@ -120,6 +120,11 @@ export default class ContentNode extends React.PureComponent {
         );
       case NODE_TYPE_SECTION_IMAGE: {
         const meta = node.get('meta', Map());
+        const urlField = meta.get('url') || '';
+        // allow 3rd party URLs OR construct ours from the filename
+        const url = (urlField.substring(0, 5) === 'https' || urlField.substring(0,2) === '//')
+          ? urlField
+          : `${process.env.API_URL}/image/${urlField}`;
         return (
           <ImageSection data-type={NODE_TYPE_SECTION_IMAGE} name={node.get('id')} contentEditable={false}>
             <Figure>
@@ -131,7 +136,7 @@ export default class ContentNode extends React.PureComponent {
                     if (!isEditing) return;
                     isEditing(node.get('id'))
                   }}
-                  src={meta.get('url')}
+                  src={url}
                 />
               </ImagePlaceholderContainer>
               <FigureCaption>{meta.get('caption')}</FigureCaption>

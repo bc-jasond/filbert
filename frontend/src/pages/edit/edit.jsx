@@ -672,6 +672,7 @@ export default class EditPost extends React.Component {
   }
   
   updateMetaProp = async (propName, value) => {
+    const { editSectionMeta } = this.state;
     if (propName === 'file') {
       const { post } = this.state;
       const [file] = value;
@@ -679,10 +680,19 @@ export default class EditPost extends React.Component {
       formData.append('postId', post.get('id'));
       formData.append('id', 'optionalUpToSha512HashAsHexHere');
       formData.append('fileData', file);
-      await uploadImage(formData);
+      const {
+        imageId,
+        width,
+        height,
+      } = await uploadImage(formData);
+      this.setState({
+        editSectionMeta: editSectionMeta
+          .set('url', `${imageId}`)
+          .set('width', width)
+          .set('height', height),
+      });
       return;
     }
-    const { editSectionMeta } = this.state;
     this.setState({ editSectionMeta: editSectionMeta.set(propName, value) })
   }
   sectionEdit = (sectionId) => {

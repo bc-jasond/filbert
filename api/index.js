@@ -2,6 +2,7 @@
 require = require('esm')(module/*, options*/);
 
 const express = require('express');
+const cors = require('cors');
 const multer = require('multer');
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -11,7 +12,7 @@ const upload = multer({
     fileSize: 16777216, // 16MB in bytes
   }
 });
-const cors = require('cors');
+const sharp = require('sharp');
 // const util = require('util');  for util.inspect()
 
 const {
@@ -284,16 +285,46 @@ async function main() {
           body,
           file,
         } = req;
+        const [existingImage] = await knex('image')
+          .select('id', 'width', 'height')
+          .where({
+            post_id: parseInt(body.postId, 10),
+            id: file.originalname,
+          });
+        // TODO: compare more than file name to dedupe
+        if (existingImage) {
+          res.status(200).send({
+            imageId: existingImage.id,
+            width: existingImage.width,
+            height: existingImage.height,
+          });
+          return;
+        }
+        let fileBuffer = file.buffer;
+        const sharpInstance = sharp(file.buffer);
+        let imgMeta = await sharpInstance.metadata();
+        // TODO: maybe support bigger img sizes later on?
+        if (imgMeta.width > 1200) {
+          const resizedImg = await sharpInstance.resize({ width: 1200 });
+          imgMeta = await resizedImg.metadata();
+          fileBuffer = await resizedImg.toBuffer();
+        }
+        console.log('IMAGE META', imgMeta);
         const imageId = await knex('image')
           .insert({
-            post_id: body.postId,
+            post_id: parseInt(body.postId, 10),
             id: file.originalname,
             mime_type: file.mimetype,
-            file_data: file.buffer,
+            file_data: fileBuffer,
             encoding: file.encoding,
-            size: file.size,
+            width: imgMeta.width,
+            height: imgMeta.height,
           });
-        res.status(201).send({ imageId })
+        res.status(201).send({
+          imageId,
+          width: imgMeta.width,
+          height: imgMeta.height,
+        })
       } catch (err) {
         delete req.file; // free this up now!
         console.error('POST /image Error: ', err);

@@ -50,6 +50,7 @@ export default ({
                onChange={(e) => {
                  updateMetaProp(type, type === 'file' ? e.target.files : e.target.value)
                }}
+               accept={type === 'file' ? 'image/*' : ''}
                error={false /*TODO*/}
                ref={idx === 0 ? forwardRef : () => {}}/>
       </InputContainer>
