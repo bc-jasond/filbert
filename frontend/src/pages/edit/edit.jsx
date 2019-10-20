@@ -677,7 +677,7 @@ export default class EditPost extends React.Component {
       const { post } = this.state;
       const [file] = value;
       const formData = new FormData();
-      formData.append('postId', post.get('id'));
+      formData.append('userId', post.get('user_id'));
       formData.append('id', 'optionalUpToSha512HashAsHexHere');
       formData.append('fileData', file);
       const {
@@ -687,7 +687,7 @@ export default class EditPost extends React.Component {
       } = await uploadImage(formData);
       this.setState({
         editSectionMeta: editSectionMeta
-          .set('url', `${imageId}`)
+          .set('url', imageId)
           .set('width', width)
           .set('height', height),
       });

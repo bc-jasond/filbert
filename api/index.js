@@ -22,7 +22,7 @@ const {
   getMysqlDatetime,
 } = require('./mysql');
 const { checkPassword } = require('./user');
-const { encrypt, decrypt } = require('./cipher');
+const { encrypt, decrypt, getChecksum } = require('./cipher');
 
 async function getNodes(knex, postId) {
   const nodesArray = await knex('content_node')
@@ -285,13 +285,13 @@ async function main() {
           body,
           file,
         } = req;
+        const checksum = await getChecksum(file.buffer);
         const [existingImage] = await knex('image')
           .select('id', 'width', 'height')
           .where({
-            post_id: parseInt(body.postId, 10),
-            id: file.originalname,
+            user_id: parseInt(body.userId, 10),
+            id: checksum,
           });
-        // TODO: compare more than file name to dedupe
         if (existingImage) {
           res.status(200).send({
             imageId: existingImage.id,
@@ -304,6 +304,9 @@ async function main() {
         const sharpInstance = sharp(file.buffer);
         let imgMeta = await sharpInstance.metadata();
         // TODO: maybe support bigger img sizes later on?
+        // TODO: check pixel density, convert down to 72PPI
+        // TODO: what to do with animated GIFs?
+        // TODO: only support jpg, png & gif - support other types as input but convert to jpg
         if (imgMeta.width > 1200) {
           const resizedImg = await sharpInstance.resize({ width: 1200 });
           imgMeta = await resizedImg.metadata();
@@ -312,8 +315,8 @@ async function main() {
         console.log('IMAGE META', imgMeta);
         const imageId = await knex('image')
           .insert({
-            post_id: parseInt(body.postId, 10),
-            id: file.originalname,
+            user_id: parseInt(body.userId, 10),
+            id: checksum,
             mime_type: file.mimetype,
             file_data: fileBuffer,
             encoding: file.encoding,
@@ -321,7 +324,7 @@ async function main() {
             height: imgMeta.height,
           });
         res.status(201).send({
-          imageId,
+          imageId: checksum,
           width: imgMeta.width,
           height: imgMeta.height,
         })

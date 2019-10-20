@@ -1,3 +1,4 @@
+const { performance } = require('perf_hooks');
 const crypto = require('crypto');
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // Must be 256 bits (32 characters)
 const IV_LENGTH = 16; // For AES, this is always 16
@@ -22,4 +23,18 @@ function decrypt(text) {
   return decrypted.toString();
 }
 
-module.exports = { decrypt, encrypt };
+function getChecksum(buffer) {
+  const startTime = performance.now();
+  console.log('starting sha256...');
+  const hash = crypto.createHash('sha256');
+  hash.update(buffer);
+  const hexDigest = hash.digest('hex');
+  console.log(`finished sha256 hash. Took ${(performance.now() - startTime) / 1000} seconds.\n`);
+  return hexDigest;
+}
+
+module.exports = {
+  decrypt,
+  encrypt,
+  getChecksum,
+};
