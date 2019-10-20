@@ -900,7 +900,7 @@ export default class EditPost extends React.Component {
       <React.Fragment>
         <Header>
           <HeaderContentContainer>
-            <LogoLinkStyled to="/">dubaniewi.cz</LogoLinkStyled>
+            <LogoLinkStyled to="/">filbert</LogoLinkStyled>
             <HeaderLinksContainer>
               <PublishPost onClick={this.togglePostMenu}>publish</PublishPost>
               <DeletePost onClick={this.deletePost}>delete</DeletePost>

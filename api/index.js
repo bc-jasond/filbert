@@ -45,7 +45,7 @@ async function main() {
     
     const app = express();
     app.use(express.json());
-    app.use(cors(/* TODO: whitelist *.dubaniewi.cz in PRODUCTION */))
+    app.use(cors(/* TODO: whitelist *.filbert.xyz & *.dubaniewi.cz in PRODUCTION */))
     
     /**
      * parse Authorization header, add logged in user to req object
@@ -296,6 +296,7 @@ async function main() {
         const [existingImage] = await knex('image')
           .select('id', 'width', 'height', 'num_times_used')
           .where(existingImageWhereClause);
+        // if image already exists, just increment counter and return meta
         if (existingImage) {
           await knex('image')
             .update({ num_times_used: existingImage.num_times_used + 1 })

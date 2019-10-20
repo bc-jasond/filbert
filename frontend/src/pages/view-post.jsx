@@ -79,7 +79,7 @@ export default class ViewPost extends React.Component {
       <React.Fragment>
         <Header>
           <HeaderContentContainer>
-            <LogoLinkStyled to="/">dubaniewi.cz</LogoLinkStyled>
+            <LogoLinkStyled to="/">filbert</LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession()
                 ? (
