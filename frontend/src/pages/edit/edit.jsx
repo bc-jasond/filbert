@@ -673,12 +673,13 @@ export default class EditPost extends React.Component {
   
   updateMetaProp = async (propName, value) => {
     const { editSectionMeta } = this.state;
+    // special case for input[type="file"] to upload an image
     if (propName === 'file') {
       const { post } = this.state;
       const [file] = value;
       const formData = new FormData();
+      formData.append('postId', post.get('id'));
       formData.append('userId', post.get('user_id'));
-      formData.append('id', 'optionalUpToSha512HashAsHexHere');
       formData.append('fileData', file);
       const {
         imageId,

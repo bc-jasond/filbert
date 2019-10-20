@@ -285,14 +285,21 @@ async function main() {
           body,
           file,
         } = req;
+        // get hash from whole file
         const checksum = await getChecksum(file.buffer);
+        // TODO: use transaction
+        // see if the image already exists, deduped by user, not globally
+        const existingImageWhereClause = {
+          user_id: parseInt(body.userId, 10),
+          id: checksum,
+        };
         const [existingImage] = await knex('image')
-          .select('id', 'width', 'height')
-          .where({
-            user_id: parseInt(body.userId, 10),
-            id: checksum,
-          });
+          .select('id', 'width', 'height', 'num_times_used')
+          .where(existingImageWhereClause);
         if (existingImage) {
+          await knex('image')
+            .update({ num_times_used: existingImage.num_times_used + 1 })
+            .where(existingImageWhereClause);
           res.status(200).send({
             imageId: existingImage.id,
             width: existingImage.width,
@@ -313,7 +320,7 @@ async function main() {
           fileBuffer = await resizedImg.toBuffer();
         }
         console.log('IMAGE META', imgMeta);
-        const imageId = await knex('image')
+        await knex('image')
           .insert({
             user_id: parseInt(body.userId, 10),
             id: checksum,
@@ -322,6 +329,7 @@ async function main() {
             encoding: file.encoding,
             width: imgMeta.width,
             height: imgMeta.height,
+            num_times_used: 1,
           });
         res.status(201).send({
           imageId: checksum,
@@ -329,7 +337,7 @@ async function main() {
           height: imgMeta.height,
         })
       } catch (err) {
-        delete req.file; // free this up now!
+        delete req.file; // free this up ASAP!
         console.error('POST /image Error: ', err);
         res.status(500).send({})
       }

@@ -295,7 +295,7 @@ export default class EditDocumentModel {
     }
     let left = this.getNode(leftId);
     const right = this.getNode(rightId);
-    left = left.set('content', `${left.get('content')}${right.get('content')}`);
+    left = left.set('content', `${left.get('content', '')}${right.get('content', '')}`);
     left = concatSelections(left, right);
     this.update(left);
     this.delete(rightId);
@@ -381,7 +381,7 @@ export default class EditDocumentModel {
       .filter(node => node.get('id') !== nodeId)
     );
     // delete this node's children list
-    // note: don't stage delete it's children, they might have moved to another section during a merge
+    // NOTE: don't stage delete it's children, they might have moved to another section during a merge
     this.nodesByParentId = this.nodesByParentId.delete(nodeId);
     // reindex children and persist changes
     this.updateNodesForParent(parentId);
