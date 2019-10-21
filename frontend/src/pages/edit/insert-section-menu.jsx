@@ -11,7 +11,7 @@ import {
 
 import styled, { css } from 'styled-components';
 import { grey } from '../../common/css';
-import { NavButtonMixin } from '../../common/shared-styled-components';
+import { Input, NavButtonMixin } from '../../common/shared-styled-components';
 
 const InsertSectionMenu = styled.div`
   position: absolute;
@@ -56,6 +56,9 @@ const InsertSectionMenuButton = styled.button`
     `}
   }
 `;
+const HiddenFileInput = styled.input`
+  display: none;
+`;
 const InsertSectionMenuItemsContainer = styled.div`
   position: absolute;
   top: 16px;
@@ -72,6 +75,8 @@ const InsertSectionMenuItemsContainer = styled.div`
 const InsertSectionItem = styled.span`
   ${NavButtonMixin};
 `;
+
+const fileInputRef = React.createRef();
 
 export default ({
                   shouldShowInsertMenu,
@@ -94,7 +99,16 @@ export default ({
       <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_CODE)}>code</InsertSectionItem>
       <InsertSectionItem onClick={() => insertSection(NODE_TYPE_OL)}>list</InsertSectionItem>
       <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_SPACER)}>spacer</InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_IMAGE)}>photo</InsertSectionItem>
+      <InsertSectionItem onClick={() => fileInputRef.current.click()}>
+        photo
+        <HiddenFileInput name="hidden-image-upload-file-input"
+                         type="file"
+                         onChange={(e) => {
+                           insertSection(NODE_TYPE_SECTION_IMAGE, e.target.files)
+                         }}
+                         accept="image/*"
+                         ref={fileInputRef} />
+      </InsertSectionItem>
       <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_QUOTE)}>quote</InsertSectionItem>
     </InsertSectionMenuItemsContainer>
   </InsertSectionMenu>

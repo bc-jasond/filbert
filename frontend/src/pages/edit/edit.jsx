@@ -113,7 +113,7 @@ import {
 } from './edit-selection-helpers';
 
 import InsertSectionMenu from './insert-section-menu';
-import EditSectionForm from './edit-section-form';
+import EditImageForm from './edit-image-form';
 import FormatSelectionMenu from './format-selection-menu';
 import PublishPostForm from './edit-publish-post-form';
 
@@ -135,11 +135,8 @@ export default class EditPost extends React.Component {
       insertMenuIsOpen: false,
       insertMenuTopOffset: 0,
       insertMenuLeftOffset: 0,
-      editSectionId: null,
-      editSectionType: null,
-      editSectionMeta: Map(),
+      editImageSectionNode: Map(),
       editSectionMetaFormTopOffset: 0,
-      editSectionMetaFormLeftOffset: 0,
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
       shouldShowPublishPostMenu: false,
@@ -183,8 +180,7 @@ export default class EditPost extends React.Component {
   updateManager = new EditUpdateManager();
   commitTimeoutId;
   cancelledEvent; // to coordinate noops between event types keydown, keyup
-  linkUrlInputRef;
-  sectionEditInputRef;
+  inputRef;
   
   saveContentBatch = async () => {
     try {
@@ -201,7 +197,7 @@ export default class EditPost extends React.Component {
   
   saveContentBatchDebounce() {
     clearTimeout(this.commitTimeoutId);
-    this.commitTimeoutId = setTimeout(this.saveContentBatch, 500);
+    this.commitTimeoutId = setTimeout(this.saveContentBatch, 750);
   }
   
   newPost() {
@@ -325,16 +321,21 @@ export default class EditPost extends React.Component {
     
     // TODO: optimistically save updated nodes - look ma, no errors!
     await this.saveContentBatchDebounce();
-    const { formatSelectionNode } = this.state;
+    const {
+      formatSelectionNode,
+      editImageSectionNode,
+      editQuoteSectionNode,
+    } = this.state;
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
       this.setState({
         nodesByParentId: this.documentModel.nodesByParentId,
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
+        editImageSectionNode: Map(),
         editSectionId: null,
       }, () => {
-        if (!formatSelectionNode.get('id')) {
+        if (!formatSelectionNode.get('id') && !editImageSectionNode.get('id') && !editQuoteSectionNode.get('id')) {
           setCaret(focusNodeId, offset, shouldFocusLastChild);
         }
         this.manageInsertMenu();
@@ -511,22 +512,27 @@ export default class EditPost extends React.Component {
     this.saveContentBatchDebounce()
   }
   
+  /**
+   * Move caret for special user input cases
+   * @param evt
+   */
   handleCaret(evt) {
     if (this.cancelledEvent || evt.isPropagationStopped()) {
       return;
     }
     const domNode = getCaretNode();
-    if (domNode && domNode.tagName === 'PRE') {
+    if (domNode && (domNode.tagName === 'PRE'
+        // when clicking on a section, the caret will be on an input in the edit image or quote menu, ignore
+        || domNode.dataset)) {
       // TODO
       return;
     }
-    const selectedNodeId = getCaretNodeId();
+    const selectedNodeId = getCaretNodeId(domNode);
     const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     if (!selectedNodeMap) {
-      console.warn('CARET no node, bad selection: ', getCaretNode());
+      console.warn('CARET no node, bad selection: ', domNode);
       return;
     }
-    console.debug('CARET - node', getCaretNode());
     if (selectedNodeMap.get('type') === NODE_TYPE_SECTION_SPACER) {
       evt.stopPropagation();
       evt.preventDefault();
@@ -543,13 +549,13 @@ export default class EditPost extends React.Component {
   }
   
   handleKeyDown = (evt) => {
-    console.debug('KeyDown code: ', evt.keyCode, 'Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    //console.debug('KeyDown code: ', evt.keyCode, 'Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleBackspace(evt);
     this.handleEnter(evt);
   }
   
   handleKeyUp = (evt) => {
-    console.debug('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    //console.debug('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleSyncFromDom(evt);
     this.handleCaret(evt);
     this.manageInsertMenu(evt);
@@ -558,22 +564,27 @@ export default class EditPost extends React.Component {
   }
   
   handleMouseUp = (evt) => {
-    console.debug('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    //console.debug('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleCaret(evt);
     this.manageInsertMenu();
     this.manageFormatSelectionMenu();
+    // close edit section menus by default, this.sectionEdit() callback will fire after this to override
+    this.sectionEditClose();
   }
   
   handlePaste = (evt) => {
     const selectedNode = getCaretNode();
-    const selectedNodeType = getCaretNodeType();
-    const selectedNodeId = getCaretNodeId();
-  
+    if (!selectedNode) {
+      return;
+    }
+    const selectedNodeType = getCaretNodeType(selectedNode);
+    const selectedNodeId = getCaretNodeId(selectedNode);
+    
     const [caretPosition] = getOffsetInParentContent();
     // split selectedNodeContent at caret
     const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
     const domLines = evt.clipboardData.getData('text/plain').split('\n');
-  
+    
     evt.stopPropagation();
     evt.preventDefault();
     
@@ -581,10 +592,14 @@ export default class EditPost extends React.Component {
     let focusIdx = selectedNodeContent.length;
     switch (selectedNodeType) {
       case NODE_TYPE_PRE: {
-        [focusNodeId, focusIdx] = handlePasteCode(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent, domLines);
+        [
+          focusNodeId,
+          focusIdx
+        ] = handlePasteCode(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent, domLines);
         break;
       }
-      default: { /*NOOP*/ }
+      default: { /*NOOP*/
+      }
     }
     if (focusNodeId) {
       this.commitUpdates(focusNodeId, focusIdx);
@@ -593,16 +608,13 @@ export default class EditPost extends React.Component {
   
   manageInsertMenu() {
     const range = getRange();
-    if (!range) {
-      return;
-    }
     const selectedNode = getCaretNode();
-    const selectedType = getCaretNodeType();
+    const selectedType = getCaretNodeType(selectedNode);
     
     // save current nodeId because the selection will disappear when the insert menu is shown
-    this.insertMenuSelectedNodeId = getCaretNodeId();
+    this.insertMenuSelectedNodeId = getCaretNodeId(selectedNode);
     
-    if (range.collapsed && selectedType === NODE_TYPE_P && !this.activeElementHasContent()) {
+    if (range && range.collapsed && selectedType === NODE_TYPE_P && !this.activeElementHasContent()) {
       this.setState({
         shouldShowInsertMenu: true,
         insertMenuTopOffset: selectedNode.offsetTop,
@@ -623,10 +635,20 @@ export default class EditPost extends React.Component {
     });
   }
   
+  async uploadFile(file) {
+    const { post } = this.state;
+    // TODO: allow multiple files
+    const formData = new FormData();
+    formData.append('postId', post.get('id'));
+    formData.append('userId', post.get('user_id'));
+    formData.append('fileData', file);
+    return uploadImage(formData);
+  }
+  
   /**
    * INSERT SECTIONS
    */
-  insertSection = async (sectionType) => {
+  insertSection = async (sectionType, [firstFile]) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
     let focusNodeId;
     
@@ -653,7 +675,20 @@ export default class EditPost extends React.Component {
         break;
       }
       case NODE_TYPE_SECTION_IMAGE: {
-        focusNodeId = insertPhoto(this.documentModel, selectedNodeId);
+        const {
+          imageId,
+          width,
+          height,
+        } = await this.uploadFile(firstFile);
+        focusNodeId = insertPhoto(
+          this.documentModel,
+          selectedNodeId,
+          Map({
+            url: imageId,
+            width,
+            height,
+          }),
+        );
         break;
       }
       case NODE_TYPE_SECTION_QUOTE: {
@@ -666,50 +701,43 @@ export default class EditPost extends React.Component {
     }
     
     await this.commitUpdates(focusNodeId);
-    if ([NODE_TYPE_SECTION_QUOTE, NODE_TYPE_SECTION_IMAGE].includes(sectionType)) {
+    if ([NODE_TYPE_SECTION_QUOTE].includes(sectionType)) {
       this.sectionEdit(focusNodeId)
     }
   }
   
-  updateMetaProp = async (propName, value) => {
-    const { editSectionMeta } = this.state;
-    // special case for input[type="file"] to upload an image
-    if (propName === 'file') {
-      const { post } = this.state;
-      const [file] = value;
-      const formData = new FormData();
-      formData.append('postId', post.get('id'));
-      formData.append('userId', post.get('user_id'));
-      formData.append('fileData', file);
-      const {
-        imageId,
-        width,
-        height,
-      } = await uploadImage(formData);
-      this.setState({
-        editSectionMeta: editSectionMeta
-          .set('url', imageId)
-          .set('width', width)
-          .set('height', height),
-      });
-      return;
-    }
-    this.setState({ editSectionMeta: editSectionMeta.set(propName, value) })
-  }
   sectionEdit = (sectionId) => {
-    console.log('SECTION CALLBACK ', sectionId);
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = this.documentModel.getNode(sectionId);
+    console.log('SECTION CALLBACK ', sectionId);
     
-    this.setState({
-      editSectionId: sectionId,
-      editSectionType: section.get('type'),
-      editSectionMeta: section.get('meta', Map()),
+    const newState = {
+      // hide all other menus here because this callback fires last
+      // insert menu
+      shouldShowInsertMenu: false,
+      insertMenuIsOpen: false,
+      // format selection menu
+      formatSelectionNode: Map(),
+      formatSelectionModel: Selection(),
+      // hide edit section menu by default
+      editImageSectionNode: Map(),
+      editQuoteSectionNode: Map(),
       editSectionMetaFormTopOffset: sectionDomNode.offsetTop,
-      editSectionMetaFormLeftOffset: sectionDomNode.offsetLeft,
-    }, () => {
-      if (this.sectionEditInputRef) {
-        this.sectionEditInputRef.focus();
+    }
+    
+    switch (section.get('type')) {
+      case NODE_TYPE_SECTION_IMAGE: {
+        newState.editImageSectionNode = section;
+      }
+      case NODE_TYPE_SECTION_QUOTE: {
+      
+      }
+    }
+    
+    this.setState(newState, () => {
+      if (this.inputRef) {
+        // allow animations to finish or scroll goes wacko
+        setTimeout(() => this.inputRef.focus(), 500)
       }
     });
     
@@ -718,32 +746,68 @@ export default class EditPost extends React.Component {
     // 3. save and close
     // 4. cancel and close
   }
-  getSectionEditForwardedRef = (ref) => {
-    if (!ref) return;
-    this.sectionEditInputRef = ref;
-    ref.focus();
-  }
   sectionEditClose = () => {
     this.setState({
-      editSectionId: null,
-      editSectionType: null,
-      editSectionMeta: Map(),
+      editImageSectionNode: Map(),
+      editQuoteSectionNode: Map(),
     });
   }
-  sectionSaveMeta = (sectionId) => {
-    const { editSectionMeta } = this.state;
-    const section = this.documentModel.getNode(sectionId);
-    this.documentModel.update(section.set('meta', editSectionMeta));
-    this.commitUpdates(sectionId);
-  }
   sectionDelete = (sectionId) => {
-    if (confirm('Delete Section?')) {
+    if (confirm('Delete?')) {
       const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
       this.documentModel.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
   }
+  updateLinkUrl = async (value) => {
+    const {
+      formatSelectionNode,
+      formatSelectionModel,
+    } = this.state;
+    const updatedSelectionModel = formatSelectionModel.set(SELECTION_LINK_URL, value);
+    const updatedNode = upsertSelection(
+      formatSelectionNode,
+      updatedSelectionModel,
+    );
+    this.documentModel.update(updatedNode);
+    await this.commitUpdates();
+    this.setState({
+      formatSelectionNode: updatedNode,
+      formatSelectionModel: updatedSelectionModel
+    })
+  }
   
+  replaceImageFile = async ([firstFile]) => {
+    const { editImageSectionNode } = this.state;
+    const {
+      imageId,
+      width,
+      height,
+    } = await this.uploadFile(firstFile);
+    const updatedImageSectionNode = editImageSectionNode
+      .setIn(['meta', 'url'], imageId)
+      .setIn(['meta', 'width'], width)
+      .setIn(['meta', 'height'], height);
+    this.documentModel.update(updatedImageSectionNode);
+    await this.commitUpdates();
+    this.setState({
+      editImageSectionNode: updatedImageSectionNode,
+    })
+  }
+  
+  updateImageCaption = async (value) => {
+    const {
+      editImageSectionNode,
+    } = this.state;
+    const updatedImageSectionNode = editImageSectionNode.setIn(['meta', 'caption'], value);
+    this.documentModel.update(updatedImageSectionNode);
+    await this.commitUpdates();
+    this.setState({
+      editImageSectionNode: updatedImageSectionNode,
+    })
+  }
+  
+  // TODO: bug - selection highlighting disappears on user input on format selection menu
   manageFormatSelectionMenu(evt) {
     const range = getRange();
     const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
@@ -772,9 +836,15 @@ export default class EditPost extends React.Component {
     });
   }
   
+  getInputForwardedRef = (ref) => {
+    if (!ref) return;
+    this.inputRef = ref;
+    ref.focus();
+  }
+  
   getLinkUrlForwardedRef = (ref) => {
     if (!ref) return;
-    this.linkUrlInputRef = ref;
+    this.inputRef = ref;
     const { formatSelectionModel } = this.state;
     if (formatSelectionModel.get(SELECTION_ACTION_LINK)) {
       ref.focus();
@@ -837,29 +907,13 @@ export default class EditPost extends React.Component {
       formatSelectionNode: updatedNode,
       formatSelectionModel: updatedSelectionModel
     }, () => {
-      if (updatedSelectionModel.get(SELECTION_ACTION_LINK) && this.linkUrlInputRef) {
-        this.linkUrlInputRef.focus();
+      if (updatedSelectionModel.get(SELECTION_ACTION_LINK) && this.inputRef) {
+        this.inputRef.focus();
       }
     })
   }
   
-  updateLinkUrl = async (value) => {
-    const {
-      formatSelectionNode,
-      formatSelectionModel,
-    } = this.state;
-    const updatedSelectionModel = formatSelectionModel.set(SELECTION_LINK_URL, value);
-    const updatedNode = upsertSelection(
-      formatSelectionNode,
-      updatedSelectionModel,
-    );
-    this.documentModel.update(updatedNode);
-    await this.commitUpdates();
-    this.setState({
-      formatSelectionNode: updatedNode,
-      formatSelectionModel: updatedSelectionModel
-    })
-  }
+  
   
   render() {
     const {
@@ -874,11 +928,8 @@ export default class EditPost extends React.Component {
       insertMenuIsOpen,
       insertMenuTopOffset,
       insertMenuLeftOffset,
-      editSectionId,
-      editSectionType,
-      editSectionMeta,
+      editImageSectionNode,
       editSectionMetaFormTopOffset,
-      editSectionMetaFormLeftOffset,
       formatSelectionNode,
       formatSelectionMenuTopOffset,
       formatSelectionMenuLeftOffset,
@@ -945,17 +996,13 @@ export default class EditPost extends React.Component {
                 insertMenuIsOpen={insertMenuIsOpen}
                 insertSection={this.insertSection}
               />)}
-              {editSectionId && (<EditSectionForm
-                editSectionId={editSectionId}
-                editSectionType={editSectionType}
-                editSectionMeta={editSectionMeta}
-                editSectionMetaFormTopOffset={editSectionMetaFormTopOffset}
-                editSectionMetaFormLeftOffset={editSectionMetaFormLeftOffset}
-                updateMetaProp={this.updateMetaProp}
-                sectionSaveMeta={this.sectionSaveMeta}
+              {editImageSectionNode.get('id') && (<EditImageForm
+                offsetTop={editSectionMetaFormTopOffset}
+                nodeModel={editImageSectionNode}
+                uploadFile={this.replaceImageFile}
+                updateImageCaption={this.updateImageCaption}
                 sectionDelete={this.sectionDelete}
-                close={this.sectionEditClose}
-                forwardRef={this.getSectionEditForwardedRef}
+                forwardRef={this.getInputForwardedRef}
               />)}
               {formatSelectionNode.get('id') && (<FormatSelectionMenu
                 offsetTop={formatSelectionMenuTopOffset}

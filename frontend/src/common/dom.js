@@ -158,7 +158,7 @@ export function getCaretNode() {
   let { commonAncestorContainer } = range;
   if (commonAncestorContainer.nodeType > 1) {
     let current = commonAncestorContainer.parentElement;
-    while (!current.getAttribute('name')) {
+    while (current && !current.getAttribute('name')) {
       current = current.parentElement;
     }
     return current;
@@ -177,13 +177,13 @@ export function getCaretOffset() {
   return [range.startOffset, range.endOffset];
 }
 
-export function getCaretNodeType() {
-  const selectedNode = getCaretNode();
+export function getCaretNodeType(node) {
+  const selectedNode = node || getCaretNode();
   return selectedNode ? selectedNode.dataset.type : null;
 }
 
-export function getCaretNodeId() {
-  const selectedNode = getCaretNode();
+export function getCaretNodeId(node) {
+  const selectedNode = node || getCaretNode();
   return selectedNode ? selectedNode.getAttribute('name') : null;
 }
 

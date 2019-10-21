@@ -96,6 +96,10 @@ export default class ContentNode extends React.PureComponent {
   render() {
     const {
       node,
+      // this is a callback to the edit page, it passes a nodeId.
+      // It's only for image & quote sections.  Maybe it could go?
+      // Might need a currentEditSectionId value to show selected state (right now it's just on hover).
+      // Maybe that can be computed somehow?
       isEditing,
     } = this.props;
     switch (node.get('type')) {
@@ -130,14 +134,14 @@ export default class ContentNode extends React.PureComponent {
             <Figure>
               <ImagePlaceholderContainer w={meta.get('width')} h={meta.get('height')}>
                 <ImagePlaceholderFill w={meta.get('width')} h={meta.get('height')} />
-                <Img
+                {urlField.length > 0 && (<Img
                   isEditing={isEditing}
                   onClick={() => {
                     if (!isEditing) return;
                     isEditing(node.get('id'))
                   }}
                   src={url}
-                />
+                />)}
               </ImagePlaceholderContainer>
               <FigureCaption>{meta.get('caption')}</FigureCaption>
             </Figure>
@@ -166,7 +170,7 @@ export default class ContentNode extends React.PureComponent {
           </ContentSection>
         );
       }
-      // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout
+      // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
       case NODE_TYPE_SECTION_POSTLINK: {
         const to = node.getIn(['meta', 'to']);
         const Centered = styled.div`
@@ -182,7 +186,7 @@ export default class ContentNode extends React.PureComponent {
             </ContentSection>
             {to && (
               <H2>
-                Next Post: <LinkStyled to={to}>{node.get('content')}</LinkStyled>
+                Next Post 👉 <LinkStyled to={to}>{node.get('content')}</LinkStyled>
               </H2>
             )}
             <H2>

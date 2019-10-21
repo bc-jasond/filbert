@@ -25,7 +25,7 @@ function decrypt(text) {
 
 function getChecksum(buffer) {
   const startTime = performance.now();
-  console.log('starting sha256...');
+  console.log(`starting sha256 on Buffer of size ${buffer.length} bytes...`);
   const hash = crypto.createHash('sha256');
   hash.update(buffer);
   const hexDigest = hash.digest('hex');

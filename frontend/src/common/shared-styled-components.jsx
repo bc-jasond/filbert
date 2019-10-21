@@ -201,7 +201,7 @@ export const Img = styled.img`
   margin: 0;
   display: block;
   max-width: 100%;
-  border: 4px solid transparent;
+  border: 4px solid ${p => p.shouldShowBorder ? lightBlue : 'transparent'};
   ${p => p.isEditing && `
     &:hover {
       cursor: pointer;
@@ -327,4 +327,69 @@ export const NavButtonMixin = css`
     color: white;
     background-color: ${lightBlue};
   `}
+`;
+
+// LIL BLACK FORMS with ICONS
+export const LilBlackMenu = styled.div`
+  position: absolute;
+  transition: .1s top;
+  top: ${p => p.top - (p.shouldShowUrl ? 80 : 50)}px;
+  z-index: 11;
+  background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
+  background-repeat: repeat-x;
+  border-radius: 5px;
+  padding: 0 10px;
+  color: ${darkGrey};
+`;
+export const SvgIconMixin = css`
+  fill: #fff;
+  position: relative;
+  top: -1px;
+  vertical-align: middle;
+  height: 21px;
+  &:hover {
+    fill: ${blue};
+  }
+  ${p => p.selected && `
+    fill: ${darkBlue};
+  `}
+`;
+export const IconButton = styled.button`
+  position: relative;
+  background: rgba(0,0,0,0);
+  color: white;
+  font-size: 16px;
+  transition: .1s background-color,.1s border-color,.1s color,.1s fill;
+  border: 0;
+  display: inline-block;
+  vertical-align: middle;
+  height: 44px;
+  line-height: 21px;
+  margin: 0 8px;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+  outline: 0;
+`;
+export const ButtonSeparator = styled.div`
+  display: inline-block;
+  vertical-align: middle;
+  width: 1px;
+  margin: 0 6px;
+  height: 24px;
+  background: rgba(255,255,255,.2);
+`;
+export const PointClip = styled.div`
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  clip: rect(10px 20px 20px 0);
+  margin-left: -10px;
+`;
+export const Arrow = styled.span`
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: #262625;
+  transform: rotate(45deg) scale(.5);
 `;
