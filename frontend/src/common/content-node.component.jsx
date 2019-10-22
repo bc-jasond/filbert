@@ -149,22 +149,26 @@ export default class ContentNode extends React.PureComponent {
         );
       }
       case NODE_TYPE_SECTION_QUOTE: {
-        const meta = node.get('meta', Map());
+        const id = node.get('id');
+        const quote = node.getIn(['meta', 'quote'], '');
+        const url = node.getIn(['meta', 'url'], '');
+        const author = node.getIn(['meta', 'author'], '');
+        const context = node.getIn(['meta', 'context'], '');
         return (
-          <ContentSection data-type={NODE_TYPE_SECTION_QUOTE} name={node.get('id')} contentEditable={false}>
+          <ContentSection data-type={NODE_TYPE_SECTION_QUOTE} name={id} contentEditable={false}>
             <QuoteP
               isEditing={isEditing}
               onClick={() => {
                 if (!isEditing) return;
-                isEditing(node.get('id'))
+                isEditing(id)
               }
               }
             >
               {'💡Remember: '}
               <ItalicText>
-                {meta.get('quote') && `"${meta.get('quote')}" `}
-                <A target="_blank" href={meta.get('url')}>{meta.get('author') && `-${meta.get('author')}`}</A>
-                <MiniText>{meta.get('context') && ` ${meta.get('context')}`}</MiniText>
+                {quote && `"${quote}" `}
+                <A target="_blank" href={url}>{author && `-${author}`}</A>
+                <MiniText>{context && ` ${context}`}</MiniText>
               </ItalicText>
             </QuoteP>
           </ContentSection>

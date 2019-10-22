@@ -3,7 +3,7 @@ import styled, { css } from 'styled-components';
 import GitHubSvg from '../../assets/github-mark.svg';
 import LinkedInSvg from '../../assets/linkedin-logo.svg';
 import InfoSvg from '../../assets/info.svg';
-import { darkGrey, grey, lightBlue, lightGrey } from './css';
+import { darkGrey, grey, lightGrey } from './css';
 import { monospaced, sansSerif } from './fonts.css';
 import { NavButtonMixin } from './shared-styled-components';
 
@@ -11,7 +11,7 @@ export const Header = styled.header`
   position: fixed;
   display: block;
   box-sizing: border-box;
-  z-index: 10;
+  z-index: 12;
   width: 100%;
   background: rgba(255,255,255,.97);
   letter-spacing: 0;

@@ -1,6 +1,5 @@
 import * as React from 'react';
-import styled, { css } from 'styled-components';
-import { blue, darkBlue, darkGrey } from '../../common/css';
+import styled from 'styled-components';
 import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_ITALIC,
@@ -18,6 +17,7 @@ import {
   SvgIconMixin,
   LilBlackMenu,
   IconButton,
+  DarkInput,
   ButtonSeparator,
   PointClip,
   Arrow,
@@ -61,20 +61,9 @@ export const FormatSelectionMenu = styled(LilBlackMenu)`
   top: ${p => p.top - (p.shouldShowUrl ? 80 : 50)}px;
   left: ${p => p.left - 165}px; // 165 is half the width of the menu
 `;
-export const LinkInput = styled.input`
-  background: rgba(0,0,0,0);
+export const LinkInput = styled(DarkInput)`
   display: block;
   height: 0;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  color: #fff;
-  border: none;
-  outline: 0;
-  font-size: 16px;
-  box-sizing: border-box;
-  border-radius: 5px;
-  appearance: none;
   transition: .05s height;
   ${p => p.selected && `
     padding: 12px;

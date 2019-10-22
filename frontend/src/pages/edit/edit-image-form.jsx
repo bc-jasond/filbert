@@ -5,6 +5,7 @@ import {
   SvgIconMixin,
   LilBlackMenu,
   IconButton,
+  DarkInput,
   ButtonSeparator,
   PointClip,
   Arrow,
@@ -28,20 +29,14 @@ export const EditImageMenu = styled(LilBlackMenu)`
   display: flex;
   align-items: center;
   justify-items: center;
+  top: ${p => p.top - 50}px;
   width: 400px;
   margin: 0 auto;
   left:50%;
   margin-left:-200px;
 `;
-export const ImageCaptionInput = styled.input`
-  flex: 1;
-  background: rgba(0,0,0,0);
+export const ImageCaptionInput = styled(DarkInput)`
   margin: 0 8px;
-  color: #fff;
-  border: none;
-  outline: 0;
-  font-size: 16px;
-  border-radius: 5px;
 `;
 export default ({
                   offsetTop,

@@ -114,6 +114,7 @@ import {
 
 import InsertSectionMenu from './insert-section-menu';
 import EditImageForm from './edit-image-form';
+import EditQuoteForm from './edit-quote-form';
 import FormatSelectionMenu from './format-selection-menu';
 import PublishPostForm from './edit-publish-post-form';
 
@@ -136,6 +137,7 @@ export default class EditPost extends React.Component {
       insertMenuTopOffset: 0,
       insertMenuLeftOffset: 0,
       editImageSectionNode: Map(),
+      editQuoteSectionNode: Map(),
       editSectionMetaFormTopOffset: 0,
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
@@ -332,7 +334,6 @@ export default class EditPost extends React.Component {
         nodesByParentId: this.documentModel.nodesByParentId,
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
-        editImageSectionNode: Map(),
         editSectionId: null,
       }, () => {
         if (!formatSelectionNode.get('id') && !editImageSectionNode.get('id') && !editQuoteSectionNode.get('id')) {
@@ -648,7 +649,7 @@ export default class EditPost extends React.Component {
   /**
    * INSERT SECTIONS
    */
-  insertSection = async (sectionType, [firstFile]) => {
+  insertSection = async (sectionType, [firstFile] = []) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
     let focusNodeId;
     
@@ -701,7 +702,7 @@ export default class EditPost extends React.Component {
     }
     
     await this.commitUpdates(focusNodeId);
-    if ([NODE_TYPE_SECTION_QUOTE].includes(sectionType)) {
+    if ([NODE_TYPE_SECTION_IMAGE, NODE_TYPE_SECTION_QUOTE].includes(sectionType)) {
       this.sectionEdit(focusNodeId)
     }
   }
@@ -728,9 +729,11 @@ export default class EditPost extends React.Component {
     switch (section.get('type')) {
       case NODE_TYPE_SECTION_IMAGE: {
         newState.editImageSectionNode = section;
+        break;
       }
       case NODE_TYPE_SECTION_QUOTE: {
-      
+        newState.editQuoteSectionNode = section;
+        break;
       }
     }
     
@@ -754,27 +757,17 @@ export default class EditPost extends React.Component {
   }
   sectionDelete = (sectionId) => {
     if (confirm('Delete?')) {
+      this.sectionEditClose();
       const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
       this.documentModel.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
   }
-  updateLinkUrl = async (value) => {
-    const {
-      formatSelectionNode,
-      formatSelectionModel,
-    } = this.state;
-    const updatedSelectionModel = formatSelectionModel.set(SELECTION_LINK_URL, value);
-    const updatedNode = upsertSelection(
-      formatSelectionNode,
-      updatedSelectionModel,
-    );
-    this.documentModel.update(updatedNode);
-    await this.commitUpdates();
-    this.setState({
-      formatSelectionNode: updatedNode,
-      formatSelectionModel: updatedSelectionModel
-    })
+  
+  getInputForwardedRef = (ref) => {
+    if (!ref) return;
+    this.inputRef = ref;
+    ref.focus();
   }
   
   replaceImageFile = async ([firstFile]) => {
@@ -807,6 +800,18 @@ export default class EditPost extends React.Component {
     })
   }
   
+  updateQuoteMeta = async (value, metaKey) => {
+    const {
+      editQuoteSectionNode,
+    } = this.state;
+    const updatedQuoteSectionNode = editQuoteSectionNode.setIn(['meta', metaKey], value);
+    this.documentModel.update(updatedQuoteSectionNode);
+    await this.commitUpdates();
+    this.setState({
+      editQuoteSectionNode: updatedQuoteSectionNode,
+    })
+  }
+  
   // TODO: bug - selection highlighting disappears on user input on format selection menu
   manageFormatSelectionMenu(evt) {
     const range = getRange();
@@ -834,12 +839,6 @@ export default class EditPost extends React.Component {
       formatSelectionMenuTopOffset: selectedNode.offsetTop,
       formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2,
     });
-  }
-  
-  getInputForwardedRef = (ref) => {
-    if (!ref) return;
-    this.inputRef = ref;
-    ref.focus();
   }
   
   getLinkUrlForwardedRef = (ref) => {
@@ -913,7 +912,23 @@ export default class EditPost extends React.Component {
     })
   }
   
-  
+  updateLinkUrl = async (value) => {
+    const {
+      formatSelectionNode,
+      formatSelectionModel,
+    } = this.state;
+    const updatedSelectionModel = formatSelectionModel.set(SELECTION_LINK_URL, value);
+    const updatedNode = upsertSelection(
+      formatSelectionNode,
+      updatedSelectionModel,
+    );
+    this.documentModel.update(updatedNode);
+    await this.commitUpdates();
+    this.setState({
+      formatSelectionNode: updatedNode,
+      formatSelectionModel: updatedSelectionModel
+    })
+  }
   
   render() {
     const {
@@ -929,6 +944,7 @@ export default class EditPost extends React.Component {
       insertMenuTopOffset,
       insertMenuLeftOffset,
       editImageSectionNode,
+      editQuoteSectionNode,
       editSectionMetaFormTopOffset,
       formatSelectionNode,
       formatSelectionMenuTopOffset,
@@ -1001,6 +1017,13 @@ export default class EditPost extends React.Component {
                 nodeModel={editImageSectionNode}
                 uploadFile={this.replaceImageFile}
                 updateImageCaption={this.updateImageCaption}
+                sectionDelete={this.sectionDeleteImage}
+                forwardRef={this.getInputForwardedRef}
+              />)}
+              {editQuoteSectionNode.get('id') && (<EditQuoteForm
+                offsetTop={editSectionMetaFormTopOffset}
+                nodeModel={editQuoteSectionNode}
+                updateMeta={this.updateQuoteMeta}
                 sectionDelete={this.sectionDelete}
                 forwardRef={this.getInputForwardedRef}
               />)}

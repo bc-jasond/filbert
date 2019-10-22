@@ -333,7 +333,7 @@ export const NavButtonMixin = css`
 export const LilBlackMenu = styled.div`
   position: absolute;
   transition: .1s top;
-  top: ${p => p.top - (p.shouldShowUrl ? 80 : 50)}px;
+  top: ${p => p.top}px;
   z-index: 11;
   background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
   background-repeat: repeat-x;
@@ -370,6 +370,16 @@ export const IconButton = styled.button`
   cursor: pointer;
   user-select: none;
   outline: 0;
+`;
+export const DarkInput = styled.input`
+  flex: 1;
+  background: rgba(0,0,0,0);
+  color: #fff;
+  border: none;
+  outline: 0;
+  font-size: 16px;
+  border-radius: 5px;
+  //appearance: none;
 `;
 export const ButtonSeparator = styled.div`
   display: inline-block;
