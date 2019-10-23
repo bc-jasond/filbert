@@ -1,7 +1,7 @@
 {
-  "name": "dubaniewicz-site",
+  "name": "filbert",
   "version": "0.0.1",
-  "description": "Jason Dubaniewicz | thoughts & tutorials on web development, life",
+  "description": "a simple writing platform",
   "main": "index.html",
   "repository": "https://github.com/bc-jasond/dubaniewicz-site.git",
   "author": "Jason Dubaniewicz <jason@dubaniewi.cz>",

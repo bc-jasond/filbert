@@ -45,7 +45,10 @@ import CodeNode from './content-nodes/code';
 import ItalicNode from './content-nodes/italic';
 import SiteInfoNode from './content-nodes/siteinfo';
 import StrikethroughNode from './content-nodes/strikethrough';
-import { cleanTextOrZeroLengthPlaceholder } from './utils';
+import {
+  cleanTextOrZeroLengthPlaceholder,
+  imageUrlIsId,
+} from './utils';
 
 const StyledDiv = styled.div``;
 
@@ -107,9 +110,11 @@ export default class ContentNode extends React.PureComponent {
        * NON-RECURSIVE 'custom' SECTIONS
        */
       case NODE_TYPE_SECTION_H1:
-        return (<H1 data-type={NODE_TYPE_SECTION_H1} name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H1>);
+        return (<H1 data-type={NODE_TYPE_SECTION_H1}
+                    name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H1>);
       case NODE_TYPE_SECTION_H2:
-        return (<H2 data-type={NODE_TYPE_SECTION_H2} name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H2>);
+        return (<H2 data-type={NODE_TYPE_SECTION_H2}
+                    name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H2>);
       case NODE_TYPE_SECTION_SPACER:
         return (<SpacerSection data-type={NODE_TYPE_SECTION_SPACER} name={node.get('id')} contentEditable={false} />);
       case NODE_TYPE_SECTION_CODE:
@@ -125,10 +130,10 @@ export default class ContentNode extends React.PureComponent {
       case NODE_TYPE_SECTION_IMAGE: {
         const meta = node.get('meta', Map());
         const urlField = meta.get('url') || '';
-        // allow 3rd party URLs OR construct ours from the filename
-        const url = (urlField.substring(0, 5) === 'https' || urlField.substring(0,2) === '//')
-          ? urlField
-          : `${process.env.API_URL}/image/${urlField}`;
+        // construct our url from the hash OR assume 3rd party URL
+        const url = imageUrlIsId(urlField)
+          ? `${process.env.API_URL}/image/${urlField}`
+          : urlField;
         return (
           <ImageSection data-type={NODE_TYPE_SECTION_IMAGE} name={node.get('id')} contentEditable={false}>
             <Figure>

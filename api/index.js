@@ -6,10 +6,10 @@ const cors = require('cors');
 const multer = require('multer');
 const storage = multer.memoryStorage();
 const upload = multer({
-  storage, // store in memory as Buffer
+  storage, // TODO: store in memory as Buffer - bad idea?
   //dest: './uploads/', // store in filesystem
   limits: { // busboy option
-    fileSize: 16777216, // 16MB in bytes
+    fileSize: 16777216, // 16MB in bytes max size for mysql MEDIUMBLOB
   }
 });
 const sharp = require('sharp');
@@ -17,27 +17,13 @@ const sharp = require('sharp');
 
 const {
   getKnex,
+  getNodes,
   bulkContentNodeUpsert,
   bulkContentNodeDelete,
   getMysqlDatetime,
 } = require('./mysql');
 const { checkPassword } = require('./user');
 const { encrypt, decrypt, getChecksum } = require('./cipher');
-
-async function getNodes(knex, postId) {
-  const nodesArray = await knex('content_node')
-    .where('post_id', postId)
-    .orderBy(['parent_id', 'position']);
-  
-  // group nodes by parent_id, sorted by position
-  return nodesArray.reduce((acc, node) => {
-    if (!acc[node.parent_id]) {
-      acc[node.parent_id] = [];
-    }
-    acc[node.parent_id].push(node);
-    return acc;
-  }, {})
-}
 
 async function main() {
   try {
@@ -58,7 +44,7 @@ async function main() {
         // TODO: json encoded string 'null'?
         if (authorization && authorization != 'null') {
           console.info('Authorization Header: ', authorization, typeof authorization);
-          // TODO: add expiry time
+          // TODO: add expiry time lol
           // TODO: add refresh token & flow
           req.loggedInUser = JSON.parse(decrypt(authorization));
         }
@@ -277,7 +263,7 @@ async function main() {
     })
     
     /**
-     * save image!
+     * upload image!
      */
     app.post('/image', upload.single('fileData'), async (req, res) => {
       try {
@@ -342,6 +328,33 @@ async function main() {
         console.error('POST /image Error: ', err);
         res.status(500).send({})
       }
+    })
+    
+    app.delete('/image/:id', async (req, res) => {
+      const { id } = req.params;
+      // TODO: transaction, select for update
+      const imageWhereClause = {
+        id,
+        user_id: req.loggedInUser.id,
+      };
+      const [image] = await knex('image')
+        .where(imageWhereClause);
+      if (!image) {
+        res.status(404).send({});
+        return;
+      }
+      if (image.num_times_used > 1) {
+        // decrement counter
+        await knex('image')
+          .update({num_times_used: image.num_times_used - 1})
+          .where(imageWhereClause);
+      } else {
+        // delete image!
+        await knex('image')
+          .where(imageWhereClause)
+          .del();
+      }
+      res.status(204).send({});
     })
     
     /**
@@ -417,6 +430,7 @@ async function main() {
       /**
        * DANGER ZONE!!!
        */
+      // TODO: transaction
       await knex('content_node')
         .where('post_id', id)
         .del();

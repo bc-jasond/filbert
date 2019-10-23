@@ -82,3 +82,13 @@ export function getCanonicalFromTitle(title) {
   // dedupe hyphens
   return canonical.replace(/-+/g, "-");
 }
+
+export function imageUrlIsId(url) {
+  if (typeof url !== 'string') {
+    return;
+  }
+  // imageId is 64 character hex sha256 hash - assume all other input is a valid external url
+  // this returns an array (truthy) of all string matches, in this case it should only be 1
+  const ids = url.match(/\b[0-9A-F]{64}\b/gi);
+  return ids && ids.length === 1;
+}

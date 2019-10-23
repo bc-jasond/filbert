@@ -29,7 +29,7 @@ import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
   getDiffStartAndLength,
-  getCanonicalFromTitle,
+  getCanonicalFromTitle, imageUrlIsId,
 } from '../../common/utils';
 import {
   getRange,
@@ -523,8 +523,8 @@ export default class EditPost extends React.Component {
     }
     const domNode = getCaretNode();
     if (domNode && (domNode.tagName === 'PRE'
-        // when clicking on a section, the caret will be on an input in the edit image or quote menu, ignore
-        || domNode.dataset)) {
+      // when clicking on a section, the caret will be on an input in the edit image or quote menu, ignore
+      || domNode.dataset.isMenu === 'true' /* TODO: why string? */)) {
       // TODO
       return;
     }
@@ -757,6 +757,19 @@ export default class EditPost extends React.Component {
   }
   sectionDelete = (sectionId) => {
     if (confirm('Delete?')) {
+      this.sectionEditClose();
+      const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
+      this.documentModel.delete(sectionId);
+      this.commitUpdates(focusNodeId);
+    }
+  }
+  sectionDeleteImage = async (sectionId) => {
+    if (confirm('Delete?')) {
+      const { editImageSectionNode } = this.state;
+      const urlField = editImageSectionNode.getIn(['meta', 'url']);
+      if (imageUrlIsId(urlField)) {
+        await apiDelete(`/image/${urlField}`)
+      }
       this.sectionEditClose();
       const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
       this.documentModel.delete(sectionId);

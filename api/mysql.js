@@ -2,7 +2,7 @@ const knex = require('knex')
 
 let knexConnection;
 
-async function getKnex() {
+export async function getKnex() {
   if (!knexConnection) {
     knexConnection = knex({
       client: 'mysql2',
@@ -33,10 +33,25 @@ export function getMysqlDatetime(date = null) {
     ("0" + dateInstance.getSeconds()).slice(-2);
 }
 
+export async function getNodes(knex, postId) {
+  const nodesArray = await knex('content_node')
+    .where('post_id', postId)
+    .orderBy(['parent_id', 'position']);
+  
+  // group nodes by parent_id, sorted by position
+  return nodesArray.reduce((acc, node) => {
+    if (!acc[node.parent_id]) {
+      acc[node.parent_id] = [];
+    }
+    acc[node.parent_id].push(node);
+    return acc;
+  }, {})
+}
+
 // TODO: 'touch' post on each update/delete of content or publish
 async function markPostUpdated(postId) {}
 
-async function bulkContentNodeUpsert(records) {
+export async function bulkContentNodeUpsert(records) {
   if (records.length === 0) return;
   const knexInstance = await getKnex();
   const query = `
@@ -68,7 +83,7 @@ async function bulkContentNodeUpsert(records) {
   return knexInstance.raw(query, values);
 }
 
-async function bulkContentNodeDelete(records) {
+export async function bulkContentNodeDelete(records) {
   // delete all records WHERE id IN (...recordIds) OR WHERE parent_id IN (...recordIds)
   if (records.length === 0) return;
   const postId = records[0][1].post_id;
@@ -82,7 +97,3 @@ async function bulkContentNodeDelete(records) {
     )
     .del();
 }
-
-module.exports.getKnex = getKnex;
-module.exports.bulkContentNodeUpsert = bulkContentNodeUpsert;
-module.exports.bulkContentNodeDelete = bulkContentNodeDelete;
