@@ -1,12 +1,18 @@
-FROM node:10
+FROM node:12
 
-COPY * /usr/local/
-
-WORKDIR /usr/local/
-RUN mkdir /usr/local/logs
+WORKDIR /api/
+COPY * /api/
 
 ENV NODE_ENV=production
 RUN yarn
-EXPOSE 3001
 
+# multi-staged builds save space!
+FROM node:12-slim
+
+WORKDIR /usr/local/
+COPY --from=0 /api/ /usr/local/
+RUN mkdir /usr/local/logs
+
+ENV NODE_ENV=production
+EXPOSE 3001
 CMD ["yarn", "start"]

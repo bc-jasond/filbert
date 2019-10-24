@@ -16,8 +16,9 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD
       - ENCRYPTION_KEY
-    # ports:
-    #  - 3001:3001
+    ports:
+      # localhost only for development, this should be proxied through nginx
+      - 127.0.0.1:3001:3001
 
   db:
     image: percona
@@ -28,7 +29,8 @@ services:
       # to share mysqld.cnf overrides
       - ./mysql:/etc/mysql
     ports:
-      - 3306:3306
+      # localhost to allow SSH->mysql
+      - 127.0.0.1:3306:3306
 
   certbot:
     image: certbot/certbot

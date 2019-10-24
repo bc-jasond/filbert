@@ -42,9 +42,10 @@ export const LinkStyled = styled(Link)`
   text-decoration: none;
 `;
 export const LogoLinkStyled = styled(LinkStyled)`
+  font-size: 28px;
   transition: font-size 0.125s;
   &:hover {
-    font-size: 28px;
+    font-size: 32px;
   }
 `;
 export const EditPost = styled(LinkStyled)`
