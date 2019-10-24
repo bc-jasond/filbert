@@ -40,7 +40,7 @@ echo
 
 
 echo "### Starting nginx ..."
-docker-compose up --force-recreate -d frontend
+docker-compose up -d --build frontend
 echo
 
 echo "### Deleting dummy certificate for $domains ..."
