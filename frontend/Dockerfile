@@ -10,6 +10,9 @@ COPY ["yarn.lock","webpack.config.js","package.json",".babelrc","/work/"]
 RUN yarn; \
  yarn build-prod;
 
+# serve up my lil homepage
+COPY src/jason.html /work/dist/
+
 # multi-staged builds save space!
 FROM nginx:alpine
 
