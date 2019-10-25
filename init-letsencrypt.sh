@@ -6,10 +6,13 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(filbert.xyz www.filbert.xyz api.filbert.xyz dubaniewi.cz www.dubaniewi.cz)
+domains=(filbert.xyz www.filbert.xyz api.filbert.xyz dubaniewi.cz www.dubaniewi.cz jason.dubaniewi.cz)
 rsa_key_size=4096
 data_path="./data/certbot"
-email="" # Adding a valid address is strongly recommended
+# NOTE: cert files will be stored in a directory named by the first string in the $domains{@} array
+# NOTE: $container_path is the directory referenced in nginx.conf
+container_path="/etc/letsencrypt/live/${domains[0]}"
+email="jason@dubaniewi.cz" # Adding a valid address is strongly recommended
 staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
 
 if [ -d "$data_path" ]; then
@@ -30,12 +33,11 @@ fi
 
 echo "### Creating dummy certificate for ${domains[@]} ..."
 # NOTE: this creates ONE certificate file for all domains in the array above
-path="/etc/letsencrypt/live/certificate"
-mkdir -p "$data_path/conf/live/certificate"
+mkdir -p "$data_path/conf/live/${domains[0]}"
 docker-compose run --rm --entrypoint "\
   openssl req -x509 -nodes -newkey rsa:1024 -days 1\
-    -keyout '$path/privkey.pem' \
-    -out '$path/fullchain.pem' \
+    -keyout '$container_path/privkey.pem' \
+    -out '$container_path/fullchain.pem' \
     -subj '/CN=localhost'" certbot
 echo
 
@@ -44,11 +46,11 @@ echo "### Starting nginx ..."
 docker-compose up -d --build frontend
 echo
 
-echo "### Deleting dummy certificate in /certificate ..."
+echo "### Deleting dummy certificate in /${domains[0]} ..."
 docker-compose run --rm --entrypoint "\
-  rm -Rf /etc/letsencrypt/live/certificate && \
-  rm -Rf /etc/letsencrypt/archive/certificate && \
-  rm -Rf /etc/letsencrypt/renewal/certificate" certbot
+  rm -Rf /etc/letsencrypt/live/${domains[0]} && \
+  rm -Rf /etc/letsencrypt/archive/${domains[0]} && \
+  rm -Rf /etc/letsencrypt/renewal/${domains[0]}" certbot
 echo
 
 
