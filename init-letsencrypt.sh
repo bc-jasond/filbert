@@ -34,6 +34,7 @@ fi
 echo "### Creating dummy certificate for ${domains[@]} ..."
 # NOTE: this creates ONE certificate file for all domains in the array above
 mkdir -p "$data_path/conf/live/${domains[0]}"
+mkdir -p "$data_path/www"
 docker-compose run --rm --entrypoint "\
   openssl req -x509 -nodes -newkey rsa:1024 -days 1\
     -keyout '$container_path/privkey.pem' \
