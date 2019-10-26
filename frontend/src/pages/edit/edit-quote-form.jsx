@@ -9,7 +9,7 @@ import {
   PointClip,
   Arrow, DarkInput,
 } from '../../common/shared-styled-components';
-import IconTrashSvg from '../../../assets/trash.svg';
+import IconTrashSvg from '../../../assets/icons/trash.svg';
 
 const IconTrash = styled(IconTrashSvg)`
   height: 32px;

@@ -10,8 +10,8 @@ import {
   PointClip,
   Arrow,
 } from '../../common/shared-styled-components';
-import IconImageSvg from '../../../assets/image.svg';
-import IconTrashSvg from '../../../assets/trash.svg';
+import IconImageSvg from '../../../assets/icons/image.svg';
+import IconTrashSvg from '../../../assets/icons/trash.svg';
 
 const fileInputRef = React.createRef();
 

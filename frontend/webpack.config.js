@@ -1,4 +1,5 @@
 const webpack = require('webpack');
+const express = require('express');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
@@ -53,6 +54,9 @@ module.exports = (env, argv) => {
       host: '0.0.0.0',
       disableHostCheck: true,
       watchContentBase: true,
+      before: (app) => {
+        app.use(express.static('assets'));
+      },
       historyApiFallback: {
         verbose: true,
         rewrites: [
@@ -63,10 +67,6 @@ module.exports = (env, argv) => {
           {
             from: /\.js$/,
             to: context => '/' + context.parsedUrl.pathname.split('/').pop(),
-          },
-          {
-            from: /\//,
-            to: '/index.html',
           },
         ],
       },

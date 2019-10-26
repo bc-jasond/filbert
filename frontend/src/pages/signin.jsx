@@ -93,7 +93,7 @@ export default class SignIn extends React.Component {
     return (
       <Container>
         <SignInForm onSubmit={this.doLogin}>
-          <StyledLinkStyled to="/">filbert</StyledLinkStyled>
+          <StyledLinkStyled to="/">✍️ filbert</StyledLinkStyled>
           <H1>Sign In</H1>
           <H3>Want an account? <StyledA href="javascript:alert('Coming soon!')">Click here</StyledA></H3>
           <InputContainer>

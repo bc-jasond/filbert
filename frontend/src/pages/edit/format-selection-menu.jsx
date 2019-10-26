@@ -23,14 +23,14 @@ import {
   Arrow,
 } from '../../common/shared-styled-components';
 
-import IconBoldSvg from '../../../assets/bold.svg';
-import IconItalicSvg from '../../../assets/italic.svg';
-import IconCodeSvg from '../../../assets/code.svg';
-import IconInfoSvg from '../../../assets/info.svg';
-import IconStrikethroughSvg from '../../../assets/strikethrough.svg';
-import IconLinkSvg from '../../../assets/link.svg';
-import IconH1Svg from '../../../assets/h1.svg';
-import IconH2Svg from '../../../assets/h2.svg';
+import IconBoldSvg from '../../../assets/icons/bold.svg';
+import IconItalicSvg from '../../../assets/icons/italic.svg';
+import IconCodeSvg from '../../../assets/icons/code.svg';
+import IconInfoSvg from '../../../assets/icons/info.svg';
+import IconStrikethroughSvg from '../../../assets/icons/strikethrough.svg';
+import IconLinkSvg from '../../../assets/icons/link.svg';
+import IconH1Svg from '../../../assets/icons/h1.svg';
+import IconH2Svg from '../../../assets/icons/h2.svg';
 
 const IconBold = styled(IconBoldSvg)`
   ${SvgIconMixin};
