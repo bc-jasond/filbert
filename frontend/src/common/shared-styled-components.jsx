@@ -122,6 +122,7 @@ export const Li = styled.li`
   }
 `;
 const linkMixin = css`
+  cursor: pointer;
   font: inherit;
   text-decoration: none;
   background-repeat: repeat-x;

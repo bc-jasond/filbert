@@ -16,6 +16,7 @@ import {
   NODE_TYPE_LI,
   NODE_TYPE_PRE,
 } from './constants';
+import { mediumGrey } from './css';
 import {
   H1,
   H2,
@@ -51,6 +52,10 @@ import {
 } from './utils';
 
 const StyledDiv = styled.div``;
+const TitlePlaceholder = styled.div`
+  position: absolute;
+  color: ${mediumGrey};
+`;
 
 export default class ContentNode extends React.PureComponent {
   constructor(props) {
@@ -73,6 +78,7 @@ export default class ContentNode extends React.PureComponent {
   
   getChildNodes() {
     const {
+      post,
       node,
       nodesByParentId,
       isEditing,
@@ -81,7 +87,7 @@ export default class ContentNode extends React.PureComponent {
     return nodesByParentId
       .get(node.get('id'), List())
       .map(child => (
-        <ContentNode key={child.get('id')} node={child} nodesByParentId={nodesByParentId} isEditing={isEditing} />))
+        <ContentNode key={child.get('id')} post={post} node={child} nodesByParentId={nodesByParentId} isEditing={isEditing} />))
   }
   
   getKey() {
@@ -98,6 +104,7 @@ export default class ContentNode extends React.PureComponent {
   
   render() {
     const {
+      post,
       node,
       // this is a callback to the edit page, it passes a nodeId.
       // It's only for image & quote sections.  Maybe it could go?
@@ -110,8 +117,16 @@ export default class ContentNode extends React.PureComponent {
        * NON-RECURSIVE 'custom' SECTIONS
        */
       case NODE_TYPE_SECTION_H1:
-        return (<H1 data-type={NODE_TYPE_SECTION_H1}
-                    name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H1>);
+        return (<H1
+          data-type={NODE_TYPE_SECTION_H1}
+          name={node.get('id')}
+        >
+          {console.log(node.get('content', '').length)}
+          {!post.get('id') && node.get('content', '').length === 0 && (
+            <TitlePlaceholder contentEditable={false}>Write something and hit enter...</TitlePlaceholder>
+          )}
+          {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
+        </H1>);
       case NODE_TYPE_SECTION_H2:
         return (<H2 data-type={NODE_TYPE_SECTION_H2}
                     name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H2>);

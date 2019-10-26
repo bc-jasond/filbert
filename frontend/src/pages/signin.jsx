@@ -24,9 +24,6 @@ import {
 
 const Container = styled.div`
   display: flex;
-  height: 100%;
-  width: 100%;
-  position: absolute;
   justify-content: center;
   align-items: center;
 `;
@@ -35,7 +32,6 @@ const SignInForm = styled.form`
   max-width: 450px;
   min-width: 320px;
   padding: 40px;
-  margin: 140px auto 100px;
   overflow: hidden;
   background-color: white;
   border-radius: 2px;
@@ -50,6 +46,7 @@ const LinkStyled2 = styled(Link)`
 `;
 const StyledA = styled(A)``;
 
+const usernameRef = React.createRef();
 
 export default class SignIn extends React.Component {
   constructor(props) {
@@ -60,6 +57,12 @@ export default class SignIn extends React.Component {
       error: null,
       success: null,
       shouldRedirect: false,
+    }
+  }
+  
+  componentDidMount() {
+    if (usernameRef && usernameRef.current) {
+      usernameRef.current.focus();
     }
   }
   
@@ -93,13 +96,13 @@ export default class SignIn extends React.Component {
     return (
       <Container>
         <SignInForm onSubmit={this.doLogin}>
-          <StyledLinkStyled to="/">✍️ filbert</StyledLinkStyled>
+          <StyledLinkStyled to="/">✍ filbert</StyledLinkStyled>
           <H1>Sign In</H1>
-          <H3>Want an account? <StyledA href="javascript:alert('Coming soon!')">Click here</StyledA></H3>
+          <H3>Want an account? <StyledA onClick={() => alert('Coming soon!')}>Click here</StyledA></H3>
           <InputContainer>
             <Label htmlFor="username" error={error}>Username</Label>
             <Input name="username" type="text" value={this.state.username} onChange={this.updateUsername}
-                   error={error} />
+                   error={error} ref={usernameRef} />
           </InputContainer>
           <InputContainer>
             <Label htmlFor="password" error={error}>Password</Label>

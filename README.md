@@ -1,4 +1,19 @@
-# dubaniewicz-site - a ~~Medium clone~~ content creation & publishing platform
-## website repo for http://filber.xyz and mirror http://dubaniewi.cz
-### a blog and tutorial for React, Babel, Webpack, yarn, AWS, nginx for now
-### Node.js, GraphQL, nginx, AWS, MySQL & more for later...
+# ✍ filbert
+## a simple writing platform
+### monorepo for https://filbert.xyz and (for now) my personal site https://dubaniewi.cz
+#### Tech Stack:
+- React
+- styled-components
+- ImmutableJS
+- Babel
+- Webpack
+- yarn
+- Linode
+- Docker Compose
+- nginx
+- Let's Encrypt (certbot)
+- express
+- Knex.js
+- MySQL (Percona)
+- bcrypt
+- sharp

@@ -980,7 +980,7 @@ export default class EditPost extends React.Component {
       <React.Fragment>
         <Header>
           <HeaderContentContainer>
-            <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
+            <LogoLinkStyled to="/">✍ filbert</LogoLinkStyled>
             <HeaderLinksContainer>
               <PublishPost onClick={this.togglePostMenu}>publish</PublishPost>
               <DeletePost onClick={this.deletePost}>delete</DeletePost>
@@ -1016,7 +1016,7 @@ export default class EditPost extends React.Component {
                 onMouseUp={this.handleMouseUp}
                 onPaste={this.handlePaste}
               >
-                <ContentNode node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
+                <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
               </div>
               {shouldShowInsertMenu && (<InsertSectionMenu
                 insertMenuTopOffset={insertMenuTopOffset}

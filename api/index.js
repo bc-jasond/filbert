@@ -31,7 +31,7 @@ async function main() {
     
     const app = express();
     app.use(express.json());
-    app.use(cors(/* TODO: whitelist *.filbert.xyz & *.dubaniewi.cz in PRODUCTION */))
+    app.use(cors(/* TODO: whitelist *.filbert.xyz in PRODUCTION */))
     
     /**
      * parse Authorization header, add logged in user to req object
