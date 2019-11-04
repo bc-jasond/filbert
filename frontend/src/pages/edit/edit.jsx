@@ -70,7 +70,7 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
-  SELECTION_LINK_URL,
+  SELECTION_LINK_URL, POST_ACTION_REDIRECT_TIMEOUT,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -161,6 +161,7 @@ export default class EditPost extends React.Component {
   
   async componentDidUpdate(prevProps) {
     try {
+      console.info("componentDidUpdate");
       if (this.props.match.params.id === prevProps.match.params.id) {
         return;
       }
@@ -193,7 +194,7 @@ export default class EditPost extends React.Component {
       this.updateManager.clearUpdates();
       console.info('Save Batch result', result);
     } catch (err) {
-      // console.error('Content Batch Update Error: ', err);
+      console.error('Content Batch Update Error: ', err);
     }
   }
   
@@ -271,7 +272,7 @@ export default class EditPost extends React.Component {
         shouldShowPostSuccess: true,
         shouldShowPostError: null,
       }, () => {
-        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), 1000);
+        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), POST_ACTION_REDIRECT_TIMEOUT);
       })
     } catch (err) {
       this.setState({ shouldShowPostError: true })
@@ -288,7 +289,7 @@ export default class EditPost extends React.Component {
         shouldShowPostSuccess: true,
         shouldShowPostError: null,
       }, () => {
-        setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('canonical') }), 1000);
+        setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('canonical') }), POST_ACTION_REDIRECT_TIMEOUT);
       });
     } catch (err) {
       this.setState({ shouldShowPostError: true })
@@ -316,33 +317,32 @@ export default class EditPost extends React.Component {
     this.setState({ shouldShowPublishPostMenu: !oldVal })
   }
   
-  commitUpdates = async (focusNodeId, offset = -1, shouldFocusLastChild) => {
+  commitUpdates = (focusNodeId, offset = -1, shouldFocusLastChild = false, shouldSaveContentBatch = true /* used for a new post */) => {
     if (this.props.match.params.id === NEW_POST_URL_ID) {
       return this.createNewPost();
     }
-    
-    // TODO: optimistically save updated nodes - look ma, no errors!
-    await this.saveContentBatchDebounce();
     const {
       formatSelectionNode,
       editImageSectionNode,
       editQuoteSectionNode,
     } = this.state;
-    return new Promise((resolve, reject) => {
-      // roll with state changes TODO: handle errors - roll back?
-      this.setState({
-        nodesByParentId: this.documentModel.nodesByParentId,
-        shouldShowInsertMenu: false,
-        insertMenuIsOpen: false,
-        editSectionId: null,
-      }, () => {
-        if (!formatSelectionNode.get('id') && !editImageSectionNode.get('id') && !editQuoteSectionNode.get('id')) {
-          setCaret(focusNodeId, offset, shouldFocusLastChild);
-        }
-        this.manageInsertMenu();
-        resolve();
-      });
-    })
+    // TODO: optimistically save updated nodes - look ma, no errors!
+    // TODO: handle errors - roll back?
+    // TODO: undo/redo entrypoint here?  AKA, don't setState({nodesByParentId:...}) anywhere else
+    this.setState({
+      nodesByParentId: this.documentModel.nodesByParentId,
+      shouldShowInsertMenu: false,
+      insertMenuIsOpen: false,
+      editSectionId: null,
+    },() => {
+      // TODO: WTF is going on here?  Basically, don't set the caret if a menu is open, I think.
+      if (!formatSelectionNode.get('id') && !editImageSectionNode.get('id') && !editQuoteSectionNode.get('id')) {
+        setCaret(focusNodeId, offset, shouldFocusLastChild);
+      }
+      if (shouldSaveContentBatch) {
+        this.saveContentBatchDebounce();
+      }
+    });
   }
   
   activeElementHasContent() {
@@ -477,9 +477,7 @@ export default class EditPost extends React.Component {
       this.cancelledEvent
       // don't send updates for control keys
       // TODO: this should probably use a diff strategy instead of key detection
-      || isControlKey(evt.keyCode)
-      // doesn't work with a 'new' post
-      || this.props.match.params.id === NEW_POST_URL_ID) {
+      || isControlKey(evt.keyCode)) {
       return;
     }
     const selectedNode = getCaretNode();
@@ -492,25 +490,32 @@ export default class EditPost extends React.Component {
     const selectedNodeContentDom = cleanText(selectedNode.textContent);
     if (selectedNode.tagName === 'PRE') {
       handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContentDom);
-      console.debug('DOM SYNC PRE ', selectedNode);
+      console.info('DOM SYNC PRE ', selectedNode);
+      // TODO: refactor to use commitUpdates()
       this.saveContentBatchDebounce();
       return;
     }
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
     const selectedNodeContentMap = selectedNodeMap.get('content') || '';
+    console.log('content JS ', selectedNodeContentMap);
+    console.log('content DOM', selectedNodeContentDom);
     const [diffStart, diffLength] = getDiffStartAndLength(selectedNodeContentMap, selectedNodeContentDom);
-    // TODO: handle cut/paste?
+    // TODO: handle cut/paste
     // TODO: handle select & type or select & delete
-    // TODO: 'Del' does it work at the edge of 2 selections?
+    // TODO: 'Del' does it work at the edge of 2 selections?  Probably not.
     if (diffLength === 0) {
       return;
     }
     selectedNodeMap = selectedNodeMap.set('content', selectedNodeContentDom);
     selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, diffStart, diffLength);
-    this.documentModel.update(selectedNodeMap);
-    
     console.log('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
-    this.saveContentBatchDebounce()
+    this.documentModel.update(selectedNodeMap);
+    this.commitUpdates(
+      selectedNodeId,
+      diffStart + diffLength,
+      false,
+      this.props.match.params.id !== NEW_POST_URL_ID
+    );
   }
   
   /**
@@ -801,27 +806,29 @@ export default class EditPost extends React.Component {
     })
   }
   
-  updateImageCaption = async (value) => {
+  updateImageCaption = (value) => {
     const {
       editImageSectionNode,
     } = this.state;
     const updatedImageSectionNode = editImageSectionNode.setIn(['meta', 'caption'], value);
     this.documentModel.update(updatedImageSectionNode);
-    await this.commitUpdates();
     this.setState({
       editImageSectionNode: updatedImageSectionNode,
+    }, async () => {
+      await this.commitUpdates();
     })
   }
   
-  updateQuoteMeta = async (value, metaKey) => {
+  updateQuoteMeta = (value, metaKey) => {
     const {
       editQuoteSectionNode,
     } = this.state;
     const updatedQuoteSectionNode = editQuoteSectionNode.setIn(['meta', metaKey], value);
     this.documentModel.update(updatedQuoteSectionNode);
-    await this.commitUpdates();
     this.setState({
       editQuoteSectionNode: updatedQuoteSectionNode,
+    }, async () => {
+      await this.commitUpdates();
     })
   }
   
@@ -863,7 +870,7 @@ export default class EditPost extends React.Component {
     }
   }
   
-  handleSelectionAction = async (action) => {
+  handleSelectionAction = (action) => {
     const {
       formatSelectionModel,
       formatSelectionNode,
@@ -889,10 +896,12 @@ export default class EditPost extends React.Component {
         // H1 -> H2 or H2 -> H1
         focusNodeId = this.documentModel.update(formatSelectionNode.set('type', sectionType));
       }
-      await this.commitUpdates(focusNodeId);
+      
       this.setState({
         formatSelectionNode: Map(),
         formatSelectionModel: Selection(),
+      }, async () => {
+        await this.commitUpdates(focusNodeId);
       });
       return;
     }
@@ -914,18 +923,18 @@ export default class EditPost extends React.Component {
       updatedSelectionModel,
     );
     this.documentModel.update(updatedNode);
-    await this.commitUpdates();
     this.setState({
       formatSelectionNode: updatedNode,
       formatSelectionModel: updatedSelectionModel
-    }, () => {
+    }, async () => {
+      await this.commitUpdates();
       if (updatedSelectionModel.get(SELECTION_ACTION_LINK) && this.inputRef) {
         this.inputRef.focus();
       }
     })
   }
   
-  updateLinkUrl = async (value) => {
+  updateLinkUrl = (value) => {
     const {
       formatSelectionNode,
       formatSelectionModel,
@@ -936,10 +945,11 @@ export default class EditPost extends React.Component {
       updatedSelectionModel,
     );
     this.documentModel.update(updatedNode);
-    await this.commitUpdates();
     this.setState({
       formatSelectionNode: updatedNode,
       formatSelectionModel: updatedSelectionModel
+    }, async () => {
+      await this.commitUpdates();
     })
   }
   

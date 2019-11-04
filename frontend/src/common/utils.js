@@ -44,6 +44,7 @@ export function cleanText(text) {
     //.replace(/\s+/g, " ");
 }
 
+// TODO: this is off-by-1 when caret is at the end of the string
 export function getDiffStartAndLength(oldStr, newStr) {
   const diffLength = Math.abs(oldStr.length - newStr.length);
   const doesAddCharacters = newStr.length > oldStr.length;
@@ -52,15 +53,16 @@ export function getDiffStartAndLength(oldStr, newStr) {
   for (let i = 0; i < loopLength; i++) {
     let oldCurrent = oldStr.charAt(i);
     let newCurrent = newStr.charAt(i);
-    if (!oldCurrent) {
+    if (oldCurrent.length === 0) {
       // chars were added to the end
       return [i, diffLength];
     }
-    if (!newCurrent) {
+    if (newCurrent.length === 0) {
       // chars were deleted from the end
-      return [i, -diffLength];
+      return [i + 1, -diffLength];
     }
     if (oldCurrent !== newCurrent) {
+      // chars were added/deleted somewhere in the middle
       return [i, doesAddCharacters ? diffLength : -diffLength];
     }
   }

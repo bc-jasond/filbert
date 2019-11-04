@@ -15,8 +15,8 @@ import {
   NODE_TYPE_ROOT,
   NODE_TYPE_LI,
   NODE_TYPE_PRE,
+  NEW_POST_URL_ID,
 } from './constants';
-import { mediumGrey } from './css';
 import {
   H1,
   H2,
@@ -47,17 +47,14 @@ import ItalicNode from './content-nodes/italic';
 import SiteInfoNode from './content-nodes/siteinfo';
 import StrikethroughNode from './content-nodes/strikethrough';
 import {
+  cleanText,
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
 } from './utils';
 
 const StyledDiv = styled.div``;
-const TitlePlaceholder = styled.div`
-  position: absolute;
-  color: ${mediumGrey};
-`;
 
-export default class ContentNode extends React.PureComponent {
+export default class ContentNode extends React.Component {
   constructor(props) {
     super(props);
   }
@@ -90,16 +87,18 @@ export default class ContentNode extends React.PureComponent {
         <ContentNode key={child.get('id')} post={post} node={child} nodesByParentId={nodesByParentId} isEditing={isEditing} />))
   }
   
-  getKey() {
-    const {
-      node,
-      nodesByParentId,
-    } = this.props;
-    console.debug('getKey', nodesByParentId.get(node.get('id')))
-    return nodesByParentId
-      .get(node.get('id'), List())
-      // create a key from all child ids concatenated together - this is to fix a stale render issue for TEXT (invisible to the DOM) children
-      .reduce((acc, child) => `${child.get('id')}`, '')
+  shouldComponentUpdate(nextProps) {
+    const { nodesByParentId } = this.props;
+    const { node: newNode } = nextProps;
+    const parentId = newNode.get('parent_id') || 'null';
+    const oldNode = nodesByParentId
+      .get(parentId)
+      .get(newNode.get('position'));
+    // component should update (re-render) if shallow equality changes. (NOTE: not value equality like Map.equals(OtherMap))
+    // this leverages ImmutableJS creating new copies of nodes that have changed
+    // HOWEVER, it requires some shenanigans in edit.commitUpdates() to walk the flattened nodes list
+    // and update every parent of the updated node up to the root component - exactly what ImmutableJS does under the hood
+    return oldNode !== newNode;
   }
   
   render() {
@@ -112,6 +111,7 @@ export default class ContentNode extends React.PureComponent {
       // Maybe that can be computed somehow?
       isEditing,
     } = this.props;
+    console.log("RENDER ", node.get('id'))
     switch (node.get('type')) {
       /**
        * NON-RECURSIVE 'custom' SECTIONS
@@ -120,11 +120,8 @@ export default class ContentNode extends React.PureComponent {
         return (<H1
           data-type={NODE_TYPE_SECTION_H1}
           name={node.get('id')}
+          shouldShowPlaceholder={post.get('id', 'new') === NEW_POST_URL_ID && node.get('position') === 0 && cleanText(node.get('content', '')).length === 0}
         >
-          {console.log(node.get('content', '').length)}
-          {!post.get('id') && node.get('content', '').length === 0 && (
-            <TitlePlaceholder contentEditable={false}>Write something and hit enter...</TitlePlaceholder>
-          )}
           {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
         </H1>);
       case NODE_TYPE_SECTION_H2:
@@ -227,7 +224,7 @@ export default class ContentNode extends React.PureComponent {
       case NODE_TYPE_OL: {
         const StyledComponent = this.getSectionTagFromType();
         return (
-          <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')}>
+          <StyledComponent data-type={node.get('type')} name={node.get('id')}>
             {this.getChildNodes()}
           </StyledComponent>
         )
@@ -262,7 +259,7 @@ export default class ContentNode extends React.PureComponent {
         };
         
         return (
-          <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
+          <StyledComponent data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
             {selections.map((selection, idx) => (
               <LinkNode key={`${node.get('id')}-${idx}`} selection={selection}>
                 <BoldNode selection={selection}>
