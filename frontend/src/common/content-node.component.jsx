@@ -15,6 +15,12 @@ import {
   NODE_TYPE_ROOT,
   NODE_TYPE_LI,
   NODE_TYPE_PRE,
+  SELECTION_ACTION_STRIKETHROUGH,
+  SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_CODE,
+  SELECTION_ACTION_BOLD,
+  SELECTION_ACTION_LINK,
 } from './constants';
 import { mediumGrey } from './css';
 import {
@@ -39,13 +45,10 @@ import {
   Img,
   FigureCaption,
   ImageSection,
+  StrikeText,
+  Code,
+  BoldText,
 } from './shared-styled-components';
-import LinkNode from './content-nodes/link';
-import BoldNode from './content-nodes/bold';
-import CodeNode from './content-nodes/code';
-import ItalicNode from './content-nodes/italic';
-import SiteInfoNode from './content-nodes/siteinfo';
-import StrikethroughNode from './content-nodes/strikethrough';
 import {
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
@@ -87,19 +90,8 @@ export default class ContentNode extends React.PureComponent {
     return nodesByParentId
       .get(node.get('id'), List())
       .map(child => (
-        <ContentNode key={child.get('id')} post={post} node={child} nodesByParentId={nodesByParentId} isEditing={isEditing} />))
-  }
-  
-  getKey() {
-    const {
-      node,
-      nodesByParentId,
-    } = this.props;
-    console.debug('getKey', nodesByParentId.get(node.get('id')))
-    return nodesByParentId
-      .get(node.get('id'), List())
-      // create a key from all child ids concatenated together - this is to fix a stale render issue for TEXT (invisible to the DOM) children
-      .reduce((acc, child) => `${child.get('id')}`, '')
+        <ContentNode key={child.get('id')} post={post} node={child} nodesByParentId={nodesByParentId}
+                     isEditing={isEditing} />))
   }
   
   render() {
@@ -227,7 +219,7 @@ export default class ContentNode extends React.PureComponent {
       case NODE_TYPE_OL: {
         const StyledComponent = this.getSectionTagFromType();
         return (
-          <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')}>
+          <StyledComponent data-type={node.get('type')} name={node.get('id')}>
             {this.getChildNodes()}
           </StyledComponent>
         )
@@ -260,24 +252,35 @@ export default class ContentNode extends React.PureComponent {
           const endOffset = selection.get('end');
           return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
         };
-        
+        const getSelectionKey = (s) => {
+          return `${s.get('start')}-${s.get('end')}`;
+        }
+        let children = [];
+        selections.forEach((selection) => {
+          let selectionJsx = getContentForSelection(selection);
+          if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
+            selectionJsx = (<StrikeText>{selectionJsx}</StrikeText>)
+          }
+          if (selection.get(SELECTION_ACTION_SITEINFO)) {
+            selectionJsx = (<SiteInfo>{selectionJsx}</SiteInfo>)
+          }
+          if (selection.get(SELECTION_ACTION_ITALIC)) {
+            selectionJsx = (<ItalicText>{selectionJsx}</ItalicText>)
+          }
+          if (selection.get(SELECTION_ACTION_CODE)) {
+            selectionJsx = (<Code>{selectionJsx}</Code>)
+          }
+          if (selection.get(SELECTION_ACTION_BOLD)) {
+            selectionJsx = (<BoldText>{selectionJsx}</BoldText>)
+          }
+          if (selection.get(SELECTION_ACTION_LINK)) {
+            selectionJsx = (<A href={selection.get('linkUrl')}>{selectionJsx}</A>)
+          }
+          children.push(selectionJsx);
+        });
         return (
-          <StyledComponent key={this.getKey()} data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
-            {selections.map((selection, idx) => (
-              <LinkNode key={`${node.get('id')}-${idx}`} selection={selection}>
-                <BoldNode selection={selection}>
-                  <CodeNode selection={selection}>
-                    <ItalicNode selection={selection}>
-                      <SiteInfoNode selection={selection}>
-                        <StrikethroughNode selection={selection}>
-                          {getContentForSelection(selection)}
-                        </StrikethroughNode>
-                      </SiteInfoNode>
-                    </ItalicNode>
-                  </CodeNode>
-                </BoldNode>
-              </LinkNode>
-            ))}
+          <StyledComponent data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
+            {children}
           </StyledComponent>
         )
       }

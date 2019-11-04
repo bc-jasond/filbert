@@ -58,6 +58,7 @@ module.exports = (env, argv) => {
         app.use(express.static('assets'));
       },
       historyApiFallback: {
+        disableDotRule: true,
         verbose: true,
         rewrites: [
           {
