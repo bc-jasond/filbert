@@ -70,7 +70,7 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
-  SELECTION_LINK_URL,
+  SELECTION_LINK_URL, POST_ACTION_REDIRECT_TIMEOUT,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -193,7 +193,7 @@ export default class EditPost extends React.Component {
       this.updateManager.clearUpdates();
       console.info('Save Batch result', result);
     } catch (err) {
-      // console.error('Content Batch Update Error: ', err);
+      console.error('Content Batch Update Error: ', err);
     }
   }
   
@@ -271,7 +271,7 @@ export default class EditPost extends React.Component {
         shouldShowPostSuccess: true,
         shouldShowPostError: null,
       }, () => {
-        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), 1000);
+        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), POST_ACTION_REDIRECT_TIMEOUT);
       })
     } catch (err) {
       this.setState({ shouldShowPostError: true })
@@ -288,7 +288,7 @@ export default class EditPost extends React.Component {
         shouldShowPostSuccess: true,
         shouldShowPostError: null,
       }, () => {
-        setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('canonical') }), 1000);
+        setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('canonical') }), POST_ACTION_REDIRECT_TIMEOUT);
       });
     } catch (err) {
       this.setState({ shouldShowPostError: true })
@@ -471,15 +471,18 @@ export default class EditPost extends React.Component {
     this.commitUpdates(focusNodeId, 0);
   }
   
+  /**
+   * NOTE (TODO?): we don't call setState({nodesByParentId... here. (except when typing a new Title on /edit/new)
+   * The sync goes DOM -> JSModel only until the user formats a selection, hits enter or edits a section.
+   * Calling setState({nodesByParentId... here causes issues with the caret position
+   */
   handleSyncFromDom(evt) {
     if (
       // cross event type cancellation keyDown -> keyUp, etc
       this.cancelledEvent
       // don't send updates for control keys
       // TODO: this should probably use a diff strategy instead of key detection
-      || isControlKey(evt.keyCode)
-      // doesn't work with a 'new' post
-      || this.props.match.params.id === NEW_POST_URL_ID) {
+      || isControlKey(evt.keyCode)) {
       return;
     }
     const selectedNode = getCaretNode();
@@ -490,6 +493,7 @@ export default class EditPost extends React.Component {
     }
     let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     const selectedNodeContentDom = cleanText(selectedNode.textContent);
+    // codel lines are stored differently
     if (selectedNode.tagName === 'PRE') {
       handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContentDom);
       console.debug('DOM SYNC PRE ', selectedNode);
@@ -505,13 +509,22 @@ export default class EditPost extends React.Component {
     if (diffLength === 0) {
       return;
     }
+    console.log('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
     selectedNodeMap = selectedNodeMap.set('content', selectedNodeContentDom);
     selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, diffStart, diffLength);
     this.documentModel.update(selectedNodeMap);
     
-    console.log('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
-    this.saveContentBatchDebounce()
+    if (this.props.match.params.id !== NEW_POST_URL_ID) {
+      this.saveContentBatchDebounce();
+      return;
+    }
+    
+    // setState here to show/hide the title placeholder - only for an unsaved post!
+    this.setState({
+      nodesByParentId: this.documentModel.nodesByParentId,
+    });
   }
+  
   
   /**
    * Move caret for special user input cases

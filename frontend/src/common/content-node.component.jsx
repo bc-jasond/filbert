@@ -2,6 +2,7 @@ import React from 'react';
 import { List, Map } from 'immutable';
 import styled from 'styled-components';
 import {
+  NEW_POST_URL_ID,
   NODE_TYPE_OL,
   NODE_TYPE_P,
   NODE_TYPE_SECTION_CODE,
@@ -50,17 +51,14 @@ import {
   BoldText,
 } from './shared-styled-components';
 import {
+  cleanText,
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
 } from './utils';
 
 const StyledDiv = styled.div``;
-const TitlePlaceholder = styled.div`
-  position: absolute;
-  color: ${mediumGrey};
-`;
 
-export default class ContentNode extends React.PureComponent {
+export default class ContentNode extends React.Component {
   constructor(props) {
     super(props);
   }
@@ -94,7 +92,26 @@ export default class ContentNode extends React.PureComponent {
                      isEditing={isEditing} />))
   }
   
+  shouldComponentUpdate(nextProps) {
+    const {
+      node,
+      nodesByParentId,
+    } = this.props;
+    
+    const { node: newNode } = nextProps;
+    const parentId = newNode.get('parent_id') || 'null';
+    const oldNode = nodesByParentId
+      .get(parentId)
+      .get(newNode.get('position'));
+    // component should update (re-render) if shallow equality changes. (NOTE: not value equality like Map.equals(OtherMap))
+    // this leverages ImmutableJS creating new copies of nodes that have changed
+    // HOWEVER, it requires some shenanigans in edit.commitUpdates() to walk the flattened nodes list
+    // and update every parent of the updated node up to the root component - exactly what ImmutableJS does under the hood
+    return oldNode !== newNode;
+  }
+  
   render() {
+    console.log("ContentNode RENDER", this);
     const {
       post,
       node,
@@ -108,23 +125,23 @@ export default class ContentNode extends React.PureComponent {
       /**
        * NON-RECURSIVE 'custom' SECTIONS
        */
-      case NODE_TYPE_SECTION_H1:
+      case NODE_TYPE_SECTION_H1: {
         return (<H1
           data-type={NODE_TYPE_SECTION_H1}
           name={node.get('id')}
+          shouldShowPlaceholder={post.get('id', 'new') === NEW_POST_URL_ID && node.get('position') === 0 && cleanText(node.get('content', '')).length === 0}
         >
-          {console.log(node.get('content', '').length)}
-          {!post.get('id') && node.get('content', '').length === 0 && (
-            <TitlePlaceholder contentEditable={false}>Write something and hit enter...</TitlePlaceholder>
-          )}
           {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
         </H1>);
-      case NODE_TYPE_SECTION_H2:
+      }
+      case NODE_TYPE_SECTION_H2: {
         return (<H2 data-type={NODE_TYPE_SECTION_H2}
                     name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H2>);
-      case NODE_TYPE_SECTION_SPACER:
+      }
+      case NODE_TYPE_SECTION_SPACER: {
         return (<SpacerSection data-type={NODE_TYPE_SECTION_SPACER} name={node.get('id')} contentEditable={false} />);
-      case NODE_TYPE_SECTION_CODE:
+      }
+      case NODE_TYPE_SECTION_CODE: {
         const lines = node
           .getIn(['meta', 'lines'], List([cleanTextOrZeroLengthPlaceholder('')]));
         return (
@@ -134,6 +151,7 @@ export default class ContentNode extends React.PureComponent {
                                             name={`${node.get('id')}-${idx}`}>{cleanTextOrZeroLengthPlaceholder(line)}</Pre>))}
           </CodeSection>
         );
+      }
       case NODE_TYPE_SECTION_IMAGE: {
         const meta = node.get('meta', Map());
         const urlField = meta.get('url') || '';

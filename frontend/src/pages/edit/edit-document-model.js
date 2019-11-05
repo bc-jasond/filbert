@@ -82,7 +82,7 @@ export default class EditDocumentModel {
   
   getParent(nodeId) {
     const node = this.getNode(nodeId);
-    return node.get('parent_id') ? this.getNode(node.get('parent_id')) : node;
+    return this.getNode(node.get('parent_id'));
   }
   
   getChildren(nodeId) {
