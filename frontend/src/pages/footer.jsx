@@ -12,7 +12,7 @@ export default () => (
   <Footer>
     🚚 1/4/2019
     <SocialLinksContainer>
-      <A href="https://github.com/bc-jasond/dubaniewicz-site"><GitHubStyled /></A>
+      <A href="https://github.com/bc-jasond/filbert"><GitHubStyled /></A>
       <A href="https://www.linkedin.com/in/jasondubaniewicz/"><LinkedInStyled /></A>
       <LogoLinkStyled to="/about"><InfoStyled /></LogoLinkStyled>
     </SocialLinksContainer>

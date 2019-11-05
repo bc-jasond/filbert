@@ -14,7 +14,7 @@ docker-compose up -d db
 export PERCONA_CONTAINER_NAME="${PWD##*/}_db_1"
 
 # DB backup
-docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --default-character-set=utf8mb4 --databases dubaniewicz -uroot -p"$MYSQL_ROOT_PASSWORD" > ~/Dropbox/mysql\ dumps/`date +'%Y-%m-%d_%H%M'`.sql
+docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" > ~/Dropbox/mysql\ dumps/`date +'%Y-%m-%d_%H%M'`.sql
 
 # DB restore
 docker exec -i $PERCONA_CONTAINER_NAME /usr/bin/mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < ~/Dropbox/mysql\ dumps/2019-07-07_1032.sql
