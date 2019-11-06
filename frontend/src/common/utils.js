@@ -42,11 +42,12 @@ export function cleanText(text) {
     //
 }
 
-export function normalizeSpaces(text) {
+export function normalizeHtmlEntities(text) {
+  // TODO: what other htmlentities need to be normalized here?
   // for pesky char code 160 ( &nbsp; )
   // contenteditable automatically converts between " " 32 and "&nbsp;" 160 for placeholder spaces at the end of tags or sequential spaces
   // we want to normalize this (to 32) for diffing
-  return text.replace(/\s+/g, " ");
+  return text.replace(String.fromCharCode(160), String.fromCharCode(32));
 }
 
 export function getDiffStartAndLength(oldStr, newStr) {
@@ -55,8 +56,8 @@ export function getDiffStartAndLength(oldStr, newStr) {
   const loopLength = Math.max(newStr.length, oldStr.length);
   
   for (let i = 0; i < loopLength; i++) {
-    let oldCurrent = normalizeSpaces(oldStr).charAt(i);
-    let newCurrent = normalizeSpaces(newStr).charAt(i);
+    let oldCurrent = normalizeHtmlEntities(oldStr).charAt(i);
+    let newCurrent = normalizeHtmlEntities(newStr).charAt(i);
     if (oldCurrent.length === 0) {
       // chars were added to the end
       return [i, diffLength];

@@ -588,7 +588,7 @@ export default class EditPost extends React.Component {
     //console.debug('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleCaret(evt);
     this.manageInsertMenu();
-    this.manageFormatSelectionMenu();
+    this.manageFormatSelectionMenu(evt);
     // close edit section menus by default, this.sectionEdit() callback will fire after this to override
     this.sectionEditClose();
   }
@@ -939,6 +939,7 @@ export default class EditPost extends React.Component {
       formatSelectionNode: updatedNode,
       formatSelectionModel: updatedSelectionModel
     }, () => {
+      // TODO: selection highlight will be lost after rendering - create new range and add to window.selection
       if (updatedSelectionModel.get(SELECTION_ACTION_LINK) && this.inputRef) {
         this.inputRef.focus();
       }
@@ -998,7 +999,7 @@ export default class EditPost extends React.Component {
     const root = this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID, List()).get(0, Map());
 
     return (
-      <React.Fragment>
+      <main onMouseUp={this.handleMouseUp}>
         <Header>
           <HeaderContentContainer>
             <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
@@ -1029,12 +1030,11 @@ export default class EditPost extends React.Component {
                 successMessage={shouldShowPostSuccess}
                 errorMessage={shouldShowPostError}
               />)}
-              <div
+              <div id="filbert-edit-container"
                 contentEditable={true}
                 suppressContentEditableWarning={true}
                 onKeyDown={this.handleKeyDown}
                 onKeyUp={this.handleKeyUp}
-                onMouseUp={this.handleMouseUp}
                 onPaste={this.handlePaste}
               >
                 <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
@@ -1074,7 +1074,7 @@ export default class EditPost extends React.Component {
           )}
         </Article>
         <Footer />
-      </React.Fragment>
+      </main>
     )
   }
 }
