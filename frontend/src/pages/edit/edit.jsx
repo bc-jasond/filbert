@@ -29,7 +29,8 @@ import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
   getDiffStartAndLength,
-  getCanonicalFromTitle, imageUrlIsId,
+  getCanonicalFromTitle,
+  imageUrlIsId,
 } from '../../common/utils';
 import {
   getRange,
@@ -70,7 +71,8 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
-  SELECTION_LINK_URL, POST_ACTION_REDIRECT_TIMEOUT,
+  SELECTION_LINK_URL,
+  POST_ACTION_REDIRECT_TIMEOUT,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -127,7 +129,6 @@ export default class EditPost extends React.Component {
     this.state = {
       post: Map(),
       nodesByParentId: Map(),
-      root: null,
       shouldShow404: false,
       shouldRedirectToHome: false,
       shouldRedirectToDrafts: false,
@@ -149,6 +150,7 @@ export default class EditPost extends React.Component {
   }
   
   async componentDidMount() {
+    console.log("EDIT - didMount")
     try {
       if (this.props.match.params.id === NEW_POST_URL_ID) {
         return this.newPost();
@@ -164,7 +166,8 @@ export default class EditPost extends React.Component {
       if (this.props.match.params.id === prevProps.match.params.id) {
         return;
       }
-      
+          console.log("EDIT - didUpdate")
+
       this.setState({
         shouldRedirectToEditWithId: false,
         shouldShowInsertMenu: false,
@@ -198,11 +201,13 @@ export default class EditPost extends React.Component {
   }
   
   saveContentBatchDebounce() {
+    console.log("Batch Debounce");
     clearTimeout(this.commitTimeoutId);
     this.commitTimeoutId = setTimeout(this.saveContentBatch, 750);
   }
   
   newPost() {
+    console.log("New PostNew PostNew PostNew PostNew PostNew Post");
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
     this.updateManager.init(postPlaceholder);
     this.documentModel.init(postPlaceholder, this.updateManager);
@@ -210,7 +215,6 @@ export default class EditPost extends React.Component {
     const focusNodeId = this.documentModel.insertSection(NODE_TYPE_SECTION_H1, 0);
     this.setState({
       post: Map(),
-      root: this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID).first(),
       nodesByParentId: this.documentModel.nodesByParentId,
     }, () => {
       setCaret(focusNodeId);
@@ -237,7 +241,6 @@ export default class EditPost extends React.Component {
       const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
       this.setState({
         post: fromJS(post),
-        root: this.documentModel.root,
         nodesByParentId: this.documentModel.nodesByParentId,
         shouldShow404: false
       }, () => {
@@ -248,7 +251,7 @@ export default class EditPost extends React.Component {
       })
     } catch (err) {
       // console.error(err);
-      this.setState({ root: null, nodesByParentId: Map(), shouldShow404: true })
+      this.setState({ nodesByParentId: Map(), shouldShow404: true })
     }
   }
   updatePost = (fieldName, value) => {
@@ -522,6 +525,10 @@ export default class EditPost extends React.Component {
     // setState here to show/hide the title placeholder - only for an unsaved post!
     this.setState({
       nodesByParentId: this.documentModel.nodesByParentId,
+    }, () => {
+      // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
+      //  The browser will then place the caret at the beginning of the textContent... 😞
+      setCaret(selectedNodeId, diffStart + diffLength);
     });
   }
   
@@ -959,7 +966,6 @@ export default class EditPost extends React.Component {
   render() {
     const {
       post,
-      root,
       nodesByParentId,
       shouldShow404,
       shouldRedirectToHome,
@@ -988,12 +994,14 @@ export default class EditPost extends React.Component {
     // huh, aren't we on /edit? - this is for coming from /edit/new...
     if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
     if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
-    
+
+    const root = this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID, List()).get(0, Map());
+
     return (
       <React.Fragment>
         <Header>
           <HeaderContentContainer>
-            <LogoLinkStyled to="/">✍ filbert</LogoLinkStyled>
+            <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
             <HeaderLinksContainer>
               <PublishPost onClick={this.togglePostMenu}>publish</PublishPost>
               <DeletePost onClick={this.deletePost}>delete</DeletePost>
@@ -1010,7 +1018,7 @@ export default class EditPost extends React.Component {
         </Header>
         <HeaderSpacer />
         <Article>
-          {root && (
+          {root.get('id') && (
             <React.Fragment>
               {shouldShowPublishPostMenu && (<PublishPostForm
                 post={post}

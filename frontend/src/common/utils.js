@@ -38,10 +38,15 @@ export function cleanText(text) {
   const re = new RegExp(ZERO_LENGTH_CHAR);
   return text
     .replace(re, '')
-    // for pesky char code 160 ( &nbsp; )
-    // Update: leave it in.
-    // contenteditable automatically converts between 32 and 160 for placeholder spaces at the end of tags
-    //.replace(/\s+/g, " ");
+
+    //
+}
+
+export function normalizeSpaces(text) {
+  // for pesky char code 160 ( &nbsp; )
+  // contenteditable automatically converts between " " 32 and "&nbsp;" 160 for placeholder spaces at the end of tags or sequential spaces
+  // we want to normalize this (to 32) for diffing
+  return text.replace(/\s+/g, " ");
 }
 
 export function getDiffStartAndLength(oldStr, newStr) {
@@ -50,18 +55,22 @@ export function getDiffStartAndLength(oldStr, newStr) {
   const loopLength = Math.max(newStr.length, oldStr.length);
   
   for (let i = 0; i < loopLength; i++) {
-    let oldCurrent = oldStr.charAt(i);
-    let newCurrent = newStr.charAt(i);
-    if (!oldCurrent) {
+    let oldCurrent = normalizeSpaces(oldStr).charAt(i);
+    let newCurrent = normalizeSpaces(newStr).charAt(i);
+    if (oldCurrent.length === 0) {
       // chars were added to the end
       return [i, diffLength];
     }
-    if (!newCurrent) {
+    if (newCurrent.length === 0) {
       // chars were deleted from the end
-      return [i, -diffLength];
+      // offset the loop counter to account for the change in direction (right to left for a 'delete')
+      return [i + diffLength, -diffLength];
     }
     if (oldCurrent !== newCurrent) {
-      return [i, doesAddCharacters ? diffLength : -diffLength];
+      if (doesAddCharacters) {
+        return [i, diffLength];
+      }
+      return [i + diffLength, -diffLength];
     }
   }
   // strings are the same!

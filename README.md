@@ -1,4 +1,4 @@
-# ✍ filbert
+# ✍️ filbert
 ## a simple writing platform
 ### monorepo for https://filbert.xyz and (for now) my personal site https://dubaniewi.cz
 #### Tech Stack:

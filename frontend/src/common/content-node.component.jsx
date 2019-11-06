@@ -55,6 +55,7 @@ import {
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
 } from './utils';
+import {getCaretNode} from "./dom";
 
 const StyledDiv = styled.div``;
 
@@ -91,7 +92,7 @@ export default class ContentNode extends React.Component {
         <ContentNode key={child.get('id')} post={post} node={child} nodesByParentId={nodesByParentId}
                      isEditing={isEditing} />))
   }
-  
+
   shouldComponentUpdate(nextProps) {
     const {
       node,
@@ -111,7 +112,7 @@ export default class ContentNode extends React.Component {
   }
   
   render() {
-    console.log("ContentNode RENDER", this);
+    console.debug("ContentNode RENDER", this);
     const {
       post,
       node,
