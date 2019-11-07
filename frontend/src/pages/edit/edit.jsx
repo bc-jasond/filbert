@@ -491,12 +491,12 @@ export default class EditPost extends React.Component {
     }
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
+    const selectedNodeContentDom = cleanText(selectedNode.textContent);
+
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.error('DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
-    let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-    const selectedNodeContentDom = cleanText(selectedNode.textContent);
     // codel lines are stored differently
     if (selectedNode.tagName === 'PRE') {
       handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContentDom);
@@ -504,6 +504,8 @@ export default class EditPost extends React.Component {
       this.saveContentBatchDebounce();
       return;
     }
+    
+    let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
     const selectedNodeContentMap = selectedNodeMap.get('content') || '';
     // TODO: handle diffStart != diffEnd (range is not collapsed)
