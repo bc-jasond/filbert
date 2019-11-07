@@ -23,7 +23,6 @@ import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_LINK,
 } from './constants';
-import { mediumGrey } from './css';
 import {
   H1,
   H2,
@@ -55,7 +54,7 @@ import {
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
 } from './utils';
-import {getCaretNode} from "./dom";
+import { getSelectionKey } from '../pages/edit/edit-selection-helpers';
 
 const StyledDiv = styled.div``;
 
@@ -105,9 +104,9 @@ export default class ContentNode extends React.Component {
       .get(parentId)
       .get(newNode.get('position'));
     // component should update (re-render) if shallow equality changes. (NOTE: not value equality like Map.equals(OtherMap))
-    // this leverages ImmutableJS creating new copies of nodes that have changed
-    // HOWEVER, it requires some shenanigans in edit.commitUpdates() to walk the flattened nodes list
-    // and update every parent of the updated node up to the root component - exactly what ImmutableJS does under the hood
+    // this leverages ImmutableJS's new copies of nodes that have changed
+    // HOWEVER, it requires some shenanigans in documentModel to walk the flattened nodes list (key:parentId->[children])
+    // and update (or "touch") every ancestor of the updated node up to the root component replicating what ImmutableJS does under the hood with a hash trie structure
     return oldNode !== newNode;
   }
   
@@ -271,29 +270,27 @@ export default class ContentNode extends React.Component {
           const endOffset = selection.get('end');
           return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
         };
-        const getSelectionKey = (s) => {
-          return `${s.get('start')}-${s.get('end')}`;
-        }
         let children = [];
         selections.forEach((selection) => {
+          const key = getSelectionKey(selection);
           let selectionJsx = getContentForSelection(selection);
           if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
-            selectionJsx = (<StrikeText>{selectionJsx}</StrikeText>)
+            selectionJsx = (<StrikeText key={key}>{selectionJsx}</StrikeText>)
           }
           if (selection.get(SELECTION_ACTION_SITEINFO)) {
-            selectionJsx = (<SiteInfo>{selectionJsx}</SiteInfo>)
+            selectionJsx = (<SiteInfo key={key}>{selectionJsx}</SiteInfo>)
           }
           if (selection.get(SELECTION_ACTION_ITALIC)) {
-            selectionJsx = (<ItalicText>{selectionJsx}</ItalicText>)
+            selectionJsx = (<ItalicText key={key}>{selectionJsx}</ItalicText>)
           }
           if (selection.get(SELECTION_ACTION_CODE)) {
-            selectionJsx = (<Code>{selectionJsx}</Code>)
+            selectionJsx = (<Code key={key}>{selectionJsx}</Code>)
           }
           if (selection.get(SELECTION_ACTION_BOLD)) {
-            selectionJsx = (<BoldText>{selectionJsx}</BoldText>)
+            selectionJsx = (<BoldText key={key}>{selectionJsx}</BoldText>)
           }
           if (selection.get(SELECTION_ACTION_LINK)) {
-            selectionJsx = (<A href={selection.get('linkUrl')}>{selectionJsx}</A>)
+            selectionJsx = (<A key={key} href={selection.get('linkUrl')}>{selectionJsx}</A>)
           }
           children.push(selectionJsx);
         });

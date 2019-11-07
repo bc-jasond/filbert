@@ -88,12 +88,14 @@ export default class EditDocumentModel {
   
   getNode(nodeId) {
     this.infiniteLoopCount = 0;
+    // trying to find the parent of the root node makes for noisy logs
+    if ([null, "null"].includes(nodeId)) return Map();
     if (this.rootId === nodeId) return this.root;
     
     const queue = [this.rootId];
     while (queue.length) {
       if (this.infiniteLoopCount++ > 1000) {
-        throw new Error('getNode is Out of Control!!!');
+        throw new Error('getNode is Fuera de Control!!!');
       }
       const currentList = this.nodesByParentId.get(queue.shift(), List());
       const node = currentList.find(node => node.get('id') === nodeId);

@@ -72,7 +72,7 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT,
+  POST_ACTION_REDIRECT_TIMEOUT, ZERO_LENGTH_CHAR,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -110,6 +110,7 @@ import {
 import {
   Selection,
   adjustSelectionOffsetsAndCleanup,
+  mergeAdjacentSelectionsWithSameFormats,
   getSelection,
   upsertSelection,
 } from './edit-selection-helpers';
@@ -379,7 +380,7 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     this.cancelledEvent = evt;
-    
+
     /**
      * TODO: make these into sets of atomic commands that are added to a queue,
      *  then make a 'flush' command to process this queue.
@@ -428,7 +429,7 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     this.cancelledEvent = evt;
-    
+
     const range = getRange();
     if (!range) {
       console.warn('ENTER no range');
@@ -505,15 +506,23 @@ export default class EditPost extends React.Component {
     }
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
     const selectedNodeContentMap = selectedNodeMap.get('content') || '';
-    const [diffStart, diffLength] = getDiffStartAndLength(selectedNodeContentMap, selectedNodeContentDom);
+    // TODO: handle diffStart != diffEnd (range is not collapsed)
+    const [diffStartDomRange, _] = this.keyDownCaretPosition;
+    const [diffStartFromTextDiff, diffLength] = getDiffStartAndLength(selectedNodeContentMap, selectedNodeContentDom);
+    // HACK: ugh, zero length char placeholder (so we can set the caret) causes this to be off by one when entering the first character in the title of a new post...
+    let diffStart = diffStartDomRange;
+    if (selectedNodeContentMap.length === 0) {
+      diffStart = diffStartFromTextDiff;
+    }
     // TODO: handle cut/paste?
     // TODO: handle select & type or select & delete
     // TODO: 'Del' does it work at the edge of 2 selections?
     if (diffLength === 0) {
       return;
     }
-    console.log('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
+    console.debug('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
     selectedNodeMap = selectedNodeMap.set('content', selectedNodeContentDom);
+    // use the offset from 'onKeyDown' handler - before DOM was updated to know the caret start position
     selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, diffStart, diffLength);
     this.documentModel.update(selectedNodeMap);
     
@@ -573,6 +582,7 @@ export default class EditPost extends React.Component {
     //console.debug('KeyDown code: ', evt.keyCode, 'Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleBackspace(evt);
     this.handleEnter(evt);
+    this.keyDownCaretPosition = getOffsetInParentContent();
   }
   
   handleKeyUp = (evt) => {
@@ -1034,7 +1044,7 @@ export default class EditPost extends React.Component {
                 contentEditable={true}
                 suppressContentEditableWarning={true}
                 onKeyDown={this.handleKeyDown}
-                onKeyUp={this.handleKeyUp}
+                onInput={this.handleKeyUp}
                 onPaste={this.handlePaste}
               >
                 <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
