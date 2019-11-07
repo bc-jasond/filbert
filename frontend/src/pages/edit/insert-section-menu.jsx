@@ -17,7 +17,7 @@ const InsertSectionMenu = styled.div`
   position: absolute;
   width: ${p => p.isOpen ? '755' : '50'}px;
   display: block;
-  top: ${p => p.topOffset - 13}px;
+  top: ${p => p.topOffset + 52}px;
   left: ${p => p.leftOffset - 68}px;
 `;
 const lineMixin = css`
@@ -61,6 +61,7 @@ const HiddenFileInput = styled.input`
 `;
 const InsertSectionMenuItemsContainer = styled.div`
   position: absolute;
+  z-index: 13; // same as lil black menu
   top: 16px;
   min-height: 24px;
   left: 48px;

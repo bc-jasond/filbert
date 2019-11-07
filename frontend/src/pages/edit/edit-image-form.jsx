@@ -29,7 +29,7 @@ export const EditImageMenu = styled(LilBlackMenu)`
   display: flex;
   align-items: center;
   justify-items: center;
-  top: ${p => p.top - 50}px;
+  top: ${p => p.top + 10}px;
   width: 400px;
   margin: 0 auto;
   left:50%;

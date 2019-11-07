@@ -11,7 +11,7 @@ RUN yarn; \
  yarn build-prod;
 
 # serve up my lil homepage
-COPY src/jason.html /work/dist/
+COPY ["src/jason.html","assets/site.webmanifest","assets/favicons","/work/dist/"]
 
 # multi-staged builds save space!
 FROM nginx:alpine

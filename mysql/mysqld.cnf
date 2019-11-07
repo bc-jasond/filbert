@@ -13,4 +13,4 @@ skip-host-cache
 skip-name-resolve
 
 # START overrides
-max_allowed_packet=32M # this enables sending images to be saved as mediumblob (16MB size limit)
+max_allowed_packet=1000M # this enables sending images to be saved as mediumblob (16MB size limit) but also mysqldump files!

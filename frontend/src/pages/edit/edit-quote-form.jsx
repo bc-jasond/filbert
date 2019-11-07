@@ -20,7 +20,7 @@ const EditImageMenu = styled(LilBlackMenu)`
   display: flex;
   flex-direction: column;
   justify-items: center;
-  top: ${p => p.top - 155}px;
+  top: ${p => p.top - 90}px;
   width: 400px;
   margin: 0 auto;
   padding: 8px;
