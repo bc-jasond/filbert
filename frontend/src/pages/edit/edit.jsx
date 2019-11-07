@@ -29,7 +29,8 @@ import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
   getDiffStartAndLength,
-  getCanonicalFromTitle, imageUrlIsId,
+  getCanonicalFromTitle,
+  imageUrlIsId,
 } from '../../common/utils';
 import {
   getRange,
@@ -71,6 +72,7 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
+  POST_ACTION_REDIRECT_TIMEOUT, ZERO_LENGTH_CHAR,
 } from '../../common/constants';
 
 import ContentNode from '../../common/content-node.component';
@@ -108,6 +110,7 @@ import {
 import {
   Selection,
   adjustSelectionOffsetsAndCleanup,
+  mergeAdjacentSelectionsWithSameFormats,
   getSelection,
   upsertSelection,
 } from './edit-selection-helpers';
@@ -127,7 +130,6 @@ export default class EditPost extends React.Component {
     this.state = {
       post: Map(),
       nodesByParentId: Map(),
-      root: null,
       shouldShow404: false,
       shouldRedirectToHome: false,
       shouldRedirectToDrafts: false,
@@ -149,6 +151,7 @@ export default class EditPost extends React.Component {
   }
   
   async componentDidMount() {
+    console.log("EDIT - didMount")
     try {
       if (this.props.match.params.id === NEW_POST_URL_ID) {
         return this.newPost();
@@ -164,7 +167,8 @@ export default class EditPost extends React.Component {
       if (this.props.match.params.id === prevProps.match.params.id) {
         return;
       }
-      
+          console.log("EDIT - didUpdate")
+
       this.setState({
         shouldRedirectToEditWithId: false,
         shouldShowInsertMenu: false,
@@ -193,16 +197,18 @@ export default class EditPost extends React.Component {
       this.updateManager.clearUpdates();
       console.info('Save Batch result', result);
     } catch (err) {
-      // console.error('Content Batch Update Error: ', err);
+      console.error('Content Batch Update Error: ', err);
     }
   }
   
   saveContentBatchDebounce() {
+    console.log("Batch Debounce");
     clearTimeout(this.commitTimeoutId);
     this.commitTimeoutId = setTimeout(this.saveContentBatch, 750);
   }
   
   newPost() {
+    console.log("New PostNew PostNew PostNew PostNew PostNew Post");
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
     this.updateManager.init(postPlaceholder);
     this.documentModel.init(postPlaceholder, this.updateManager);
@@ -210,7 +216,6 @@ export default class EditPost extends React.Component {
     const focusNodeId = this.documentModel.insertSection(NODE_TYPE_SECTION_H1, 0);
     this.setState({
       post: Map(),
-      root: this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID).first(),
       nodesByParentId: this.documentModel.nodesByParentId,
     }, () => {
       setCaret(focusNodeId);
@@ -237,7 +242,6 @@ export default class EditPost extends React.Component {
       const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
       this.setState({
         post: fromJS(post),
-        root: this.documentModel.root,
         nodesByParentId: this.documentModel.nodesByParentId,
         shouldShow404: false
       }, () => {
@@ -248,7 +252,7 @@ export default class EditPost extends React.Component {
       })
     } catch (err) {
       // console.error(err);
-      this.setState({ root: null, nodesByParentId: Map(), shouldShow404: true })
+      this.setState({ nodesByParentId: Map(), shouldShow404: true })
     }
   }
   updatePost = (fieldName, value) => {
@@ -271,7 +275,7 @@ export default class EditPost extends React.Component {
         shouldShowPostSuccess: true,
         shouldShowPostError: null,
       }, () => {
-        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), 1000);
+        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), POST_ACTION_REDIRECT_TIMEOUT);
       })
     } catch (err) {
       this.setState({ shouldShowPostError: true })
@@ -288,7 +292,7 @@ export default class EditPost extends React.Component {
         shouldShowPostSuccess: true,
         shouldShowPostError: null,
       }, () => {
-        setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('canonical') }), 1000);
+        setTimeout(() => this.setState({ shouldRedirectToPublishedPostId: post.get('canonical') }), POST_ACTION_REDIRECT_TIMEOUT);
       });
     } catch (err) {
       this.setState({ shouldShowPostError: true })
@@ -376,7 +380,7 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     this.cancelledEvent = evt;
-    
+
     /**
      * TODO: make these into sets of atomic commands that are added to a queue,
      *  then make a 'flush' command to process this queue.
@@ -425,7 +429,7 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     this.cancelledEvent = evt;
-    
+
     const range = getRange();
     if (!range) {
       console.warn('ENTER no range');
@@ -471,15 +475,18 @@ export default class EditPost extends React.Component {
     this.commitUpdates(focusNodeId, 0);
   }
   
+  /**
+   * NOTE (TODO?): we don't call setState({nodesByParentId... here. (except when typing a new Title on /edit/new)
+   * The sync goes DOM -> JSModel only until the user formats a selection, hits enter or edits a section.
+   * Calling setState({nodesByParentId... here causes issues with the caret position
+   */
   handleSyncFromDom(evt) {
     if (
       // cross event type cancellation keyDown -> keyUp, etc
       this.cancelledEvent
       // don't send updates for control keys
       // TODO: this should probably use a diff strategy instead of key detection
-      || isControlKey(evt.keyCode)
-      // doesn't work with a 'new' post
-      || this.props.match.params.id === NEW_POST_URL_ID) {
+      || isControlKey(evt.keyCode)) {
       return;
     }
     const selectedNode = getCaretNode();
@@ -490,6 +497,7 @@ export default class EditPost extends React.Component {
     }
     let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     const selectedNodeContentDom = cleanText(selectedNode.textContent);
+    // codel lines are stored differently
     if (selectedNode.tagName === 'PRE') {
       handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContentDom);
       console.debug('DOM SYNC PRE ', selectedNode);
@@ -498,20 +506,41 @@ export default class EditPost extends React.Component {
     }
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
     const selectedNodeContentMap = selectedNodeMap.get('content') || '';
-    const [diffStart, diffLength] = getDiffStartAndLength(selectedNodeContentMap, selectedNodeContentDom);
+    // TODO: handle diffStart != diffEnd (range is not collapsed)
+    const [diffStartDomRange, _] = this.keyDownCaretPosition;
+    const [diffStartFromTextDiff, diffLength] = getDiffStartAndLength(selectedNodeContentMap, selectedNodeContentDom);
+    // HACK: ugh, zero length char placeholder (so we can set the caret) causes this to be off by one when entering the first character in the title of a new post...
+    let diffStart = diffStartDomRange;
+    if (selectedNodeContentMap.length === 0) {
+      diffStart = diffStartFromTextDiff;
+    }
     // TODO: handle cut/paste?
     // TODO: handle select & type or select & delete
     // TODO: 'Del' does it work at the edge of 2 selections?
     if (diffLength === 0) {
       return;
     }
+    console.debug('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
     selectedNodeMap = selectedNodeMap.set('content', selectedNodeContentDom);
+    // use the offset from 'onKeyDown' handler - before DOM was updated to know the caret start position
     selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, diffStart, diffLength);
     this.documentModel.update(selectedNodeMap);
     
-    console.log('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
-    this.saveContentBatchDebounce()
+    if (this.props.match.params.id !== NEW_POST_URL_ID) {
+      this.saveContentBatchDebounce();
+      return;
+    }
+    
+    // setState here to show/hide the title placeholder - only for an unsaved post!
+    this.setState({
+      nodesByParentId: this.documentModel.nodesByParentId,
+    }, () => {
+      // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
+      //  The browser will then place the caret at the beginning of the textContent... 😞
+      setCaret(selectedNodeId, diffStart + diffLength);
+    });
   }
+  
   
   /**
    * Move caret for special user input cases
@@ -553,6 +582,7 @@ export default class EditPost extends React.Component {
     //console.debug('KeyDown code: ', evt.keyCode, 'Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleBackspace(evt);
     this.handleEnter(evt);
+    this.keyDownCaretPosition = getOffsetInParentContent();
   }
   
   handleKeyUp = (evt) => {
@@ -568,7 +598,7 @@ export default class EditPost extends React.Component {
     //console.debug('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleCaret(evt);
     this.manageInsertMenu();
-    this.manageFormatSelectionMenu();
+    this.manageFormatSelectionMenu(evt);
     // close edit section menus by default, this.sectionEdit() callback will fire after this to override
     this.sectionEditClose();
   }
@@ -919,6 +949,7 @@ export default class EditPost extends React.Component {
       formatSelectionNode: updatedNode,
       formatSelectionModel: updatedSelectionModel
     }, () => {
+      // TODO: selection highlight will be lost after rendering - create new range and add to window.selection
       if (updatedSelectionModel.get(SELECTION_ACTION_LINK) && this.inputRef) {
         this.inputRef.focus();
       }
@@ -946,7 +977,6 @@ export default class EditPost extends React.Component {
   render() {
     const {
       post,
-      root,
       nodesByParentId,
       shouldShow404,
       shouldRedirectToHome,
@@ -975,12 +1005,14 @@ export default class EditPost extends React.Component {
     // huh, aren't we on /edit? - this is for coming from /edit/new...
     if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
     if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
-    
+
+    const root = this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID, List()).get(0, Map());
+
     return (
-      <React.Fragment>
+      <main onMouseUp={this.handleMouseUp}>
         <Header>
           <HeaderContentContainer>
-            <LogoLinkStyled to="/">✍ filbert</LogoLinkStyled>
+            <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
             <HeaderLinksContainer>
               <PublishPost onClick={this.togglePostMenu}>publish</PublishPost>
               <DeletePost onClick={this.deletePost}>delete</DeletePost>
@@ -997,7 +1029,7 @@ export default class EditPost extends React.Component {
         </Header>
         <HeaderSpacer />
         <Article>
-          {root && (
+          {root.get('id') && (
             <React.Fragment>
               {shouldShowPublishPostMenu && (<PublishPostForm
                 post={post}
@@ -1008,12 +1040,11 @@ export default class EditPost extends React.Component {
                 successMessage={shouldShowPostSuccess}
                 errorMessage={shouldShowPostError}
               />)}
-              <div
+              <div id="filbert-edit-container"
                 contentEditable={true}
                 suppressContentEditableWarning={true}
                 onKeyDown={this.handleKeyDown}
-                onKeyUp={this.handleKeyUp}
-                onMouseUp={this.handleMouseUp}
+                onInput={this.handleKeyUp}
                 onPaste={this.handlePaste}
               >
                 <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
@@ -1053,7 +1084,7 @@ export default class EditPost extends React.Component {
           )}
         </Article>
         <Footer />
-      </React.Fragment>
+      </main>
     )
   }
 }

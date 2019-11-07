@@ -10,7 +10,7 @@ export async function getKnex() {
         host: process.env.NODE_ENV === 'production' ? 'db' : 'localhost', // docker-compose.yml service name
         user: 'root',
         password: process.env.MYSQL_ROOT_PASSWORD,
-        database: 'dubaniewicz'
+        database: 'filbert'
       },
       asyncStackTraces: true,
       debug: true,

@@ -26,6 +26,12 @@ import {
   selectionReviver,
 } from './edit-selection-helpers';
 
+function reviver(key, value) {
+  return selectionReviver(key, value)
+    // ImmutableJS default behavior
+    || (isKeyed(value) ? value.toMap() : value.toList())
+}
+
 export default class EditDocumentModel {
   post;
   root;
@@ -33,18 +39,40 @@ export default class EditDocumentModel {
   infiniteLoopCount = 0;
   nodesByParentId = Map();
   
+  // this will trigger a shouldComponentUpdate -> true for re-rendering
+  // this function breaks references inside the nodesByParentId List for all ancestors of an updated node
+  setNodesByParentId(nodeId, updated) {
+    // replace the updated parent with new children
+    this.nodesByParentId = this.nodesByParentId.set(nodeId, updated);
+    if (nodeId === ROOT_NODE_PARENT_ID) {
+      return;
+    }
+    let currentId = nodeId;
+    // "touch" all ancestors to break references
+    while (currentId) {
+      const parentId = this.getParent(currentId).get('id') || ROOT_NODE_PARENT_ID;
+      const siblings = this.nodesByParentId.get(parentId);
+      const nodeIdx = siblings.findIndex(n => n.get('id') === currentId);
+      // TODO: find a better way to break the reference...
+      this.nodesByParentId = this.nodesByParentId.set(
+        parentId,
+        siblings.set(
+          nodeIdx,
+          Immutable.fromJS(this.getNode(currentId).toJS(), reviver),
+        )
+      );
+      currentId = this.getParent(currentId).get('id');
+    }
+  }
+  
   init(post, updateManager, jsonData = null) {
     this.post = Immutable.fromJS(post);
     // TODO: ideally this documentModel class doesn't have to know about the updateManager.
     // But, it's nice to make one call from the consumer (edit.jsx + helpers) that handles the documentModel
-    // and the updateManager behind the scenes, so that orchestration would have to move either out into edit.jsx or into another helper class
+    // and the updateManager behind the scenes.  That orchestration would have to move either out into edit.jsx or into another helper class
     this.updateManager = updateManager;
     if (jsonData) {
-      this.nodesByParentId = Immutable.fromJS(jsonData, (key, value) => {
-        return selectionReviver(key, value)
-          // ImmutableJS default behavior
-          || (isKeyed(value) ? value.toMap() : value.toList())
-      });
+      this.nodesByParentId = Immutable.fromJS(jsonData, reviver);
       this.root = this.getFirstChild(ROOT_NODE_PARENT_ID);
       this.rootId = this.root.get('id');
     } else {
@@ -60,12 +88,14 @@ export default class EditDocumentModel {
   
   getNode(nodeId) {
     this.infiniteLoopCount = 0;
+    // trying to find the parent of the root node makes for noisy logs
+    if ([null, "null"].includes(nodeId)) return Map();
     if (this.rootId === nodeId) return this.root;
     
     const queue = [this.rootId];
     while (queue.length) {
       if (this.infiniteLoopCount++ > 1000) {
-        throw new Error('getNode is Out of Control!!!');
+        throw new Error('getNode is Fuera de Control!!!');
       }
       const currentList = this.nodesByParentId.get(queue.shift(), List());
       const node = currentList.find(node => node.get('id') === nodeId);
@@ -82,7 +112,7 @@ export default class EditDocumentModel {
   
   getParent(nodeId) {
     const node = this.getNode(nodeId);
-    return node.get('parent_id') ? this.getNode(node.get('parent_id')) : node;
+    return this.getNode(node.get('parent_id'));
   }
   
   getChildren(nodeId) {
@@ -90,7 +120,7 @@ export default class EditDocumentModel {
   }
   
   setChildren(nodeId, children) {
-    this.nodesByParentId = this.nodesByParentId.set(nodeId, children);
+    this.setNodesByParentId(nodeId, children);
     return this;
   }
   
@@ -231,7 +261,7 @@ export default class EditDocumentModel {
     const nodeIdx = siblings.findIndex(s => s.get('id') === nodeId);
     
     // update existing section
-    this.nodesByParentId = this.nodesByParentId.set(sectionId, siblings.slice(0, nodeIdx));
+    this.setNodesByParentId(sectionId, siblings.slice(0, nodeIdx));
     // if all existing nodes moved to the new section, create a new P
     if (this.nodesByParentId.get(sectionId).size === 0) {
       this.insert(sectionId, NODE_TYPE_P, 0);
@@ -239,7 +269,7 @@ export default class EditDocumentModel {
     this.updateNodesForParent(sectionId);
     // new section
     const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
-    this.nodesByParentId = this.nodesByParentId.set(newSectionId, siblings.slice(nodeIdx));
+    this.setNodesByParentId(newSectionId, siblings.slice(nodeIdx));
     // if all existing nodes stayed in the existing section, create a new P
     if (this.nodesByParentId.get(newSectionId).size === 0) {
       this.insert(newSectionId, NODE_TYPE_P, 0);
@@ -313,9 +343,9 @@ export default class EditDocumentModel {
     // left or right could be empty because the selectedNode was already deleted
     const rightNodes = this.nodesByParentId.get(rightSectionId, List());
     const leftNodes = this.nodesByParentId.get(leftSectionId, List());
-    this.nodesByParentId = this.nodesByParentId.set(leftSectionId, leftNodes.concat(rightNodes));
+    this.setNodesByParentId(leftSectionId, leftNodes.concat(rightNodes));
     this.updateNodesForParent(leftSectionId);
-    this.nodesByParentId = this.nodesByParentId.set(rightSectionId, List());
+    this.setNodesByParentId(rightSectionId, List());
     this.delete(rightSectionId);
   }
   
@@ -340,7 +370,7 @@ export default class EditDocumentModel {
       meta: meta || Map(),
     });
     this.updateManager.stageNodeUpdate(newNode.get('id'));
-    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
+    this.setNodesByParentId(parentId, siblings
       .insert(newNode.get('position'), newNode)
     );
     // reindex children and persist changes
@@ -351,11 +381,11 @@ export default class EditDocumentModel {
   
   update(node) {
     const nodeId = node.get('id');
-    const parentId = this.getParent(nodeId).get('id');
+    const parentId = this.getParent(nodeId).get('id') || ROOT_NODE_PARENT_ID;
     const siblings = this.nodesByParentId.get(parentId);
     const nodeIdx = siblings.findIndex(n => n.get('id') === nodeId);
     this.updateManager.stageNodeUpdate(nodeId);
-    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings.set(nodeIdx, node))
+    this.setNodesByParentId(parentId, siblings.set(nodeIdx, node))
     return nodeId
   }
   
@@ -377,7 +407,7 @@ export default class EditDocumentModel {
     const parentId = this.getParent(nodeId).get('id');
     const siblings = this.nodesByParentId.get(parentId);
     // filter this node out of its parent list
-    this.nodesByParentId = this.nodesByParentId.set(parentId, siblings
+    this.setNodesByParentId(parentId, siblings
       .filter(node => node.get('id') !== nodeId)
     );
     // delete this node's children list
@@ -392,9 +422,9 @@ export default class EditDocumentModel {
   updateNodesForParent(parentId) {
     // TODO: this is getting called 7 times when inserting a CodeSection
     //  it's clobbering deleted nodes with updates, it's a hot mess.
-    console.info('UPDATE NodesFor PARENT ', parentId);
+    console.info('UPDATE Nodes For PARENT ', parentId);
     const siblings = this.nodesByParentId.get(parentId, List());
-    this.nodesByParentId = this.nodesByParentId.set(
+    this.setNodesByParentId(
       parentId,
       siblings
       // reindex positions for remaining siblings

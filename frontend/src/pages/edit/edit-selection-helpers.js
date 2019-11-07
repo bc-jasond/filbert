@@ -7,7 +7,7 @@ import {
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
-  SELECTION_LINK_URL,
+  SELECTION_LINK_URL, SELECTION_START, SELECTION_END,
 } from '../../common/constants';
 
 export const Selection = Record({
@@ -26,6 +26,10 @@ export function selectionReviver(key, value) {
   if (value.has('start') && value.has('end')) {
     return new Selection(value)
   }
+}
+
+function formatSelections(s) {
+  return s.reduce((acc, v) => `${acc} | start: ${v.get('start')}, end: ${v.get('end')}`, '');
 }
 
 /**
@@ -118,8 +122,9 @@ function mergeOverlappingSelections(nodeModel, newSelection) {
  * @param selections
  */
 function fillEnds(nodeModel) {
-  let selections = nodeModel.getIn(['meta', 'selections'], List());
+  const selections = nodeModel.getIn(['meta', 'selections'], List());
   const contentLength = nodeModel.get('content', '').length;
+  let newSelections = selections;
   let minStart = contentLength;
   let maxEnd = 0;
   selections.forEach(s => {
@@ -127,12 +132,16 @@ function fillEnds(nodeModel) {
     maxEnd = Math.max(maxEnd, s.get('end'));
   });
   if (minStart > 0) {
-    selections = selections.insert(0, Selection({ 'start': 0, 'end': minStart }));
+    newSelections = newSelections.insert(0, Selection({ 'start': 0, 'end': minStart }));
   }
   if (maxEnd < contentLength) {
-    selections = selections.push(Selection({ 'start': maxEnd, 'end': contentLength }))
+    newSelections = newSelections.push(Selection({ 'start': maxEnd, 'end': contentLength }))
   }
-  return nodeModel.setIn(['meta', 'selections'], selections);
+  if (!selections.equals(newSelections)) {
+    console.log('FILL ENDS      ', formatSelections(newSelections));
+    return nodeModel.setIn(['meta', 'selections'], newSelections);
+  }
+  return nodeModel;
 }
 
 /**
@@ -150,6 +159,9 @@ function fillEnds(nodeModel) {
 function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
   let newSelections = List();
   const selections = nodeModel.getIn(['meta', 'selections'], List());
+  if (selections.size === 0) {
+    return nodeModel;
+  }
   let current = selections.first();
   for (let i = 1; i < selections.size; i++) {
     const next = selections.get(i, Selection());
@@ -167,7 +179,11 @@ function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
   if (newSelections.size === 1 && !selectionsHaveDifferentFormats(newSelections.get(0), Selection())) {
     newSelections = List();
   }
-  return nodeModel.setIn(['meta', 'selections'], newSelections);
+  if (!selections.equals(newSelections)) {
+    console.log('MERGE ADJACENT ', formatSelections(newSelections));
+    return nodeModel.setIn(['meta', 'selections'], newSelections);
+  }
+  return nodeModel;
 }
 
 /**
@@ -182,7 +198,6 @@ function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
  *   - start = oldStart += newKeyStrokesCount
  *   - end (if > -1) = oldEnd += newKeyStrokesCount
  *
- * ALSO, this function doesn't allow out of bounds selection offsets (greater than the length of the content)
  */
 export function adjustSelectionOffsetsAndCleanup(nodeModel, start = 0, count = 0) {
   const selections = nodeModel.getIn(['meta', 'selections'], List());
@@ -203,16 +218,16 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, start = 0, count = 0
     // for deleting characters: don't push empty selections
     if (current.get('end') > current.get('start')) {
       newSelections = newSelections.push(current);
-    } else {
-      // HACK: Assuming the user hit backspace: if we're skipping an empty selection, we've also decremented the end of the previous selection by one.  We don't want to do both, add that guy back
-      const lastSelection = newSelections.last();
-      newSelections = newSelections.pop();
-      newSelections = newSelections.push(lastSelection.set('end', lastSelection.get('end') + 1))
     }
   }
   
-  console.log('ADJUST start: ', start, ' count: ', count, ' length: ', contentLength, newSelections.reduce((acc, v) => `${acc} | start: ${v.get('start')}, end: ${v.get('end')}`, ''));
-  return nodeModel.setIn(['meta', 'selections'], newSelections);
+  let newModel = nodeModel;
+  if (!selections.equals(newSelections)) {
+    console.log('ADJUST         ', formatSelections(newSelections), 'start: ', start, ' count: ', count, ' length: ', contentLength);
+    newModel = nodeModel.setIn(['meta', 'selections'], newSelections);
+  }
+  newModel = mergeAdjacentSelectionsWithSameFormats(newModel);
+  return fillEnds(newModel);
 }
 
 /**
@@ -300,7 +315,7 @@ export function concatSelections(leftModel, rightModel) {
   let right = rightModel.getIn(['meta', 'selections'], List());
   let newSelections = left.slice();
   const leftOffset = left.last(Selection()).get('end');
-  // if the formats for the last left and first right selections are the same, merge them
+  // TODO: use if the formats for the last left and first right selections are the same, merge them
   if (left.size > 0 && right.size > 0 && !selectionsHaveDifferentFormats(left.last(), right.first())) {
     newSelections = newSelections
       .pop()
@@ -323,4 +338,15 @@ export function concatSelections(leftModel, rightModel) {
   }
   leftModel = leftModel.setIn(['meta', 'selections'], newSelections);
   return adjustSelectionOffsetsAndCleanup(leftModel);
+}
+
+export function getSelectionKey(s) {
+  return `${s.get(SELECTION_START)}-${s.get(SELECTION_END)}-${[
+    SELECTION_ACTION_BOLD,
+    SELECTION_ACTION_ITALIC,
+    SELECTION_ACTION_CODE,
+    SELECTION_ACTION_SITEINFO,
+    SELECTION_ACTION_STRIKETHROUGH,
+    SELECTION_ACTION_LINK,
+  ].map(fmt => s.get(fmt) ? 1 : 0)}`;
 }

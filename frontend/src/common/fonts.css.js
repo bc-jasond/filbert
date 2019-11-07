@@ -6,11 +6,11 @@ import CharterItalic from '../../assets/fonts/charter-italic-webfont.woff';
 import Kievit from '../../assets/fonts/kievit-ot-book.woff';
 import FiraCode from '../../assets/fonts/fira-code-regular.woff';
 
-export const titleSerif = 'dubaniewicz-title-serif';
-export const contentSerif = 'dubaniewicz-content-serif';
-export const italicSerif = 'dubaniewicz-italic-serif';
-export const sansSerif = 'dubaniewicz-sans-serif';
-export const monospaced = 'dubaniewicz-monospace';
+export const titleSerif = 'filbert-title-serif';
+export const contentSerif = 'filbert-content-serif';
+export const italicSerif = 'filbert-italic-serif';
+export const sansSerif = 'filbert-sans-serif';
+export const monospaced = 'filbert-monospace';
 
 export default createGlobalStyle`
     @font-face {

@@ -55,7 +55,7 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
     const queue = [...containerNode.childNodes];
     while (queue.length) {
       if (infiniteLoopCount++ > 1000) {
-        throw new Error('setCaret is Out of Control!!!');
+        throw new Error('setCaret is Fuera de Control!!!');
       }
       // find first (queue), find last - (stack) yay!
       const current = shouldFindLastNode ? queue.pop() : queue.shift();
@@ -71,8 +71,7 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   if (textNode) {
     console.info('setCaret textNode ', textNode, ' offset ', offset);
     // set caret to end of text content
-    range.setEnd(textNode, offset === -1 ? textNode.textContent.length : offset);
-    range.collapse();
+    range.setStart(textNode, offset === -1 ? textNode.textContent.length : offset);
     sel.addRange(range);
   } else {
     console.warn(`setCaret - couldn't find a text node inside of `, nodeId);

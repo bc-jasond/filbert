@@ -81,13 +81,17 @@ export const SELECTION_ACTION_LINK = 'selection-link';
 export const SELECTION_ACTION_H1 = 'selection-h1';
 export const SELECTION_ACTION_H2 = 'selection-h2';
 export const SELECTION_LINK_URL = 'linkUrl';
+export const SELECTION_START = 'start';
+export const SELECTION_END = 'end';
+// post level edits
+export const POST_ACTION_REDIRECT_TIMEOUT = 1000;
 
 // ENV
 export const API_URL = process.env.API_URL;
 
 // AUTH
-export const AUTH_TOKEN_KEY = 'dubaniewicz-token';
-export const SESSION_KEY = 'dubaniewicz-session';
+export const AUTH_TOKEN_KEY = 'filbert-token';
+export const SESSION_KEY = 'filbert-session';
 
 // DOM
 export const DOM_TEXT_NODE_TYPE_ID = 3;

@@ -2,6 +2,7 @@ import React from 'react';
 import { List, Map } from 'immutable';
 import styled from 'styled-components';
 import {
+  NEW_POST_URL_ID,
   NODE_TYPE_OL,
   NODE_TYPE_P,
   NODE_TYPE_SECTION_CODE,
@@ -22,7 +23,6 @@ import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_LINK,
 } from './constants';
-import { mediumGrey } from './css';
 import {
   H1,
   H2,
@@ -50,17 +50,15 @@ import {
   BoldText,
 } from './shared-styled-components';
 import {
+  cleanText,
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
 } from './utils';
+import { getSelectionKey } from '../pages/edit/edit-selection-helpers';
 
 const StyledDiv = styled.div``;
-const TitlePlaceholder = styled.div`
-  position: absolute;
-  color: ${mediumGrey};
-`;
 
-export default class ContentNode extends React.PureComponent {
+export default class ContentNode extends React.Component {
   constructor(props) {
     super(props);
   }
@@ -93,8 +91,27 @@ export default class ContentNode extends React.PureComponent {
         <ContentNode key={child.get('id')} post={post} node={child} nodesByParentId={nodesByParentId}
                      isEditing={isEditing} />))
   }
+
+  shouldComponentUpdate(nextProps) {
+    const {
+      node,
+      nodesByParentId,
+    } = this.props;
+    
+    const { node: newNode } = nextProps;
+    const parentId = newNode.get('parent_id') || 'null';
+    const oldNode = nodesByParentId
+      .get(parentId)
+      .get(newNode.get('position'));
+    // component should update (re-render) if shallow equality changes. (NOTE: not value equality like Map.equals(OtherMap))
+    // this leverages ImmutableJS's new copies of nodes that have changed
+    // HOWEVER, it requires some shenanigans in documentModel to walk the flattened nodes list (key:parentId->[children])
+    // and update (or "touch") every ancestor of the updated node up to the root component replicating what ImmutableJS does under the hood with a hash trie structure
+    return oldNode !== newNode;
+  }
   
   render() {
+    console.debug("ContentNode RENDER", this);
     const {
       post,
       node,
@@ -108,23 +125,23 @@ export default class ContentNode extends React.PureComponent {
       /**
        * NON-RECURSIVE 'custom' SECTIONS
        */
-      case NODE_TYPE_SECTION_H1:
+      case NODE_TYPE_SECTION_H1: {
         return (<H1
           data-type={NODE_TYPE_SECTION_H1}
           name={node.get('id')}
+          shouldShowPlaceholder={post.get('id', 'new') === NEW_POST_URL_ID && node.get('position') === 0 && cleanText(node.get('content', '')).length === 0}
         >
-          {console.log(node.get('content', '').length)}
-          {!post.get('id') && node.get('content', '').length === 0 && (
-            <TitlePlaceholder contentEditable={false}>Write something and hit enter...</TitlePlaceholder>
-          )}
           {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
         </H1>);
-      case NODE_TYPE_SECTION_H2:
+      }
+      case NODE_TYPE_SECTION_H2: {
         return (<H2 data-type={NODE_TYPE_SECTION_H2}
                     name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H2>);
-      case NODE_TYPE_SECTION_SPACER:
+      }
+      case NODE_TYPE_SECTION_SPACER: {
         return (<SpacerSection data-type={NODE_TYPE_SECTION_SPACER} name={node.get('id')} contentEditable={false} />);
-      case NODE_TYPE_SECTION_CODE:
+      }
+      case NODE_TYPE_SECTION_CODE: {
         const lines = node
           .getIn(['meta', 'lines'], List([cleanTextOrZeroLengthPlaceholder('')]));
         return (
@@ -134,6 +151,7 @@ export default class ContentNode extends React.PureComponent {
                                             name={`${node.get('id')}-${idx}`}>{cleanTextOrZeroLengthPlaceholder(line)}</Pre>))}
           </CodeSection>
         );
+      }
       case NODE_TYPE_SECTION_IMAGE: {
         const meta = node.get('meta', Map());
         const urlField = meta.get('url') || '';
@@ -252,29 +270,27 @@ export default class ContentNode extends React.PureComponent {
           const endOffset = selection.get('end');
           return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
         };
-        const getSelectionKey = (s) => {
-          return `${s.get('start')}-${s.get('end')}`;
-        }
         let children = [];
         selections.forEach((selection) => {
+          const key = getSelectionKey(selection);
           let selectionJsx = getContentForSelection(selection);
           if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
-            selectionJsx = (<StrikeText>{selectionJsx}</StrikeText>)
+            selectionJsx = (<StrikeText key={key}>{selectionJsx}</StrikeText>)
           }
           if (selection.get(SELECTION_ACTION_SITEINFO)) {
-            selectionJsx = (<SiteInfo>{selectionJsx}</SiteInfo>)
+            selectionJsx = (<SiteInfo key={key}>{selectionJsx}</SiteInfo>)
           }
           if (selection.get(SELECTION_ACTION_ITALIC)) {
-            selectionJsx = (<ItalicText>{selectionJsx}</ItalicText>)
+            selectionJsx = (<ItalicText key={key}>{selectionJsx}</ItalicText>)
           }
           if (selection.get(SELECTION_ACTION_CODE)) {
-            selectionJsx = (<Code>{selectionJsx}</Code>)
+            selectionJsx = (<Code key={key}>{selectionJsx}</Code>)
           }
           if (selection.get(SELECTION_ACTION_BOLD)) {
-            selectionJsx = (<BoldText>{selectionJsx}</BoldText>)
+            selectionJsx = (<BoldText key={key}>{selectionJsx}</BoldText>)
           }
           if (selection.get(SELECTION_ACTION_LINK)) {
-            selectionJsx = (<A href={selection.get('linkUrl')}>{selectionJsx}</A>)
+            selectionJsx = (<A key={key} href={selection.get('linkUrl')}>{selectionJsx}</A>)
           }
           children.push(selectionJsx);
         });

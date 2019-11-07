@@ -5,12 +5,15 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
+  const entry = ['@babel/polyfill'];
+  if (!isProduction) {
+    entry.push('react-hot-loader/patch');
+  }
+  entry.push('./src/index.jsx');
+  
   const config = {
     mode: isProduction ? 'production' : 'dev',
-    entry: [
-      '@babel/polyfill',
-      './src/index.jsx',
-    ],
+    entry,
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].[hash].js'

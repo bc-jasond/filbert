@@ -13,6 +13,13 @@ export const H1 = styled.h1`
   font-size: 46px;
   line-height: 1.25;
   margin-bottom: 24px;
+  ${p => p.shouldShowPlaceholder && `
+    &::before {
+      content: 'Write a title and hit enter...';
+      position: absolute;
+      color: ${mediumGrey};
+    }
+  `}
 `;
 export const H2 = styled.h2`
  ${sectionWidthMixin}
@@ -335,7 +342,7 @@ export const LilBlackMenu = styled.div`
   position: absolute;
   transition: .1s top;
   top: ${p => p.top}px;
-  z-index: 11;
+  z-index: 13;
   background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
   background-repeat: repeat-x;
   border-radius: 5px;

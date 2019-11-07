@@ -2,6 +2,17 @@
 CREATE DATABASE `filbert` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci */;
 USE `filbert`;
 # tables
+CREATE TABLE `user` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `email` varchar(150) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `password` char(60) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username_UNIQUE` (`username`) USING BTREE,
+  UNIQUE KEY `email_UNIQUE` (`email`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 CREATE TABLE `content_node` (
   `post_id` int(11) NOT NULL,
   `id` char(4) COLLATE utf8mb4_unicode_520_ci NOT NULL,
@@ -38,15 +49,4 @@ CREATE TABLE `post` (
   KEY `user_id_fk_idx` (`user_id`),
   CONSTRAINT `user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=196 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-CREATE TABLE `user` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `email` varchar(150) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `password` char(60) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `deleted` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username_UNIQUE` (`username`) USING BTREE,
-  UNIQUE KEY `email_UNIQUE` (`email`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
