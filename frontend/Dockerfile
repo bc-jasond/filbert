@@ -12,6 +12,7 @@ RUN yarn; \
 
 # serve up my lil homepage
 COPY ["src/jason.html","assets/site.webmanifest","/work/dist/"]
+# favicons aren't bundled by webpack...
 COPY assets/favicons /work/dist/favicons/
 
 # multi-staged builds save space!

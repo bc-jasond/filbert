@@ -129,7 +129,7 @@ export default class ContentNode extends React.Component {
         return (<H1
           data-type={NODE_TYPE_SECTION_H1}
           name={node.get('id')}
-          shouldShowPlaceholder={post.get('id', 'new') === NEW_POST_URL_ID && node.get('position') === 0 && cleanText(node.get('content', '')).length === 0}
+          shouldShowPlaceholder={post && post.get('id', 'new') === NEW_POST_URL_ID && node.get('position') === 0 && cleanText(node.get('content', '')).length === 0}
         >
           {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
         </H1>);
