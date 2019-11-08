@@ -1037,30 +1037,28 @@ export default class EditPost extends React.Component {
           <HeaderSpacer />
           <Article>
             {root.get('id') && (
-              <React.Fragment>
-                {shouldShowPublishPostMenu && (<PublishPostForm
-                  post={post}
-                  updatePost={this.updatePost}
-                  publishPost={this.publishPost}
-                  savePost={this.savePost}
-                  close={this.togglePostMenu}
-                  successMessage={shouldShowPostSuccess}
-                  errorMessage={shouldShowPostError}
-                />)}
-                <div id="filbert-edit-container"
-                  contentEditable={true}
-                  suppressContentEditableWarning={true}
-                  onKeyDown={this.handleKeyDown}
-                  onInput={this.handleKeyUp}
-                  onPaste={this.handlePaste}
-                >
-                  <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
-                </div>
-              </React.Fragment>
+              <div id="filbert-edit-container"
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onKeyDown={this.handleKeyDown}
+                onInput={this.handleKeyUp}
+                onPaste={this.handlePaste}
+              >
+                <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
+              </div>
             )}
           </Article>
           <Footer />
         </main>
+        {shouldShowPublishPostMenu && (<PublishPostForm
+            post={post}
+            updatePost={this.updatePost}
+            publishPost={this.publishPost}
+            savePost={this.savePost}
+            close={this.togglePostMenu}
+            successMessage={shouldShowPostSuccess}
+            errorMessage={shouldShowPostError}
+        />)}
         {shouldShowInsertMenu && (<InsertSectionMenu
             insertMenuTopOffset={insertMenuTopOffset}
             insertMenuLeftOffset={insertMenuLeftOffset}

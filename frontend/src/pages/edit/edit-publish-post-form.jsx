@@ -14,7 +14,7 @@ import {
   MessageContainer,
 } from '../../common/shared-styled-components';
 
-import { formatPostDate } from '../../common/utils';
+import {formatPostDate} from '../../common/utils';
 
 const publishPostFields = [
   {
@@ -24,7 +24,10 @@ const publishPostFields = [
   }, {
     fieldName: 'canonical',
     StyledComponent: Input,
-    disabled: post => { console.log(post.get('published')); return post.get('published') },
+    disabled: post => {
+      console.log(post.get('published'));
+      return post.get('published')
+    },
   }, {
     fieldName: 'abstract',
     StyledComponent: TextArea,
@@ -34,12 +37,12 @@ const publishPostFields = [
 
 const PublishPostFormContainer = styled.div`
   position: absolute;
-  top: 0;
+  top: 65px;
   left: 0;
   width: 100%;
   z-index: 10;
   background-color: white;
-`
+`;
 const PublishPostForm = styled.div`
   position: relative;
   width: 50%;
@@ -59,17 +62,21 @@ export default ({
   <PublishPostFormContainer>
     <PublishPostForm>
       <H1>{`${post.get('published') ? 'Post' : 'Draft'}: Details & Publish`}</H1>
-      {publishPostFields.map(({ fieldName, StyledComponent, disabled }, idx) => (
-        <InputContainer key={idx}>
-          <Label htmlFor={fieldName} error={false /*TODO*/}>{fieldName}</Label>
-          <StyledComponent name={fieldName} type="text" value={post.get(fieldName, '')}
-                           disabled={disabled(post) && 'disabled'}
-                           onChange={(e) => {
-                             updatePost(fieldName, e.target.value)
-                           }}
-                           error={false /*TODO*/} />
-        </InputContainer>
-      ))}
+      {publishPostFields.map(({fieldName, StyledComponent, disabled}, idx) => {
+          const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
+          return (
+            <InputContainer key={idx}>
+              <Label htmlFor={fieldName} error={false /*TODO*/}>{fieldName}</Label>
+              <StyledComponent name={fieldName} type="text" value={fieldValue}
+                               disabled={disabled(post) && 'disabled'}
+                               onChange={(e) => {
+                                 updatePost(fieldName, e.target.value)
+                               }}
+                               error={false /*TODO*/}/>
+            </InputContainer>
+          )
+        }
+      )}
       <MessageContainer>
         {errorMessage && (<ErrorMessage>Error 🤷‍</ErrorMessage>)}
         {successMessage && (<SuccessMessage>Saved 👍</SuccessMessage>)}
