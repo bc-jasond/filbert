@@ -1,4 +1,5 @@
 import React from 'react';
+import styled from 'styled-components';
 import { List, Map, fromJS } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
@@ -123,6 +124,12 @@ import PublishPostForm from './edit-publish-post-form';
 
 import Page404 from '../404';
 
+const ArticleStyled = styled(Article)`
+  @media (max-width: 800px) {
+    padding: 40px 80px;
+  }
+`;
+
 export default class EditPost extends React.Component {
   constructor(props) {
     super(props);
@@ -153,6 +160,7 @@ export default class EditPost extends React.Component {
   async componentDidMount() {
     console.log("EDIT - didMount")
     try {
+      window.addEventListener('resize', this.manageInsertMenu.bind(this));
       if (this.props.match.params.id === NEW_POST_URL_ID) {
         return this.newPost();
       }
@@ -1035,7 +1043,7 @@ export default class EditPost extends React.Component {
             </HeaderContentContainer>
           </Header>
           <HeaderSpacer />
-          <Article>
+          <ArticleStyled>
             {root.get('id') && (
               <div id="filbert-edit-container"
                 contentEditable={true}
@@ -1047,7 +1055,7 @@ export default class EditPost extends React.Component {
                 <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
               </div>
             )}
-          </Article>
+          </ArticleStyled>
           <Footer />
         </main>
         {shouldShowPublishPostMenu && (<PublishPostForm

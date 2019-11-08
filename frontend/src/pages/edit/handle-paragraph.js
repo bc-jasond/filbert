@@ -7,7 +7,7 @@ import {
   NODE_TYPE_SECTION_H2,
   NODE_TYPE_SECTION_SPACER
 } from '../../common/constants';
-import { splitSelectionsAtCaretOffset } from './edit-selection-helpers';
+import {formatSelections, splitSelectionsAtCaretOffset} from './edit-selection-helpers';
 
 export function handleBackspaceParagraph(documentModel, selectedNodeId) {
   const selectedSection = documentModel.getSection(selectedNodeId);
@@ -82,7 +82,7 @@ export function handleEnterParagraph(documentModel, selectedNodeId, caretPositio
   let leftNode = documentModel.getNode(selectedNodeId);
   let rightNode = documentModel.getNode(rightNodeId);
   [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
-  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftNode.getIn(['meta', 'selections'], List()).toJS(), 'right selections: ', rightNode.getIn(['meta', 'selections'], List()).toJS());
+  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', formatSelections(leftNode), 'right selections: ', formatSelections(rightNode));
   documentModel.update(leftNode.set('content', contentLeft));
   documentModel.update(rightNode);
   return rightNodeId;

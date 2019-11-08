@@ -77,12 +77,12 @@ export const HeaderSpacer = styled.div`
 export const Article = styled.article`
   width: 100%;
   min-height: 80vh;
-  padding: 0 20px 80px;
+  padding: 40px 80px;
   margin: 0 auto;
   box-sizing: border-box;
   position: relative;
   @media (max-width: 800px) {
-    padding: 0 20px 80px 20px;
+    padding: 40px 20px;
   }
 `;
 export const Footer = styled.footer`

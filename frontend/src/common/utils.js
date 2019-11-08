@@ -38,8 +38,6 @@ export function cleanText(text) {
   const re = new RegExp(ZERO_LENGTH_CHAR);
   return text
     .replace(re, '')
-
-    //
 }
 
 export function normalizeHtmlEntities(text) {
@@ -65,13 +63,10 @@ export function getDiffStartAndLength(oldStr, newStr) {
     if (newCurrent.length === 0) {
       // chars were deleted from the end
       // offset the loop counter to account for the change in direction (right to left for a 'delete')
-      return [i + diffLength, -diffLength];
+      return [i, -diffLength];
     }
     if (oldCurrent !== newCurrent) {
-      if (doesAddCharacters) {
-        return [i, diffLength];
-      }
-      return [i + diffLength, -diffLength];
+      return [i, doesAddCharacters ? diffLength : -diffLength];
     }
   }
   // strings are the same!
