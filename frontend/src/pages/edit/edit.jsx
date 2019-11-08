@@ -561,10 +561,17 @@ export default class EditPost extends React.Component {
       return;
     }
     const domNode = getCaretNode();
-    if (domNode && (domNode.tagName === 'PRE'
+    if (!domNode) return;
+    if (domNode.tagName === 'PRE'
       // when clicking on a section, the caret will be on an input in the edit image or quote menu, ignore
-      || domNode.dataset.isMenu === 'true' /* TODO: why string? */)) {
+      || domNode.dataset.isMenu === 'true' /* TODO: why string? */) {
       // TODO
+      return;
+    }
+    // TODO: clicking on the <article> tag comes back as the header-spacer???
+    //  if we're clicking on the document container, focus the end of the last node
+    if (domNode.id === 'header-spacer') {
+      setCaret(this.documentModel.rootId, -1, true);
       return;
     }
     const selectedNodeId = getCaretNodeId(domNode);
@@ -1042,7 +1049,7 @@ export default class EditPost extends React.Component {
               </HeaderLinksContainer>
             </HeaderContentContainer>
           </Header>
-          <HeaderSpacer />
+          <HeaderSpacer id="header-spacer" />
           <ArticleStyled>
             {root.get('id') && (
               <div id="filbert-edit-container"

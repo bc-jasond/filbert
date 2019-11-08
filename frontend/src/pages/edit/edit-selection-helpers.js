@@ -135,6 +135,9 @@ function mergeOverlappingSelections(nodeModel, newSelection) {
  */
 function fillEnds(nodeModel) {
   const selections = getSelections(nodeModel);
+  if (selections.size === 0) {
+    return nodeModel;
+  }
   const contentLength = nodeModel.get('content', '').length;
   let newSelections = selections;
   let minStart = contentLength;
@@ -186,9 +189,9 @@ function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
     }
   }
   newSelections = newSelections.push(current);
-  // SUPER PERFORMANCE OPTIMIZATION: if there's only one Selection and it's empty - clear it out
+  // SUPER PERFORMANCE OPTIMIZATION: if there's only one Selection and it's empty - unset 'selections'
   if (newSelections.size === 1 && !selectionsHaveDifferentFormats(newSelections.get(0), Selection())) {
-    newSelections = List();
+    return nodeModel.deleteIn(['meta', 'selections']);
   }
   if (!selections.equals(newSelections)) {
     console.log('MERGE ADJACENT ', formatSelections(newSelections));
@@ -237,8 +240,8 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, start = 0, count = 0
     console.log('ADJUST         ', formatSelections(newSelections), 'start: ', start, ' count: ', count, ' length: ', contentLength);
     newModel = setSelections(nodeModel, newSelections);
   }
-  newModel = mergeAdjacentSelectionsWithSameFormats(newModel);
-  return fillEnds(newModel);
+  newModel = fillEnds(newModel);
+  return mergeAdjacentSelectionsWithSameFormats(newModel);
 }
 
 /**
@@ -276,9 +279,6 @@ export function getSelection(nodeModel, start, end) {
  */
 export function upsertSelection(nodeModel, newSelection) {
   nodeModel = mergeOverlappingSelections(nodeModel, newSelection);
-  // TODO: this function wouldn't be needed if there was always at least 1 selection
-  nodeModel = fillEnds(nodeModel);
-  nodeModel = mergeAdjacentSelectionsWithSameFormats(nodeModel);
   return adjustSelectionOffsetsAndCleanup(nodeModel);
 }
 
