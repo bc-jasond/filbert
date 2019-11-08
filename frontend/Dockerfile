@@ -11,12 +11,13 @@ RUN yarn; \
  yarn build-prod;
 
 # serve up my lil homepage
-COPY ["src/jason.html","assets/site.webmanifest","assets/favicons","/work/dist/"]
+COPY ["src/jason.html","assets/site.webmanifest","/work/dist/"]
+COPY assets/favicons /work/dist/favicons/
 
 # multi-staged builds save space!
 FROM nginx:alpine
 
-COPY --from=0 /work/dist /var/www
+COPY --from=0 /work/dist /var/www/
 COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
