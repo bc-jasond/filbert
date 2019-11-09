@@ -25,7 +25,6 @@ const publishPostFields = [
     fieldName: 'canonical',
     StyledComponent: Input,
     disabled: post => {
-      console.log(post.get('published'));
       return post.get('published')
     },
   }, {
@@ -58,6 +57,7 @@ export default ({
                   close,
                   successMessage,
                   errorMessage,
+                  forwardRef,
                 }) => (
   <PublishPostFormContainer>
     <PublishPostForm>
@@ -72,7 +72,9 @@ export default ({
                                onChange={(e) => {
                                  updatePost(fieldName, e.target.value)
                                }}
-                               error={false /*TODO*/}/>
+                               error={false /*TODO*/}
+                               ref={idx === 0 ? forwardRef : () => {}}
+              />
             </InputContainer>
           )
         }

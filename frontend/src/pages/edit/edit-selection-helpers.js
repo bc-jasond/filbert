@@ -34,7 +34,7 @@ export function formatSelections(s) {
   if (!List.isList(s)) {
     return;
   }
-  return s.reduce((acc, v) => `${acc} | start: ${v.get(SELECTION_START)}, end: ${v.get(SELECTION_END)}`, '');
+  return `${s.reduce((acc, v) => `${acc} | start: ${v.get(SELECTION_START)}, end: ${v.get(SELECTION_END)}`, '')} |`;
 }
 
 /**
@@ -237,7 +237,7 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, start = 0, count = 0
 
   let newModel = nodeModel;
   if (!selections.equals(newSelections)) {
-    console.log('ADJUST         ', formatSelections(newSelections), 'start: ', start, ' count: ', count, ' length: ', contentLength);
+    console.log('ADJUST         ', formatSelections(newSelections), ' -- offset: ', start, ' count: ', count, ' content length: ', contentLength);
     newModel = setSelections(nodeModel, newSelections);
   }
   newModel = fillEnds(newModel);

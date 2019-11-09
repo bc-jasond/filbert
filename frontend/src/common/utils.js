@@ -40,7 +40,20 @@ export function cleanText(text) {
     .replace(re, '')
 }
 
-export function normalizeHtmlEntities(text) {
+export function getCharFromEvent(evt, node, offset) {
+  if (evt && typeof evt.keyCode !== undefined) {
+    // TODO: replace only necessary spaces with &nbsp;
+    if (evt.keyCode === 32) {
+      return String.fromCharCode(160);
+    }
+    return evt.key;
+  } else {
+    // TODO: handle emoji keyboard insert
+    return evt.nativeEvent.data;
+  }
+}
+
+function normalizeHtmlEntities(text) {
   // TODO: what other htmlentities need to be normalized here?
   // for pesky char code 160 ( &nbsp; )
   // contenteditable automatically converts between " " 32 and "&nbsp;" 160 for placeholder spaces at the end of tags or sequential spaces

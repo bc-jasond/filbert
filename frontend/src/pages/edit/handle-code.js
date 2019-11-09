@@ -103,7 +103,9 @@ export function handleEnterCode(documentModel, selectedNodeId, caretPosition, co
   return `${selectedSectionId}-${lineIndex + 1}`;
 }
 
-export function handlePasteCode(documentModel, selectedNodeId, caretPosition, content, domLines) {
+export function handlePasteCode(documentModel, selectedNodeId, caretPosition, clipboardText) {
+  const domLines = clipboardText.split('\n');
+  const content = documentModel.getNode(selectedNodeId).get('content') || '';
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
   const [selectedSectionId, selectedLineIdx] = getPreCodeSectionIdAndIndex(selectedNodeId);
