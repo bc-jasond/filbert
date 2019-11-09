@@ -83,6 +83,7 @@ import EditUpdateManager from './edit-update-manager';
 
 import {
   handleBackspaceCode,
+  handleBackspaceCodeStructuralChange,
   handleDomSyncCode,
   handleEnterCode,
   handlePasteCode,
@@ -381,19 +382,28 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
 
-    if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
+    if (range.startOffset > 0 && selectedNodeContent) {
       //  not at beginning of node text and node text isn't empty
       //  it's just a "normal" backspace, not a 'structural change' backspace
       //  (although a selection could span across nodes and become structural)
       const diffLength = Math.max(1, range.endOffset - range.startOffset);
       if (diffLength === 1) {
         // delete just one char
-        let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-        const beforeContentMap = selectedNodeMap.get('content') || '';
-        const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - 1)}${beforeContentMap.slice(caretPositionStart)}`;
-        selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
-        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, -diffLength);
-        this.documentModel.update(selectedNodeMap);
+        switch (selectedNode.tagName) {
+          case 'PRE': {
+            console.debug('BACKSPACE PRE ', selectedNode);
+            handleBackspaceCode(this.documentModel, selectedNodeId, caretPositionStart);
+            break;
+          }
+          default: {
+            let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
+            const beforeContentMap = selectedNodeMap.get('content') || '';
+            const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - 1)}${beforeContentMap.slice(caretPositionStart)}`;
+            selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
+            selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, -diffLength);
+            this.documentModel.update(selectedNodeMap);
+          }
+        }
         // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
         //  The browser will then place the caret at the beginning of the textContent... 😞
         this.commitUpdates(selectedNodeId, diffLength === 1 ? caretPositionStart - 1 : caretPositionStart)
@@ -427,7 +437,7 @@ export default class EditPost extends React.Component {
         break;
       }
       case NODE_TYPE_PRE: {
-        [focusNodeId, caretOffset] = handleBackspaceCode(this.documentModel, selectedNodeId);
+        [focusNodeId, caretOffset] = handleBackspaceCodeStructuralChange(this.documentModel, selectedNodeId);
         break;
       }
       case NODE_TYPE_LI: {
@@ -517,7 +527,7 @@ export default class EditPost extends React.Component {
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
     if (selectedNodeId === 'null' || !selectedNodeId) {
-      console.error('DOM SYNC - bad selection, no id ', selectedNode);
+      console.warn('To DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
     evt.stopPropagation();
@@ -525,27 +535,27 @@ export default class EditPost extends React.Component {
 
     // TODO: handle start != end (range is not collapsed)
     const [caretPositionStart, caretPositionEnd]  = getOffsetInParentContent();
+    const newChar = getCharFromEvent(evt);
+    const diffLength = newChar.length;
 
-    // TODO: code lines are stored differently, custom behavior
-    if (selectedNode.tagName === 'PRE') {
-      const beforeContentDom = cleanText(selectedNode.textContent);
-      const updatedContentDom = `${beforeContentDom.slice(0, caretPositionStart)}${evt.key}${beforeContentDom.slice(caretPositionStart)}`;
-      handleDomSyncCode(this.documentModel, selectedNodeId, updatedContentDom);
-      console.debug('DOM SYNC PRE ', selectedNode);
-      this.saveContentBatchDebounce();
-      return;
+    switch (selectedNode.tagName) {
+      case 'PRE': {
+        console.debug('To DOM SYNC PRE ', selectedNode);
+        handleDomSyncCode(this.documentModel, selectedNodeId, newChar, caretPositionStart);
+        break;
+      }
+      default: {
+        let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
+        const beforeContentMap = selectedNodeMap.get('content') || '';
+        const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${newChar}${beforeContentMap.slice(caretPositionStart)}`;
+
+        console.info('To DOM SYNC diff: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
+        selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
+        // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
+        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, diffLength);
+        this.documentModel.update(selectedNodeMap);
+      }
     }
-
-    let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-    const beforeContentMap = selectedNodeMap.get('content') || '';
-    const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${getCharFromEvent(evt)}${beforeContentMap.slice(caretPositionStart)}`;
-    const diffLength = updatedContentMap.length - beforeContentMap.length;
-
-    console.info('DOM SYNC diff: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
-    selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
-    // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-    selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, diffLength);
-    this.documentModel.update(selectedNodeMap);
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
     this.commitUpdates(selectedNodeId, caretPositionStart + diffLength);
@@ -555,7 +565,44 @@ export default class EditPost extends React.Component {
     // Stop all updates to the contenteditable div!
     evt.stopPropagation();
     evt.preventDefault();
-    // TODO: detect emoji keyboard insert
+
+    if (evt.type !== 'input') {
+      return;
+    }
+
+    // NOTE: following for emojis keyboard insert only...
+    const selectedNode = getCaretNode();
+    const selectedNodeId = getCaretNodeId();
+    if (selectedNodeId === 'null' || !selectedNodeId) {
+      console.warn('From DOM SYNC - bad selection, no id ', selectedNode);
+      return;
+    }
+    const emoji = getCharFromEvent(evt);
+    // TODO: handle start != end (range is not collapsed)
+    const [caretPositionStart, caretPositionEnd]  = getOffsetInParentContent();
+    switch (selectedNode.tagName) {
+      case 'PRE': {
+        console.debug('From DOM SYNC PRE ', selectedNode);
+        handleDomSyncCode(this.documentModel, selectedNodeId, emoji, caretPositionStart - emoji.length);
+        break;
+      }
+      default: {
+        let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
+        const beforeContentMap = selectedNodeMap.get('content') || '';
+        const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - emoji.length)}${emoji}${beforeContentMap.slice(caretPositionStart - emoji.length)}`;
+        const diffLength = emoji.length;
+
+        console.info('From DOM SYNC diff - this should be an emoji: ', emoji, ' caret start: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
+        selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
+        // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
+        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, diffLength);
+        this.documentModel.update(selectedNodeMap);
+      }
+    }
+
+    // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
+    //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
+    this.commitUpdates(selectedNodeId, caretPositionStart);
   }
 
   /**

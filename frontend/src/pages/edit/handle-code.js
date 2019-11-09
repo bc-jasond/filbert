@@ -5,7 +5,7 @@ import {
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_SPACER,
 } from '../../common/constants';
-import { cleanText } from '../../common/utils';
+import {cleanText, getCharFromEvent} from '../../common/utils';
 
 function getPreCodeSectionIdAndIndex(selectedNodeId) {
   if (!selectedNodeId.includes('-')) {
@@ -15,7 +15,18 @@ function getPreCodeSectionIdAndIndex(selectedNodeId) {
   return [sectionId, parseInt(lineIdx, 10)];
 }
 
-export function handleBackspaceCode(documentModel, selectedNodeId) {
+export function handleBackspaceCode(documentModel, selectedNodeId, caretPositionStart) {
+  const [selectedSectionId, lineIndex] = getPreCodeSectionIdAndIndex(selectedNodeId);
+  const selectedSection = documentModel.getNode(selectedSectionId);
+  let lines = selectedSection.getIn(['meta', 'lines'], List());
+  const currentLineContent = lines.get(lineIndex);
+  const updatedLineContent = `${currentLineContent.slice(0, caretPositionStart - 1)}${currentLineContent.slice(caretPositionStart)}`;
+  documentModel.update(
+    selectedSection.setIn(['meta', 'lines'], lines.set(lineIndex, updatedLineContent))
+  );
+}
+
+export function handleBackspaceCodeStructuralChange(documentModel, selectedNodeId) {
   const [selectedSectionId, lineIdx] = getPreCodeSectionIdAndIndex(selectedNodeId);
   let prevSection = documentModel.getPrevSibling(selectedSectionId);
   let prevFocusNodeId = documentModel.getPreviousFocusNodeId(selectedSectionId);
@@ -138,16 +149,14 @@ export function handlePasteCode(documentModel, selectedNodeId, caretPosition, cl
   return [`${selectedSectionId}-${selectedLineIdx + domLines.length + 1}`, lastDomLine.length];
 }
 
-export function handleDomSyncCode(documentModel, selectedNodeId, selectedNodeContent) {
+export function handleDomSyncCode(documentModel, selectedNodeId, newContent, caretPositionStart) {
   const [selectedSectionId, lineIndex] = getPreCodeSectionIdAndIndex(selectedNodeId);
   const selectedSection = documentModel.getNode(selectedSectionId);
   let lines = selectedSection.getIn(['meta', 'lines'], List());
   const currentLineContent = lines.get(lineIndex);
-  if (currentLineContent === selectedNodeContent) {
-    return;
-  }
+  const updatedLineContent = `${currentLineContent.slice(0, caretPositionStart)}${newContent}${currentLineContent.slice(caretPositionStart)}`;
   documentModel.update(
-    selectedSection.setIn(['meta', 'lines'], lines.set(lineIndex, selectedNodeContent))
+    selectedSection.setIn(['meta', 'lines'], lines.set(lineIndex, updatedLineContent))
   );
 }
 
