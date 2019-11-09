@@ -44,6 +44,7 @@ export function getCharFromEvent(evt, node, offset) {
   if (evt && typeof evt.keyCode !== undefined) {
     // TODO: replace only necessary spaces with &nbsp;
     if (evt.keyCode === 32) {
+      // change all spaces to &nbsp; - is there a better way?  This works pretty well.
       return String.fromCharCode(160);
     }
     return evt.key;

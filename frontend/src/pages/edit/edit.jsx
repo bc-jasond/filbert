@@ -176,7 +176,7 @@ export default class EditPost extends React.Component {
       if (this.props.match.params.id === prevProps.match.params.id) {
         return;
       }
-          console.debug("EDIT - didUpdate")
+      console.debug("EDIT - didUpdate")
 
       this.setState({
         shouldRedirectToEditWithId: false,
@@ -222,12 +222,8 @@ export default class EditPost extends React.Component {
     this.documentModel.init(postPlaceholder, this.updateManager);
     this.updateManager.stageNodeUpdate(this.documentModel.rootId);
     const focusNodeId = this.documentModel.insertSection(NODE_TYPE_SECTION_H1, 0);
-    this.setState({
-      post: Map(),
-      nodesByParentId: this.documentModel.nodesByParentId,
-    }, () => {
-      setCaret(focusNodeId);
-    });
+    this.setState({post: Map()});
+    this.commitUpdates(focusNodeId);
   }
 
   createNewPost = async () => {
@@ -328,13 +324,8 @@ export default class EditPost extends React.Component {
     this.setState({ shouldShowPublishPostMenu: !oldVal })
   }
 
-  commitUpdates = async (focusNodeId, offset = -1, shouldFocusLastChild) => {
-    if (this.props.match.params.id === NEW_POST_URL_ID) {
-      return this.createNewPost();
-    }
-
+  commitUpdates = (focusNodeId, offset = -1, shouldFocusLastChild) => {
     // TODO: optimistically save updated nodes - look ma, no errors!
-    await this.saveContentBatchDebounce();
     const {
       formatSelectionNode,
       editImageSectionNode,
@@ -347,7 +338,12 @@ export default class EditPost extends React.Component {
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,
-      }, () => {
+      },() => {
+        // if we're on /edit/new, we don't save until user hits "enter"
+        if (this.props.match.params.id !== NEW_POST_URL_ID) {
+          this.saveContentBatchDebounce();
+        }
+        // if a menu isn't open, re-place the caret
         if (!formatSelectionNode.get('id') && !editImageSectionNode.get('id') && !editQuoteSectionNode.get('id')) {
           setCaret(focusNodeId, offset, shouldFocusLastChild);
         }
@@ -386,8 +382,8 @@ export default class EditPost extends React.Component {
     evt.preventDefault();
 
     if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
-      // TODO: move this to handleSyncToDom
-      //  not at beginning of node text and node text isn't empty - it's just a normal backspace, not a 'structural change' backspace
+      //  not at beginning of node text and node text isn't empty
+      //  it's just a "normal" backspace, not a 'structural change' backspace
       //  (although a selection could span across nodes and become structural)
       const diffLength = Math.max(1, range.endOffset - range.startOffset);
       if (diffLength === 1) {
@@ -398,22 +394,14 @@ export default class EditPost extends React.Component {
         selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
         selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, -diffLength);
         this.documentModel.update(selectedNodeMap);
-        // TODO: use commitUpdates()
-        this.setState({
-          nodesByParentId: this.documentModel.nodesByParentId,
-        }, () => {
-            if (this.props.match.params.id !== NEW_POST_URL_ID) {
-              this.saveContentBatchDebounce();
-            }
-          // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
-          //  The browser will then place the caret at the beginning of the textContent... 😞
-          setCaret(selectedNodeId, diffLength === 1 ? caretPositionStart - 1 : caretPositionStart);
-        });
-        return;
-      } else {
-        // TODO: a highlighted selection was deleted
+        // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
+        //  The browser will then place the caret at the beginning of the textContent... 😞
+        this.commitUpdates(selectedNodeId, diffLength === 1 ? caretPositionStart - 1 : caretPositionStart)
         return;
       }
+      // TODO: a highlighted selection was deleted
+      // TODO: did selection span multiple nodes?
+      return;
     }
     /**
      * TODO: make these into sets of atomic commands that are added to a queue,
@@ -505,6 +493,9 @@ export default class EditPost extends React.Component {
         return;
       }
     }
+    if (this.props.match.params.id === NEW_POST_URL_ID) {
+      return this.createNewPost();
+    }
     this.commitUpdates(focusNodeId, 0);
   }
 
@@ -546,27 +537,18 @@ export default class EditPost extends React.Component {
     }
 
     let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-    // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
     const beforeContentMap = selectedNodeMap.get('content') || '';
     const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${getCharFromEvent(evt)}${beforeContentMap.slice(caretPositionStart)}`;
     const diffLength = updatedContentMap.length - beforeContentMap.length;
 
     console.info('DOM SYNC diff: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
     selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
-    // use the offset from 'onKeyDown' handler - before DOM was updated to know the caret start position
+    // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
     selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, diffLength);
     this.documentModel.update(selectedNodeMap);
-    // TODO use commitUpdates()
-    this.setState({
-      nodesByParentId: this.documentModel.nodesByParentId,
-    }, () => {
-        if (this.props.match.params.id !== NEW_POST_URL_ID) {
-          this.saveContentBatchDebounce();
-        }
-      // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
-      //  The browser will then place the caret at the beginning of the textContent... 😞
-      setCaret(selectedNodeId, caretPositionStart + diffLength);
-    });
+    // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
+    //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
+    this.commitUpdates(selectedNodeId, caretPositionStart + diffLength);
   }
 
   handleSyncFromDom(evt) {
