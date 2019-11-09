@@ -1,4 +1,5 @@
 import React from 'react';
+import styled from 'styled-components';
 import { List, Map, fromJS } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
@@ -6,7 +7,8 @@ import {
   apiDelete,
   apiGet,
   apiPatch,
-  apiPost, uploadImage,
+  apiPost,
+  uploadImage,
 } from '../../common/fetch';
 import {
   Article,
@@ -28,16 +30,15 @@ import {
   confirmPromise,
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
-  getDiffStartAndLength,
   getCanonicalFromTitle,
   imageUrlIsId,
+  getCharFromEvent,
 } from '../../common/utils';
 import {
   getRange,
   getCaretNode,
   getCaretNodeId,
   getCaretNodeType,
-  getCaretOffset,
   getFirstHeadingContent,
   setCaret,
   getOffsetInParentContent,
@@ -72,8 +73,9 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT, ZERO_LENGTH_CHAR,
+  POST_ACTION_REDIRECT_TIMEOUT,
 } from '../../common/constants';
+import { lineHeight } from "../../common/css";
 
 import ContentNode from '../../common/content-node.component';
 import EditDocumentModel from './edit-document-model';
@@ -96,6 +98,7 @@ import {
 import {
   handleBackspaceParagraph,
   handleEnterParagraph,
+  handlePasteParagraph,
   paragraphToTitle,
   titleToParagraph,
 } from './handle-paragraph';
@@ -110,7 +113,6 @@ import {
 import {
   Selection,
   adjustSelectionOffsetsAndCleanup,
-  mergeAdjacentSelectionsWithSameFormats,
   getSelection,
   upsertSelection,
 } from './edit-selection-helpers';
@@ -122,6 +124,12 @@ import FormatSelectionMenu from './format-selection-menu';
 import PublishPostForm from './edit-publish-post-form';
 
 import Page404 from '../404';
+
+const ArticleStyled = styled(Article)`
+  @media (max-width: 800px) {
+    padding: 40px 80px;
+  }
+`;
 
 export default class EditPost extends React.Component {
   constructor(props) {
@@ -151,8 +159,9 @@ export default class EditPost extends React.Component {
   }
 
   async componentDidMount() {
-    console.log("EDIT - didMount")
+    console.debug("EDIT - didMount")
     try {
+      window.addEventListener('resize', this.manageInsertMenu.bind(this));
       if (this.props.match.params.id === NEW_POST_URL_ID) {
         return this.newPost();
       }
@@ -167,7 +176,7 @@ export default class EditPost extends React.Component {
       if (this.props.match.params.id === prevProps.match.params.id) {
         return;
       }
-          console.log("EDIT - didUpdate")
+          console.debug("EDIT - didUpdate")
 
       this.setState({
         shouldRedirectToEditWithId: false,
@@ -185,7 +194,6 @@ export default class EditPost extends React.Component {
   documentModel = new EditDocumentModel();
   updateManager = new EditUpdateManager();
   commitTimeoutId;
-  cancelledEvent; // to coordinate noops between event types keydown, keyup
   inputRef;
 
   saveContentBatch = async () => {
@@ -202,13 +210,13 @@ export default class EditPost extends React.Component {
   }
 
   saveContentBatchDebounce() {
-    console.log("Batch Debounce");
+    console.debug("Batch Debounce");
     clearTimeout(this.commitTimeoutId);
     this.commitTimeoutId = setTimeout(this.saveContentBatch, 750);
   }
 
   newPost() {
-    console.log("New PostNew PostNew PostNew PostNew PostNew Post");
+    console.debug("New PostNew PostNew PostNew PostNew PostNew Post");
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
     this.updateManager.init(postPlaceholder);
     this.documentModel.init(postPlaceholder, this.updateManager);
@@ -370,17 +378,43 @@ export default class EditPost extends React.Component {
     }
     const selectedNode = getCaretNode();
     const selectedNodeType = getCaretNodeType();
+    const [caretPositionStart, _] = getOffsetInParentContent();
     const selectedNodeContent = cleanText(selectedNode.textContent);
-    if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
-      // not at beginning of node text and node text isn't empty - don't override, it's just a normal backspace
-      return
-    }
     console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
 
     evt.stopPropagation();
     evt.preventDefault();
-    this.cancelledEvent = evt;
 
+    if (range.startOffset > 0 && cleanText(selectedNodeContent)) {
+      // TODO: move this to handleSyncToDom
+      //  not at beginning of node text and node text isn't empty - it's just a normal backspace, not a 'structural change' backspace
+      //  (although a selection could span across nodes and become structural)
+      const diffLength = Math.max(1, range.endOffset - range.startOffset);
+      if (diffLength === 1) {
+        // delete just one char
+        let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
+        const beforeContentMap = selectedNodeMap.get('content') || '';
+        const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - 1)}${beforeContentMap.slice(caretPositionStart)}`;
+        selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
+        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, -diffLength);
+        this.documentModel.update(selectedNodeMap);
+        // TODO: use commitUpdates()
+        this.setState({
+          nodesByParentId: this.documentModel.nodesByParentId,
+        }, () => {
+            if (this.props.match.params.id !== NEW_POST_URL_ID) {
+              this.saveContentBatchDebounce();
+            }
+          // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
+          //  The browser will then place the caret at the beginning of the textContent... 😞
+          setCaret(selectedNodeId, diffLength === 1 ? caretPositionStart - 1 : caretPositionStart);
+        });
+        return;
+      } else {
+        // TODO: a highlighted selection was deleted
+        return;
+      }
+    }
     /**
      * TODO: make these into sets of atomic commands that are added to a queue,
      *  then make a 'flush' command to process this queue.
@@ -428,7 +462,6 @@ export default class EditPost extends React.Component {
 
     evt.stopPropagation();
     evt.preventDefault();
-    this.cancelledEvent = evt;
 
     const range = getRange();
     if (!range) {
@@ -479,70 +512,69 @@ export default class EditPost extends React.Component {
    * NOTE (TODO?): we don't call setState({nodesByParentId... here. (except when typing a new Title on /edit/new)
    * The sync goes DOM -> JSModel only until the user formats a selection, hits enter or edits a section.
    * Calling setState({nodesByParentId... here causes issues with the caret position
+   * // TODO: handle cut/paste?
+    // TODO: handle select & type or select & delete
+    // TODO: 'Del' does it work at the edge of 2 selections?
    */
-  handleSyncFromDom(evt) {
-    if (
-      // cross event type cancellation keyDown -> keyUp, etc
-      this.cancelledEvent
-      // don't send updates for control keys
-      // TODO: this should probably use a diff strategy instead of key detection
-      || isControlKey(evt.keyCode)) {
+  handleSyncToDom(evt) {
+    // don't send updates for control keys
+    if (isControlKey(evt.keyCode)
+      // stopped by another handler like Backspace or Enter
+      || evt.isPropagationStopped()) {
       return;
     }
     const selectedNode = getCaretNode();
     const selectedNodeId = getCaretNodeId();
-    const selectedNodeContentDom = cleanText(selectedNode.textContent);
-
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.error('DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
-    // codel lines are stored differently
+    evt.stopPropagation();
+    evt.preventDefault();
+
+    // TODO: handle start != end (range is not collapsed)
+    const [caretPositionStart, caretPositionEnd]  = getOffsetInParentContent();
+
+    // TODO: code lines are stored differently, custom behavior
     if (selectedNode.tagName === 'PRE') {
-      handleDomSyncCode(this.documentModel, selectedNodeId, selectedNodeContentDom);
+      const beforeContentDom = cleanText(selectedNode.textContent);
+      const updatedContentDom = `${beforeContentDom.slice(0, caretPositionStart)}${evt.key}${beforeContentDom.slice(caretPositionStart)}`;
+      handleDomSyncCode(this.documentModel, selectedNodeId, updatedContentDom);
       console.debug('DOM SYNC PRE ', selectedNode);
       this.saveContentBatchDebounce();
       return;
     }
-    
+
     let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     // paragraph has selections?  adjust starts and ends of any that fall on or after the current caret position
-    const selectedNodeContentMap = selectedNodeMap.get('content') || '';
-    // TODO: handle diffStart != diffEnd (range is not collapsed)
-    const [diffStartDomRange, _] = this.keyDownCaretPosition;
-    const [diffStartFromTextDiff, diffLength] = getDiffStartAndLength(selectedNodeContentMap, selectedNodeContentDom);
-    // HACK: ugh, zero length char placeholder (so we can set the caret) causes this to be off by one when entering the first character in the title of a new post...
-    let diffStart = diffStartDomRange;
-    if (selectedNodeContentMap.length === 0) {
-      diffStart = diffStartFromTextDiff;
-    }
-    // TODO: handle cut/paste?
-    // TODO: handle select & type or select & delete
-    // TODO: 'Del' does it work at the edge of 2 selections?
-    if (diffLength === 0) {
-      return;
-    }
-    console.debug('DOM SYNC diff: ', diffStart, ' diffLen: ', diffLength, 'length: ', selectedNodeContentDom.length);
-    selectedNodeMap = selectedNodeMap.set('content', selectedNodeContentDom);
+    const beforeContentMap = selectedNodeMap.get('content') || '';
+    const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${getCharFromEvent(evt)}${beforeContentMap.slice(caretPositionStart)}`;
+    const diffLength = updatedContentMap.length - beforeContentMap.length;
+
+    console.info('DOM SYNC diff: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
+    selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
     // use the offset from 'onKeyDown' handler - before DOM was updated to know the caret start position
-    selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, diffStart, diffLength);
+    selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, diffLength);
     this.documentModel.update(selectedNodeMap);
-
-    if (this.props.match.params.id !== NEW_POST_URL_ID) {
-      this.saveContentBatchDebounce();
-      return;
-    }
-
-    // setState here to show/hide the title placeholder - only for an unsaved post!
+    // TODO use commitUpdates()
     this.setState({
       nodesByParentId: this.documentModel.nodesByParentId,
     }, () => {
+        if (this.props.match.params.id !== NEW_POST_URL_ID) {
+          this.saveContentBatchDebounce();
+        }
       // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
       //  The browser will then place the caret at the beginning of the textContent... 😞
-      setCaret(selectedNodeId, diffStart + diffLength);
+      setCaret(selectedNodeId, caretPositionStart + diffLength);
     });
   }
 
+  handleSyncFromDom(evt) {
+    // Stop all updates to the contenteditable div!
+    evt.stopPropagation();
+    evt.preventDefault();
+    // TODO: detect emoji keyboard insert
+  }
 
   /**
    * Move caret for special user input cases
@@ -553,10 +585,17 @@ export default class EditPost extends React.Component {
       return;
     }
     const domNode = getCaretNode();
-    if (domNode && (domNode.tagName === 'PRE'
+    if (!domNode) return;
+    if (domNode.tagName === 'PRE'
       // when clicking on a section, the caret will be on an input in the edit image or quote menu, ignore
-      || domNode.dataset.isMenu === 'true' /* TODO: why string? */)) {
+      || domNode.dataset.isMenu === 'true' /* TODO: why string? */) {
       // TODO
+      return;
+    }
+    // TODO: clicking on the <article> tag comes back as the header-spacer???
+    //  if we're clicking on the document container, focus the end of the last node
+    if (domNode.id === 'header-spacer') {
+      setCaret(this.documentModel.rootId, -1, true);
       return;
     }
     const selectedNodeId = getCaretNodeId(domNode);
@@ -581,19 +620,26 @@ export default class EditPost extends React.Component {
   }
 
   handleKeyDown = (evt) => {
+    // any control keys being held down?
+    if (evt.metaKey || isControlKey(evt.keyCode)) {
+      return;
+    }
     //console.debug('KeyDown code: ', evt.keyCode, 'Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleBackspace(evt);
     this.handleEnter(evt);
-    this.keyDownCaretPosition = getOffsetInParentContent();
+    this.handleSyncToDom(evt);
   }
 
   handleKeyUp = (evt) => {
+    // any control keys being held down?
+    if (evt.metaKey) {
+      return;
+    }
     //console.debug('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleSyncFromDom(evt);
     this.handleCaret(evt);
     this.manageInsertMenu(evt);
     this.manageFormatSelectionMenu(evt);
-    this.cancelledEvent = null;
   }
 
   handleMouseUp = (evt) => {
@@ -613,23 +659,28 @@ export default class EditPost extends React.Component {
     const selectedNodeType = getCaretNodeType(selectedNode);
     const selectedNodeId = getCaretNodeId(selectedNode);
 
-    const [caretPosition] = getOffsetInParentContent();
+    const [caretPositionStart, _] = getOffsetInParentContent();
     // split selectedNodeContent at caret
-    const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
-    const domLines = evt.clipboardData.getData('text/plain').split('\n');
+    const clipboardText = evt.clipboardData.getData('text/plain');
 
     evt.stopPropagation();
     evt.preventDefault();
 
     let focusNodeId;
-    let focusIdx = selectedNodeContent.length;
+    let focusIdx = caretPositionStart;
     switch (selectedNodeType) {
       case NODE_TYPE_PRE: {
         [
           focusNodeId,
-          focusIdx
-        ] = handlePasteCode(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent, domLines);
+          focusIdx,
+        ] = handlePasteCode(this.documentModel, selectedNodeId, caretPositionStart, clipboardText);
         break;
+      }
+      case NODE_TYPE_P: {
+        [
+          focusNodeId,
+          focusIdx,
+        ] = handlePasteParagraph(this.documentModel, selectedNodeId, caretPositionStart, clipboardText);
       }
       default: { /*NOOP*/
       }
@@ -908,11 +959,27 @@ export default class EditPost extends React.Component {
     const rect = range.getBoundingClientRect();
     const selectedNodeId = getCaretNodeId();
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
+    // Top Offset (from top of document) - needs a heuristic!
+    // start with the top offset of the paragraph
+    const paragraphTop = selectedNode.offsetTop;
+    // get a percentage of where the start of the selection is relative to the length of the content
+    const percentageOfText = (startOffset / selectedNode.textContent.length);
+    // take that percentage from height of the paragraph
+    const percentageOffset = selectedNode.offsetHeight * percentageOfText;
+    // get closest clean division of the height of the selection (this sort of works)
+
+    let offsetByLineHeight = 0;
+    while (true) {
+      if (offsetByLineHeight + lineHeight > percentageOffset) {
+        break;
+      }
+      offsetByLineHeight += lineHeight;
+    }
     //const
     this.setState({
       formatSelectionNode: selectedNodeModel,
       formatSelectionModel: getSelection(selectedNodeModel, startOffset, endOffset),
-      formatSelectionMenuTopOffset: selectedNode.offsetTop,
+      formatSelectionMenuTopOffset: paragraphTop + offsetByLineHeight,
       formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2,
     });
   }
@@ -1034,33 +1101,33 @@ export default class EditPost extends React.Component {
               </HeaderLinksContainer>
             </HeaderContentContainer>
           </Header>
-          <HeaderSpacer />
-          <Article>
+          <HeaderSpacer id="header-spacer" />
+          <ArticleStyled>
             {root.get('id') && (
-              <React.Fragment>
-                {shouldShowPublishPostMenu && (<PublishPostForm
-                  post={post}
-                  updatePost={this.updatePost}
-                  publishPost={this.publishPost}
-                  savePost={this.savePost}
-                  close={this.togglePostMenu}
-                  successMessage={shouldShowPostSuccess}
-                  errorMessage={shouldShowPostError}
-                />)}
-                <div id="filbert-edit-container"
-                  contentEditable={true}
-                  suppressContentEditableWarning={true}
-                  onKeyDown={this.handleKeyDown}
-                  onInput={this.handleKeyUp}
-                  onPaste={this.handlePaste}
-                >
-                  <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
-                </div>
-              </React.Fragment>
+              <div id="filbert-edit-container"
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onKeyDown={this.handleKeyDown}
+                onKeyUp={this.handleKeyUp}
+                onInput={this.handleKeyUp}
+                onPaste={this.handlePaste}
+              >
+                <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
+              </div>
             )}
-          </Article>
+          </ArticleStyled>
           <Footer />
         </main>
+        {shouldShowPublishPostMenu && (<PublishPostForm
+            post={post}
+            updatePost={this.updatePost}
+            publishPost={this.publishPost}
+            savePost={this.savePost}
+            close={this.togglePostMenu}
+            successMessage={shouldShowPostSuccess}
+            errorMessage={shouldShowPostError}
+            forwardRef={this.getInputForwardedRef}
+        />)}
         {shouldShowInsertMenu && (<InsertSectionMenu
             insertMenuTopOffset={insertMenuTopOffset}
             insertMenuLeftOffset={insertMenuLeftOffset}

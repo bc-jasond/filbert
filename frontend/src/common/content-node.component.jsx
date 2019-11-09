@@ -54,7 +54,10 @@ import {
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
 } from './utils';
-import { getSelectionKey } from '../pages/edit/edit-selection-helpers';
+import {
+  getContentForSelection,
+  getSelectionKey,
+} from '../pages/edit/edit-selection-helpers';
 
 const StyledDiv = styled.div``;
 
@@ -261,19 +264,10 @@ export default class ContentNode extends React.Component {
         const meta = node.get('meta', Map());
         const selections = meta
           .get('selections', List([Map()]));
-        const getContentForSelection = (selection) => {
-          let content = node.get('content');
-          if (content === undefined || content === null) {
-            content = '';
-          }
-          const startOffset = selection.get('start');
-          const endOffset = selection.get('end');
-          return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
-        };
         let children = [];
         selections.forEach((selection) => {
           const key = getSelectionKey(selection);
-          let selectionJsx = getContentForSelection(selection);
+          let selectionJsx = getContentForSelection(node, selection);
           if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
             selectionJsx = (<StrikeText key={key}>{selectionJsx}</StrikeText>)
           }

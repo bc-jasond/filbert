@@ -58,7 +58,7 @@ const IconH2 = styled(IconH2Svg)`
 `;
 
 export const FormatSelectionMenu = styled(LilBlackMenu)`
-  top: ${p => p.top - (p.shouldShowUrl ? 80 : 50)}px;
+  top: ${p => p.top - (p.shouldShowUrl ? 30 : 0)}px;
   left: ${p => p.left - 165}px; // 165 is half the width of the menu
 `;
 export const LinkInput = styled(DarkInput)`

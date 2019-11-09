@@ -202,6 +202,7 @@ export const ImagePlaceholderFill = styled.div`
 `;
 export const Img = styled.img`
   position: absolute;
+  box-sizing: border-box;
   top: 0;
   left: 0;
   width: 100%;

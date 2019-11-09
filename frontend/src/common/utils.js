@@ -38,11 +38,22 @@ export function cleanText(text) {
   const re = new RegExp(ZERO_LENGTH_CHAR);
   return text
     .replace(re, '')
-
-    //
 }
 
-export function normalizeHtmlEntities(text) {
+export function getCharFromEvent(evt, node, offset) {
+  if (evt && typeof evt.keyCode !== undefined) {
+    // TODO: replace only necessary spaces with &nbsp;
+    if (evt.keyCode === 32) {
+      return String.fromCharCode(160);
+    }
+    return evt.key;
+  } else {
+    // TODO: handle emoji keyboard insert
+    return evt.nativeEvent.data;
+  }
+}
+
+function normalizeHtmlEntities(text) {
   // TODO: what other htmlentities need to be normalized here?
   // for pesky char code 160 ( &nbsp; )
   // contenteditable automatically converts between " " 32 and "&nbsp;" 160 for placeholder spaces at the end of tags or sequential spaces
@@ -65,13 +76,10 @@ export function getDiffStartAndLength(oldStr, newStr) {
     if (newCurrent.length === 0) {
       // chars were deleted from the end
       // offset the loop counter to account for the change in direction (right to left for a 'delete')
-      return [i + diffLength, -diffLength];
+      return [i, -diffLength];
     }
     if (oldCurrent !== newCurrent) {
-      if (doesAddCharacters) {
-        return [i, diffLength];
-      }
-      return [i + diffLength, -diffLength];
+      return [i, doesAddCharacters ? diffLength : -diffLength];
     }
   }
   // strings are the same!

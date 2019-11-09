@@ -1,6 +1,8 @@
  import {
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_H1,
+  NODE_TYPE_P,
+  NODE_TYPE_LI,
   DOM_TEXT_NODE_TYPE_ID,
   KEYCODE_TAB,
   KEYCODE_SHIFT_RIGHT,
@@ -30,8 +32,9 @@
   KEYCODE_F10,
   KEYCODE_F11,
   KEYCODE_F12,
-  KEYCODE_PRINT_SCREEN, NODE_TYPE_P, NODE_TYPE_LI,
+  KEYCODE_PRINT_SCREEN,
 } from './constants';
+ import {cleanText} from "./utils";
 
 let infiniteLoopCount = 0;
 
@@ -71,7 +74,11 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   if (textNode) {
     console.info('setCaret textNode ', textNode, ' offset ', offset);
     // set caret to end of text content
-    range.setStart(textNode, offset === -1 ? textNode.textContent.length : offset);
+    let caretOffset = offset;
+    if (offset === -1 || offset > textNode.textContent.length) {
+      caretOffset = textNode.textContent.length;
+    }
+    range.setStart(textNode, caretOffset);
     sel.addRange(range);
   } else {
     console.warn(`setCaret - couldn't find a text node inside of `, nodeId);
@@ -117,6 +124,10 @@ export function getOffsetInParentContent() {
   for (let i = 0; i < rangeIdx; i++) {
     // for each child of the paragraph that precedes our current range - add the length of it's content to the offset
     offset += paragraph.childNodes[i].textContent.length;
+  }
+  // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
+  if (rangeStartOffset === 1 && cleanText(paragraph.textContent).length === 0) {
+    return [0, 0];
   }
   // now we'll have the correct positioning of the selected text inside the paragraph (the node that holds the 'content' saved to the DB) text as a whole no matter what formatting tags have been applied
   return [rangeStartOffset + offset, rangeEndOffset + offset];

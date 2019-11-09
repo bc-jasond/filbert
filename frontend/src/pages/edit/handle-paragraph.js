@@ -7,7 +7,12 @@ import {
   NODE_TYPE_SECTION_H2,
   NODE_TYPE_SECTION_SPACER
 } from '../../common/constants';
-import { splitSelectionsAtCaretOffset } from './edit-selection-helpers';
+import {
+  adjustSelectionOffsetsAndCleanup,
+  formatSelections,
+  splitSelectionsAtCaretOffset
+} from './edit-selection-helpers';
+import {getCharFromEvent} from "../../common/utils";
 
 export function handleBackspaceParagraph(documentModel, selectedNodeId) {
   const selectedSection = documentModel.getSection(selectedNodeId);
@@ -82,7 +87,7 @@ export function handleEnterParagraph(documentModel, selectedNodeId, caretPositio
   let leftNode = documentModel.getNode(selectedNodeId);
   let rightNode = documentModel.getNode(rightNodeId);
   [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
-  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', leftNode.getIn(['meta', 'selections'], List()).toJS(), 'right selections: ', rightNode.getIn(['meta', 'selections'], List()).toJS());
+  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', formatSelections(leftNode), 'right selections: ', formatSelections(rightNode));
   documentModel.update(leftNode.set('content', contentLeft));
   documentModel.update(rightNode);
   return rightNodeId;
@@ -119,4 +124,18 @@ export function paragraphToTitle(documentModel, selectedNodeId, sectionType) {
   }
   const sectionOffset = documentModel.splitSectionForFormatChange(sectionId, paragraphIdx);
   return documentModel.insertSection(sectionType, sectionIdx + sectionOffset, content);
+}
+
+export function handlePasteParagraph(documentModel, selectedNodeId, caretPosition, clipboardText) {
+  let selectedNode = documentModel.getNode(selectedNodeId);
+  const content = selectedNode.get('content') || '';
+  const contentLeft = content.substring(0, caretPosition);
+  const contentRight = content.substring(caretPosition);
+  console.info('PASTE - paragraph content: ', contentLeft, contentRight, caretPosition, clipboardText);
+  const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
+  const diffLength = clipboardText.length;
+  selectedNode = selectedNode.set('content', updatedContent);
+  selectedNode = adjustSelectionOffsetsAndCleanup(selectedNode, caretPosition, diffLength);
+  documentModel.update(selectedNode);
+  return [selectedNodeId, contentLeft.length + clipboardText.length];
 }
