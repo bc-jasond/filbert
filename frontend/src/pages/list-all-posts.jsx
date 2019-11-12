@@ -2,15 +2,18 @@ import { fromJS, List } from 'immutable';
 import React from 'react';
 
 import {
+  apiDelete,
   apiGet,
 } from '../common/fetch';
-
 import {
   getSession,
   getUserName,
-  signout
+  signout,
 } from '../common/session';
-import { formatPostDate } from '../common/utils';
+import {
+  confirmPromise,
+  formatPostDate,
+} from '../common/utils';
 
 import Footer from './footer'
 import {
@@ -32,7 +35,6 @@ import {
   StyledHeadingA,
   StyledA,
   PostMetaRow,
-  PostMetaContent,
   PostMetaContentFirst,
   PostAction,
   AuthorExpand,
@@ -60,6 +62,16 @@ export default class AllPosts extends React.Component {
       return post;
     }))
     this.setState({ posts: postsFormatted })
+  }
+  
+  deletePost = async (post) => {
+    try {
+      await confirmPromise(`Delete post ${post.get('title')}?`);
+      await apiDelete(`/post/${post.get('id')}`);
+      this.loadPosts();
+    } catch (err) {
+      console.error('Delete post error:', err)
+    }
   }
   
   render() {
@@ -118,7 +130,7 @@ export default class AllPosts extends React.Component {
                     )}
                     {post.get('canDelete') && (
                       <React.Fragment>
-                        <PostAction>delete</PostAction>
+                        <PostAction onClick={() => this.deletePost(post)}>delete</PostAction>
                       </React.Fragment>
                     )}
                     <AuthorExpand>{post.get('username')}</AuthorExpand>
