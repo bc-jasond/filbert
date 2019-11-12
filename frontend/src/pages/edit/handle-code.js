@@ -15,12 +15,21 @@ function getPreCodeSectionIdAndIndex(selectedNodeId) {
   return [sectionId, parseInt(lineIdx, 10)];
 }
 
-export function handleBackspaceCode(documentModel, selectedNodeId, caretPositionStart) {
+export function handleBackspaceCode(documentModel, selectedNodeId, caretPositionStart, diffLength = 1) {
   const [selectedSectionId, lineIndex] = getPreCodeSectionIdAndIndex(selectedNodeId);
   const selectedSection = documentModel.getNode(selectedSectionId);
   let lines = selectedSection.getIn(['meta', 'lines'], List());
   const currentLineContent = lines.get(lineIndex);
-  const updatedLineContent = `${currentLineContent.slice(0, caretPositionStart - 1)}${currentLineContent.slice(caretPositionStart)}`;
+  let updatedLineContent;
+  // TODO handle multi-line delete
+  if (diffLength === 1) {
+    // delete one char
+    updatedLineContent = `${currentLineContent.slice(0, caretPositionStart - 1)}${currentLineContent.slice(caretPositionStart)}`;
+  } else {
+    // delete a highlight of 1 or more chars
+    updatedLineContent = `${currentLineContent.slice(0, caretPositionStart)}${currentLineContent.slice(caretPositionStart + diffLength)}`;
+  }
+  
   documentModel.update(
     selectedSection.setIn(['meta', 'lines'], lines.set(lineIndex, updatedLineContent))
   );
@@ -115,38 +124,38 @@ export function handleEnterCode(documentModel, selectedNodeId, caretPosition, co
 }
 
 export function handlePasteCode(documentModel, selectedNodeId, caretPosition, clipboardText) {
-  const domLines = clipboardText.split('\n');
-  const content = documentModel.getNode(selectedNodeId).get('content') || '';
-  const contentLeft = content.substring(0, caretPosition);
-  const contentRight = content.substring(caretPosition);
+  const clipboardLines = clipboardText.split('\n');
   const [selectedSectionId, selectedLineIdx] = getPreCodeSectionIdAndIndex(selectedNodeId);
   const selectedSection = documentModel.getNode(selectedSectionId);
   const lines = selectedSection.getIn(['meta', 'lines'], List());
-  console.info('PASTE - code section content: ', contentLeft, contentRight, selectedSectionId, selectedLineIdx, domLines);
-  if (domLines.length === 1) {
+  const selectedLine = lines.get(selectedLineIdx);
+  const selectedLineLeft = selectedLine.substring(0, caretPosition);
+  const selectedLineRight = selectedLine.substring(caretPosition);
+  console.info('PASTE - code section selectedLine: ', selectedLineLeft, selectedLineRight, selectedSectionId, selectedLineIdx, clipboardLines);
+  if (clipboardLines.length === 1) {
     documentModel.update(
       selectedSection.setIn(
         ['meta', 'lines'],
         lines
-          .set(selectedLineIdx, `${contentLeft}${domLines[0]}${contentRight}`)
+          .set(selectedLineIdx, `${selectedLineLeft}${clipboardLines[0]}${selectedLineRight}`)
       )
     );
-    return [`${selectedSectionId}-${selectedLineIdx}`, contentLeft.length + domLines[0].length];
+    return [`${selectedSectionId}-${selectedLineIdx}`, selectedLineLeft.length + clipboardLines[0].length];
   }
-  // domLines.length > 1
-  const firstDomLine = domLines.shift();
-  const lastDomLine = domLines.pop();
+  // clipboardLines.length > 1
+  const firstClipboardLine = clipboardLines.shift();
+  const lastClipboardLine = clipboardLines.pop();
   documentModel.update(
     selectedSection.setIn(
       ['meta', 'lines'],
       lines
-        .set(selectedLineIdx, `${contentLeft}${firstDomLine}`)
+        .set(selectedLineIdx, `${selectedLineLeft}${firstClipboardLine}`)
         // delete the empty line
-        .splice(selectedLineIdx + 1, content.length > 0 ? 0 : 1, ...domLines)
-        .insert(selectedLineIdx + domLines.length + 1, `${lastDomLine}${contentRight}`)
+        .splice(selectedLineIdx + 1, selectedLine.length > 0 ? 0 : 1, ...clipboardLines)
+        .insert(selectedLineIdx + clipboardLines.length + 1, `${lastClipboardLine}${selectedLineRight}`)
     )
   );
-  return [`${selectedSectionId}-${selectedLineIdx + domLines.length + 1}`, lastDomLine.length];
+  return [`${selectedSectionId}-${selectedLineIdx + clipboardLines.length + 1}`, lastClipboardLine.length];
 }
 
 export function handleDomSyncCode(documentModel, selectedNodeId, newContent, caretPositionStart) {

@@ -359,7 +359,7 @@ export default class EditPost extends React.Component {
     return cleaned.length > 0;
   }
 
-  handleBackspace(evt) {
+  handleBackspace = async (evt) => {
     if (evt.keyCode !== KEYCODE_BACKSPACE) {
       return;
     }
@@ -385,34 +385,40 @@ export default class EditPost extends React.Component {
     if (range.startOffset > 0 && selectedNodeContent) {
       //  not at beginning of node text and node text isn't empty
       //  it's just a "normal" backspace, not a 'structural change' backspace
-      //  (although a selection could span across nodes and become structural)
+      //
+      // NOTE: highlight (diffLength >= 1) could span across nodes and become structural
       const diffLength = Math.max(1, range.endOffset - range.startOffset);
-      if (diffLength === 1) {
-        // delete just one char
-        switch (selectedNode.tagName) {
-          case 'PRE': {
-            console.debug('BACKSPACE PRE ', selectedNode);
-            handleBackspaceCode(this.documentModel, selectedNodeId, caretPositionStart);
-            break;
-          }
-          default: {
-            let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-            const beforeContentMap = selectedNodeMap.get('content') || '';
-            const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - 1)}${beforeContentMap.slice(caretPositionStart)}`;
-            selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
-            selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, -diffLength);
-            this.documentModel.update(selectedNodeMap);
-          }
+      switch (selectedNode.tagName) {
+        case 'PRE': {
+          console.debug('BACKSPACE PRE ', selectedNode);
+          handleBackspaceCode(this.documentModel, selectedNodeId, caretPositionStart, diffLength);
+          break;
         }
-        // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
-        //  The browser will then place the caret at the beginning of the textContent... 😞
-        this.commitUpdates(selectedNodeId, diffLength === 1 ? caretPositionStart - 1 : caretPositionStart)
-        return;
+        default: {
+          let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
+          const beforeContentMap = selectedNodeMap.get('content') || '';
+          let updatedContentMap;
+          if (diffLength === 1) {
+            updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - 1)}${beforeContentMap.slice(caretPositionStart)}`;
+          } else {
+            // clear the selected format node when deleting the highlighted selection
+            // NOTE: must wait for state have been set or setCaret will check stale values
+            await new Promise(resolve => {
+              this.setState({formatSelectionNode: Map()}, resolve)
+            });
+            updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${beforeContentMap.slice(caretPositionStart + diffLength)}`;
+          }
+          selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
+          selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, -diffLength);
+          this.documentModel.update(selectedNodeMap);
+        }
       }
-      // TODO: a highlighted selection was deleted
-      // TODO: did selection span multiple nodes?
+      // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
+      //  The browser will then place the caret at the beginning of the textContent... 😞
+      this.commitUpdates(selectedNodeId, diffLength === 1 ? caretPositionStart - 1 : caretPositionStart);
       return;
     }
+
     /**
      * TODO: make these into sets of atomic commands that are added to a queue,
      *  then make a 'flush' command to process this queue.
@@ -421,13 +427,17 @@ export default class EditPost extends React.Component {
      *  UPDATE: immutablejs has helped make this situation more predictable but,
      *  it still isn't conducive to an undo/redo workflow, so leaving the TODO
      *
+     *  UPDATE 2: this is a lot more stable after grouping handlers by Node Types.
+     *  Splitting out the "DocumentModel" and the "UpdateManager" concerns will help enable undo/redo history.
+     *  This will all be revisited during undo/redo.
+     *
      * AN INCOMPLETE LIST OF THINGS TO CONSIDER FOR DELETE (in order, maybe):
-     * 1) only-child of first section - noop until there's special 'rootIsEmpty' placeholder logic
-     * 2) delete the current selected node - always if 'this far'
-     * 3) delete the previous section (if it's a SPACER or other terminal node)?
-     * 4) merge the current section's children (could be 0) into previous section (current section will be deleted)
-     * 5) merge the current selected node's text into the previous node?
-     * 6) selected node is/was an only-child, delete current section
+     * 1) only-child of first "Section" - noop until there's special 'rootIsEmpty' placeholder logic.  If user deletes last paragraph or title "Section", they will be left with a blank screen and can't proceed
+     * 2) delete the current selected "Node" - always if 'this far'
+     * 3) delete the previous "Section" (if it's a SPACER or other terminal "Node")?
+     * 4) merge the current "Section"'s children (could be 0) into previous "Section" (current "Section" will be deleted)
+     * 5) merge the current selected "Node"'s text into the previous "Node"?
+     * 6) selected "Node" is/was an only-child, delete current "Section"
      */
     let focusNodeId;
     let caretOffset;
@@ -510,12 +520,10 @@ export default class EditPost extends React.Component {
   }
 
   /**
-   * NOTE (TODO?): we don't call setState({nodesByParentId... here. (except when typing a new Title on /edit/new)
-   * The sync goes DOM -> JSModel only until the user formats a selection, hits enter or edits a section.
-   * Calling setState({nodesByParentId... here causes issues with the caret position
-   * // TODO: handle cut/paste?
-    // TODO: handle select & type or select & delete
-    // TODO: 'Del' does it work at the edge of 2 selections?
+   * Capture edit intent one keystroke at a time.  Update JS Model then let React selectively re-render DOM
+   *
+    // TODO: better cut/paste
+    // TODO: handle select & type
    */
   handleSyncToDom(evt) {
     // don't send updates for control keys
@@ -557,7 +565,7 @@ export default class EditPost extends React.Component {
       }
     }
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
-    //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
+    //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
     this.commitUpdates(selectedNodeId, caretPositionStart + diffLength);
   }
 
@@ -647,6 +655,8 @@ export default class EditPost extends React.Component {
       setCaret(this.documentModel.getNextFocusNodeId(selectedNodeId));
     }
   }
+  
+  // MAIN "ON" EVENT CALLBACKS
 
   handleKeyDown = (evt) => {
     // any control keys being held down?
@@ -655,6 +665,7 @@ export default class EditPost extends React.Component {
     }
     //console.debug('KeyDown code: ', evt.keyCode, 'Node: ', getCaretNode(), ' offset ', getCaretOffset())
     this.handleBackspace(evt);
+    // TODO this.handleDel(evt); // currently, no support for the 'Del' key
     this.handleEnter(evt);
     this.handleSyncToDom(evt);
   }
