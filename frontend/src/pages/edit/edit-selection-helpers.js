@@ -326,7 +326,12 @@ export function concatSelections(leftModel, rightModel) {
   const left = getSelections(leftModel);
   let right = getSelections(rightModel);
   let newSelections = left.slice();
-  const leftOffset = left.last(Selection()).get(SELECTION_END);
+  let leftOffset = left.last(Selection()).get(SELECTION_END);
+  if (leftOffset === -1) {
+    // left node has no selections - substitute content length
+    // NOTE: left and right content has already been merged, subtract the right length!
+    leftOffset = leftModel.get('content','').length - rightModel.get('content', '').length;
+  }
   // add all right selections with left offsets
   // NOTE: if left.last() and right.first() have the same formats, they'll be merged in mergeAdjacent
   for (let i = 0; i < right.size; i++) {

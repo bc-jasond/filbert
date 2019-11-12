@@ -73,7 +73,7 @@ export function handleEnterList(documentModel, selectedNodeId, caretPosition, co
   let leftNode = documentModel.getNode(selectedNodeId);
   let rightNode = documentModel.getNode(rightNodeId);
   [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
-  documentModel.update(leftNode);
+  documentModel.update(leftNode.set('content', contentLeft));
   documentModel.update(rightNode);
   return rightNodeId;
 }
