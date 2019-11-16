@@ -64,6 +64,7 @@ export const FormatSelectionMenu = styled(LilBlackMenu)`
 export const LinkInput = styled(DarkInput)`
   display: block;
   height: 0;
+  padding: 0;
   transition: .05s height;
   ${p => p.selected && `
     padding: 12px;

@@ -36,12 +36,11 @@ import {
 } from '../../common/utils';
 import {
   getRange,
-  getCaretNode,
-  getCaretNodeId,
-  getCaretNodeType,
+  getNodeId,
+  getNodeType,
   getFirstHeadingContent,
   setCaret,
-  getOffsetInParentContent,
+  getHighlightedSelectionOffsets,
   isControlKey,
 } from '../../common/dom';
 
@@ -135,7 +134,7 @@ const ArticleStyled = styled(Article)`
 export default class EditPost extends React.Component {
   constructor(props) {
     super(props);
-
+    
     this.state = {
       post: Map(),
       nodesByParentId: Map(),
@@ -158,7 +157,7 @@ export default class EditPost extends React.Component {
       shouldShowPostSuccess: null,
     }
   }
-
+  
   async componentDidMount() {
     console.debug("EDIT - didMount")
     try {
@@ -171,14 +170,14 @@ export default class EditPost extends React.Component {
       console.error('EDIT - load post error:', err);
     }
   }
-
+  
   async componentDidUpdate(prevProps) {
     try {
       if (this.props.match.params.id === prevProps.match.params.id) {
         return;
       }
       console.debug("EDIT - didUpdate")
-
+      
       this.setState({
         shouldRedirectToEditWithId: false,
         shouldShowInsertMenu: false,
@@ -191,12 +190,12 @@ export default class EditPost extends React.Component {
       console.error('EDIT - load post error:', err);
     }
   }
-
+  
   documentModel = new EditDocumentModel();
   updateManager = new EditUpdateManager();
   commitTimeoutId;
   inputRef;
-
+  
   saveContentBatch = async () => {
     try {
       const updated = this.updateManager.updates(this.documentModel);
@@ -209,13 +208,13 @@ export default class EditPost extends React.Component {
       console.error('Content Batch Update Error: ', err);
     }
   }
-
+  
   saveContentBatchDebounce() {
     console.debug("Batch Debounce");
     clearTimeout(this.commitTimeoutId);
     this.commitTimeoutId = setTimeout(this.saveContentBatch, 750);
   }
-
+  
   newPost() {
     console.debug("New PostNew PostNew PostNew PostNew PostNew Post");
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
@@ -223,10 +222,10 @@ export default class EditPost extends React.Component {
     this.documentModel.init(postPlaceholder, this.updateManager);
     this.updateManager.stageNodeUpdate(this.documentModel.rootId);
     const focusNodeId = this.documentModel.insertSection(NODE_TYPE_SECTION_H1, 0);
-    this.setState({post: Map()});
+    this.setState({ post: Map() });
     this.commitUpdates(focusNodeId);
   }
-
+  
   createNewPost = async () => {
     const title = getFirstHeadingContent();
     // get canonical - chop title, add hash
@@ -238,7 +237,7 @@ export default class EditPost extends React.Component {
     await this.saveContentBatch();
     this.setState({ shouldRedirectToEditWithId: postId })
   }
-
+  
   loadPost = async () => {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.match.params.id}`);
@@ -288,7 +287,7 @@ export default class EditPost extends React.Component {
   }
   publishPost = async () => {
     const { post } = this.state;
-
+    
     try {
       await confirmPromise('Publish this post?  This makes it public.');
       await this.savePost();
@@ -324,7 +323,7 @@ export default class EditPost extends React.Component {
     const { shouldShowPublishPostMenu: oldVal } = this.state;
     this.setState({ shouldShowPublishPostMenu: !oldVal })
   }
-
+  
   commitUpdates = (focusNodeId, offset = -1, shouldFocusLastChild) => {
     // TODO: optimistically save updated nodes - look ma, no errors!
     const {
@@ -339,7 +338,7 @@ export default class EditPost extends React.Component {
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,
-      },() => {
+      }, () => {
         // if we're on /edit/new, we don't save until user hits "enter"
         if (this.props.match.params.id !== NEW_POST_URL_ID) {
           this.saveContentBatchDebounce();
@@ -353,12 +352,7 @@ export default class EditPost extends React.Component {
       });
     })
   }
-
-  activeElementHasContent() {
-    const cleaned = cleanText(getCaretNode().textContent);
-    return cleaned.length > 0;
-  }
-
+  
   handleBackspace = async (evt) => {
     if (evt.keyCode !== KEYCODE_BACKSPACE) {
       return;
@@ -368,29 +362,33 @@ export default class EditPost extends React.Component {
       console.warn('BACKSPACE no range');
       return;
     }
-    const selectedNodeId = getCaretNodeId();
+    const [
+      [caretPositionStart, _, selectedNode],
+      middle,
+      end,
+    ] = getHighlightedSelectionOffsets();
+    const selectedNodeId = getNodeId(selectedNode);
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('BACKSPACE - bad selection, no id ', selectedNode);
       return;
     }
-    const selectedNode = getCaretNode();
-    const selectedNodeType = getCaretNodeType();
-    const [caretPositionStart, _] = getOffsetInParentContent();
+    
     const selectedNodeContent = cleanText(selectedNode.textContent);
+    const selectedNodeType = getNodeType(selectedNode);
     console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
-
+    
     evt.stopPropagation();
     evt.preventDefault();
-
+    
     if (range.startOffset > 0 && selectedNodeContent) {
       //  not at beginning of node text and node text isn't empty
       //  it's just a "normal" backspace, not a 'structural change' backspace
       //
       // NOTE: highlight (diffLength >= 1) could span across nodes and become structural
       const diffLength = Math.max(1, range.endOffset - range.startOffset);
-      switch (selectedNode.tagName) {
-        case 'PRE': {
-          console.debug('BACKSPACE PRE ', selectedNode);
+      switch (selectedNodeType) {
+        case NODE_TYPE_PRE: {
+          // console.debug('BACKSPACE PRE ', selectedNode);
           handleBackspaceCode(this.documentModel, selectedNodeId, caretPositionStart, diffLength);
           break;
         }
@@ -404,7 +402,7 @@ export default class EditPost extends React.Component {
             // clear the selected format node when deleting the highlighted selection
             // NOTE: must wait for state have been set or setCaret will check stale values
             await new Promise(resolve => {
-              this.setState({formatSelectionNode: Map()}, resolve)
+              this.setState({ formatSelectionNode: Map() }, resolve)
             });
             updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${beforeContentMap.slice(caretPositionStart + diffLength)}`;
           }
@@ -418,7 +416,7 @@ export default class EditPost extends React.Component {
       this.commitUpdates(selectedNodeId, diffLength === 1 ? caretPositionStart - 1 : caretPositionStart);
       return;
     }
-
+    
     /**
      * TODO: make these into sets of atomic commands that are added to a queue,
      *  then make a 'flush' command to process this queue.
@@ -462,34 +460,37 @@ export default class EditPost extends React.Component {
     }
     this.commitUpdates(focusNodeId, caretOffset, true);
   }
-
+  
   handleEnter(evt) {
     if (evt.keyCode !== KEYCODE_ENTER) {
       return;
     }
-
+    
     evt.stopPropagation();
     evt.preventDefault();
-
+    
     const range = getRange();
     if (!range) {
       console.warn('ENTER no range');
       return;
     }
-    const selectedNodeId = getCaretNodeId();
+    const [
+      [caretPosition, _, selectedNode],
+      middle,
+      end,
+    ] = getHighlightedSelectionOffsets();
+    const selectedNodeId = getNodeId(selectedNode);
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('ENTER - bad selection, no id ', selectedNode);
       return;
     }
-
-    const [caretPosition] = getOffsetInParentContent();
-    const selectedNode = getCaretNode();
+    
     console.info('ENTER node: ', selectedNode, caretPosition);
-    const selectedNodeType = getCaretNodeType();
+    const selectedNodeType = getNodeType(selectedNode);
     // split selectedNodeContent at caret
     const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
     let focusNodeId;
-
+    
     switch (selectedNodeType) {
       case NODE_TYPE_PRE: {
         focusNodeId = handleEnterCode(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
@@ -518,12 +519,12 @@ export default class EditPost extends React.Component {
     }
     this.commitUpdates(focusNodeId, 0);
   }
-
+  
   /**
    * Capture edit intent one keystroke at a time.  Update JS Model then let React selectively re-render DOM
    *
-    // TODO: better cut/paste
-    // TODO: handle select & type
+   // TODO: better cut/paste
+   // TODO: handle select & type
    */
   handleSyncToDom(evt) {
     // don't send updates for control keys
@@ -532,20 +533,23 @@ export default class EditPost extends React.Component {
       || evt.isPropagationStopped()) {
       return;
     }
-    const selectedNode = getCaretNode();
-    const selectedNodeId = getCaretNodeId();
+    const [
+      [caretPositionStart, caretPositionEnd, selectedNode],
+      middle,
+      end,
+    ] = getHighlightedSelectionOffsets();
+    const selectedNodeId = getNodeId(selectedNode);
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('To DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
     evt.stopPropagation();
     evt.preventDefault();
-
+    
     // TODO: handle start != end (range is not collapsed)
-    const [caretPositionStart, caretPositionEnd]  = getOffsetInParentContent();
     const newChar = getCharFromEvent(evt);
     const diffLength = newChar.length;
-
+    
     switch (selectedNode.tagName) {
       case 'PRE': {
         console.debug('To DOM SYNC PRE ', selectedNode);
@@ -556,7 +560,7 @@ export default class EditPost extends React.Component {
         let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
         const beforeContentMap = selectedNodeMap.get('content') || '';
         const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${newChar}${beforeContentMap.slice(caretPositionStart)}`;
-
+        
         console.info('To DOM SYNC diff: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
         selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
         // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
@@ -568,26 +572,29 @@ export default class EditPost extends React.Component {
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
     this.commitUpdates(selectedNodeId, caretPositionStart + diffLength);
   }
-
+  
   handleSyncFromDom(evt) {
     // Stop all updates to the contenteditable div!
     evt.stopPropagation();
     evt.preventDefault();
-
+    
     if (evt.type !== 'input') {
       return;
     }
-
-    // NOTE: following for emojis keyboard insert only...
-    const selectedNode = getCaretNode();
-    const selectedNodeId = getCaretNodeId();
+    const [
+      [caretPositionStart, caretPositionEnd, selectedNode],
+      middle,
+      end,
+    ] = getHighlightedSelectionOffsets();
+    const selectedNodeId = getNodeId(selectedNode);
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('From DOM SYNC - bad selection, no id ', selectedNode);
       return;
     }
+    
+    // NOTE: following for emojis keyboard insert only...
     const emoji = getCharFromEvent(evt);
     // TODO: handle start != end (range is not collapsed)
-    const [caretPositionStart, caretPositionEnd]  = getOffsetInParentContent();
     switch (selectedNode.tagName) {
       case 'PRE': {
         console.debug('From DOM SYNC PRE ', selectedNode);
@@ -599,7 +606,7 @@ export default class EditPost extends React.Component {
         const beforeContentMap = selectedNodeMap.get('content') || '';
         const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - emoji.length)}${emoji}${beforeContentMap.slice(caretPositionStart - emoji.length)}`;
         const diffLength = emoji.length;
-
+        
         console.info('From DOM SYNC diff - this should be an emoji: ', emoji, ' caret start: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
         selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
         // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
@@ -607,21 +614,23 @@ export default class EditPost extends React.Component {
         this.documentModel.update(selectedNodeMap);
       }
     }
-
+    
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
     this.commitUpdates(selectedNodeId, caretPositionStart);
   }
-
+  
   /**
    * Move caret for special user input cases
    * @param evt
    */
   handleCaret(evt) {
-    if (this.cancelledEvent || evt.isPropagationStopped()) {
+    if (evt.isPropagationStopped()) {
       return;
     }
-    const domNode = getCaretNode();
+    const [
+      [_, __, domNode],
+    ] = getHighlightedSelectionOffsets();
     if (!domNode) return;
     if (domNode.tagName === 'PRE'
       // when clicking on a section, the caret will be on an input in the edit image or quote menu, ignore
@@ -635,7 +644,7 @@ export default class EditPost extends React.Component {
       setCaret(this.documentModel.rootId, -1, true);
       return;
     }
-    const selectedNodeId = getCaretNodeId(domNode);
+    const selectedNodeId = getNodeId(domNode);
     const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     if (!selectedNodeMap.get('id')) {
       console.warn('CARET no node, bad selection: ', domNode);
@@ -657,55 +666,59 @@ export default class EditPost extends React.Component {
   }
   
   // MAIN "ON" EVENT CALLBACKS
-
+  
   handleKeyDown = (evt) => {
     // any control keys being held down?
     if (evt.metaKey || isControlKey(evt.keyCode)) {
       return;
     }
-    //console.debug('KeyDown code: ', evt.keyCode, 'Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    //console.debug('KeyDown: ', evt)
     this.handleBackspace(evt);
     // TODO this.handleDel(evt); // currently, no support for the 'Del' key
     this.handleEnter(evt);
     this.handleSyncToDom(evt);
   }
-
+  
   handleKeyUp = (evt) => {
     // any control keys being held down?
     if (evt.metaKey) {
       return;
     }
-    //console.debug('KeyUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    //console.debug('KeyUp: ', evt)
     this.handleSyncFromDom(evt);
     this.handleCaret(evt);
     this.manageInsertMenu(evt);
     this.manageFormatSelectionMenu(evt);
   }
-
+  
   handleMouseUp = (evt) => {
-    //console.debug('MouseUp Node: ', getCaretNode(), ' offset ', getCaretOffset())
+    //console.debug('MouseUp: ', evt)
     this.handleCaret(evt);
     this.manageInsertMenu();
     this.manageFormatSelectionMenu(evt);
     // close edit section menus by default, this.sectionEdit() callback will fire after this to override
     this.sectionEditClose();
   }
-
+  
   handlePaste = (evt) => {
-    const selectedNode = getCaretNode();
+    const [
+      [caretPositionStart, _, selectedNode],
+      middle,
+      end,
+    ] = getHighlightedSelectionOffsets();
+    
     if (!selectedNode) {
       return;
     }
-    const selectedNodeType = getCaretNodeType(selectedNode);
-    const selectedNodeId = getCaretNodeId(selectedNode);
-
-    const [caretPositionStart, _] = getOffsetInParentContent();
+    const selectedNodeType = getNodeType(selectedNode);
+    const selectedNodeId = getNodeId(selectedNode);
+    
     // split selectedNodeContent at caret
     const clipboardText = evt.clipboardData.getData('text/plain');
-
+    
     evt.stopPropagation();
     evt.preventDefault();
-
+    
     let focusNodeId;
     let focusIdx = caretPositionStart;
     switch (selectedNodeType) {
@@ -729,16 +742,19 @@ export default class EditPost extends React.Component {
       this.commitUpdates(focusNodeId, focusIdx);
     }
   }
-
+  
   manageInsertMenu() {
-    const range = getRange();
-    const selectedNode = getCaretNode();
-    const selectedType = getCaretNodeType(selectedNode);
-
+    const [
+      [caretPositionStart, caretPositionEnd, selectedNode]
+    ] = getHighlightedSelectionOffsets();
     // save current nodeId because the selection will disappear when the insert menu is shown
-    this.insertMenuSelectedNodeId = getCaretNodeId(selectedNode);
-
-    if (range && range.collapsed && selectedType === NODE_TYPE_P && !this.activeElementHasContent()) {
+    this.insertMenuSelectedNodeId = getNodeId(selectedNode);
+    const selectedNodeMap = this.documentModel.getNode(this.insertMenuSelectedNodeId);
+    
+    if (selectedNode
+      && caretPositionStart === caretPositionEnd
+      && selectedNodeMap.get('type') === NODE_TYPE_P
+      && selectedNodeMap.get('content', '').length === 0) {
       this.setState({
         shouldShowInsertMenu: true,
         insertMenuTopOffset: selectedNode.offsetTop,
@@ -746,10 +762,10 @@ export default class EditPost extends React.Component {
       });
       return;
     }
-
+    
     this.setState({ shouldShowInsertMenu: false, insertMenuIsOpen: false });
   }
-
+  
   toggleInsertMenu = () => {
     const { insertMenuIsOpen } = this.state;
     this.setState({ insertMenuIsOpen: !insertMenuIsOpen }, () => {
@@ -758,7 +774,7 @@ export default class EditPost extends React.Component {
       }
     });
   }
-
+  
   async uploadFile(file) {
     const { post } = this.state;
     // TODO: allow multiple files
@@ -768,14 +784,14 @@ export default class EditPost extends React.Component {
     formData.append('fileData', file);
     return uploadImage(formData);
   }
-
+  
   /**
    * INSERT SECTIONS
    */
   insertSection = async (sectionType, [firstFile] = []) => {
     const selectedNodeId = this.insertMenuSelectedNodeId;
     let focusNodeId;
-
+    
     // lists get added to content sections, keep current section
     switch (sectionType) {
       case NODE_TYPE_OL: {
@@ -823,18 +839,18 @@ export default class EditPost extends React.Component {
         console.error('insertSection - unknown type! ', sectionType);
       }
     }
-
+    
     await this.commitUpdates(focusNodeId);
     if ([NODE_TYPE_SECTION_IMAGE, NODE_TYPE_SECTION_QUOTE].includes(sectionType)) {
       this.sectionEdit(focusNodeId)
     }
   }
-
+  
   sectionEdit = (sectionId) => {
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = this.documentModel.getNode(sectionId);
     console.log('SECTION CALLBACK ', sectionId);
-
+    
     const newState = {
       // hide all other menus here because this callback fires last
       // insert menu
@@ -848,7 +864,7 @@ export default class EditPost extends React.Component {
       editQuoteSectionNode: Map(),
       editSectionMetaFormTopOffset: sectionDomNode.offsetTop,
     }
-
+    
     switch (section.get('type')) {
       case NODE_TYPE_SECTION_IMAGE: {
         newState.editImageSectionNode = section;
@@ -859,14 +875,14 @@ export default class EditPost extends React.Component {
         break;
       }
     }
-
+    
     this.setState(newState, () => {
       if (this.inputRef) {
         // allow animations to finish or scroll goes wacko
         setTimeout(() => this.inputRef.focus(), 500)
       }
     });
-
+    
     // 1. open edit menu
     // 2. position it based on the section
     // 3. save and close
@@ -899,13 +915,13 @@ export default class EditPost extends React.Component {
       this.commitUpdates(focusNodeId);
     }
   }
-
+  
   getInputForwardedRef = (ref) => {
     if (!ref) return;
     this.inputRef = ref;
     ref.focus();
   }
-
+  
   getLinkUrlForwardedRef = (ref) => {
     if (!ref) return;
     this.inputRef = ref;
@@ -914,7 +930,7 @@ export default class EditPost extends React.Component {
       ref.focus();
     }
   }
-
+  
   replaceImageFile = async ([firstFile]) => {
     const { editImageSectionNode } = this.state;
     const {
@@ -933,7 +949,7 @@ export default class EditPost extends React.Component {
       await this.commitUpdates()
     })
   }
-
+  
   updateImageCaption = (value) => {
     const {
       editImageSectionNode,
@@ -946,7 +962,7 @@ export default class EditPost extends React.Component {
       await this.commitUpdates();
     })
   }
-
+  
   updateQuoteMeta = (value, metaKey) => {
     const {
       editQuoteSectionNode,
@@ -959,7 +975,7 @@ export default class EditPost extends React.Component {
       await this.commitUpdates();
     })
   }
-
+  
   updateLinkUrl = (value) => {
     const {
       formatSelectionNode,
@@ -978,12 +994,16 @@ export default class EditPost extends React.Component {
       await this.commitUpdates();
     })
   }
-
+  
   // TODO: bug - selection highlighting disappears on user input on format selection menu
   manageFormatSelectionMenu(evt) {
     const range = getRange();
     const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
-    const selectedNode = getCaretNode();
+    const [
+      [startOffset, endOffset, selectedNode],
+      middle,
+      end,
+    ] = getHighlightedSelectionOffsets();
     if (!range || range.collapsed || !selectedNode || isEscKey) {
       this.setState({
         formatSelectionNode: Map(),
@@ -993,11 +1013,16 @@ export default class EditPost extends React.Component {
       })
       return;
     }
-    const [startOffset, endOffset] = getOffsetInParentContent();
-    console.info('SELECTION: ', startOffset, endOffset, range, range.getBoundingClientRect());
-
+    
+    if (startOffset === -1) {
+      // TODO: support highlight across multiple nodes
+      console.info('// TODO: format selection across nodes: ', range);
+      return;
+    }
+    console.info('SELECTION: ', startOffset, endOffset, end, middle, range, range.getBoundingClientRect());
+    
     const rect = range.getBoundingClientRect();
-    const selectedNodeId = getCaretNodeId();
+    const selectedNodeId = getNodeId(selectedNode);
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
     // Top Offset (from top of document) - needs a heuristic!
     // start with the top offset of the paragraph
@@ -1007,7 +1032,6 @@ export default class EditPost extends React.Component {
     // take that percentage from height of the paragraph
     const percentageOffset = selectedNode.offsetHeight * percentageOfText;
     // get closest clean division of the height of the selection (this sort of works)
-
     let offsetByLineHeight = 0;
     while (true) {
       if (offsetByLineHeight + lineHeight > percentageOffset) {
@@ -1023,16 +1047,16 @@ export default class EditPost extends React.Component {
       formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2,
     });
   }
-
+  
   handleSelectionAction = async (action) => {
     const {
       formatSelectionModel,
       formatSelectionNode,
     } = this.state;
     const previousActionValue = formatSelectionModel.get(action);
-
+    
     console.info('HANDLE SELECTION ACTION: ', action, formatSelectionModel.toJS());
-
+    
     if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
       const sectionType = action === SELECTION_ACTION_H1 ? NODE_TYPE_SECTION_H1 : NODE_TYPE_SECTION_H2;
       const selectedNodeId = formatSelectionNode.get('id');
@@ -1057,7 +1081,7 @@ export default class EditPost extends React.Component {
       });
       return;
     }
-
+    
     let updatedSelectionModel = formatSelectionModel.set(action, !previousActionValue);
     // selection can be either italic or siteinfo, not both
     if (action === SELECTION_ACTION_ITALIC && updatedSelectionModel.get(SELECTION_ACTION_ITALIC)) {
@@ -1086,7 +1110,7 @@ export default class EditPost extends React.Component {
       }
     })
   }
-
+  
   render() {
     const {
       post,
@@ -1111,16 +1135,16 @@ export default class EditPost extends React.Component {
       shouldShowPostError,
       shouldShowPostSuccess,
     } = this.state;
-
+    
     if (shouldShow404) return (<Page404 />);
     if (shouldRedirectToHome) return (<Redirect to="/" />);
     if (shouldRedirectToDrafts) return (<Redirect to="/drafts" />);
     // huh, aren't we on /edit? - this is for coming from /edit/new...
     if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
     if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
-
+    
     const root = this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID, List()).get(0, Map());
-
+    
     return (
       <React.Fragment>
         <main onMouseUp={this.handleMouseUp}>
@@ -1145,12 +1169,12 @@ export default class EditPost extends React.Component {
           <ArticleStyled>
             {root.get('id') && (
               <div id="filbert-edit-container"
-                contentEditable={true}
-                suppressContentEditableWarning={true}
-                onKeyDown={this.handleKeyDown}
-                onKeyUp={this.handleKeyUp}
-                onInput={this.handleKeyUp}
-                onPaste={this.handlePaste}
+                   contentEditable={true}
+                   suppressContentEditableWarning={true}
+                   onKeyDown={this.handleKeyDown}
+                   onKeyUp={this.handleKeyUp}
+                   onInput={this.handleKeyUp}
+                   onPaste={this.handlePaste}
               >
                 <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
               </div>
@@ -1159,45 +1183,45 @@ export default class EditPost extends React.Component {
           <Footer />
         </main>
         {shouldShowPublishPostMenu && (<PublishPostForm
-            post={post}
-            updatePost={this.updatePost}
-            publishPost={this.publishPost}
-            savePost={this.savePost}
-            close={this.togglePostMenu}
-            successMessage={shouldShowPostSuccess}
-            errorMessage={shouldShowPostError}
-            forwardRef={this.getInputForwardedRef}
+          post={post}
+          updatePost={this.updatePost}
+          publishPost={this.publishPost}
+          savePost={this.savePost}
+          close={this.togglePostMenu}
+          successMessage={shouldShowPostSuccess}
+          errorMessage={shouldShowPostError}
+          forwardRef={this.getInputForwardedRef}
         />)}
         {shouldShowInsertMenu && (<InsertSectionMenu
-            insertMenuTopOffset={insertMenuTopOffset}
-            insertMenuLeftOffset={insertMenuLeftOffset}
-            toggleInsertMenu={this.toggleInsertMenu}
-            insertMenuIsOpen={insertMenuIsOpen}
-            insertSection={this.insertSection}
+          insertMenuTopOffset={insertMenuTopOffset}
+          insertMenuLeftOffset={insertMenuLeftOffset}
+          toggleInsertMenu={this.toggleInsertMenu}
+          insertMenuIsOpen={insertMenuIsOpen}
+          insertSection={this.insertSection}
         />)}
         {editImageSectionNode.get('id') && (<EditImageForm
-            offsetTop={editSectionMetaFormTopOffset}
-            nodeModel={editImageSectionNode}
-            uploadFile={this.replaceImageFile}
-            updateImageCaption={this.updateImageCaption}
-            sectionDelete={this.sectionDeleteImage}
-            forwardRef={this.getInputForwardedRef}
+          offsetTop={editSectionMetaFormTopOffset}
+          nodeModel={editImageSectionNode}
+          uploadFile={this.replaceImageFile}
+          updateImageCaption={this.updateImageCaption}
+          sectionDelete={this.sectionDeleteImage}
+          forwardRef={this.getInputForwardedRef}
         />)}
         {editQuoteSectionNode.get('id') && (<EditQuoteForm
-            offsetTop={editSectionMetaFormTopOffset}
-            nodeModel={editQuoteSectionNode}
-            updateMeta={this.updateQuoteMeta}
-            sectionDelete={this.sectionDelete}
-            forwardRef={this.getInputForwardedRef}
+          offsetTop={editSectionMetaFormTopOffset}
+          nodeModel={editQuoteSectionNode}
+          updateMeta={this.updateQuoteMeta}
+          sectionDelete={this.sectionDelete}
+          forwardRef={this.getInputForwardedRef}
         />)}
         {formatSelectionNode.get('id') && (<FormatSelectionMenu
-            offsetTop={formatSelectionMenuTopOffset}
-            offsetLeft={formatSelectionMenuLeftOffset}
-            nodeModel={formatSelectionNode}
-            selectionModel={formatSelectionModel}
-            selectionAction={this.handleSelectionAction}
-            updateLinkUrl={this.updateLinkUrl}
-            forwardRef={this.getLinkUrlForwardedRef}
+          offsetTop={formatSelectionMenuTopOffset}
+          offsetLeft={formatSelectionMenuLeftOffset}
+          nodeModel={formatSelectionNode}
+          selectionModel={formatSelectionModel}
+          selectionAction={this.handleSelectionAction}
+          updateLinkUrl={this.updateLinkUrl}
+          forwardRef={this.getLinkUrlForwardedRef}
         />)}
       </React.Fragment>
     )

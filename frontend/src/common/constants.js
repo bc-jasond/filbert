@@ -94,4 +94,5 @@ export const AUTH_TOKEN_KEY = 'filbert-token';
 export const SESSION_KEY = 'filbert-session';
 
 // DOM
+export const DOM_ELEMENT_NODE_TYPE_ID = 1;
 export const DOM_TEXT_NODE_TYPE_ID = 3;

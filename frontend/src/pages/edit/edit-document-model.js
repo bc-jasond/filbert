@@ -366,7 +366,7 @@ export default class EditDocumentModel {
       type,
       parent_id: parentId,
       position: index,
-      content,
+      content: cleanText(content),
       meta: meta || Map(),
     });
     this.updateManager.stageNodeUpdate(newNode.get('id'));

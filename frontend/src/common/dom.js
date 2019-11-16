@@ -1,4 +1,4 @@
- import {
+import {
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_H1,
   NODE_TYPE_P,
@@ -33,6 +33,7 @@
   KEYCODE_F11,
   KEYCODE_F12,
   KEYCODE_PRINT_SCREEN,
+  DOM_ELEMENT_NODE_TYPE_ID, NODE_TYPE_ROOT,
 } from './constants';
  import {cleanText} from "./utils";
 
@@ -93,45 +94,148 @@ export function getRange() {
   return sel.getRangeAt(0);
 }
 
-/**
- * Once formatting is applied to a paragraph, subsequent selections could yield a child formatting element <em>, <strong>, etc. as the Range commonAncestorContainer
- * But, we need to process selections based on the offset within the parent (AKA first ancestor with a 'name' attribute) content
- */
-export function getOffsetInParentContent() {
-  const range = getRange();
-  if (!range) {
-    return;
+function getParagraphContentOffset(formattingNode, paragraph) {
+  if (formattingNode === paragraph) {
+    return 0;
   }
-  const rangeStartOffset = range.startOffset;
-  let rangeEndOffset = range.endOffset;
-  const selectedText = window.getSelection().toString();
-  const paragraph = getCaretNode();
-  // range offsets could be relative to a child of the paragraph - but, we need them to be offset based on the paragraph itself
-  let rangeNode = range.commonAncestorContainer;
-  // if the commonAncestorContainer is the paragraph, multiple childNodes have been selected
-  if (rangeNode === paragraph) {
-    rangeNode = range.startContainer;
-    // use selectedText length here because endOffset will be relative to another child of paragraph
-    rangeEndOffset = rangeStartOffset + selectedText.length;
-  }
-  while (rangeNode.parentElement !== paragraph) {
+  while (formattingNode.parentElement !== paragraph) {
     // find the first immediate child of the paragraph - we could be nested inside several formatting tags at this point
-    rangeNode = rangeNode.parentElement;
+    // i.e. for <em><strong><strike>content here</strike></strong></em> - we want the <em> node
+    formattingNode = formattingNode.parentElement;
   }
   // find the index of the immediate child
-  const rangeIdx = Array.prototype.indexOf.call(paragraph.childNodes, rangeNode);
+  const rangeIdx = Array.prototype.indexOf.call(paragraph.childNodes, formattingNode);
   let offset = 0;
   for (let i = 0; i < rangeIdx; i++) {
     // for each child of the paragraph that precedes our current range - add the length of it's content to the offset
     offset += paragraph.childNodes[i].textContent.length;
   }
-  // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
-  if (rangeStartOffset === 1 && cleanText(paragraph.textContent).length === 0) {
-    return [0, 0];
-  }
-  // now we'll have the correct positioning of the selected text inside the paragraph (the node that holds the 'content' saved to the DB) text as a whole no matter what formatting tags have been applied
-  return [rangeStartOffset + offset, rangeEndOffset + offset];
+  return offset;
 }
+
+function getPathToAncestorByChildIdx(node, ancestor) {
+  const path = [];
+  let parent = node.parentNode;
+  while (node !== ancestor) {
+    path.push(Array.prototype.indexOf.call(parent.childNodes, node));
+    parent = parent.parentNode;
+    node = node.parentNode;
+  }
+  path.push(0); // make ancestor's index always 0 since it acts as a root node
+  return path.reverse();
+}
+
+function getAllChildIdsForNode(node) {
+  const ids = [];
+  const queue = [node];
+  while (queue.length) {
+    const current = queue.shift();
+    const id = getNodeId(current);
+    if (!id) {
+      continue;
+    }
+    ids.push(id);
+    queue.push(...current.childNodes)
+  }
+  return ids;
+}
+
+/**
+ * 1) find path (array of childNodes indeces for each level of the tree) for ancestor -> startNode
+ * 2) find path for ancestor -> endNode
+ * 3) use DFS bounding inside start & end indeces for each level
+ * 4) returned ids list will contain all "completely highlighted" nodes
+ */
+function getAllNodesWithIdsBetweenTwoNodes(startNode, endNode, commonAncestor) {
+  const nodes = [];
+  // commonAncestor will be a Section, an OL or Root
+  const startPath = getPathToAncestorByChildIdx(startNode, commonAncestor);
+  const endPath = getPathToAncestorByChildIdx(endNode, commonAncestor);
+  
+  function inner(current, level) {
+    const id = getNodeId(current);
+    if (!id) {
+      return;
+    }
+    const startIdxBoundary = Number.isInteger(startPath[level]) ? startPath[level] : -1;
+    const endIdxBoundary = Number.isInteger(endPath[level]) ? endPath[level] : current.parentNode.childNodes.length;
+    const currentIdx = current === commonAncestor ? 0 : Array.prototype.indexOf.call(current.parentNode.childNodes, current);
+    // don't recurse if nodes are "outside" the index, however
+    // do recurse if currentIdx === startIdx or currentIdx === endIdx
+    if (currentIdx < startIdxBoundary || currentIdx > endIdxBoundary) {
+      return;
+    }
+    // use less-than to exclude nodes in start or end path
+    if (startIdxBoundary < currentIdx && currentIdx < endIdxBoundary) {
+      // recursively get all ids for this node
+      nodes.push(...getAllChildIdsForNode(current));
+      // don't continue outer recursion
+      return;
+    }
+    for (let i = 0; i < current.childNodes.length; i++) {
+      inner(current.childNodes[i], level + 1)
+    }
+  }
+  inner(commonAncestor, 0);
+  return nodes;
+}
+
+/**
+ * Once formatting is applied to a paragraph, subsequent selections could yield a child formatting element <em>, <strong>, etc. as the Range commonAncestorContainer
+ * But, we need to express selections in terms of an offset within the parent content (AKA first ancestor with a 'name' attribute)
+ *
+ * @return [
+ *  [start, end, nodeId], // starting node & offset
+ *  [start, end, nodeId], // *optional list of nodeIds completely enveloped by highlight
+ *  [nodeId...],          // *optional ending node & offset, if user has highlighted across > 1 nodes
+ * ]
+ */
+export function getHighlightedSelectionOffsets() {
+  const range = getRange();
+  if (!range) {
+    return;
+  }
+  const startNode = getFirstAncestorWithId(range.startContainer);
+  const endNode = getFirstAncestorWithId(range.endContainer);
+  const commonAncestor = range.commonAncestorContainer;
+  const rangeStartOffset = range.startOffset;
+  const rangeEndOffset = range.endOffset;
+  
+  const startNodeOffset = getParagraphContentOffset(range.startContainer, startNode);
+  let startOffset = rangeStartOffset + startNodeOffset;
+  // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
+  if (rangeStartOffset === 1 && cleanText(startNode.textContent).length === 0) {
+    startOffset = 0;
+  }
+  const start = [startOffset, -1, startNode];
+  
+  const endNodeOffset = getParagraphContentOffset(range.endContainer, endNode);
+  let endOffset = rangeEndOffset + endNodeOffset;
+  // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
+  if (rangeEndOffset === 1 && cleanText(endNode.textContent).length === 0) {
+    endOffset = 0;
+  }
+  const end = [0, endOffset, endNode];
+  
+  if (startNode === endNode) {
+    start[1] = endOffset;
+    console.debug('getHighlightedSelectionOffsets SINGLE NODE');
+    return [start];
+  }
+  
+  console.debug('getHighlightedSelectionOffsets MULTIPLE NODES');
+  const middle = getAllNodesWithIdsBetweenTwoNodes(startNode, endNode, commonAncestor)
+  
+  //const selectedTextStart = startNode.textContent.slice(start[0]);
+  //const selectedTextEnd = endNode.textContent.slice(0, end[1]);
+  return [start, middle, end];
+}
+
+/**
+ * TODO: When React re-renders after setState() to apply formatting changes, the highlight is lost.
+ *  Use this to replace it.
+ */
+export function replaceHighlightedSelection(startNode, startOffset, endNode, endOffset) {}
 
 /**
  * given an offset in a parent 'paragraph', return a child text node and child offset
@@ -160,41 +264,28 @@ export function getChildTextNodeAndOffsetFromParentOffset(parent, parentOffset) 
   return [childNode, childOffset];
 }
 
-export function getCaretNode() {
-  const range = getRange();
-  if (!range) {
-    return;
+export function getFirstAncestorWithId(domNode) {
+  if (!domNode) return;
+  if (domNode.nodeType === DOM_ELEMENT_NODE_TYPE_ID && domNode.getAttribute('name')) return domNode;
+  // walk ancestors until one has a truthy 'name' attribute
+  // 'name' === id in the db
+  let current = domNode.parentElement;
+  while (current && !current.getAttribute('name')) {
+    current = current.parentElement;
   }
-  let { commonAncestorContainer } = range;
-  if (commonAncestorContainer.nodeType > 1) {
-    let current = commonAncestorContainer.parentElement;
-    while (current && !current.getAttribute('name')) {
-      current = current.parentElement;
-    }
-    return current;
-  }
-  if (commonAncestorContainer.dataset.type === NODE_TYPE_SECTION_CONTENT) {
-    return commonAncestorContainer.lastChild;
-  }
-  return commonAncestorContainer;
+  return current;
 }
 
-export function getCaretOffset() {
-  const range = getRange();
-  if (!range) {
-    return;
-  }
-  return [range.startOffset, range.endOffset];
+export function getNodeType(node) {
+  return (node && node.dataset)
+    ? node.dataset.type
+    : null;
 }
 
-export function getCaretNodeType(node) {
-  const selectedNode = node || getCaretNode();
-  return selectedNode ? selectedNode.dataset.type : null;
-}
-
-export function getCaretNodeId(node) {
-  const selectedNode = node || getCaretNode();
-  return selectedNode ? selectedNode.getAttribute('name') : null;
+export function getNodeId(node) {
+  return (node && node.getAttribute)
+    ? node.getAttribute('name')
+    : null;
 }
 
 export function getFirstHeadingContent() {
