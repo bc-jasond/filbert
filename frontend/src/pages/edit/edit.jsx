@@ -353,7 +353,7 @@ export default class EditPost extends React.Component {
     })
   }
   
-  handleBackspace = async (evt) => {
+  handleBackspace = async (evt, selectionOffsets) => {
     if (evt.keyCode !== KEYCODE_BACKSPACE) {
       return;
     }
@@ -366,7 +366,7 @@ export default class EditPost extends React.Component {
       [caretPositionStart, _, selectedNode],
       middle,
       end,
-    ] = getHighlightedSelectionOffsets();
+    ] = selectionOffsets;
     const selectedNodeId = getNodeId(selectedNode);
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('BACKSPACE - bad selection, no id ', selectedNode);
@@ -461,7 +461,7 @@ export default class EditPost extends React.Component {
     this.commitUpdates(focusNodeId, caretOffset, true);
   }
   
-  handleEnter(evt) {
+  handleEnter(evt, selectionOffsets) {
     if (evt.keyCode !== KEYCODE_ENTER) {
       return;
     }
@@ -478,7 +478,7 @@ export default class EditPost extends React.Component {
       [caretPosition, _, selectedNode],
       middle,
       end,
-    ] = getHighlightedSelectionOffsets();
+    ] = selectionOffsets;
     const selectedNodeId = getNodeId(selectedNode);
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('ENTER - bad selection, no id ', selectedNode);
@@ -526,7 +526,7 @@ export default class EditPost extends React.Component {
    // TODO: better cut/paste
    // TODO: handle select & type
    */
-  handleSyncToDom(evt) {
+  handleSyncToDom(evt, selectionOffsets) {
     // don't send updates for control keys
     if (isControlKey(evt.keyCode)
       // stopped by another handler like Backspace or Enter
@@ -537,7 +537,7 @@ export default class EditPost extends React.Component {
       [caretPositionStart, caretPositionEnd, selectedNode],
       middle,
       end,
-    ] = getHighlightedSelectionOffsets();
+    ] = selectionOffsets;
     const selectedNodeId = getNodeId(selectedNode);
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('To DOM SYNC - bad selection, no id ', selectedNode);
@@ -573,7 +573,7 @@ export default class EditPost extends React.Component {
     this.commitUpdates(selectedNodeId, caretPositionStart + diffLength);
   }
   
-  handleSyncFromDom(evt) {
+  handleSyncFromDom(evt, selectionOffsets) {
     // Stop all updates to the contenteditable div!
     evt.stopPropagation();
     evt.preventDefault();
@@ -585,7 +585,7 @@ export default class EditPost extends React.Component {
       [caretPositionStart, caretPositionEnd, selectedNode],
       middle,
       end,
-    ] = getHighlightedSelectionOffsets();
+    ] = selectionOffsets;
     const selectedNodeId = getNodeId(selectedNode);
     if (selectedNodeId === 'null' || !selectedNodeId) {
       console.warn('From DOM SYNC - bad selection, no id ', selectedNode);
@@ -624,14 +624,14 @@ export default class EditPost extends React.Component {
    * Move caret for special user input cases
    * @param evt
    */
-  handleCaret(evt) {
-    if (evt.isPropagationStopped()) {
-      return;
-    }
+  handleCaret(evt, selectionOffsets) {
     const [
       [_, __, domNode],
-    ] = getHighlightedSelectionOffsets();
-    if (!domNode) return;
+    ] = selectionOffsets;
+    if (evt.isPropagationStopped() || !domNode) {
+      return;
+    }
+    
     if (domNode.tagName === 'PRE'
       // when clicking on a section, the caret will be on an input in the edit image or quote menu, ignore
       || domNode.dataset.isMenu === 'true' /* TODO: why string? */) {
@@ -672,11 +672,12 @@ export default class EditPost extends React.Component {
     if (evt.metaKey || isControlKey(evt.keyCode)) {
       return;
     }
+    const selectionOffsets = getHighlightedSelectionOffsets();
     //console.debug('KeyDown: ', evt)
-    this.handleBackspace(evt);
+    this.handleBackspace(evt, selectionOffsets);
     // TODO this.handleDel(evt); // currently, no support for the 'Del' key
-    this.handleEnter(evt);
-    this.handleSyncToDom(evt);
+    this.handleEnter(evt, selectionOffsets);
+    this.handleSyncToDom(evt, selectionOffsets);
   }
   
   handleKeyUp = (evt) => {
@@ -685,17 +686,19 @@ export default class EditPost extends React.Component {
       return;
     }
     //console.debug('KeyUp: ', evt)
-    this.handleSyncFromDom(evt);
-    this.handleCaret(evt);
-    this.manageInsertMenu(evt);
-    this.manageFormatSelectionMenu(evt);
+    const selectionOffsets = getHighlightedSelectionOffsets();
+    this.handleSyncFromDom(evt, selectionOffsets);
+    this.handleCaret(evt, selectionOffsets);
+    this.manageInsertMenu(selectionOffsets);
+    this.manageFormatSelectionMenu(evt, selectionOffsets);
   }
   
   handleMouseUp = (evt) => {
     //console.debug('MouseUp: ', evt)
-    this.handleCaret(evt);
-    this.manageInsertMenu();
-    this.manageFormatSelectionMenu(evt);
+    const selectionOffsets = getHighlightedSelectionOffsets();
+    this.handleCaret(evt, selectionOffsets);
+    this.manageInsertMenu(selectionOffsets);
+    this.manageFormatSelectionMenu(evt, selectionOffsets);
     // close edit section menus by default, this.sectionEdit() callback will fire after this to override
     this.sectionEditClose();
   }
@@ -743,10 +746,11 @@ export default class EditPost extends React.Component {
     }
   }
   
-  manageInsertMenu() {
+  manageInsertMenu(selectionOffsetsArg) {
+    const selectionOffsets = selectionOffsetsArg || getHighlightedSelectionOffsets();
     const [
       [caretPositionStart, caretPositionEnd, selectedNode]
-    ] = getHighlightedSelectionOffsets();
+    ] = selectionOffsets;
     // save current nodeId because the selection will disappear when the insert menu is shown
     this.insertMenuSelectedNodeId = getNodeId(selectedNode);
     const selectedNodeMap = this.documentModel.getNode(this.insertMenuSelectedNodeId);
@@ -996,15 +1000,14 @@ export default class EditPost extends React.Component {
   }
   
   // TODO: bug - selection highlighting disappears on user input on format selection menu
-  manageFormatSelectionMenu(evt) {
-    const range = getRange();
+  manageFormatSelectionMenu(evt, selectionOffsets) {
     const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
     const [
       [startOffset, endOffset, selectedNode],
       middle,
       end,
-    ] = getHighlightedSelectionOffsets();
-    if (!range || range.collapsed || !selectedNode || isEscKey) {
+    ] = selectionOffsets;
+    if (!selectedNode || startOffset === endOffset || isEscKey) {
       this.setState({
         formatSelectionNode: Map(),
         formatSelectionModel: Selection(),
@@ -1014,13 +1017,13 @@ export default class EditPost extends React.Component {
       return;
     }
     
-    if (startOffset === -1) {
+    if (end) {
       // TODO: support highlight across multiple nodes
-      console.info('// TODO: format selection across nodes: ', range);
+      console.info('// TODO: format selection across nodes: ', selectionOffsets);
       return;
     }
+    const range = getRange();
     console.info('SELECTION: ', startOffset, endOffset, end, middle, range, range.getBoundingClientRect());
-    
     const rect = range.getBoundingClientRect();
     const selectedNodeId = getNodeId(selectedNode);
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);

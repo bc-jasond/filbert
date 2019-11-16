@@ -193,7 +193,7 @@ function getAllNodesWithIdsBetweenTwoNodes(startNode, endNode, commonAncestor) {
 export function getHighlightedSelectionOffsets() {
   const range = getRange();
   if (!range) {
-    return;
+    return [[]];
   }
   const startNode = getFirstAncestorWithId(range.startContainer);
   const endNode = getFirstAncestorWithId(range.endContainer);
@@ -201,13 +201,21 @@ export function getHighlightedSelectionOffsets() {
   const rangeStartOffset = range.startOffset;
   const rangeEndOffset = range.endOffset;
   
+  if (startNode === null || endNode === null) {
+    return [[]];
+  }
+  
   const startNodeOffset = getParagraphContentOffset(range.startContainer, startNode);
   let startOffset = rangeStartOffset + startNodeOffset;
   // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
   if (rangeStartOffset === 1 && cleanText(startNode.textContent).length === 0) {
     startOffset = 0;
   }
-  const start = [startOffset, -1, startNode];
+  // in consumer code range.collapsed can be checked by start[0] === start[1]
+  const start = [startOffset, range.collapsed ? startOffset : -1, startNode];
+  if (range.collapsed) {
+    return [start];
+  }
   
   const endNodeOffset = getParagraphContentOffset(range.endContainer, endNode);
   let endOffset = rangeEndOffset + endNodeOffset;
@@ -224,7 +232,7 @@ export function getHighlightedSelectionOffsets() {
   }
   
   console.debug('getHighlightedSelectionOffsets MULTIPLE NODES');
-  const middle = getAllNodesWithIdsBetweenTwoNodes(startNode, endNode, commonAncestor)
+  const middle = getAllNodesWithIdsBetweenTwoNodes(startNode, endNode, commonAncestor);
   
   //const selectedTextStart = startNode.textContent.slice(start[0]);
   //const selectedTextEnd = endNode.textContent.slice(0, end[1]);
