@@ -28,11 +28,11 @@ import Footer from '../footer';
 import { getUserName, signout } from '../../common/session';
 import {
   confirmPromise,
-  cleanText,
   cleanTextOrZeroLengthPlaceholder,
   getCanonicalFromTitle,
   imageUrlIsId,
   getCharFromEvent,
+  deleteContentRange,
 } from '../../common/utils';
 import {
   getRange,
@@ -357,64 +357,123 @@ export default class EditPost extends React.Component {
     if (evt.keyCode !== KEYCODE_BACKSPACE) {
       return;
     }
-    const range = getRange();
-    if (!range) {
-      console.warn('BACKSPACE no range');
-      return;
-    }
     const [
-      [caretPositionStart, _, selectedNode],
+      [startNodeCaretStart, startNodeCaretEnd, startNode],
       middle,
       end,
     ] = selectionOffsets;
-    const selectedNodeId = getNodeId(selectedNode);
-    if (selectedNodeId === 'null' || !selectedNodeId) {
-      console.warn('BACKSPACE - bad selection, no id ', selectedNode);
+    const startNodeId = getNodeId(startNode);
+    if (startNodeId === 'null' || !startNodeId) {
+      console.warn('BACKSPACE - bad selection, no id ', startNode);
       return;
     }
     
-    const selectedNodeContent = cleanText(selectedNode.textContent);
-    const selectedNodeType = getNodeType(selectedNode);
-    console.info('BACKSPACE node: ', selectedNode, ' content: ', selectedNodeContent);
-    
     evt.stopPropagation();
     evt.preventDefault();
+  
+    // clear the selected format node when deleting the highlighted selection
+    // NOTE: must wait for state have been set or setCaret will check stale values
+    await new Promise(resolve => {
+      this.setState({ formatSelectionNode: Map() }, resolve)
+    });
+  
+    /**
+     * Backspace scenarios:
+     *
+     * 1) caret is collapsed OR
+     * 2) caret highlights 1 or more characters
+     * 3) startNodeCaretStart === 0
+     * 4) startNodeCaretEnd === selectedNodeMap.get('content').length
+     * 5) caret start and end nodes are different (multi-node selection)
+     * 6) there are middle nodes (this is easy, just delete them)
+     * 7) merge (heal) content from two different nodes
+     * 8) startNode is completely selected
+     * 9) endNode is completely selected
+     * 10) startNode and endNode are the same type
+     */
     
-    if (range.startOffset > 0 && selectedNodeContent) {
-      //  not at beginning of node text and node text isn't empty
-      //  it's just a "normal" backspace, not a 'structural change' backspace
-      //
-      // NOTE: highlight (diffLength >= 1) could span across nodes and become structural
-      const diffLength = Math.max(1, range.endOffset - range.startOffset);
-      switch (selectedNodeType) {
+    // there are completely highlighted nodes in the middle of the selection - just delete them
+    if (middle) {
+      middle.forEach(nodeId => {
+        this.documentModel.delete(nodeId);
+      })
+    }
+  
+    /**
+     * the selection spans more than one node
+     * 1 - delete the highlighted text
+     * 2 - set the currentNodeId to the endNode
+     * 3 - set flag to continue to "structural" updates below.  This will heal endNode and startNode
+      */
+    // default the selectedNode to startNode - might change to endNode below
+    let selectedNodeId = startNodeId;
+    let hasStructuralUpdates = false;
+    if (end) {
+      // NOTE: using "_" because the endNode start position will always be 0 here
+      const [endNodeCaretStart, endNodeCaretEnd, endNode] = end;
+      const endNodeId = getNodeId(endNode);
+      let endNodeMap = this.documentModel.getNode(endNodeId);
+      const endDiffLength = endNodeCaretEnd - endNodeCaretStart;
+      // Set these for structural updates below
+      selectedNodeId = endNodeId;
+      // since we're spanning more than one node, we want to reconcile the document structure at the end of this procedure
+      hasStructuralUpdates = true;
+  
+      switch (endNodeMap.get('type')) {
         case NODE_TYPE_PRE: {
-          // console.debug('BACKSPACE PRE ', selectedNode);
-          handleBackspaceCode(this.documentModel, selectedNodeId, caretPositionStart, diffLength);
+          handleBackspaceCode(this.documentModel, endNodeId, 0, endDiffLength);
           break;
         }
         default: {
-          let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-          const beforeContentMap = selectedNodeMap.get('content') || '';
-          let updatedContentMap;
-          if (diffLength === 1) {
-            updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - 1)}${beforeContentMap.slice(caretPositionStart)}`;
+          // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
+          if (endDiffLength === endNodeMap.get('content').length) {
+            selectedNodeId = this.documentModel.getNextFocusNodeId(endNodeId);
+            this.documentModel.delete(endNodeId);
           } else {
-            // clear the selected format node when deleting the highlighted selection
-            // NOTE: must wait for state have been set or setCaret will check stale values
-            await new Promise(resolve => {
-              this.setState({ formatSelectionNode: Map() }, resolve)
-            });
-            updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${beforeContentMap.slice(caretPositionStart + diffLength)}`;
+            // only some of endNode's content has been selected, delete that content
+            endNodeMap = endNodeMap.set('content', deleteContentRange(endNodeId, 0, endDiffLength));
+            endNodeMap = adjustSelectionOffsetsAndCleanup(endNodeMap, endNodeCaretStart, endDiffLength === 0 ? -1 : -endDiffLength);
+            this.documentModel.update(endNodeMap);
           }
-          selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
-          selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, -diffLength);
-          this.documentModel.update(selectedNodeMap);
         }
       }
-      // TODO: This is a hack.  Calling setState here will force all changed nodes to rerender.
+    }
+    
+    
+    let startNodeMap = this.documentModel.getNode(startNodeId);
+    const startNodeContent = startNodeMap.get('content');
+    const startDiffLength = startNodeCaretEnd - startNodeCaretStart;
+    if ((startNodeCaretStart > 0 && startNodeContent) || startDiffLength > 0) {
+      //  not at beginning of node text and node text isn't empty OR
+      //  there's one or more chars of highlighted text
+      //
+      // NOTE: need to distinguish between collapsed caret backspace and highlight 1 char backspace
+      //  the former removes a character behind the caret and the latter removes one in front...
+      
+      switch (startNodeMap.get('type')) {
+        case NODE_TYPE_PRE: {
+          // console.debug('BACKSPACE PRE ', selectedNode);
+          handleBackspaceCode(this.documentModel, selectedNodeId, startNodeCaretStart, startDiffLength);
+          break;
+        }
+        default: {
+          // all of the startNode's content has been selected, delete it
+          if (startDiffLength === startNodeMap.get('content').length) {
+            this.documentModel.delete(startNodeId);
+          } else {
+            // only some of endNode's content has been selected, delete that content
+            startNodeMap = startNodeMap.set('content', deleteContentRange(startNodeContent, startNodeCaretStart, startDiffLength));
+            startNodeMap = adjustSelectionOffsetsAndCleanup(startNodeMap, startNodeCaretStart, startDiffLength === 0 ? -1 : -startDiffLength);
+            this.documentModel.update(startNodeMap);
+          }
+        }
+      }
+      // NOTE: Calling setState here will force all changed nodes to rerender.
       //  The browser will then place the caret at the beginning of the textContent... 😞
-      this.commitUpdates(selectedNodeId, diffLength === 1 ? caretPositionStart - 1 : caretPositionStart);
-      return;
+      if (!hasStructuralUpdates) {
+        this.commitUpdates(selectedNodeId, startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart);
+        return;
+      }
     }
     
     /**
@@ -439,7 +498,7 @@ export default class EditPost extends React.Component {
      */
     let focusNodeId;
     let caretOffset;
-    switch (selectedNodeType) {
+    switch (this.documentModel.getNode(selectedNodeId).get('type')) {
       case NODE_TYPE_P: {
         [focusNodeId, caretOffset] = handleBackspaceParagraph(this.documentModel, selectedNodeId);
         break;
@@ -461,6 +520,12 @@ export default class EditPost extends React.Component {
     this.commitUpdates(focusNodeId, caretOffset, true);
   }
   
+  /**
+   * ENTER
+   * @param evt
+   * @param selectionOffsets
+   * @returns {Promise<void>}
+   */
   handleEnter(evt, selectionOffsets) {
     if (evt.keyCode !== KEYCODE_ENTER) {
       return;

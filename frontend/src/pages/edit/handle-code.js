@@ -5,7 +5,7 @@ import {
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_SPACER,
 } from '../../common/constants';
-import {cleanText, getCharFromEvent} from '../../common/utils';
+import { cleanText, deleteContentRange, getCharFromEvent } from '../../common/utils';
 
 function getPreCodeSectionIdAndIndex(selectedNodeId) {
   if (!selectedNodeId.includes('-')) {
@@ -15,23 +15,14 @@ function getPreCodeSectionIdAndIndex(selectedNodeId) {
   return [sectionId, parseInt(lineIdx, 10)];
 }
 
-export function handleBackspaceCode(documentModel, selectedNodeId, caretPositionStart, diffLength = 1) {
+export function handleBackspaceCode(documentModel, selectedNodeId, caretPositionStart, diffLength = 0) {
   const [selectedSectionId, lineIndex] = getPreCodeSectionIdAndIndex(selectedNodeId);
   const selectedSection = documentModel.getNode(selectedSectionId);
   let lines = selectedSection.getIn(['meta', 'lines'], List());
   const currentLineContent = lines.get(lineIndex);
-  let updatedLineContent;
-  // TODO handle multi-line delete
-  if (diffLength === 1) {
-    // delete one char
-    updatedLineContent = `${currentLineContent.slice(0, caretPositionStart - 1)}${currentLineContent.slice(caretPositionStart)}`;
-  } else {
-    // delete a highlight of 1 or more chars
-    updatedLineContent = `${currentLineContent.slice(0, caretPositionStart)}${currentLineContent.slice(caretPositionStart + diffLength)}`;
-  }
   
   documentModel.update(
-    selectedSection.setIn(['meta', 'lines'], lines.set(lineIndex, updatedLineContent))
+    selectedSection.setIn(['meta', 'lines'], lines.set(lineIndex, deleteContentRange(currentLineContent, caretPositionStart, diffLength)))
   );
 }
 

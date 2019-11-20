@@ -19,7 +19,7 @@ CREATE TABLE `content_node` (
   `parent_id` char(4) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `position` int(11) NOT NULL,
   `type` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `content` text COLLATE utf8mb4_unicode_520_ci,
+  `content` text COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `meta` json NOT NULL,
   PRIMARY KEY (`post_id`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;

@@ -33,7 +33,7 @@ import {
   KEYCODE_F11,
   KEYCODE_F12,
   KEYCODE_PRINT_SCREEN,
-  DOM_ELEMENT_NODE_TYPE_ID, NODE_TYPE_ROOT,
+  DOM_ELEMENT_NODE_TYPE_ID, NODE_TYPE_ROOT, ROOT_NODE_PARENT_ID,
 } from './constants';
  import {cleanText} from "./utils";
 
@@ -117,11 +117,12 @@ function getPathToAncestorByChildIdx(node, ancestor) {
   const path = [];
   let parent = node.parentNode;
   while (node !== ancestor) {
-    path.push(Array.prototype.indexOf.call(parent.childNodes, node));
+    // add the node id to make sure we compare apples to apples child index values
+    path.push([Array.prototype.indexOf.call(parent.childNodes, node), getNodeId(parent)]);
     parent = parent.parentNode;
     node = node.parentNode;
   }
-  path.push(0); // make ancestor's index always 0 since it acts as a root node
+  path.push([0, ROOT_NODE_PARENT_ID]); // make ancestor's index always 0 since it acts as a root node
   return path.reverse();
 }
 
@@ -157,15 +158,42 @@ function getAllNodesWithIdsBetweenTwoNodes(startNode, endNode, commonAncestor) {
     if (!id) {
       return;
     }
-    const startIdxBoundary = Number.isInteger(startPath[level]) ? startPath[level] : -1;
-    const endIdxBoundary = Number.isInteger(endPath[level]) ? endPath[level] : current.parentNode.childNodes.length;
+    let startIdxBoundary = -1;
+    let startIdxAtLevel;
+    let startNodeIdAtLevel = 'foo';
+    if (Array.isArray(startPath[level])) {
+      [startIdxAtLevel, startNodeIdAtLevel] = startPath[level];
+    }
+  
+    let endIdxBoundary = current.parentNode.childNodes.length;
+    let endIdxAtLevel;
+    let endNodeIdAtLevel = 'bar';
+    if (Array.isArray(endPath[level])) {
+      [endIdxAtLevel, endNodeIdAtLevel] = endPath[level];
+    }
+    
     const currentIdx = current === commonAncestor ? 0 : Array.prototype.indexOf.call(current.parentNode.childNodes, current);
+    // adjust boundaries depending on which path the current shares a parent with - to make sure we stay "inside the triangle"
+    const currentHasSameParentAsStartPath = getNodeId(current.parentNode) === startNodeIdAtLevel;
+    const currentHasSameParentAsEndPath = getNodeId(current.parentNode) === endNodeIdAtLevel;
+    if (getNodeType(current) === NODE_TYPE_ROOT || (currentHasSameParentAsStartPath && currentHasSameParentAsEndPath)) {
+      // children of the same parent - use level indexes, otherwise keep defaults
+      startIdxBoundary = startIdxAtLevel;
+      endIdxBoundary = endIdxAtLevel;
+    } else if (currentHasSameParentAsStartPath) {
+      // grab nodes "from startIdx to length"
+      startIdxBoundary = startIdxAtLevel;
+    } else {
+      // grab nodes "from 0 up to endIdx"
+      endIdxBoundary = endIdxAtLevel;
+    }
+    
     // don't recurse if nodes are "outside" the index, however
     // do recurse if currentIdx === startIdx or currentIdx === endIdx
     if (currentIdx < startIdxBoundary || currentIdx > endIdxBoundary) {
       return;
     }
-    // use less-than to exclude nodes in start or end path
+    // use less-than (without equals) to exclude nodes in start or end path
     if (startIdxBoundary < currentIdx && currentIdx < endIdxBoundary) {
       // recursively get all ids for this node
       nodes.push(...getAllChildIdsForNode(current));
@@ -212,7 +240,7 @@ export function getHighlightedSelectionOffsets() {
     startOffset = 0;
   }
   // in consumer code range.collapsed can be checked by start[0] === start[1]
-  const start = [startOffset, range.collapsed ? startOffset : -1, startNode];
+  const start = [startOffset, range.collapsed ? startOffset : cleanText(startNode.textContent).length, startNode];
   if (range.collapsed) {
     return [start];
   }

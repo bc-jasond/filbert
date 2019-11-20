@@ -22,6 +22,7 @@ import {
   getMapWithId,
 } from '../../common/utils';
 import {
+  adjustSelectionOffsetsAndCleanup,
   concatSelections,
   selectionReviver,
 } from './edit-selection-helpers';
@@ -405,10 +406,11 @@ export default class EditDocumentModel {
     // mark this node deleted
     this.updateManager.stageNodeDelete(nodeId);
     const parentId = this.getParent(nodeId).get('id');
-    const siblings = this.nodesByParentId.get(parentId);
+    const siblings = this.nodesByParentId.get(parentId, List());
     // filter this node out of its parent list
-    this.setNodesByParentId(parentId, siblings
-      .filter(node => node.get('id') !== nodeId)
+    this.setNodesByParentId(
+      parentId,
+      siblings.filter(node => node.get('id') !== nodeId)
     );
     // delete this node's children list
     // NOTE: don't stage delete it's children, they might have moved to another section during a merge

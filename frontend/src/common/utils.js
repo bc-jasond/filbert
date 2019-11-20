@@ -1,4 +1,5 @@
 import { Map } from 'immutable';
+import { adjustSelectionOffsetsAndCleanup } from '../pages/edit/edit-selection-helpers';
 
 import { ZERO_LENGTH_CHAR } from './constants';
 
@@ -110,4 +111,14 @@ export function imageUrlIsId(url) {
   // this returns an array (truthy) of all string matches, in this case it should only be 1
   const ids = url.match(/\b[0-9A-F]{64}\b/gi);
   return ids && ids.length === 1;
+}
+
+export function deleteContentRange(content, startIdx, length) {
+  if (length === 0) {
+    // delete the char behind the caret - assumes "Backspace"
+    // TODO: handle "Del"
+    return `${content.slice(0, startIdx - 1)}${content.slice(startIdx)}`;
+  }
+  // delete all highlighted chars in front of the caret
+  return `${content.slice(0, startIdx)}${content.slice(startIdx + length)}`;
 }
