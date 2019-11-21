@@ -413,8 +413,9 @@ export default class EditPost extends React.Component {
       const [endNodeCaretStart, endNodeCaretEnd, endNode] = end;
       const endNodeId = getNodeId(endNode);
       let endNodeMap = this.documentModel.getNode(endNodeId);
+      const endNodeContent = endNodeMap.get('content', '');
       const endDiffLength = endNodeCaretEnd - endNodeCaretStart;
-      // Set these for structural updates below
+      // Set this to update focusNode
       selectedNodeId = endNodeId;
       // since we're spanning more than one node, we want to reconcile the document structure at the end of this procedure
       hasStructuralUpdates = true;
@@ -426,12 +427,11 @@ export default class EditPost extends React.Component {
         }
         default: {
           // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
-          if (endDiffLength === endNodeMap.get('content').length) {
-            selectedNodeId = this.documentModel.getNextFocusNodeId(endNodeId);
+          if (endDiffLength === endNodeContent.length) {
             this.documentModel.delete(endNodeId);
           } else {
             // only some of endNode's content has been selected, delete that content
-            endNodeMap = endNodeMap.set('content', deleteContentRange(endNodeId, 0, endDiffLength));
+            endNodeMap = endNodeMap.set('content', deleteContentRange(endNodeContent, 0, endDiffLength));
             endNodeMap = adjustSelectionOffsetsAndCleanup(endNodeMap, endNodeCaretStart, endDiffLength === 0 ? -1 : -endDiffLength);
             this.documentModel.update(endNodeMap);
           }
@@ -458,7 +458,7 @@ export default class EditPost extends React.Component {
         }
         default: {
           // all of the startNode's content has been selected, delete it
-          if (startDiffLength === startNodeMap.get('content').length) {
+          if (startDiffLength === startNodeContent.length) {
             this.documentModel.delete(startNodeId);
           } else {
             // only some of endNode's content has been selected, delete that content
@@ -469,7 +469,9 @@ export default class EditPost extends React.Component {
         }
       }
       // NOTE: Calling setState here will force all changed nodes to rerender.
-      //  The browser will then place the caret at the beginning of the textContent... 😞
+      //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
+      // ALSO: reaching this code means we don't need to continue to the "structural" handlers below.
+      //  We'll place the caret where the selection ended and the user can hit backspace again to "heal" or merge sections
       if (!hasStructuralUpdates) {
         this.commitUpdates(selectedNodeId, startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart);
         return;

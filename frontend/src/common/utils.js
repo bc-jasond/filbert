@@ -35,7 +35,7 @@ export function cleanTextOrZeroLengthPlaceholder(text) {
   return cleaned.length > 0 ? cleaned : ZERO_LENGTH_CHAR;
 }
 
-export function cleanText(text) {
+export function cleanText(text = '') {
   const re = new RegExp(ZERO_LENGTH_CHAR);
   return text
     .replace(re, '')
@@ -50,7 +50,7 @@ export function getCharFromEvent(evt, node, offset) {
     }
     return evt.key;
   } else {
-    // TODO: handle emoji keyboard insert
+    // for OS X emoji keyboard insert
     return evt.nativeEvent.data;
   }
 }
@@ -114,7 +114,7 @@ export function imageUrlIsId(url) {
 }
 
 export function deleteContentRange(content, startIdx, length) {
-  if (length === 0) {
+  if (length === 0 && startIdx > 0) {
     // delete the char behind the caret - assumes "Backspace"
     // TODO: handle "Del"
     return `${content.slice(0, startIdx - 1)}${content.slice(startIdx)}`;

@@ -10,7 +10,7 @@ import { splitSelectionsAtCaretOffset } from './edit-selection-helpers';
 
 export function handleBackspaceList(documentModel, selectedNodeId) {
   const selectedOl = documentModel.getParent(selectedNodeId);
-  let prevSection;
+  let prevSection = documentModel.getPrevSibling(selectedOl.get('id'));
   if (documentModel.isFirstChild(selectedNodeId)) {
     if (documentModel.isFirstChild(selectedOl.get('id'))) {
       const selectedSection = documentModel.getSection(selectedOl.get('id'));
