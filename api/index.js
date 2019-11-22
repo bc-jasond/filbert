@@ -271,6 +271,9 @@ async function main() {
           body,
           file,
         } = req;
+        // TODO: this whole approach to deduping files isn't worth it, it adds complexity and edge cases
+        //  we really need to lock the whole table and do all these operations in a transaction
+        //  a simpler alternative would be to use a guid, and not dedupe at all. Then just use a cronjob every so often to delete images whose ids aren't in content_node
         // get hash from whole file
         const checksum = await getChecksum(file.buffer);
         // TODO: use transaction
@@ -280,13 +283,10 @@ async function main() {
           id: checksum,
         };
         const [existingImage] = await knex('image')
-          .select('id', 'width', 'height', 'num_times_used')
+          .select('id', 'width', 'height')
           .where(existingImageWhereClause);
         // if image already exists, just increment counter and return meta
         if (existingImage) {
-          await knex('image')
-            .update({ num_times_used: existingImage.num_times_used + 1 })
-            .where(existingImageWhereClause);
           res.status(200).send({
             imageId: existingImage.id,
             width: existingImage.width,
@@ -316,7 +316,6 @@ async function main() {
             encoding: file.encoding,
             width: imgMeta.width,
             height: imgMeta.height,
-            num_times_used: 1,
           });
         res.status(201).send({
           imageId: checksum,
@@ -330,9 +329,9 @@ async function main() {
       }
     })
     
-    app.delete('/image/:id', async (req, res) => {
+    app.post('/image_rotate/:id', async (req, res) => {
       const { id } = req.params;
-      // TODO: transaction, select for update
+      // TODO: transaction
       const imageWhereClause = {
         id,
         user_id: req.loggedInUser.id,
@@ -343,12 +342,64 @@ async function main() {
         res.status(404).send({});
         return;
       }
-      if (image.num_times_used > 1) {
-        // decrement counter
-        await knex('image')
-          .update({num_times_used: image.num_times_used - 1})
-          .where(imageWhereClause);
-      } else {
+      const sharpInstance = sharp(image.file_data);
+      const rotatedImage = await sharpInstance
+        .rotate(90)
+        .toBuffer();
+      await knex('image')
+        .update({
+          file_data: rotatedImage,
+          width: image.height,
+          height: image.width,
+        })
+        .where(imageWhereClause);
+      // update all usages of image - could be slow!
+      const contentNodes = await knex('content_node')
+        .where('type', 'image')
+        .andWhere('meta', 'like', `%${id}%`);
+      const updatedNodes = contentNodes
+        .map(contentNode => {
+          const { meta } = contentNode;
+          const tmp = meta.height;
+          meta.height = meta.width;
+          meta.width = tmp;
+          return [
+            contentNode.id, {
+              post_id: contentNode.post_id,
+              node: {...contentNode, meta },
+          }];
+        });
+      await bulkContentNodeUpsert(updatedNodes);
+      res.send({
+        id,
+        width: image.height,
+        height: image.width,
+      });
+    })
+    
+    app.delete('/image/:id', async (req, res) => {
+      const { id } = req.params;
+      // TODO: transaction, select for update
+      const imageWhereClause = {
+        id,
+        user_id: req.loggedInUser.id,
+      };
+      const [image] = await knex('image')
+        .select('id')
+        .where(imageWhereClause);
+      if (!image) {
+        res.status(404).send({});
+        return;
+      }
+      
+      // TODO: slow query warning!  But, also just move this to a cron job
+      //  1) run once a day, put all image ids that aren't referenced in a content_node meta into a image_delete_staging table with the date.  remove image ids from table that have been used again
+      //  2) delete all ids with times older than X days, clear these entries from image_delete_staging
+      const numTimesUsed = await knex('content_node')
+        .where('type', 'image')
+        .andWhere('meta', 'like', `%${id}%`);
+
+      if (numTimesUsed.length < 2) {
         // delete image!
         await knex('image')
           .where(imageWhereClause)

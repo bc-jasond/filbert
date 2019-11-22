@@ -22,6 +22,7 @@ CREATE TABLE `content_node` (
   `content` text COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `meta` json NOT NULL,
   PRIMARY KEY (`post_id`,`id`)
+  KEY `type` (`type`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 CREATE TABLE `image` (
   `user_id` int(11) NOT NULL,
@@ -30,7 +31,6 @@ CREATE TABLE `image` (
   `encoding` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `width` int(11) NOT NULL,
   `height` int(11) NOT NULL,
-  `num_times_used` int(11) NOT NULL,
   `file_data` mediumblob NOT NULL,
   PRIMARY KEY (`user_id`,`id`),
   CONSTRAINT `user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
