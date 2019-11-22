@@ -162,6 +162,7 @@ export default class ContentNode extends React.Component {
         const url = imageUrlIsId(urlField)
           ? `${process.env.API_URL}/image/${urlField}`
           : urlField;
+        const rotationDegrees = meta.get('rotationDegrees', 0);
         return (
           <ImageSection data-type={NODE_TYPE_SECTION_IMAGE} name={node.get('id')} contentEditable={false}>
             <Figure>
@@ -173,6 +174,7 @@ export default class ContentNode extends React.Component {
                     if (!isEditing) return;
                     isEditing(node.get('id'))
                   }}
+                  rotationDegrees={rotationDegrees}
                   src={url}
                 />)}
               </ImagePlaceholderContainer>

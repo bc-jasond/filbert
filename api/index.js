@@ -329,54 +329,6 @@ async function main() {
       }
     })
     
-    app.post('/image_rotate/:id', async (req, res) => {
-      const { id } = req.params;
-      // TODO: transaction
-      const imageWhereClause = {
-        id,
-        user_id: req.loggedInUser.id,
-      };
-      const [image] = await knex('image')
-        .where(imageWhereClause);
-      if (!image) {
-        res.status(404).send({});
-        return;
-      }
-      const sharpInstance = sharp(image.file_data);
-      const rotatedImage = await sharpInstance
-        .rotate(90)
-        .toBuffer();
-      await knex('image')
-        .update({
-          file_data: rotatedImage,
-          width: image.height,
-          height: image.width,
-        })
-        .where(imageWhereClause);
-      // update all usages of image - could be slow!
-      const contentNodes = await knex('content_node')
-        .where('type', 'image')
-        .andWhere('meta', 'like', `%${id}%`);
-      const updatedNodes = contentNodes
-        .map(contentNode => {
-          const { meta } = contentNode;
-          const tmp = meta.height;
-          meta.height = meta.width;
-          meta.width = tmp;
-          return [
-            contentNode.id, {
-              post_id: contentNode.post_id,
-              node: {...contentNode, meta },
-          }];
-        });
-      await bulkContentNodeUpsert(updatedNodes);
-      res.send({
-        id,
-        width: image.height,
-        height: image.width,
-      });
-    })
-    
     app.delete('/image/:id', async (req, res) => {
       const { id } = req.params;
       // TODO: transaction, select for update

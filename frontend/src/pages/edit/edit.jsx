@@ -1010,6 +1010,7 @@ export default class EditPost extends React.Component {
       height,
     } = await this.uploadFile(firstFile);
     const updatedImageSectionNode = editImageSectionNode
+      .deleteIn(['meta', 'rotationDegrees'])
       .setIn(['meta', 'url'], imageId)
       .setIn(['meta', 'width'], width)
       .setIn(['meta', 'height'], height);
@@ -1032,6 +1033,31 @@ export default class EditPost extends React.Component {
     }, async () => {
       await this.commitUpdates();
     })
+  }
+  
+  imageRotate = () => {
+    const {
+      editImageSectionNode,
+    } = this.state;
+    const currentRotationDegrees = editImageSectionNode.getIn(['meta', 'rotationDegrees'], 0);
+    const updatedRotationDegrees = currentRotationDegrees === 270 ? 0 : currentRotationDegrees + 90;
+    let updatedImageSectionNode = editImageSectionNode.setIn(['meta', 'rotationDegrees'], updatedRotationDegrees);
+    if (false) {//} && updatedRotationDegrees === 90 || updatedRotationDegrees === 270) {
+      // swap height & width
+      const meta = updatedImageSectionNode.get('meta');
+      updatedImageSectionNode = updatedImageSectionNode.set(
+        'meta',
+        meta
+          .set('width', meta.get('height'))
+          .set('height', meta.get('width'))
+      );
+    }
+    this.documentModel.update(updatedImageSectionNode);
+    this.setState({
+      editImageSectionNode: updatedImageSectionNode,
+    }, async () => {
+      await this.commitUpdates();
+    });
   }
   
   updateQuoteMeta = (value, metaKey) => {
@@ -1275,6 +1301,7 @@ export default class EditPost extends React.Component {
           uploadFile={this.replaceImageFile}
           updateImageCaption={this.updateImageCaption}
           sectionDelete={this.sectionDeleteImage}
+          imageRotate={this.imageRotate}
           forwardRef={this.getInputForwardedRef}
         />)}
         {editQuoteSectionNode.get('id') && (<EditQuoteForm

@@ -12,6 +12,7 @@ import {
 } from '../../common/shared-styled-components';
 import IconImageSvg from '../../../assets/icons/image.svg';
 import IconTrashSvg from '../../../assets/icons/trash.svg';
+import IconRotateSvg from '../../../assets/icons/rotate.svg';
 
 const fileInputRef = React.createRef();
 
@@ -19,6 +20,9 @@ const IconImage = styled(IconImageSvg)`
   ${SvgIconMixin};
 `;
 const IconTrash = styled(IconTrashSvg)`
+  ${SvgIconMixin};
+`;
+const IconRotate = styled(IconRotateSvg)`
   ${SvgIconMixin};
 `;
 
@@ -44,11 +48,15 @@ export default ({
                   uploadFile,
                   updateImageCaption,
                   sectionDelete,
+                  imageRotate,
                   forwardRef,
                 }) => (
   <EditImageMenu data-is-menu={true} top={offsetTop}>
     <IconButton onClick={() => fileInputRef.current.click()}>
       <IconImage />
+    </IconButton>
+    <IconButton onClick={() => imageRotate(nodeModel.getIn(['meta', 'url']))}>
+      <IconRotate />
     </IconButton>
     <IconButton onClick={() => sectionDelete(nodeModel.get('id'))}>
       <IconTrash />

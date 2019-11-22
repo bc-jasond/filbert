@@ -217,6 +217,17 @@ export const Img = styled.img`
       border: 4px solid ${lightBlue};
     }
   `}
+  ${p => p.rotationDegrees === 90 && `
+    transform-origin: left;
+    transform: translate(50%, -50%) rotate(90deg) ;
+  `}
+  ${p => p.rotationDegrees === 180 && `
+    transform: scale(1,-1) ;
+  `}
+  ${p => p.rotationDegrees === 270 && `
+    transform-origin: right;
+    transform: translate(-50%, -50%) rotate(-90deg) ;
+  `}
 `;
 
 // FORMS
