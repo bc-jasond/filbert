@@ -301,10 +301,12 @@ async function main() {
         // TODO: check pixel density, convert down to 72PPI
         // TODO: what to do with animated GIFs?
         // TODO: only support jpg, png & gif - support other types as input but convert to jpg
-        if (imgMeta.width > 1200) {
-          const resizedImg = await sharpInstance.resize({ width: 1200 });
-          imgMeta = await resizedImg.metadata();
-          fileBuffer = await resizedImg.toBuffer();
+        const isLandscape = imgMeta.width > imgMeta.height;
+        if (imgMeta.width > 1200 || imgMeta.height > 1200) {
+          fileBuffer = await sharpInstance
+            .resize(isLandscape ? { width: 1200 } : { height: 1000 })
+            .toBuffer();
+          imgMeta = await sharp(fileBuffer).metadata();
         }
         console.log('IMAGE META', imgMeta);
         await knex('image')

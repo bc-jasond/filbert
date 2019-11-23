@@ -182,6 +182,9 @@ export const MiniText = styled.span`
 export const Figure = styled.figure`
   padding: 5px 0;
   position: relative;
+  ${p => Number.isInteger(p.heightOverride) && `
+    height: ${p.heightOverride}px;
+  `}
 `;
 export const FigureCaption = styled.figcaption`
   ${miniText}

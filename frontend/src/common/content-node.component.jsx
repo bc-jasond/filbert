@@ -157,17 +157,26 @@ export default class ContentNode extends React.Component {
       }
       case NODE_TYPE_SECTION_IMAGE: {
         const meta = node.get('meta', Map());
+        const w = meta.get('width');
+        const h = meta.get('height');
         const urlField = meta.get('url') || '';
         // construct our url from the hash OR assume 3rd party URL
         const url = imageUrlIsId(urlField)
           ? `${process.env.API_URL}/image/${urlField}`
           : urlField;
         const rotationDegrees = meta.get('rotationDegrees', 0);
+        let heightOverride;
+        // if the image is rotated left once or right once change the height of the image container
+        // to the width of the image to cover the increased/decreased dimension after CSS transform
+        if (rotationDegrees === 90 || rotationDegrees === 270) {
+          // current max-width of an ImageSection is 1000px...
+          heightOverride = Math.min(w, 1000);
+        }
         return (
           <ImageSection data-type={NODE_TYPE_SECTION_IMAGE} name={node.get('id')} contentEditable={false}>
-            <Figure>
-              <ImagePlaceholderContainer w={meta.get('width')} h={meta.get('height')}>
-                <ImagePlaceholderFill w={meta.get('width')} h={meta.get('height')} />
+            <Figure heightOverride={heightOverride}>
+              <ImagePlaceholderContainer w={w} h={h}>
+                <ImagePlaceholderFill w={w} h={h} />
                 {urlField.length > 0 && (<Img
                   isEditing={isEditing}
                   onClick={() => {
@@ -178,8 +187,8 @@ export default class ContentNode extends React.Component {
                   src={url}
                 />)}
               </ImagePlaceholderContainer>
-              <FigureCaption>{meta.get('caption')}</FigureCaption>
             </Figure>
+            <FigureCaption>{meta.get('caption')}</FigureCaption>
           </ImageSection>
         );
       }
