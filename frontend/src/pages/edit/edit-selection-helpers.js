@@ -60,33 +60,6 @@ function selectionsHaveDifferentFormats(left, right) {
 }
 
 /**
- * NOTE: returns a Selection
- * @param nodeModel
- * @param newSelection
- * @returns {Selection}
- */
-function applyFormatsOfOverlappingSelections(nodeModel, newSelection) {
-  const selections = getSelections(nodeModel);
-  return selections
-    .filter(s =>
-      // newSelection overlaps s to the right
-      (newSelection.get(SELECTION_START) >= s.get(SELECTION_START) && newSelection.get(SELECTION_START) <= s.get(SELECTION_END))
-      // newSelection overlaps s to the left
-      || (newSelection.get(SELECTION_END) >= s.get(SELECTION_START) && newSelection.get(SELECTION_END) <= s.get(SELECTION_END))
-      // newSelection envelops s completely
-      || (newSelection.get(SELECTION_START) < s.get(SELECTION_START) && newSelection.get(SELECTION_END) > s.get(SELECTION_END)))
-    .reduce((acc, selection) => acc.mergeWith(
-      (oldVal, newVal, key) => {
-        // don't blow away non-formatting related values like SELECTION_START or SELECTION_END
-        if ([SELECTION_START, SELECTION_END, SELECTION_LINK_URL].includes(key)) {
-          return oldVal
-        }
-        return newVal || oldVal
-      },
-      selection), newSelection);
-}
-
-/**
  * make sure that all characters in the paragraph are in a selection
  * @param selections
  */
@@ -168,17 +141,25 @@ function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
  *
  * adjusts selection offsets (and removes selections) after these events: paste, keydown, delete 1 char, delete selection of 1 or more chars
  */
-export function adjustSelectionOffsetsAndCleanup(nodeModel, start = 0, count = 0) {
+export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', start = 0, count = 0) {
   const diffRangeStart = Math.min(start, start + count);
   const diffRangeEnd = Math.max(start, start + count);
   const doesRemoveCharacters = count < 0;
-  const contentLength = nodeModel.get('content', '').length;
+  // compare beforeContent length for delete operations, nodeMode.get('content') for add operations
+  const contentLength = Math.max(nodeModel.get('content', '').length, beforeContent.length);
   // validate input
   if (
+    // don't test for no-op case
+    !(start === 0 && count === 0)
+    // can't start before 0
+    && (start < 0
+    // can't start beyond contentLength
+    || start > contentLength
     // trying to delete too far left (past 0)
-    start + count < 0
+    || start + count < 0
     // trying to add too far right (past contentLength)
-    || start + count > contentLength) {
+    || start + count > contentLength)
+  ) {
     throw new Error(`adjustSelectionOffsetsAndCleanup out of bounds!\n${JSON.stringify(nodeModel.toJS())}\n${start}\n${count}`);
   }
   const selections = getSelections(nodeModel);
@@ -260,15 +241,45 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, start = 0, count = 0
  */
 export function getSelection(nodeModel, start, end) {
   const selections = getSelections(nodeModel);
-  let selection = selections.find(s => s.get(SELECTION_START) === start && s.get(SELECTION_END) === end, null, Selection());
+  let newSelection = selections.find(s => s.get(SELECTION_START) === start && s.get(SELECTION_END) === end, null, Selection());
   // selection already exists?
-  if (selection.get(SELECTION_END) === end) {
-    return selection;
+  if (newSelection.get(SELECTION_END) === end) {
+    return newSelection;
   }
-  selection = selection
+  newSelection = newSelection
     .set(SELECTION_START, start)
-    .set(SELECTION_END, end);
-  return applyFormatsOfOverlappingSelections(nodeModel, selection);
+    .set(SELECTION_END, end)
+    // set all to true for && mask against all overlapping selections
+    .set(SELECTION_ACTION_BOLD, true)
+    .set(SELECTION_ACTION_ITALIC, true)
+    .set(SELECTION_ACTION_CODE, true)
+    .set(SELECTION_ACTION_STRIKETHROUGH, true)
+    .set(SELECTION_ACTION_SITEINFO, true);
+  
+  // applyFormatsOfOverlappingSelections
+  // applies "intersection" of formats from all overlapping Selections
+  return selections
+    .filter(s =>
+      // newSelection overlaps s to the right
+      (newSelection.get(SELECTION_START) >= s.get(SELECTION_START) && newSelection.get(SELECTION_START) <= s.get(SELECTION_END))
+      // newSelection overlaps s to the left
+      || (newSelection.get(SELECTION_END) >= s.get(SELECTION_START) && newSelection.get(SELECTION_END) <= s.get(SELECTION_END))
+      // newSelection envelops s completely
+      || (newSelection.get(SELECTION_START) < s.get(SELECTION_START) && newSelection.get(SELECTION_END) > s.get(SELECTION_END))
+      // newSelection is completely enveloped by s
+      || (newSelection.get(SELECTION_START) >= s.get(SELECTION_START) && newSelection.get(SELECTION_END) <= s.get(SELECTION_END))
+    )
+    .unshift(newSelection)
+    .reduce((acc, selection) => acc.mergeWith(
+      (oldVal, newVal, key) => {
+        // don't blow away non-formatting related values like SELECTION_START or SELECTION_END
+        if ([SELECTION_START, SELECTION_END, SELECTION_LINK_URL].includes(key)) {
+          return oldVal
+        }
+        // NOTE: for "union" of all formats use ||, for "intersection" of all formats use &&
+        return newVal && oldVal
+      },
+      selection), newSelection);
 }
 
 /**

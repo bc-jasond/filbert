@@ -1,15 +1,19 @@
 import {
+  SELECTION_ACTION_BOLD,
+  SELECTION_ACTION_CODE,
   SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
   SELECTION_END,
-  SELECTION_START,
-  ZERO_LENGTH_CHAR
+  SELECTION_LINK_URL,
+  SELECTION_START
 } from "../../common/constants";
 
 const { fromJS } = require("immutable");
 const { reviver } = require("./edit-document-model");
 const {
   Selection,
+  formatSelections,
   selectionReviver,
   adjustSelectionOffsetsAndCleanup,
   getSelection,
@@ -134,7 +138,7 @@ describe("selectionReviver", () => {
 });
 
 describe("adjustSelectionOffsetsAndCleanup", () => {
-  test('delete all characters up to caret (when "end" in handleBackspace)', () => {
+  test('delete all highlighted characters up to caret (when "end" in handleBackspace)', () => {
     const expectedSelections = fromJS(
       [
         {
@@ -167,7 +171,12 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       "content",
       testContent.substring(17)
     );
-    const modelAdjusted = adjustSelectionOffsetsAndCleanup(testModel, 17, -17);
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      17,
+      -17
+    );
     expect(
       modelAdjusted.getIn(["meta", "selections"]).equals(expectedSelections)
     ).toBe(true);
@@ -208,7 +217,7 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       }
     `);
   });
-  test('delete all characters from caret through the end (when "start" with multiple nodes in handleBackspace)', () => {
+  test('delete all highlighted characters from caret through the end (when "start" with multiple nodes in handleBackspace)', () => {
     const expectedSelections = fromJS(
       [
         {
@@ -274,7 +283,12 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       "content",
       testContent.substring(0, 17)
     );
-    const modelAdjusted = adjustSelectionOffsetsAndCleanup(testModel, 30, -13);
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      30,
+      -13
+    );
     expect(
       modelAdjusted.getIn(["meta", "selections"]).equals(expectedSelections)
     ).toBe(true);
@@ -348,7 +362,7 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       }
     `);
   });
-  test("delete some characters from middle, deletes a selection, adjusts overlapping selections", () => {
+  test("delete highlighted characters from middle, deletes a selection, adjusts overlapping selections", () => {
     const expectedSelections = fromJS(
       [
         {
@@ -402,7 +416,12 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       "content",
       `${testContent.substring(0, 4)}${testContent.substring(17)}`
     );
-    const modelAdjusted = adjustSelectionOffsetsAndCleanup(testModel, 17, -13);
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      17,
+      -13
+    );
     expect(
       modelAdjusted.getIn(["meta", "selections"]).equals(expectedSelections)
     ).toBe(true);
@@ -465,7 +484,7 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       }
     `);
   });
-  test("delete some characters from middle of one selection", () => {
+  test("delete highlighted characters from middle of one selection", () => {
     const expectedSelections = fromJS(
       [
         {
@@ -541,7 +560,12 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       "content",
       `${testContent.substring(0, 8)}${testContent.substring(11)}`
     );
-    const modelAdjusted = adjustSelectionOffsetsAndCleanup(testModel, 11, -3);
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      11,
+      -3
+    );
     expect(
       modelAdjusted.getIn(["meta", "selections"]).equals(expectedSelections)
     ).toBe(true);
@@ -629,6 +653,7 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
   test("delete all characters", () => {
     const modelAdjusted = adjustSelectionOffsetsAndCleanup(
       nodeModelWithSelections,
+      testContent,
       30,
       -30
     );
@@ -814,7 +839,12 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       "content",
       `${testContent.substring(0, 5)}pple${testContent.substring(5)}`
     );
-    const modelAdjusted = adjustSelectionOffsetsAndCleanup(testModel, 5, 4);
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      5,
+      4
+    );
     expect(
       modelAdjusted.getIn(["meta", "selections"]).equals(expectedSelections)
     ).toBe(true);
@@ -899,9 +929,198 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       }
     `);
   });
+  test.todo("add one character at the boundary of two selections");
+  test.todo(
+    "delete one highlighted character at the boundary of two selections"
+  );
+  test.todo(
+    "delete one character (caret collapsed) at the boundary of two selection"
+  );
+  test.todo(
+    "delete last character (caret collapsed) of a selection, surrounding selections have same formats and should merge"
+  );
+  test("delete last character (caret collapsed) of last selection with formats, model should have 'selections' unset", () => {
+    const testModel = nodeModelWithSelections
+      .set(
+        "content",
+        `${testContent.substring(0, 13)}${testContent.substring(14)}`
+      )
+      .deleteIn(["meta", "selections"])
+      .setIn(
+        ["meta", "selections"],
+        fromJS(
+          [
+            {
+              start: 0,
+              end: 13,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            },
+            {
+              start: 13,
+              end: 14,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": true,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            },
+            {
+              start: 14,
+              end: 30,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            }
+          ],
+          reviver
+        )
+      );
+    const updatedModel = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      14,
+      -1
+    );
+    expect(updatedModel).toMatchInlineSnapshot(`
+      Immutable.Map {
+        "type": "p",
+        "parent_id": "39fb",
+        "position": 1,
+        "content": "And a second aragraph because",
+        "meta": Immutable.Map {},
+        "id": "6eda",
+        "post_id": 166,
+      }
+    `);
+  });
+  test("start or end out of bounds should throw", () => {
+    expect(() => {
+      adjustSelectionOffsetsAndCleanup(
+        nodeModelWithSelections,
+        testContent,
+        -1,
+        10
+      );
+    }).toThrow();
+    expect(() => {
+      adjustSelectionOffsetsAndCleanup(
+        nodeModelWithSelections,
+        testContent,
+        31,
+        -12
+      );
+    }).toThrow();
+    expect(() => {
+      adjustSelectionOffsetsAndCleanup(
+        nodeModelWithSelections,
+        testContent,
+        12,
+        -15
+      );
+    }).toThrow();
+  });
 });
 
-describe("getSelection", () => {});
+describe("getSelection", () => {
+  test("finds existing Selection, preserves existing formats", () => {
+    const testModel = nodeModelWithSelections.set("content", testContent).setIn(
+      ["meta", "selections", 4],
+      nodeModelWithSelections
+        .getIn(["meta", "selections", 4])
+        .set(SELECTION_LINK_URL, "http://foo.bar")
+        .set(SELECTION_ACTION_LINK, true)
+    );
+    const testSelection = getSelection(testModel, 13, 22);
+    // testModel.getIn(["meta", "selections"]).get(4)
+    expect(testSelection).toMatchInlineSnapshot(`
+      Immutable.Record {
+        "start": 13,
+        "end": 22,
+        "selection-bold": false,
+        "selection-italic": false,
+        "selection-code": true,
+        "selection-strikethrough": false,
+        "selection-siteinfo": false,
+        "selection-link": true,
+        "linkUrl": "http://foo.bar",
+      }
+    `);
+  });
+  test("creates new selection with intersection of overlapping Selection formats applied (no formats)", () => {
+    const testModel = nodeModelWithSelections.set("content", testContent);
+    const testSelection = getSelection(testModel, 2, 22);
+    // testModel.getIn(["meta", "selections"]).get(4)
+    expect(testSelection).toMatchInlineSnapshot(`
+      Immutable.Record {
+        "start": 2,
+        "end": 22,
+        "selection-bold": false,
+        "selection-italic": false,
+        "selection-code": false,
+        "selection-strikethrough": false,
+        "selection-siteinfo": false,
+        "selection-link": false,
+        "linkUrl": "",
+      }
+    `);
+  });
+  test("creates new selection with intersection of overlapping Selection formats applied", () => {
+    const selections = nodeModelWithSelections.getIn(["meta", "selections"]);
+    // will now contain 3 Selections in a row that have SELECTION_ACTION_CODE formats
+    const testModel = nodeModelWithSelections
+      .set("content", testContent)
+      .setIn(
+        ["meta", "selections"],
+        selections
+          .set(2, selections.get(2).set(SELECTION_ACTION_CODE, true))
+          .set(3, selections.get(3).set(SELECTION_ACTION_CODE, true))
+      );
+    const testSelection = getSelection(testModel, 10, 20);
+    expect(testSelection).toMatchInlineSnapshot(`
+      Immutable.Record {
+        "start": 10,
+        "end": 20,
+        "selection-bold": false,
+        "selection-italic": false,
+        "selection-code": true,
+        "selection-strikethrough": false,
+        "selection-siteinfo": false,
+        "selection-link": false,
+        "linkUrl": "",
+      }
+    `);
+  });
+  test("applies formats of outer selection if selection is made within one selection", () => {
+    const testModel = nodeModelWithSelections.set("content", testContent);
+    const testSelection = getSelection(testModel, 16, 20);
+    // testModel.getIn(["meta", "selections"]).get(4)
+    expect(testSelection).toMatchInlineSnapshot(`
+      Immutable.Record {
+        "start": 16,
+        "end": 20,
+        "selection-bold": false,
+        "selection-italic": false,
+        "selection-code": true,
+        "selection-strikethrough": false,
+        "selection-siteinfo": false,
+        "selection-link": false,
+        "linkUrl": "",
+      }
+    `);
+  });
+});
 
 describe("upsertSelection", () => {
   test("insert first Selection", () => {
@@ -1003,9 +1222,187 @@ describe("upsertSelection", () => {
       }
     `);
   });
-  test.todo("new Selection matches existing Selection");
-  test.todo("new Selection overlaps existing Selection to the left");
-  test.todo("new Selection overlaps existing Selection to the right");
+  test("new Selection matches existing Selection", () => {
+    const testModel = nodeModelWithSelections.set("content", testContent);
+    const updatedModel = upsertSelection(
+      testModel,
+      testModel
+        .getIn(["meta", "selections"])
+        .get(4)
+        .set(SELECTION_ACTION_BOLD, true)
+    );
+    expect(updatedModel).toMatchInlineSnapshot(`
+      Immutable.Map {
+        "type": "p",
+        "parent_id": "39fb",
+        "position": 1,
+        "content": "And a second paragraph because",
+        "meta": Immutable.Map {
+          "selections": Immutable.List [
+            Immutable.Record {
+              "start": 0,
+              "end": 3,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": true,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 3,
+              "end": 6,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 6,
+              "end": 12,
+              "selection-bold": false,
+              "selection-italic": true,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 12,
+              "end": 13,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 13,
+              "end": 22,
+              "selection-bold": true,
+              "selection-italic": false,
+              "selection-code": true,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 22,
+              "end": 30,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+          ],
+        },
+        "id": "6eda",
+        "post_id": 166,
+      }
+    `);
+  });
+  test("new Selection overlaps existing Selections", () => {
+    const testModel = nodeModelWithSelections.set("content", testContent);
+    const newSelection = testModel
+      .getIn(["meta", "selections", 2])
+      .set(SELECTION_ACTION_LINK, true)
+      .set(SELECTION_LINK_URL, "http://hot.flakes")
+      .set(SELECTION_ACTION_BOLD, true)
+      .set(SELECTION_START, 10)
+      .set(SELECTION_END, 20);
+    const updatedModel = upsertSelection(testModel, newSelection);
+    expect(updatedModel).toMatchInlineSnapshot(`
+      Immutable.Map {
+        "type": "p",
+        "parent_id": "39fb",
+        "position": 1,
+        "content": "And a second paragraph because",
+        "meta": Immutable.Map {
+          "selections": Immutable.List [
+            Immutable.Record {
+              "start": 0,
+              "end": 3,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": true,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 3,
+              "end": 6,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 6,
+              "end": 10,
+              "selection-bold": false,
+              "selection-italic": true,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 10,
+              "end": 20,
+              "selection-bold": true,
+              "selection-italic": true,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": true,
+              "linkUrl": "http://hot.flakes",
+            },
+            Immutable.Record {
+              "start": 20,
+              "end": 22,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": true,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 22,
+              "end": 30,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+          ],
+        },
+        "id": "6eda",
+        "post_id": 166,
+      }
+    `);
+  });
   test.todo("new Selection is inside existing Selection");
   test.todo("unset last Selection, should remove 'selections' key from 'meta'");
 });
@@ -1125,8 +1522,8 @@ describe("splitSelectionsAtCaretOffset", () => {
       }
     `);
   });
-  test.todo("split at the edge of 2 Selections")
-  test.todo("split with no selections")
+  test.todo("split at the edge of 2 Selections");
+  test.todo("split with no selections");
 });
 
 describe("concatSelections", () => {
@@ -1312,5 +1709,13 @@ describe("getSelectionKey", () => {
     expect(getSelectionKey(testSelection)).toMatchInlineSnapshot(
       `"12-115-1-0-1-0-0-0"`
     );
+  });
+});
+
+describe("formatSelections", () => {
+  test("return empty string if argument isn't a List()", () => {
+    expect(formatSelections([])).toBe("");
+    expect(formatSelections({})).toBe("");
+    expect(formatSelections(null)).toBe("");
   });
 });

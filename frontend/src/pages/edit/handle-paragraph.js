@@ -135,7 +135,7 @@ export function handlePasteParagraph(documentModel, selectedNodeId, caretPositio
   const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
   const diffLength = clipboardText.length;
   selectedNode = selectedNode.set('content', updatedContent);
-  selectedNode = adjustSelectionOffsetsAndCleanup(selectedNode, caretPosition, diffLength);
+  selectedNode = adjustSelectionOffsetsAndCleanup(selectedNode, content, caretPosition, diffLength);
   documentModel.update(selectedNode);
   return [selectedNodeId, contentLeft.length + clipboardText.length];
 }

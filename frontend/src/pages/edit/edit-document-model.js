@@ -22,7 +22,6 @@ import {
   getMapWithId,
 } from '../../common/utils';
 import {
-  adjustSelectionOffsetsAndCleanup,
   concatSelections,
   selectionReviver,
 } from './edit-selection-helpers';

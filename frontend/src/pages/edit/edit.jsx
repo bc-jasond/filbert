@@ -432,7 +432,7 @@ export default class EditPost extends React.Component {
           } else {
             // only some of endNode's content has been selected, delete that content
             endNodeMap = endNodeMap.set('content', deleteContentRange(endNodeContent, 0, endDiffLength));
-            endNodeMap = adjustSelectionOffsetsAndCleanup(endNodeMap, endNodeCaretEnd, endDiffLength === 0 ? -1 : -endDiffLength);
+            endNodeMap = adjustSelectionOffsetsAndCleanup(endNodeMap, endNodeContent, endNodeCaretEnd, endDiffLength === 0 ? -1 : -endDiffLength);
             this.documentModel.update(endNodeMap);
           }
         }
@@ -463,7 +463,7 @@ export default class EditPost extends React.Component {
           } else {
             // only some of endNode's content has been selected, delete that content
             startNodeMap = startNodeMap.set('content', deleteContentRange(startNodeContent, startNodeCaretStart, startDiffLength));
-            startNodeMap = adjustSelectionOffsetsAndCleanup(startNodeMap, startNodeCaretEnd, startDiffLength === 0 ? -1 : -startDiffLength);
+            startNodeMap = adjustSelectionOffsetsAndCleanup(startNodeMap, startNodeContent, startNodeCaretEnd, startDiffLength === 0 ? -1 : -startDiffLength);
             this.documentModel.update(startNodeMap);
           }
         }
@@ -631,7 +631,7 @@ export default class EditPost extends React.Component {
         console.info('To DOM SYNC diff: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
         selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
         // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, diffLength);
+        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, beforeContentMap, caretPositionStart, diffLength);
         this.documentModel.update(selectedNodeMap);
       }
     }
@@ -677,7 +677,7 @@ export default class EditPost extends React.Component {
         console.info('From DOM SYNC diff - this should be an emoji: ', emoji, ' caret start: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
         selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
         // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, caretPositionStart, diffLength);
+        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, beforeContentMap, caretPositionStart, diffLength);
         this.documentModel.update(selectedNodeMap);
       }
     }
