@@ -27,7 +27,7 @@ import {
   selectionReviver,
 } from './edit-selection-helpers';
 
-function reviver(key, value) {
+export function reviver(key, value) {
   return selectionReviver(key, value)
     // ImmutableJS default behavior
     || (isKeyed(value) ? value.toMap() : value.toList())

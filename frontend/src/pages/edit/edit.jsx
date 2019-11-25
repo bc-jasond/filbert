@@ -396,7 +396,7 @@ export default class EditPost extends React.Component {
     if (middle) {
       middle.forEach(nodeId => {
         this.documentModel.delete(nodeId);
-      })
+      });
     }
   
     /**
@@ -432,7 +432,7 @@ export default class EditPost extends React.Component {
           } else {
             // only some of endNode's content has been selected, delete that content
             endNodeMap = endNodeMap.set('content', deleteContentRange(endNodeContent, 0, endDiffLength));
-            endNodeMap = adjustSelectionOffsetsAndCleanup(endNodeMap, endNodeCaretStart, endDiffLength === 0 ? -1 : -endDiffLength);
+            endNodeMap = adjustSelectionOffsetsAndCleanup(endNodeMap, endNodeCaretEnd, endDiffLength === 0 ? -1 : -endDiffLength);
             this.documentModel.update(endNodeMap);
           }
         }
@@ -463,7 +463,7 @@ export default class EditPost extends React.Component {
           } else {
             // only some of endNode's content has been selected, delete that content
             startNodeMap = startNodeMap.set('content', deleteContentRange(startNodeContent, startNodeCaretStart, startDiffLength));
-            startNodeMap = adjustSelectionOffsetsAndCleanup(startNodeMap, startNodeCaretStart, startDiffLength === 0 ? -1 : -startDiffLength);
+            startNodeMap = adjustSelectionOffsetsAndCleanup(startNodeMap, startNodeCaretEnd, startDiffLength === 0 ? -1 : -startDiffLength);
             this.documentModel.update(startNodeMap);
           }
         }
