@@ -183,7 +183,7 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', 
         continue;
       }
       // selection overlaps diff to the left - set end to diffRangeStart
-      if (current.get(SELECTION_START) < diffRangeStart && current.get(SELECTION_END) < diffRangeEnd) {
+      if (current.get(SELECTION_START) < diffRangeStart && current.get(SELECTION_END) <= diffRangeEnd) {
         newSelections = newSelections.push(current.set(SELECTION_END, diffRangeStart));
         continue;
       }

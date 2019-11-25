@@ -1070,9 +1070,98 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
   test.todo(
     "delete one highlighted character at the boundary of two selections"
   );
-  test.todo(
-    "delete one character (caret collapsed) at the boundary of two selection"
-  );
+  test("delete one character (caret collapsed) at the boundary of two selections", () => {
+    const testModel = nodeModelWithSelections.set(
+      "content",
+      `${testContent.substring(0, 21)}${testContent.substring(22)}`
+    );
+    const updatedModel = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      22,
+      -1
+    );
+    expect(updatedModel).toMatchInlineSnapshot(`
+      Immutable.Map {
+        "type": "p",
+        "parent_id": "39fb",
+        "position": 1,
+        "content": "And a second paragrap because",
+        "meta": Immutable.Map {
+          "selections": Immutable.List [
+            Immutable.Record {
+              "start": 0,
+              "end": 3,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": true,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 3,
+              "end": 6,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 6,
+              "end": 12,
+              "selection-bold": false,
+              "selection-italic": true,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 12,
+              "end": 13,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 13,
+              "end": 21,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": true,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 21,
+              "end": 29,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+          ],
+        },
+        "id": "6eda",
+        "post_id": 166,
+      }
+    `);
+  });
   test.todo(
     "delete last character (caret collapsed) of a selection, surrounding selections have same formats and should merge"
   );
