@@ -84,11 +84,11 @@ export function handleEnterParagraph(documentModel, selectedNodeId, caretPositio
   const contentRight = content.substring(caretPosition);
   const rightNodeId = documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P, contentRight);
   
-  let leftNode = documentModel.getNode(selectedNodeId);
+  let leftNode = documentModel.getNode(selectedNodeId).set('content', contentLeft);
   let rightNode = documentModel.getNode(rightNodeId);
   [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
   console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', formatSelections(leftNode), 'right selections: ', formatSelections(rightNode));
-  documentModel.update(leftNode.set('content', contentLeft));
+  documentModel.update(leftNode);
   documentModel.update(rightNode);
   return rightNodeId;
 }

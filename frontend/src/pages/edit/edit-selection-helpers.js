@@ -248,7 +248,13 @@ export function getSelection(nodeModel, start, end) {
   }
   newSelection = newSelection
     .set(SELECTION_START, start)
-    .set(SELECTION_END, end)
+    .set(SELECTION_END, end);
+  // this is the first selection
+  if (selections.size === 0) {
+    return newSelection;
+  }
+  
+  newSelection = newSelection
     // set all to true for && mask against all overlapping selections
     .set(SELECTION_ACTION_BOLD, true)
     .set(SELECTION_ACTION_ITALIC, true)
@@ -353,6 +359,7 @@ export function splitSelectionsAtCaretOffset(leftNodeModel, rightNodeModel, care
   const selections = getSelections(leftNodeModel);
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
+    const currentJS = current.toJS();
     if (current.get(SELECTION_END) <= caretOffset) {
       left = left.push(current);
       continue;

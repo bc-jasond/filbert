@@ -1076,6 +1076,25 @@ describe("getSelection", () => {
       }
     `);
   });
+  test("creates new selection on paragraph with no selections", () => {
+    const testModel = nodeModelWithSelections.set("content", testContent)
+      .deleteIn(['meta','selections']);
+    const testSelection = getSelection(testModel, 10, 15);
+    // testModel.getIn(["meta", "selections"]).get(4)
+    expect(testSelection).toMatchInlineSnapshot(`
+      Immutable.Record {
+        "start": 10,
+        "end": 15,
+        "selection-bold": false,
+        "selection-italic": false,
+        "selection-code": false,
+        "selection-strikethrough": false,
+        "selection-siteinfo": false,
+        "selection-link": false,
+        "linkUrl": "",
+      }
+    `);
+  });
   test("creates new selection with intersection of overlapping Selection formats applied", () => {
     const selections = nodeModelWithSelections.getIn(["meta", "selections"]);
     // will now contain 3 Selections in a row that have SELECTION_ACTION_CODE formats
@@ -1523,7 +1542,131 @@ describe("splitSelectionsAtCaretOffset", () => {
     `);
   });
   test.todo("split at the edge of 2 Selections");
-  test.todo("split with no selections");
+  test("split with selections on left and none on right", () => {
+    const testModelLeft = fromJS(
+      {
+        post_id: 166,
+        id: "21ba",
+        parent_id: "39fb",
+        position: 0,
+        type: "p",
+        content: "Here's a first para",
+        meta: {
+          selections: [
+            {
+              start: 0,
+              end: 9,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            },
+            {
+              start: 9,
+              end: 11,
+              "selection-bold": false,
+              "selection-italic": true,
+              "selection-code": true,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            },
+            {
+              start: 11,
+              end: 32,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            }
+          ]
+        }
+      },
+      reviver
+    );
+    const testModelRight = fromJS(
+      {
+        post_id: 166,
+        id: "21bc",
+        parent_id: "39fb",
+        position: 1,
+        type: "p",
+        content: "graph because",
+        meta: {}
+      },
+      reviver
+    );
+    const [left, right] = splitSelectionsAtCaretOffset(
+      testModelLeft,
+      testModelRight,
+      19
+    );
+    expect(left).toMatchInlineSnapshot(`
+      Immutable.Map {
+        "post_id": 166,
+        "id": "21ba",
+        "parent_id": "39fb",
+        "position": 0,
+        "type": "p",
+        "content": "Here's a first para",
+        "meta": Immutable.Map {
+          "selections": Immutable.List [
+            Immutable.Record {
+              "start": 0,
+              "end": 9,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 9,
+              "end": 11,
+              "selection-bold": false,
+              "selection-italic": true,
+              "selection-code": true,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 11,
+              "end": 19,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+          ],
+        },
+      }
+    `);
+    expect(right).toMatchInlineSnapshot(`
+      Immutable.Map {
+        "post_id": 166,
+        "id": "21bc",
+        "parent_id": "39fb",
+        "position": 1,
+        "type": "p",
+        "content": "graph because",
+        "meta": Immutable.Map {},
+      }
+    `);
+  });
 });
 
 describe("concatSelections", () => {

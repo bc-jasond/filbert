@@ -189,7 +189,7 @@ export const Figure = styled.figure`
 export const FigureCaption = styled.figcaption`
   ${miniText}
   text-align: center;
-  margin: 10px auto 0;
+  margin-top: 5px;
 `;
 export const ImagePlaceholderContainer = styled.div`
   position: relative;

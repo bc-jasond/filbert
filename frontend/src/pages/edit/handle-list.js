@@ -70,10 +70,10 @@ export function handleEnterList(documentModel, selectedNodeId, caretPosition, co
     return pId;
   }
   const rightNodeId = documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_LI, contentRight);
-  let leftNode = documentModel.getNode(selectedNodeId);
+  let leftNode = documentModel.getNode(selectedNodeId).set('content', contentLeft);
   let rightNode = documentModel.getNode(rightNodeId);
   [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
-  documentModel.update(leftNode.set('content', contentLeft));
+  documentModel.update(leftNode);
   documentModel.update(rightNode);
   return rightNodeId;
 }
