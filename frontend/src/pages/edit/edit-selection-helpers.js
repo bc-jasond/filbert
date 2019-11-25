@@ -204,7 +204,7 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', 
         continue;
       }
       // selection comes after diff - add "count" to start, add "count" to end
-      if (current.get(SELECTION_START) > diffRangeEnd && current.get(SELECTION_END) > diffRangeEnd) {
+      if (current.get(SELECTION_START) >= diffRangeEnd && current.get(SELECTION_END) > diffRangeEnd) {
         newSelections = newSelections.push(current
           .set(SELECTION_START, current.get(SELECTION_START) + count)
           .set(SELECTION_END, current.get(SELECTION_END) + count)

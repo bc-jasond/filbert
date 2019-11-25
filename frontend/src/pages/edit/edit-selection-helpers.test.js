@@ -217,6 +217,143 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
       }
     `);
   });
+  test("delete all highlighted characters up to caret (up to edge of a selection)", () => {
+    const prevContent = "and some paragraph for good measure?";
+    const testModel = fromJS(
+      {
+        type: "p",
+        parent_id: "39fb",
+        position: 1,
+        content: "paragraph for good measure?",
+        meta: {
+          selections: [
+            {
+              start: 0,
+              end: 9,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            },
+            {
+              start: 9,
+              end: 18,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": true,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            },
+            {
+              start: 18,
+              end: 23,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            },
+            {
+              start: 23,
+              end: 27,
+              "selection-bold": true,
+              "selection-italic": true,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            },
+            {
+              start: 27,
+              end: 36,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              linkUrl: ""
+            }
+          ]
+        },
+        id: "ce7b",
+        post_id: 166
+      },
+      reviver
+    );
+    const updatedModel = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      prevContent,
+      9,
+      -9
+    );
+    expect(updatedModel).toMatchInlineSnapshot(`
+      Immutable.Map {
+        "type": "p",
+        "parent_id": "39fb",
+        "position": 1,
+        "content": "paragraph for good measure?",
+        "meta": Immutable.Map {
+          "selections": Immutable.List [
+            Immutable.Record {
+              "start": 0,
+              "end": 9,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": true,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 9,
+              "end": 14,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 14,
+              "end": 18,
+              "selection-bold": true,
+              "selection-italic": true,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            Immutable.Record {
+              "start": 18,
+              "end": 27,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-strikethrough": false,
+              "selection-siteinfo": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+          ],
+        },
+        "id": "ce7b",
+        "post_id": 166,
+      }
+    `);
+  });
   test('delete all highlighted characters from caret through the end (when "start" with multiple nodes in handleBackspace)', () => {
     const expectedSelections = fromJS(
       [
@@ -1077,8 +1214,9 @@ describe("getSelection", () => {
     `);
   });
   test("creates new selection on paragraph with no selections", () => {
-    const testModel = nodeModelWithSelections.set("content", testContent)
-      .deleteIn(['meta','selections']);
+    const testModel = nodeModelWithSelections
+      .set("content", testContent)
+      .deleteIn(["meta", "selections"]);
     const testSelection = getSelection(testModel, 10, 15);
     // testModel.getIn(["meta", "selections"]).get(4)
     expect(testSelection).toMatchInlineSnapshot(`
