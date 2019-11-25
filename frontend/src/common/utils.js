@@ -1,5 +1,4 @@
 import { Map } from 'immutable';
-import { adjustSelectionOffsetsAndCleanup } from '../pages/edit/edit-selection-helpers';
 
 import { ZERO_LENGTH_CHAR } from './constants';
 

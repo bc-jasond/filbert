@@ -32,7 +32,7 @@ export function selectionReviver(key, value) {
 }
 export function formatSelections(s) {
   if (!List.isList(s)) {
-    return;
+    return '';
   }
   return `${s.reduce((acc, v) => `${acc} | start: ${v.get(SELECTION_START)}, end: ${v.get(SELECTION_END)}`, '')} |`;
 }
@@ -86,49 +86,6 @@ function applyFormatsOfOverlappingSelections(nodeModel, newSelection) {
       selection), newSelection);
 }
 
-function mergeOverlappingSelections(nodeModel, newSelection) {
-  let didPushNewSelection = false;
-  let newSelections = List();
-  const selections = getSelections(nodeModel);
-  if (selections.size === 0) {
-    newSelections = newSelections.push(newSelection);
-  }
-  for (let i = 0; i < selections.size; i++) {
-    const current = selections.get(i);
-    // current selection IS newSelection
-    if (current.get(SELECTION_START) === newSelection.get(SELECTION_START) && current.get(SELECTION_END) === newSelection.get(SELECTION_END)) {
-      newSelections = newSelections.push(newSelection);
-      didPushNewSelection = true;
-      continue;
-    }
-    // current selection doesn't overlap - push it
-    if (current.get(SELECTION_END) <= newSelection.get(SELECTION_START) || current.get(SELECTION_START) >= newSelection.get(SELECTION_END)) {
-      newSelections = newSelections.push(current);
-      continue;
-    }
-    // current selection overlaps to the left
-    if (current.get(SELECTION_START) < newSelection.get(SELECTION_START)) {
-      newSelections = newSelections
-        .push(current.set(SELECTION_END, newSelection.get(SELECTION_START)))
-    }
-    // push new selection
-    if (!didPushNewSelection) {
-      newSelections = newSelections.push(newSelection);
-      didPushNewSelection = true;
-    }
-    // current selection overlaps to the right
-    if (current.get(SELECTION_END) > newSelection.get(SELECTION_END)) {
-      newSelections = newSelections.push(current.set(SELECTION_START, newSelection.get(SELECTION_END)));
-    }
-    // current selection falls completely within newSelection - skip since it's styles have already been merged with `applyFormatsOfOverlappingSelections` (noop)
-    // if (current.get(SELECTION_START) >= newSelection.get(SELECTION_START) && current.get(SELECTION_END) <= newSelection.get(SELECTION_END)) {
-    //   continue;
-    // }
-  }
-
-  return setSelections(nodeModel, newSelections);
-}
-
 /**
  * make sure that all characters in the paragraph are in a selection
  * @param selections
@@ -153,7 +110,7 @@ function fillEnds(nodeModel) {
     newSelections = newSelections.push(Selection({[SELECTION_START]: maxEnd, [SELECTION_END]: contentLength}))
   }
   if (!selections.equals(newSelections)) {
-    console.log('FILL ENDS      ', formatSelections(newSelections));
+    console.info('FILL ENDS      ', formatSelections(newSelections));
     return setSelections(nodeModel, newSelections);
   }
   return nodeModel;
@@ -194,50 +151,100 @@ function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
     return nodeModel.deleteIn(['meta', 'selections']);
   }
   if (!selections.equals(newSelections)) {
-    console.log('MERGE ADJACENT ', formatSelections(newSelections));
+    console.info('MERGE ADJACENT ', formatSelections(newSelections));
     return setSelections(nodeModel, newSelections);
   }
+  // no-op
   return nodeModel;
 }
 
 /**
  * PUBLIC API
- */
-/**
- * Every public export calls this to keep shit on the level
  *
- * if the user places the caret in the middle of a paragraph with existing selections:
- * 1) if caret in middle of selection - end = oldEnd += newKeyStrokesCount
- * 2) if exist selections that start after the current caret position
- *   - start = oldStart += newKeyStrokesCount
- *   - end (if > -1) = oldEnd += newKeyStrokesCount
  *
+ * Every public export calls this to keep shit on the level.
+ * FOR POSTERITY: This has been the single most difficult function to design in the whole codebase
+ * bugs and regressions here over and over again finally prompted adding the first tests with jest
+ *
+ * adjusts selection offsets (and removes selections) after these events: paste, keydown, delete 1 char, delete selection of 1 or more chars
  */
 export function adjustSelectionOffsetsAndCleanup(nodeModel, start = 0, count = 0) {
+  const diffRangeStart = Math.min(start, start + count);
+  const diffRangeEnd = Math.max(start, start + count);
+  const doesRemoveCharacters = count < 0;
+  const contentLength = nodeModel.get('content', '').length;
+  // validate input
+  if (
+    // trying to delete too far left (past 0)
+    start + count < 0
+    // trying to add too far right (past contentLength)
+    || start + count > contentLength) {
+    throw new Error(`adjustSelectionOffsetsAndCleanup out of bounds!\n${JSON.stringify(nodeModel.toJS())}\n${start}\n${count}`);
+  }
   const selections = getSelections(nodeModel);
   if (selections.size === 0) {
     return nodeModel.deleteIn(['meta', 'selections']);
   }
   let newSelections = List();
   // TODO: might need to account for the 'placeholder' character here...
-  const contentLength = nodeModel.get('content', '').length;
+  
   for (let i = 0; i < selections.size; i++) {
     let current = selections.get(i);
-    if (current.get(SELECTION_START) >= start) {
-      current = current.set(SELECTION_START, current.get(SELECTION_START) + count)
-    }
-    if (current.get(SELECTION_END) >= start) {
-      current = current.set(SELECTION_END, current.get(SELECTION_END) + count)
-    }
-    // for deleting characters: don't push empty selections
-    if (current.get(SELECTION_END) > current.get(SELECTION_START)) {
+    //const currentJS = current.toJS();
+    if (doesRemoveCharacters) {
+      // selection completely enveloped by diff - skip
+      if (current.get(SELECTION_START) >= diffRangeStart && current.get(SELECTION_END) <= diffRangeEnd) {
+        continue;
+      }
+      // selection comes before diff - push as is
+      if (current.get(SELECTION_END) <= diffRangeStart) {
+        newSelections = newSelections.push(current);
+        continue;
+      }
+      // selection overlaps diff to the left - set end to diffRangeStart
+      if (current.get(SELECTION_START) < diffRangeStart && current.get(SELECTION_END) < diffRangeEnd) {
+        newSelections = newSelections.push(current.set(SELECTION_END, diffRangeStart));
+        continue;
+      }
+      // diff completely inside selection - add "count" to end
+      if (current.get(SELECTION_START) <= diffRangeStart && current.get(SELECTION_END) > diffRangeEnd) {
+        newSelections = newSelections.push(
+          current.set(SELECTION_END, current.get(SELECTION_END) + count)
+        );
+        continue;
+      }
+      // selection overlaps diff to the right - set start to diffRangeStart, add "count" to end
+      if (current.get(SELECTION_START) < diffRangeEnd && current.get(SELECTION_END) > diffRangeEnd) {
+        newSelections = newSelections.push(
+          current
+          .set(SELECTION_START, diffRangeStart)
+          .set(SELECTION_END, current.get(SELECTION_END) + count)
+        );
+        continue;
+      }
+      // selection comes after diff - add "count" to start, add "count" to end
+      if (current.get(SELECTION_START) > diffRangeEnd && current.get(SELECTION_END) > diffRangeEnd) {
+        newSelections = newSelections.push(current
+          .set(SELECTION_START, current.get(SELECTION_START) + count)
+          .set(SELECTION_END, current.get(SELECTION_END) + count)
+        );
+        continue;
+      }
+    } else {
+      // ADDING characters
+      if (current.get(SELECTION_START) >= start) {
+        current = current.set(SELECTION_START, current.get(SELECTION_START) + count)
+      }
+      if (current.get(SELECTION_END) >= start) {
+        current = current.set(SELECTION_END, current.get(SELECTION_END) + count)
+      }
       newSelections = newSelections.push(current);
     }
   }
 
   let newModel = nodeModel;
   if (!selections.equals(newSelections)) {
-    console.log('ADJUST         ', formatSelections(newSelections), ' -- offset: ', start, ' count: ', count, ' content length: ', contentLength);
+    console.info('ADJUST         ', formatSelections(newSelections), ' -- offset: ', start, ' count: ', count, ' content length: ', contentLength);
     newModel = setSelections(nodeModel, newSelections);
   }
   newModel = fillEnds(newModel);
@@ -278,12 +285,51 @@ export function getSelection(nodeModel, start, end) {
  * guarantee no overlaps at rest
  */
 export function upsertSelection(nodeModel, newSelection) {
-  nodeModel = mergeOverlappingSelections(nodeModel, newSelection);
+  let didPushNewSelection = false;
+  let newSelections = List();
+  const selections = getSelections(nodeModel);
+  if (selections.size === 0) {
+    newSelections = newSelections.push(newSelection);
+  }
+  for (let i = 0; i < selections.size; i++) {
+    const current = selections.get(i);
+    // current selection IS newSelection
+    if (current.get(SELECTION_START) === newSelection.get(SELECTION_START) && current.get(SELECTION_END) === newSelection.get(SELECTION_END)) {
+      newSelections = newSelections.push(newSelection);
+      didPushNewSelection = true;
+      continue;
+    }
+    // current selection doesn't overlap - push it
+    if (current.get(SELECTION_END) <= newSelection.get(SELECTION_START) || current.get(SELECTION_START) >= newSelection.get(SELECTION_END)) {
+      newSelections = newSelections.push(current);
+      continue;
+    }
+    // current selection overlaps to the left
+    if (current.get(SELECTION_START) < newSelection.get(SELECTION_START)) {
+      newSelections = newSelections
+        .push(current.set(SELECTION_END, newSelection.get(SELECTION_START)))
+    }
+    // push new selection
+    if (!didPushNewSelection) {
+      newSelections = newSelections.push(newSelection);
+      didPushNewSelection = true;
+    }
+    // current selection overlaps to the right
+    if (current.get(SELECTION_END) > newSelection.get(SELECTION_END)) {
+      newSelections = newSelections.push(current.set(SELECTION_START, newSelection.get(SELECTION_END)));
+    }
+    // current selection falls completely within newSelection - skip since it's styles have already been merged with `applyFormatsOfOverlappingSelections` (noop)
+    // if (current.get(SELECTION_START) >= newSelection.get(SELECTION_START) && current.get(SELECTION_END) <= newSelection.get(SELECTION_END)) {
+    //   continue;
+    // }
+  }
+  
+  nodeModel = setSelections(nodeModel, newSelections);
   return adjustSelectionOffsetsAndCleanup(nodeModel);
 }
 
 /**
- * NOTE: this function returns an array of Left & Right selections List()s NOT a document model
+ * NOTE: this function returns an array of Left & Right selections List()s NOT a document nodeModel
  * the reason is because we don't have a Right model (don't have an id) yet.  I could make this so but, it seems reach-outy
  *
  * @param nodeModel
@@ -352,6 +398,9 @@ export function getContentForSelection(node, selection) {
   }
   const startOffset = selection.get(SELECTION_START);
   const endOffset = selection.get(SELECTION_END);
+  if (startOffset > content.length || startOffset < 0 || endOffset > content.length || endOffset < 0) {
+    throw new Error(`getContentForSelection - Selection offsets are out of bounds!\nContent: ${content}\nSelection: ${JSON.stringify(selection.toJS())}`);
+  }
   return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
 }
 
@@ -363,5 +412,7 @@ export function getSelectionKey(s) {
     SELECTION_ACTION_SITEINFO,
     SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_LINK,
-  ].map(fmt => s.get(fmt) ? 1 : 0)}`;
+  ]
+    .map(fmt => s.get(fmt) ? 1 : 0)
+    .join('-')}`;
 }
