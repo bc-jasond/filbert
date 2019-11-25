@@ -209,7 +209,6 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', 
           .set(SELECTION_START, current.get(SELECTION_START) + count)
           .set(SELECTION_END, current.get(SELECTION_END) + count)
         );
-        continue;
       }
     } else {
       // ADDING characters

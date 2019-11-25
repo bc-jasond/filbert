@@ -1073,12 +1073,12 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
   test("delete one character (caret collapsed) at the boundary of two selections", () => {
     const testModel = nodeModelWithSelections.set(
       "content",
-      `${testContent.substring(0, 21)}${testContent.substring(22)}`
+      `${testContent.substring(0, 11)}${testContent.substring(12)}`
     );
     const updatedModel = adjustSelectionOffsetsAndCleanup(
       testModel,
       testContent,
-      22,
+      12,
       -1
     );
     expect(updatedModel).toMatchInlineSnapshot(`
@@ -1086,7 +1086,7 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
         "type": "p",
         "parent_id": "39fb",
         "position": 1,
-        "content": "And a second paragrap because",
+        "content": "And a secon paragraph because",
         "meta": Immutable.Map {
           "selections": Immutable.List [
             Immutable.Record {
@@ -1113,7 +1113,7 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
             },
             Immutable.Record {
               "start": 6,
-              "end": 12,
+              "end": 11,
               "selection-bold": false,
               "selection-italic": true,
               "selection-code": false,
@@ -1123,8 +1123,8 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
               "linkUrl": "",
             },
             Immutable.Record {
-              "start": 12,
-              "end": 13,
+              "start": 11,
+              "end": 12,
               "selection-bold": false,
               "selection-italic": false,
               "selection-code": false,
@@ -1134,7 +1134,7 @@ describe("adjustSelectionOffsetsAndCleanup", () => {
               "linkUrl": "",
             },
             Immutable.Record {
-              "start": 13,
+              "start": 12,
               "end": 21,
               "selection-bold": false,
               "selection-italic": false,
