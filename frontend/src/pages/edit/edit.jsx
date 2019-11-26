@@ -310,7 +310,11 @@ export default class EditPost extends React.Component {
   }
   
   handleBackspace = async (evt, selectionOffsets) => {
-    if (evt.keyCode !== KEYCODE_BACKSPACE) {
+    // select-and-type - All this means is to call doDelete() if there's 1 or more characters selected
+    const [
+      [startNodeCaretStart, startNodeCaretEnd, _],
+    ] = selectionOffsets;
+    if (evt.keyCode !== KEYCODE_BACKSPACE && startNodeCaretStart === startNodeCaretEnd) {
       return;
     }
     
@@ -319,8 +323,10 @@ export default class EditPost extends React.Component {
       return;
     }
     
-    evt.stopPropagation();
-    evt.preventDefault();
+    if (evt.keyCode === KEYCODE_BACKSPACE) {
+      evt.stopPropagation();
+      evt.preventDefault();
+    }
   
     // clear the selected format node when deleting the highlighted selection
     // NOTE: must wait for state have been set or setCaret will check stale values
@@ -359,8 +365,6 @@ export default class EditPost extends React.Component {
   /**
    * Capture edit intent one keystroke at a time.  Update JS Model then let React selectively re-render DOM
    *
-   // TODO: better cut/paste
-   // TODO: handle select & type
    */
   handleSyncToDom(evt, selectionOffsets) {
     // don't send updates for control keys
@@ -404,7 +408,7 @@ export default class EditPost extends React.Component {
   
   // MAIN "ON" EVENT CALLBACKS
   
-  handleKeyDown = (evt) => {
+  handleKeyDown = async (evt) => {
     // any control keys being held down?
     if (evt.metaKey || isControlKey(evt.keyCode)) {
       return;
@@ -414,8 +418,12 @@ export default class EditPost extends React.Component {
     if (start.length === 0) {
       return;
     }
+    // since we're `await`ing below we need to persist this evt object or React will clean it up
+    evt.persist();
     //console.debug('KeyDown: ', evt)
-    this.handleBackspace(evt, selectionOffsets);
+    // await here because we rely on handleBackspace calling setState and resolving on the callback
+    //  this is to unset nodes that are checked in commitUpdates() for setCaret()
+    await this.handleBackspace(evt, selectionOffsets);
     // TODO this.handleDel(evt); // currently, no support for the 'Del' key
     this.handleEnter(evt, selectionOffsets);
     this.handleSyncToDom(evt, selectionOffsets);
@@ -428,6 +436,11 @@ export default class EditPost extends React.Component {
     }
     //console.debug('KeyUp: ', evt)
     const selectionOffsets = getHighlightedSelectionOffsets();
+    const [start] = selectionOffsets;
+    if (start.length === 0) {
+      return;
+    }
+    
     this.handleSyncFromDom(evt, selectionOffsets);
     moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
@@ -437,6 +450,10 @@ export default class EditPost extends React.Component {
   handleMouseUp = (evt) => {
     //console.debug('MouseUp: ', evt)
     const selectionOffsets = getHighlightedSelectionOffsets();
+    const [start] = selectionOffsets;
+    if (start.length === 0) {
+      return;
+    }
     moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
