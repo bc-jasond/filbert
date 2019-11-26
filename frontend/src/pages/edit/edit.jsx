@@ -392,7 +392,7 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
     
-    if (evt.type !== 'input') {
+    if (evt.type !== 'input' || this.didPaste) {
       return;
     }
     
@@ -445,6 +445,8 @@ export default class EditPost extends React.Component {
     moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
+    // since evt.inputType === 'inputFromPaste' isn't compatible with Edge
+    this.didPaste = false;
   }
   
   handleMouseUp = (evt) => {
@@ -462,14 +464,16 @@ export default class EditPost extends React.Component {
   }
   
   handlePaste = (evt) => {
+    // no other handlers please!
+    this.didPaste = true;
+    evt.stopPropagation();
+    evt.preventDefault();
+    
     const selectionOffsets = getHighlightedSelectionOffsets();
     const [focusNodeId, caretOffset] = doPaste(this.documentModel, selectionOffsets, evt.clipboardData);
     if (!focusNodeId) {
       return;
     }
-    
-    evt.stopPropagation();
-    evt.preventDefault();
     
     this.commitUpdates(focusNodeId, caretOffset);
   }

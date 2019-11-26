@@ -1,4 +1,4 @@
-import { NODE_TYPE_P, NODE_TYPE_PRE } from '../../../common/constants';
+import { NODE_TYPE_LI, NODE_TYPE_P, NODE_TYPE_PRE } from '../../../common/constants';
 import { getNodeId, getNodeType } from '../../../common/dom';
 import { handlePasteCode } from '../helpers-by-section-type/handle-code';
 import { handlePasteParagraph } from '../helpers-by-section-type/handle-paragraph';
@@ -27,6 +27,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
       ] = handlePasteCode(documentModel, selectedNodeId, caretPositionStart, clipboardText);
       break;
     }
+    case NODE_TYPE_LI: // fall-through
     case NODE_TYPE_P: {
       [
         focusNodeId,
