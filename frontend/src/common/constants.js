@@ -51,6 +51,7 @@ export const KEYCODE_UP_ARROW = 38;
 export const KEYCODE_RIGHT_ARROW = 39;
 export const KEYCODE_DOWN_ARROW = 40;
 export const KEYCODE_DEL = 46;
+export const KEYCODE_X = 88;
 export const KEYCODE_SHIFT_OR_COMMAND_LEFT = 91;
 export const KEYCODE_COMMAND_RIGHT = 93;
 export const KEYCODE_F1 = 112;

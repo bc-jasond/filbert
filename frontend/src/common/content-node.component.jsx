@@ -57,7 +57,7 @@ import {
 import {
   getContentForSelection,
   getSelectionKey,
-} from '../pages/edit/edit-selection-helpers';
+} from '../pages/edit/selection-helpers';
 
 const StyledDiv = styled.div``;
 
@@ -94,7 +94,7 @@ export default class ContentNode extends React.Component {
         <ContentNode key={child.get('id')} post={post} node={child} nodesByParentId={nodesByParentId}
                      isEditing={isEditing} />))
   }
-
+  
   shouldComponentUpdate(nextProps) {
     const {
       node,
@@ -278,26 +278,33 @@ export default class ContentNode extends React.Component {
         let children = [];
         selections.forEach((selection) => {
           const key = getSelectionKey(selection);
-          let selectionJsx = getContentForSelection(node, selection);
-          if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
-            selectionJsx = (<StrikeText key={key}>{selectionJsx}</StrikeText>)
+          try {
+            let selectionJsx = getContentForSelection(node, selection);
+            
+            if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
+              selectionJsx = (<StrikeText key={key}>{selectionJsx}</StrikeText>)
+            }
+            if (selection.get(SELECTION_ACTION_SITEINFO)) {
+              selectionJsx = (<SiteInfo key={key}>{selectionJsx}</SiteInfo>)
+            }
+            if (selection.get(SELECTION_ACTION_ITALIC)) {
+              selectionJsx = (<ItalicText key={key}>{selectionJsx}</ItalicText>)
+            }
+            if (selection.get(SELECTION_ACTION_CODE)) {
+              selectionJsx = (<Code key={key}>{selectionJsx}</Code>)
+            }
+            if (selection.get(SELECTION_ACTION_BOLD)) {
+              selectionJsx = (<BoldText key={key}>{selectionJsx}</BoldText>)
+            }
+            if (selection.get(SELECTION_ACTION_LINK)) {
+              selectionJsx = (<A key={key} href={selection.get('linkUrl')}>{selectionJsx}</A>)
+            }
+            children.push(selectionJsx);
+          } catch (err) {
+            console.warn(err);
+            // selections got corrupt, just display unformatted text
+            children = [node.get('content')];
           }
-          if (selection.get(SELECTION_ACTION_SITEINFO)) {
-            selectionJsx = (<SiteInfo key={key}>{selectionJsx}</SiteInfo>)
-          }
-          if (selection.get(SELECTION_ACTION_ITALIC)) {
-            selectionJsx = (<ItalicText key={key}>{selectionJsx}</ItalicText>)
-          }
-          if (selection.get(SELECTION_ACTION_CODE)) {
-            selectionJsx = (<Code key={key}>{selectionJsx}</Code>)
-          }
-          if (selection.get(SELECTION_ACTION_BOLD)) {
-            selectionJsx = (<BoldText key={key}>{selectionJsx}</BoldText>)
-          }
-          if (selection.get(SELECTION_ACTION_LINK)) {
-            selectionJsx = (<A key={key} href={selection.get('linkUrl')}>{selectionJsx}</A>)
-          }
-          children.push(selectionJsx);
         });
         return (
           <StyledComponent data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
