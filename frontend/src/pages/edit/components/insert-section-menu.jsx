@@ -7,11 +7,11 @@ import {
   NODE_TYPE_SECTION_IMAGE,
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER,
-} from '../../common/constants';
+} from '../../../common/constants';
 
 import styled, { css } from 'styled-components';
-import { grey } from '../../common/css';
-import { Input, NavButtonMixin } from '../../common/shared-styled-components';
+import { grey } from '../../../common/css';
+import { Input, NavButtonMixin } from '../../../common/shared-styled-components';
 
 const InsertSectionMenu = styled.div`
   position: absolute;

@@ -12,9 +12,9 @@ import {
   ErrorMessage,
   SuccessMessage,
   MessageContainer,
-} from '../../common/shared-styled-components';
+} from './shared-styled-components';
 
-import {formatPostDate} from '../../common/utils';
+import {formatPostDate} from './utils';
 
 const publishPostFields = [
   {

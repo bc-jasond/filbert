@@ -72,7 +72,7 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT,
+  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X,
 } from '../../common/constants';
 import { lineHeight } from "../../common/css";
 
@@ -87,41 +87,41 @@ import {
   handleEnterCode,
   handlePasteCode,
   insertCodeSection
-} from './handle-code';
-import { insertPhoto } from './handle-image';
+} from './section-helpers-by-type/handle-code';
+import { insertPhoto } from './section-helpers-by-type/handle-image';
 import {
   handleBackspaceList,
   handleEnterList,
   insertList,
   splitListReplaceListItemWithSection,
-} from './handle-list';
+} from './section-helpers-by-type/handle-list';
 import {
   handleBackspaceParagraph,
   handleEnterParagraph,
   handlePasteParagraph,
   paragraphToTitle,
   titleToParagraph,
-} from './handle-paragraph';
-import { insertQuote } from './handle-quote';
-import { insertSpacer } from './handle-spacer';
+} from './section-helpers-by-type/handle-paragraph';
+import { insertQuote } from './section-helpers-by-type/handle-quote';
+import { insertSpacer } from './section-helpers-by-type/handle-spacer';
 import {
   handleEnterTitle,
   handleBackspaceTitle,
   insertH1,
   insertH2
-} from './handle-title';
+} from './section-helpers-by-type/handle-title';
 import {
   Selection,
   adjustSelectionOffsetsAndCleanup,
   getSelection,
   upsertSelection,
-} from './edit-selection-helpers';
+} from './selection-helpers';
 
-import InsertSectionMenu from './insert-section-menu';
-import EditImageForm from './edit-image-form';
-import EditQuoteForm from './edit-quote-form';
-import FormatSelectionMenu from './format-selection-menu';
-import PublishPostForm from './edit-publish-post-form';
+import InsertSectionMenu from './components/insert-section-menu';
+import EditImageForm from './components/edit-image-form';
+import EditQuoteForm from './components/edit-quote-form';
+import FormatSelectionMenu from './components/format-selection-menu';
+import PublishPostForm from '../../common/edit-publish-post-form';
 
 import Page404 from '../404';
 
@@ -740,6 +740,9 @@ export default class EditPost extends React.Component {
       return;
     }
     const selectionOffsets = getHighlightedSelectionOffsets();
+    if (!selectionOffsets) {
+      return;
+    }
     //console.debug('KeyDown: ', evt)
     this.handleBackspace(evt, selectionOffsets);
     // TODO this.handleDel(evt); // currently, no support for the 'Del' key
@@ -1042,16 +1045,6 @@ export default class EditPost extends React.Component {
     const currentRotationDegrees = editImageSectionNode.getIn(['meta', 'rotationDegrees'], 0);
     const updatedRotationDegrees = currentRotationDegrees === 270 ? 0 : currentRotationDegrees + 90;
     let updatedImageSectionNode = editImageSectionNode.setIn(['meta', 'rotationDegrees'], updatedRotationDegrees);
-    if (false) {//} && updatedRotationDegrees === 90 || updatedRotationDegrees === 270) {
-      // swap height & width
-      const meta = updatedImageSectionNode.get('meta');
-      updatedImageSectionNode = updatedImageSectionNode.set(
-        'meta',
-        meta
-          .set('width', meta.get('height'))
-          .set('height', meta.get('width'))
-      );
-    }
     this.documentModel.update(updatedImageSectionNode);
     this.setState({
       editImageSectionNode: updatedImageSectionNode,

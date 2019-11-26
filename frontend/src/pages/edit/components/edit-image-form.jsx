@@ -9,10 +9,10 @@ import {
   ButtonSeparator,
   PointClip,
   Arrow,
-} from '../../common/shared-styled-components';
-import IconImageSvg from '../../../assets/icons/image.svg';
-import IconTrashSvg from '../../../assets/icons/trash.svg';
-import IconRotateSvg from '../../../assets/icons/rotate.svg';
+} from '../../../common/shared-styled-components';
+import IconImageSvg from '../../../../assets/icons/image.svg';
+import IconTrashSvg from '../../../../assets/icons/trash.svg';
+import IconRotateSvg from '../../../../assets/icons/rotate.svg';
 
 const fileInputRef = React.createRef();
 

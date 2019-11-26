@@ -4,8 +4,8 @@ import {
   NODE_TYPE_SECTION_CODE,
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_SPACER,
-} from '../../common/constants';
-import { cleanText, deleteContentRange, getCharFromEvent } from '../../common/utils';
+} from '../../../common/constants';
+import { cleanText, deleteContentRange, getCharFromEvent } from '../../../common/utils';
 
 function getPreCodeSectionIdAndIndex(selectedNodeId) {
   if (!selectedNodeId.includes('-')) {

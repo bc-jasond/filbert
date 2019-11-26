@@ -6,13 +6,13 @@ import {
   NODE_TYPE_SECTION_H1,
   NODE_TYPE_SECTION_H2,
   NODE_TYPE_SECTION_SPACER
-} from '../../common/constants';
+} from '../../../common/constants';
 import {
   adjustSelectionOffsetsAndCleanup,
   formatSelections,
   splitSelectionsAtCaretOffset
-} from './edit-selection-helpers';
-import {getCharFromEvent} from "../../common/utils";
+} from '../selection-helpers';
+import {getCharFromEvent} from "../../../common/utils";
 
 export function handleBackspaceParagraph(documentModel, selectedNodeId) {
   const selectedSection = documentModel.getSection(selectedNodeId);

@@ -24,7 +24,7 @@ import {
 import {
   concatSelections,
   selectionReviver,
-} from './edit-selection-helpers';
+} from './selection-helpers';
 
 export function reviver(key, value) {
   return selectionReviver(key, value)

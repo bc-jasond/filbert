@@ -4,9 +4,9 @@ import {
   NODE_TYPE_OL,
   NODE_TYPE_P,
   NODE_TYPE_SECTION_SPACER,
-} from '../../common/constants';
-import { cleanText } from '../../common/utils';
-import { splitSelectionsAtCaretOffset } from './edit-selection-helpers';
+} from '../../../common/constants';
+import { cleanText } from '../../../common/utils';
+import { splitSelectionsAtCaretOffset } from '../selection-helpers';
 
 export function handleBackspaceList(documentModel, selectedNodeId) {
   const selectedOl = documentModel.getParent(selectedNodeId);

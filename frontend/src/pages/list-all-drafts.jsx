@@ -32,7 +32,7 @@ import {
   PostMetaContentFirst,
   PostAction,
 } from '../common/list-all-styled-components';
-import PublishPostForm from './edit/edit-publish-post-form';
+import PublishPostForm from '../common/edit-publish-post-form';
 
 export default class AllPosts extends React.Component {
   constructor(props) {
