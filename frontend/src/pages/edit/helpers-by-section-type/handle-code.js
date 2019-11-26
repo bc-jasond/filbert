@@ -5,7 +5,7 @@ import {
   NODE_TYPE_SECTION_CONTENT,
   NODE_TYPE_SECTION_SPACER,
 } from '../../../common/constants';
-import { cleanText, deleteContentRange, getCharFromEvent } from '../../../common/utils';
+import { cleanText, deleteContentRange } from '../../../common/utils';
 
 function getPreCodeSectionIdAndIndex(selectedNodeId) {
   if (!selectedNodeId.includes('-')) {

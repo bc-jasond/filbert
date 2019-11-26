@@ -5,7 +5,7 @@ import {
   NODE_ACTION_DELETE,
 } from '../../common/constants';
 
-export default class EditUpdateManager {
+export default class UpdateManager {
   post;
   nodeUpdates;
   

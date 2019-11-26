@@ -28,16 +28,12 @@ import Footer from '../footer';
 import { getUserName, signout } from '../../common/session';
 import {
   confirmPromise,
-  cleanTextOrZeroLengthPlaceholder,
   getCanonicalFromTitle,
   imageUrlIsId,
-  getCharFromEvent,
-  deleteContentRange,
 } from '../../common/utils';
 import {
   getRange,
   getNodeId,
-  getNodeType,
   getFirstHeadingContent,
   setCaret,
   getHighlightedSelectionOffsets,
@@ -46,73 +42,33 @@ import {
 
 import {
   NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_SPACER,
   NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_IMAGE,
   KEYCODE_ENTER,
   KEYCODE_BACKSPACE,
-  KEYCODE_DEL,
-  KEYCODE_UP_ARROW,
-  KEYCODE_DOWN_ARROW,
-  KEYCODE_LEFT_ARROW,
-  KEYCODE_RIGHT_ARROW,
   KEYCODE_ESC,
   NEW_POST_URL_ID,
   ROOT_NODE_PARENT_ID,
-  NODE_TYPE_ROOT,
   NODE_TYPE_P,
-  NODE_TYPE_OL,
-  NODE_TYPE_LI,
-  NODE_TYPE_PRE,
-  SELECTION_ACTION_H1,
-  SELECTION_ACTION_H2,
-  SELECTION_ACTION_ITALIC,
-  SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X,
+  POST_ACTION_REDIRECT_TIMEOUT,
 } from '../../common/constants';
 import { lineHeight } from "../../common/css";
 
 import ContentNode from '../../common/content-node.component';
-import EditDocumentModel from './edit-document-model';
-import EditUpdateManager from './edit-update-manager';
+import { moveCaret } from './helpers-document-model/caret';
+import { doDelete } from './helpers-document-model/delete';
+import DocumentModel from './document-model';
+import { syncFromDom, syncToDom } from './helpers-document-model/dom-sync';
+import { insertSectionHelper } from './helpers-document-model/insert';
+import { doPaste } from './helpers-document-model/paste';
+import { selectionFormatAction } from './helpers-document-model/selection-format-action';
+import { doSplit } from './helpers-document-model/split';
+import UpdateManager from './update-manager';
 
 import {
-  handleBackspaceCode,
-  handleBackspaceCodeStructuralChange,
-  handleDomSyncCode,
-  handleEnterCode,
-  handlePasteCode,
-  insertCodeSection
-} from './section-helpers-by-type/handle-code';
-import { insertPhoto } from './section-helpers-by-type/handle-image';
-import {
-  handleBackspaceList,
-  handleEnterList,
-  insertList,
-  splitListReplaceListItemWithSection,
-} from './section-helpers-by-type/handle-list';
-import {
-  handleBackspaceParagraph,
-  handleEnterParagraph,
-  handlePasteParagraph,
-  paragraphToTitle,
-  titleToParagraph,
-} from './section-helpers-by-type/handle-paragraph';
-import { insertQuote } from './section-helpers-by-type/handle-quote';
-import { insertSpacer } from './section-helpers-by-type/handle-spacer';
-import {
-  handleEnterTitle,
-  handleBackspaceTitle,
-  insertH1,
-  insertH2
-} from './section-helpers-by-type/handle-title';
-import {
   Selection,
-  adjustSelectionOffsetsAndCleanup,
   getSelection,
   upsertSelection,
 } from './selection-helpers';
@@ -191,8 +147,8 @@ export default class EditPost extends React.Component {
     }
   }
   
-  documentModel = new EditDocumentModel();
-  updateManager = new EditUpdateManager();
+  documentModel = new DocumentModel();
+  updateManager = new UpdateManager();
   commitTimeoutId;
   inputRef;
   
@@ -357,14 +313,9 @@ export default class EditPost extends React.Component {
     if (evt.keyCode !== KEYCODE_BACKSPACE) {
       return;
     }
-    const [
-      [startNodeCaretStart, startNodeCaretEnd, startNode],
-      middle,
-      end,
-    ] = selectionOffsets;
-    const startNodeId = getNodeId(startNode);
-    if (startNodeId === 'null' || !startNodeId) {
-      console.warn('BACKSPACE - bad selection, no id ', startNode);
+    
+    const [focusNodeId, caretOffset, shouldFocusLastNode] = doDelete(this.documentModel, selectionOffsets);
+    if (!focusNodeId) {
       return;
     }
     
@@ -376,150 +327,8 @@ export default class EditPost extends React.Component {
     await new Promise(resolve => {
       this.setState({ formatSelectionNode: Map() }, resolve)
     });
-  
-    /**
-     * Backspace scenarios:
-     *
-     * 1) caret is collapsed OR
-     * 2) caret highlights 1 or more characters
-     * 3) startNodeCaretStart === 0
-     * 4) startNodeCaretEnd === selectedNodeMap.get('content').length
-     * 5) caret start and end nodes are different (multi-node selection)
-     * 6) there are middle nodes (this is easy, just delete them)
-     * 7) merge (heal) content from two different nodes
-     * 8) startNode is completely selected
-     * 9) endNode is completely selected
-     * 10) startNode and endNode are the same type
-     */
     
-    // there are completely highlighted nodes in the middle of the selection - just delete them
-    if (middle) {
-      middle.forEach(nodeId => {
-        this.documentModel.delete(nodeId);
-      });
-    }
-  
-    /**
-     * the selection spans more than one node
-     * 1 - delete the highlighted text
-     * 2 - set the currentNodeId to the endNode
-     * 3 - set flag to continue to "structural" updates below.  This will heal endNode and startNode
-      */
-    // default the selectedNode to startNode - might change to endNode below
-    let selectedNodeId = startNodeId;
-    let hasStructuralUpdates = false;
-    if (end) {
-      // NOTE: using "_" because the endNode start position will always be 0 here
-      const [endNodeCaretStart, endNodeCaretEnd, endNode] = end;
-      const endNodeId = getNodeId(endNode);
-      let endNodeMap = this.documentModel.getNode(endNodeId);
-      const endNodeContent = endNodeMap.get('content', '');
-      const endDiffLength = endNodeCaretEnd - endNodeCaretStart;
-      // Set this to update focusNode
-      selectedNodeId = endNodeId;
-      // since we're spanning more than one node, we want to reconcile the document structure at the end of this procedure
-      hasStructuralUpdates = true;
-  
-      switch (endNodeMap.get('type')) {
-        case NODE_TYPE_PRE: {
-          handleBackspaceCode(this.documentModel, endNodeId, 0, endDiffLength);
-          break;
-        }
-        default: {
-          // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
-          if (endDiffLength === endNodeContent.length) {
-            this.documentModel.delete(endNodeId);
-          } else {
-            // only some of endNode's content has been selected, delete that content
-            endNodeMap = endNodeMap.set('content', deleteContentRange(endNodeContent, 0, endDiffLength));
-            endNodeMap = adjustSelectionOffsetsAndCleanup(endNodeMap, endNodeContent, endNodeCaretEnd, endDiffLength === 0 ? -1 : -endDiffLength);
-            this.documentModel.update(endNodeMap);
-          }
-        }
-      }
-    }
-    
-    
-    let startNodeMap = this.documentModel.getNode(startNodeId);
-    const startNodeContent = startNodeMap.get('content');
-    const startDiffLength = startNodeCaretEnd - startNodeCaretStart;
-    if ((startNodeCaretStart > 0 && startNodeContent) || startDiffLength > 0) {
-      //  not at beginning of node text and node text isn't empty OR
-      //  there's one or more chars of highlighted text
-      //
-      // NOTE: need to distinguish between collapsed caret backspace and highlight 1 char backspace
-      //  the former removes a character behind the caret and the latter removes one in front...
-      
-      switch (startNodeMap.get('type')) {
-        case NODE_TYPE_PRE: {
-          // console.debug('BACKSPACE PRE ', selectedNode);
-          handleBackspaceCode(this.documentModel, selectedNodeId, startNodeCaretStart, startDiffLength);
-          break;
-        }
-        default: {
-          // all of the startNode's content has been selected, delete it
-          if (startDiffLength === startNodeContent.length) {
-            this.documentModel.delete(startNodeId);
-          } else {
-            // only some of endNode's content has been selected, delete that content
-            startNodeMap = startNodeMap.set('content', deleteContentRange(startNodeContent, startNodeCaretStart, startDiffLength));
-            startNodeMap = adjustSelectionOffsetsAndCleanup(startNodeMap, startNodeContent, startNodeCaretEnd, startDiffLength === 0 ? -1 : -startDiffLength);
-            this.documentModel.update(startNodeMap);
-          }
-        }
-      }
-      // NOTE: Calling setState here will force all changed nodes to rerender.
-      //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
-      // ALSO: reaching this code means we don't need to continue to the "structural" handlers below.
-      //  We'll place the caret where the selection ended and the user can hit backspace again to "heal" or merge sections
-      if (!hasStructuralUpdates) {
-        this.commitUpdates(selectedNodeId, startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart);
-        return;
-      }
-    }
-    
-    /**
-     * TODO: make these into sets of atomic commands that are added to a queue,
-     *  then make a 'flush' command to process this queue.
-     *  Right now, live updates are happening and it's clobber city
-     *
-     *  UPDATE: immutablejs has helped make this situation more predictable but,
-     *  it still isn't conducive to an undo/redo workflow, so leaving the TODO
-     *
-     *  UPDATE 2: this is a lot more stable after grouping handlers by Node Types.
-     *  Splitting out the "DocumentModel" and the "UpdateManager" concerns will help enable undo/redo history.
-     *  This will all be revisited during undo/redo.
-     *
-     * AN INCOMPLETE LIST OF THINGS TO CONSIDER FOR DELETE (in order, maybe):
-     * 1) only-child of first "Section" - noop until there's special 'rootIsEmpty' placeholder logic.  If user deletes last paragraph or title "Section", they will be left with a blank screen and can't proceed
-     * 2) delete the current selected "Node" - always if 'this far'
-     * 3) delete the previous "Section" (if it's a SPACER or other terminal "Node")?
-     * 4) merge the current "Section"'s children (could be 0) into previous "Section" (current "Section" will be deleted)
-     * 5) merge the current selected "Node"'s text into the previous "Node"?
-     * 6) selected "Node" is/was an only-child, delete current "Section"
-     */
-    let focusNodeId;
-    let caretOffset;
-    switch (this.documentModel.getNode(selectedNodeId).get('type')) {
-      case NODE_TYPE_P: {
-        [focusNodeId, caretOffset] = handleBackspaceParagraph(this.documentModel, selectedNodeId);
-        break;
-      }
-      case NODE_TYPE_PRE: {
-        [focusNodeId, caretOffset] = handleBackspaceCodeStructuralChange(this.documentModel, selectedNodeId);
-        break;
-      }
-      case NODE_TYPE_LI: {
-        [focusNodeId, caretOffset] = handleBackspaceList(this.documentModel, selectedNodeId);
-        break;
-      }
-      case NODE_TYPE_SECTION_H1:
-      case NODE_TYPE_SECTION_H2: {
-        [focusNodeId, caretOffset] = handleBackspaceTitle(this.documentModel, selectedNodeId);
-        break;
-      }
-    }
-    this.commitUpdates(focusNodeId, caretOffset, true);
+    this.commitUpdates(focusNodeId, caretOffset, shouldFocusLastNode);
   }
   
   /**
@@ -533,54 +342,14 @@ export default class EditPost extends React.Component {
       return;
     }
     
+    const focusNodeId = doSplit(this.documentModel, selectionOffsets);
+    if (!focusNodeId) {
+      return;
+    }
+    
     evt.stopPropagation();
     evt.preventDefault();
     
-    const range = getRange();
-    if (!range) {
-      console.warn('ENTER no range');
-      return;
-    }
-    const [
-      [caretPosition, _, selectedNode],
-      middle,
-      end,
-    ] = selectionOffsets;
-    const selectedNodeId = getNodeId(selectedNode);
-    if (selectedNodeId === 'null' || !selectedNodeId) {
-      console.warn('ENTER - bad selection, no id ', selectedNode);
-      return;
-    }
-    
-    console.info('ENTER node: ', selectedNode, caretPosition);
-    const selectedNodeType = getNodeType(selectedNode);
-    // split selectedNodeContent at caret
-    const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
-    let focusNodeId;
-    
-    switch (selectedNodeType) {
-      case NODE_TYPE_PRE: {
-        focusNodeId = handleEnterCode(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
-        break;
-      }
-      case NODE_TYPE_LI: {
-        focusNodeId = handleEnterList(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
-        break;
-      }
-      case NODE_TYPE_P: {
-        focusNodeId = handleEnterParagraph(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
-        break;
-      }
-      case NODE_TYPE_SECTION_H1:
-      case NODE_TYPE_SECTION_H2: {
-        focusNodeId = handleEnterTitle(this.documentModel, selectedNodeId, caretPosition, selectedNodeContent);
-        break;
-      }
-      default: {
-        console.error("Can't handle ENTER!", selectedNodeType);
-        return;
-      }
-    }
     if (this.props.match.params.id === NEW_POST_URL_ID) {
       return this.createNewPost();
     }
@@ -600,44 +369,18 @@ export default class EditPost extends React.Component {
       || evt.isPropagationStopped()) {
       return;
     }
-    const [
-      [caretPositionStart, caretPositionEnd, selectedNode],
-      middle,
-      end,
-    ] = selectionOffsets;
-    const selectedNodeId = getNodeId(selectedNode);
-    if (selectedNodeId === 'null' || !selectedNodeId) {
-      console.warn('To DOM SYNC - bad selection, no id ', selectedNode);
+    
+    const [focusNodeId, caretOffset] = syncToDom(this.documentModel, selectionOffsets, evt);
+    if (!focusNodeId) {
       return;
     }
+    
     evt.stopPropagation();
     evt.preventDefault();
     
-    // TODO: handle start != end (range is not collapsed)
-    const newChar = getCharFromEvent(evt);
-    const diffLength = newChar.length;
-    
-    switch (selectedNode.tagName) {
-      case 'PRE': {
-        console.debug('To DOM SYNC PRE ', selectedNode);
-        handleDomSyncCode(this.documentModel, selectedNodeId, newChar, caretPositionStart);
-        break;
-      }
-      default: {
-        let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-        const beforeContentMap = selectedNodeMap.get('content') || '';
-        const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart)}${newChar}${beforeContentMap.slice(caretPositionStart)}`;
-        
-        console.info('To DOM SYNC diff: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
-        selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
-        // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, beforeContentMap, caretPositionStart, diffLength);
-        this.documentModel.update(selectedNodeMap);
-      }
-    }
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
-    this.commitUpdates(selectedNodeId, caretPositionStart + diffLength);
+    this.commitUpdates(focusNodeId, caretOffset);
   }
   
   handleSyncFromDom(evt, selectionOffsets) {
@@ -648,88 +391,15 @@ export default class EditPost extends React.Component {
     if (evt.type !== 'input') {
       return;
     }
-    const [
-      [caretPositionStart, caretPositionEnd, selectedNode],
-      middle,
-      end,
-    ] = selectionOffsets;
-    const selectedNodeId = getNodeId(selectedNode);
-    if (selectedNodeId === 'null' || !selectedNodeId) {
-      console.warn('From DOM SYNC - bad selection, no id ', selectedNode);
-      return;
-    }
     
-    // NOTE: following for emojis keyboard insert only...
-    const emoji = getCharFromEvent(evt);
-    // TODO: handle start != end (range is not collapsed)
-    switch (selectedNode.tagName) {
-      case 'PRE': {
-        console.debug('From DOM SYNC PRE ', selectedNode);
-        handleDomSyncCode(this.documentModel, selectedNodeId, emoji, caretPositionStart - emoji.length);
-        break;
-      }
-      default: {
-        let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-        const beforeContentMap = selectedNodeMap.get('content') || '';
-        const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - emoji.length)}${emoji}${beforeContentMap.slice(caretPositionStart - emoji.length)}`;
-        const diffLength = emoji.length;
-        
-        console.info('From DOM SYNC diff - this should be an emoji: ', emoji, ' caret start: ', caretPositionStart, ' diffLen: ', diffLength, 'length: ', updatedContentMap.length);
-        selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
-        // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-        selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, beforeContentMap, caretPositionStart, diffLength);
-        this.documentModel.update(selectedNodeMap);
-      }
+    const [focusNodeId, caretOffset] = syncFromDom(this.documentModel, selectionOffsets, evt);
+    if (!focusNodeId) {
+      return;
     }
     
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
-    this.commitUpdates(selectedNodeId, caretPositionStart);
-  }
-  
-  /**
-   * Move caret for special user input cases
-   * @param evt
-   */
-  handleCaret(evt, selectionOffsets) {
-    const [
-      [_, __, domNode],
-    ] = selectionOffsets;
-    if (evt.isPropagationStopped() || !domNode) {
-      return;
-    }
-    
-    if (domNode.tagName === 'PRE'
-      // when clicking on a section, the caret will be on an input in the edit image or quote menu, ignore
-      || domNode.dataset.isMenu === 'true' /* TODO: why string? */) {
-      // TODO
-      return;
-    }
-    // TODO: clicking on the <article> tag comes back as the header-spacer???
-    //  if we're clicking on the document container, focus the end of the last node
-    if (domNode.id === 'header-spacer') {
-      setCaret(this.documentModel.rootId, -1, true);
-      return;
-    }
-    const selectedNodeId = getNodeId(domNode);
-    const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-    if (!selectedNodeMap.get('id')) {
-      console.warn('CARET no node, bad selection: ', domNode);
-      return;
-    }
-    if (selectedNodeMap.get('type') === NODE_TYPE_SECTION_SPACER) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      const shouldFocusOnPrevious = evt.keyCode === KEYCODE_UP_ARROW;
-      const focusNodeId = shouldFocusOnPrevious
-        ? this.documentModel.getPreviousFocusNodeId(selectedNodeId)
-        : this.documentModel.getNextFocusNodeId(selectedNodeId);
-      setCaret(focusNodeId, -1, shouldFocusOnPrevious);
-    } else if (selectedNodeMap.get('type') === NODE_TYPE_ROOT) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      setCaret(this.documentModel.getNextFocusNodeId(selectedNodeId));
-    }
+    this.commitUpdates(focusNodeId, caretOffset);
   }
   
   // MAIN "ON" EVENT CALLBACKS
@@ -740,7 +410,8 @@ export default class EditPost extends React.Component {
       return;
     }
     const selectionOffsets = getHighlightedSelectionOffsets();
-    if (!selectionOffsets) {
+    const [start] = selectionOffsets;
+    if (start.length === 0) {
       return;
     }
     //console.debug('KeyDown: ', evt)
@@ -758,7 +429,7 @@ export default class EditPost extends React.Component {
     //console.debug('KeyUp: ', evt)
     const selectionOffsets = getHighlightedSelectionOffsets();
     this.handleSyncFromDom(evt, selectionOffsets);
-    this.handleCaret(evt, selectionOffsets);
+    moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
   }
@@ -766,7 +437,7 @@ export default class EditPost extends React.Component {
   handleMouseUp = (evt) => {
     //console.debug('MouseUp: ', evt)
     const selectionOffsets = getHighlightedSelectionOffsets();
-    this.handleCaret(evt, selectionOffsets);
+    moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
     // close edit section menus by default, this.sectionEdit() callback will fire after this to override
@@ -774,46 +445,16 @@ export default class EditPost extends React.Component {
   }
   
   handlePaste = (evt) => {
-    const [
-      [caretPositionStart, _, selectedNode],
-      middle,
-      end,
-    ] = getHighlightedSelectionOffsets();
-    
-    if (!selectedNode) {
+    const selectionOffsets = getHighlightedSelectionOffsets();
+    const [focusNodeId, caretOffset] = doPaste(this.documentModel, selectionOffsets, evt.clipboardData);
+    if (!focusNodeId) {
       return;
     }
-    const selectedNodeType = getNodeType(selectedNode);
-    const selectedNodeId = getNodeId(selectedNode);
-    
-    // split selectedNodeContent at caret
-    const clipboardText = evt.clipboardData.getData('text/plain');
     
     evt.stopPropagation();
     evt.preventDefault();
     
-    let focusNodeId;
-    let focusIdx = caretPositionStart;
-    switch (selectedNodeType) {
-      case NODE_TYPE_PRE: {
-        [
-          focusNodeId,
-          focusIdx,
-        ] = handlePasteCode(this.documentModel, selectedNodeId, caretPositionStart, clipboardText);
-        break;
-      }
-      case NODE_TYPE_P: {
-        [
-          focusNodeId,
-          focusIdx,
-        ] = handlePasteParagraph(this.documentModel, selectedNodeId, caretPositionStart, clipboardText);
-      }
-      default: { /*NOOP*/
-      }
-    }
-    if (focusNodeId) {
-      this.commitUpdates(focusNodeId, focusIdx);
-    }
+    this.commitUpdates(focusNodeId, caretOffset);
   }
   
   manageInsertMenu(selectionOffsetsArg) {
@@ -863,57 +504,15 @@ export default class EditPost extends React.Component {
    * INSERT SECTIONS
    */
   insertSection = async (sectionType, [firstFile] = []) => {
-    const selectedNodeId = this.insertMenuSelectedNodeId;
-    let focusNodeId;
-    
-    // lists get added to content sections, keep current section
-    switch (sectionType) {
-      case NODE_TYPE_OL: {
-        focusNodeId = insertList(this.documentModel, selectedNodeId);
-        break;
-      }
-      case NODE_TYPE_SECTION_CODE: {
-        focusNodeId = insertCodeSection(this.documentModel, selectedNodeId);
-        break;
-      }
-      case NODE_TYPE_SECTION_SPACER: {
-        focusNodeId = insertSpacer(this.documentModel, selectedNodeId);
-        break;
-      }
-      case NODE_TYPE_SECTION_H1: {
-        focusNodeId = insertH1(this.documentModel, selectedNodeId);
-        break;
-      }
-      case NODE_TYPE_SECTION_H2: {
-        focusNodeId = insertH2(this.documentModel, selectedNodeId);
-        break;
-      }
-      case NODE_TYPE_SECTION_IMAGE: {
-        const {
-          imageId,
-          width,
-          height,
-        } = await this.uploadFile(firstFile);
-        focusNodeId = insertPhoto(
-          this.documentModel,
-          selectedNodeId,
-          Map({
-            url: imageId,
-            width,
-            height,
-          }),
-        );
-        break;
-      }
-      case NODE_TYPE_SECTION_QUOTE: {
-        focusNodeId = insertQuote(this.documentModel, selectedNodeId);
-        break;
-      }
-      default: {
-        console.error('insertSection - unknown type! ', sectionType);
-      }
+    const focusNodeId = await insertSectionHelper(
+      this.documentModel,
+      sectionType,
+      this.insertMenuSelectedNodeId,
+      this.uploadFile.bind(this, firstFile),
+    );
+    if (!focusNodeId) {
+      return;
     }
-    
     await this.commitUpdates(focusNodeId);
     if ([NODE_TYPE_SECTION_IMAGE, NODE_TYPE_SECTION_QUOTE].includes(sectionType)) {
       this.sectionEdit(focusNodeId)
@@ -1113,16 +712,21 @@ export default class EditPost extends React.Component {
     const rect = range.getBoundingClientRect();
     const selectedNodeId = getNodeId(selectedNode);
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
-    // Top Offset (from top of document) - needs a heuristic!
+    // Top Offset (from top of document) - needs a heuristic, or I'm missing an API!
     // start with the top offset of the paragraph
     const paragraphTop = selectedNode.offsetTop;
     // get a percentage of where the start of the selection is relative to the length of the content
     const percentageOfText = (startOffset / selectedNode.textContent.length);
     // take that percentage from height of the paragraph
     const percentageOffset = selectedNode.offsetHeight * percentageOfText;
-    // get closest clean division of the height of the selection (this sort of works)
+    // get closest clean division of the height by line height of the selection (this sort of works)
     let offsetByLineHeight = 0;
+    let fueraDeControlCounter = 1000;
     while (true) {
+      if (fueraDeControlCounter === 0) {
+        break;
+      }
+      fueraDeControlCounter -= 1;
       if (offsetByLineHeight + lineHeight > percentageOffset) {
         break;
       }
@@ -1142,59 +746,15 @@ export default class EditPost extends React.Component {
       formatSelectionModel,
       formatSelectionNode,
     } = this.state;
-    const previousActionValue = formatSelectionModel.get(action);
     
-    console.info('HANDLE SELECTION ACTION: ', action, formatSelectionModel.toJS());
-    
-    if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
-      const sectionType = action === SELECTION_ACTION_H1 ? NODE_TYPE_SECTION_H1 : NODE_TYPE_SECTION_H2;
-      const selectedNodeId = formatSelectionNode.get('id');
-      let focusNodeId;
-      // list item -> H1 or H2
-      if (formatSelectionNode.get('type') === NODE_TYPE_LI) {
-        focusNodeId = splitListReplaceListItemWithSection(this.documentModel, selectedNodeId, sectionType);
-      } else if (formatSelectionNode.get('type') === NODE_TYPE_P) {
-        // paragraph -> H1 or H2
-        focusNodeId = paragraphToTitle(this.documentModel, selectedNodeId, sectionType);
-      } else if (formatSelectionNode.get('type') === sectionType) {
-        // H1 or H2 -> paragraph
-        focusNodeId = titleToParagraph(this.documentModel, selectedNodeId);
-      } else {
-        // H1 -> H2 or H2 -> H1
-        focusNodeId = this.documentModel.update(formatSelectionNode.set('type', sectionType));
-      }
-      await this.commitUpdates(focusNodeId);
-      this.setState({
-        formatSelectionNode: Map(),
-        formatSelectionModel: Selection(),
-      });
-      return;
-    }
-    
-    let updatedSelectionModel = formatSelectionModel.set(action, !previousActionValue);
-    // selection can be either italic or siteinfo, not both
-    if (action === SELECTION_ACTION_ITALIC && updatedSelectionModel.get(SELECTION_ACTION_ITALIC)) {
-      updatedSelectionModel = updatedSelectionModel.remove(SELECTION_ACTION_SITEINFO);
-    }
-    if (action === SELECTION_ACTION_SITEINFO && updatedSelectionModel.get(SELECTION_ACTION_SITEINFO)) {
-      updatedSelectionModel = updatedSelectionModel.remove(SELECTION_ACTION_ITALIC);
-    }
-    // clear URL text if not link anymore
-    if (action === SELECTION_ACTION_LINK && !updatedSelectionModel.get(SELECTION_ACTION_LINK)) {
-      updatedSelectionModel = updatedSelectionModel.remove(SELECTION_LINK_URL);
-    }
-    const updatedNode = upsertSelection(
-      formatSelectionNode,
-      updatedSelectionModel,
-    );
-    this.documentModel.update(updatedNode);
-    await this.commitUpdates();
+    const [focusNodeId, updatedNode, updatedSelection] = selectionFormatAction(this.documentModel, formatSelectionNode, formatSelectionModel, action)
+    await this.commitUpdates(focusNodeId);
     this.setState({
       formatSelectionNode: updatedNode,
-      formatSelectionModel: updatedSelectionModel
+      formatSelectionModel: updatedSelection
     }, () => {
       // TODO: selection highlight will be lost after rendering - create new range and add to window.selection
-      if (updatedSelectionModel.get(SELECTION_ACTION_LINK) && this.inputRef) {
+      if (updatedSelection.get(SELECTION_ACTION_LINK) && this.inputRef) {
         this.inputRef.focus();
       }
     })

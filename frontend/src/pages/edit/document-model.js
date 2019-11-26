@@ -32,7 +32,7 @@ export function reviver(key, value) {
     || (isKeyed(value) ? value.toMap() : value.toList())
 }
 
-export default class EditDocumentModel {
+export default class DocumentModel {
   post;
   root;
   rootId;

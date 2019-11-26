@@ -10,7 +10,7 @@ import {
 } from "../../common/constants";
 
 const { fromJS } = require("immutable");
-const { reviver } = require("./edit-document-model");
+const { reviver } = require("./document-model");
 const {
   Selection,
   formatSelections,

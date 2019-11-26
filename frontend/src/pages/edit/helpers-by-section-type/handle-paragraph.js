@@ -12,7 +12,6 @@ import {
   formatSelections,
   splitSelectionsAtCaretOffset
 } from '../selection-helpers';
-import {getCharFromEvent} from "../../../common/utils";
 
 export function handleBackspaceParagraph(documentModel, selectedNodeId) {
   const selectedSection = documentModel.getSection(selectedNodeId);
