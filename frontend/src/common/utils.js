@@ -1,6 +1,6 @@
 import { Map } from 'immutable';
 
-import { ZERO_LENGTH_CHAR } from './constants';
+import { KEYCODE_SPACE, KEYCODE_SPACE_NBSP, ZERO_LENGTH_CHAR } from './constants';
 
 export function confirmPromise(msg) {
   return new Promise((resolve, reject) => {
@@ -35,56 +35,40 @@ export function cleanTextOrZeroLengthPlaceholder(text) {
 }
 
 export function cleanText(text = '') {
-  const re = new RegExp(ZERO_LENGTH_CHAR);
-  return text
-    .replace(re, '')
+  // ensure no more than 1 space in a row
+  let final = '';
+  let last = -1;
+  for (let i = 0; i < text.length; i++) {
+    const currentChar = text.charAt(i);
+    const current = text.charCodeAt(i);
+    // remove all zero length char placeholders
+    if (currentChar === ZERO_LENGTH_CHAR) {
+      continue;
+    }
+    // don't allow:
+    // 1) a space at the beginning
+    // 2) a space at the end
+    // 3) more than 1 space in a row
+    if (current === KEYCODE_SPACE
+      && (i === 0 || i === text.length - 1 || last === KEYCODE_SPACE)) {
+      const nbsp = String.fromCharCode(KEYCODE_SPACE_NBSP);
+      final += nbsp;
+      last = nbsp;
+      continue;
+    }
+    final += currentChar;
+    last = current;
+  }
+  return final;
 }
 
-export function getCharFromEvent(evt, node, offset) {
+export function getCharFromEvent(evt) {
   if (evt && typeof evt.keyCode !== "undefined") {
-    // TODO: replace only necessary spaces with &nbsp;
-    if (evt.keyCode === 32) {
-      // change all spaces to &nbsp; - is there a better way?  This works pretty well.
-      return String.fromCharCode(160);
-    }
+    // for normal "found on the keyboard" characters
     return evt.key;
-  } else {
-    // for OS X emoji keyboard insert
-    return evt.nativeEvent.data;
   }
-}
-
-function normalizeHtmlEntities(text) {
-  // TODO: what other htmlentities need to be normalized here?
-  // for pesky char code 160 ( &nbsp; )
-  // contenteditable automatically converts between " " 32 and "&nbsp;" 160 for placeholder spaces at the end of tags or sequential spaces
-  // we want to normalize this (to 32) for diffing
-  return text.replace(String.fromCharCode(160), String.fromCharCode(32));
-}
-
-export function getDiffStartAndLength(oldStr, newStr) {
-  const diffLength = Math.abs(oldStr.length - newStr.length);
-  const doesAddCharacters = newStr.length > oldStr.length;
-  const loopLength = Math.max(newStr.length, oldStr.length);
-  
-  for (let i = 0; i < loopLength; i++) {
-    let oldCurrent = normalizeHtmlEntities(oldStr).charAt(i);
-    let newCurrent = normalizeHtmlEntities(newStr).charAt(i);
-    if (oldCurrent.length === 0) {
-      // chars were added to the end
-      return [i, diffLength];
-    }
-    if (newCurrent.length === 0) {
-      // chars were deleted from the end
-      // offset the loop counter to account for the change in direction (right to left for a 'delete')
-      return [i, -diffLength];
-    }
-    if (oldCurrent !== newCurrent) {
-      return [i, doesAddCharacters ? diffLength : -diffLength];
-    }
-  }
-  // strings are the same!
-  return [-1, 0];
+  // for OS X emoji keyboard insert
+  return evt.nativeEvent.data;
 }
 
 export function getCanonicalFromTitle(title) {

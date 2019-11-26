@@ -120,7 +120,7 @@ export default class ContentNode extends React.Component {
       node,
       // this is a callback to the edit page, it passes a nodeId.
       // It's only for image & quote sections.  Maybe it could go?
-      // Might need a currentEditSectionId value to show selected state (right now it's just on hover).
+      // TODO: add currentEditSectionId to show selected state (right now it's just on hover).
       // Maybe that can be computed somehow?
       isEditing,
     } = this.props;
@@ -272,13 +272,11 @@ export default class ContentNode extends React.Component {
             console.error('Error: Unknown type! ', node.get('type'));
             return null;
         }
-        const meta = node.get('meta', Map());
-        const selections = meta
-          .get('selections', List([Map()]));
+        const selections = node.getIn(['meta', 'selections'], List([Map()]));
         let children = [];
         selections.forEach((selection) => {
-          const key = getSelectionKey(selection);
           try {
+            const key = getSelectionKey(selection);
             let selectionJsx = getContentForSelection(node, selection);
             
             if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {

@@ -42,6 +42,7 @@ export const KEYCODE_CTRL = 17;
 export const KEYCODE_ALT = 18;
 export const KEYCODE_CAPS_LOCK = 20;
 export const KEYCODE_ESC = 27;
+export const KEYCODE_SPACE = 32;
 export const KEYCODE_PAGE_UP = 33;
 export const KEYCODE_PAGE_DOWN = 34;
 export const KEYCODE_END = 35;
@@ -67,6 +68,7 @@ export const KEYCODE_F10 = 121;
 export const KEYCODE_F11 = 122;
 export const KEYCODE_F12 = 123;
 export const KEYCODE_PRINT_SCREEN = 124;
+export const KEYCODE_SPACE_NBSP = 160;
 
 // edit actions
 export const NODE_ACTION_INSERT = 'insert';

@@ -1,4 +1,4 @@
-import {List, Record} from 'immutable';
+import { List, Record } from 'immutable';
 
 import {
   SELECTION_ACTION_BOLD,
@@ -413,11 +413,15 @@ export function getContentForSelection(node, selection) {
   if (content === undefined || content === null) {
     content = '';
   }
-  const startOffset = selection.get(SELECTION_START);
-  const endOffset = selection.get(SELECTION_END);
+  if (!Record.isRecord(selection)) {
+    return cleanTextOrZeroLengthPlaceholder(content);
+  }
+  const startOffset = selection.get(SELECTION_START, -1);
+  const endOffset = selection.get(SELECTION_END, Number.MAX_SAFE_INTEGER);
   if (startOffset > content.length || startOffset < 0 || endOffset > content.length || endOffset < 0) {
     throw new Error(`getContentForSelection - Selection offsets are out of bounds!\nContent: ${content}\nSelection: ${JSON.stringify(selection.toJS())}`);
   }
+  // NOTE: content.substring(undefined, undefined) works like: content.substring(0, content.length)
   return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
 }
 
