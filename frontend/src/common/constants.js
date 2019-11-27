@@ -17,17 +17,6 @@ export const NODE_TYPE_P = 'p';
 export const NODE_TYPE_PRE = 'pre';
 export const NODE_TYPE_LI = 'li';
 
-// @deprecated formatting nodes
-export const NODE_TYPE_A = 'a';
-export const NODE_TYPE_CODE = 'code';
-export const NODE_TYPE_SITEINFO = 'siteinfo';
-export const NODE_TYPE_ITALIC = 'italic';
-export const NODE_TYPE_STRIKE = 'strike';
-export const NODE_TYPE_BOLD = 'bold';
-export const NODE_TYPE_LINK = 'link';
-export const NODE_TYPE_TEXT = 'text';
-
-
 // EDITOR
 // TODO: this is a placeholder to be able to set the caret in an empty tag
 export const NEW_POST_URL_ID = 'new';
@@ -52,6 +41,7 @@ export const KEYCODE_UP_ARROW = 38;
 export const KEYCODE_RIGHT_ARROW = 39;
 export const KEYCODE_DOWN_ARROW = 40;
 export const KEYCODE_DEL = 46;
+export const KEYCODE_V = 86;
 export const KEYCODE_X = 88;
 export const KEYCODE_SHIFT_OR_COMMAND_LEFT = 91;
 export const KEYCODE_COMMAND_RIGHT = 93;

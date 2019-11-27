@@ -52,7 +52,7 @@ import {
   NODE_TYPE_P,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT,
+  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X, KEYCODE_V,
 } from '../../common/constants';
 import { lineHeight } from "../../common/css";
 
@@ -280,13 +280,27 @@ export default class EditPost extends React.Component {
     this.setState({ shouldShowPublishPostMenu: !oldVal })
   }
   
-  commitUpdates = (focusNodeId, offset = -1, shouldFocusLastChild) => {
-    // TODO: optimistically save updated nodes - look ma, no errors!
+  anyEditContentMenuIsOpen = () => {
     const {
-      formatSelectionNode,
-      editImageSectionNode,
+    formatSelectionNode,
+      editImageSectionNode ,
       editQuoteSectionNode,
     } = this.state;
+    return formatSelectionNode.get('id') || editImageSectionNode.get('id') || editQuoteSectionNode.get('id')
+  }
+  
+  closeAllEditContentMenus = async () => {
+    return new Promise(resolve => {
+      this.setState({
+        formatSelectionNode: Map(),
+        editImageSectionNode: Map(),
+        editQuoteSectionNode: Map(),
+      }, resolve)
+    });
+  }
+  
+  commitUpdates = (focusNodeId, offset = -1, shouldFocusLastChild) => {
+    // TODO: optimistically save updated nodes - look ma, no errors!
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
       this.setState({
@@ -300,7 +314,7 @@ export default class EditPost extends React.Component {
           this.saveContentBatchDebounce();
         }
         // if a menu isn't open, re-place the caret
-        if (!formatSelectionNode.get('id') && !editImageSectionNode.get('id') && !editQuoteSectionNode.get('id')) {
+        if (!this.anyEditContentMenuIsOpen()) {
           setCaret(focusNodeId, offset, shouldFocusLastChild);
         }
         this.manageInsertMenu();
@@ -310,11 +324,9 @@ export default class EditPost extends React.Component {
   }
   
   handleBackspace = async (evt, selectionOffsets) => {
-    // select-and-type - All this means is to call doDelete() if there's 1 or more characters selected
-    const [
-      [startNodeCaretStart, startNodeCaretEnd, _],
-    ] = selectionOffsets;
-    if (evt.keyCode !== KEYCODE_BACKSPACE && startNodeCaretStart === startNodeCaretEnd) {
+    // if the caret is collapsed, only let the "backspace" key through...
+    // otherwise, if there are any other key strokes that aren't control keys - delete the selection!
+    if (evt.keyCode !== KEYCODE_BACKSPACE) {
       return;
     }
     
@@ -323,16 +335,12 @@ export default class EditPost extends React.Component {
       return;
     }
     
-    if (evt.keyCode === KEYCODE_BACKSPACE) {
-      evt.stopPropagation();
-      evt.preventDefault();
-    }
+    evt.stopPropagation();
+    evt.preventDefault();
   
     // clear the selected format node when deleting the highlighted selection
     // NOTE: must wait for state have been set or setCaret will check stale values
-    await new Promise(resolve => {
-      this.setState({ formatSelectionNode: Map() }, resolve)
-    });
+    await this.closeAllEditContentMenus();
     
     this.commitUpdates(focusNodeId, caretOffset, shouldFocusLastNode);
   }
@@ -343,7 +351,7 @@ export default class EditPost extends React.Component {
    * @param selectionOffsets
    * @returns {Promise<void>}
    */
-  handleEnter(evt, selectionOffsets) {
+  handleEnter = async (evt, selectionOffsets) => {
     if (evt.keyCode !== KEYCODE_ENTER) {
       return;
     }
@@ -355,6 +363,8 @@ export default class EditPost extends React.Component {
     
     evt.stopPropagation();
     evt.preventDefault();
+    
+    await this.closeAllEditContentMenus();
     
     if (this.props.match.params.id === NEW_POST_URL_ID) {
       return this.createNewPost();
@@ -370,8 +380,20 @@ export default class EditPost extends React.Component {
     // don't send updates for control keys
     if (isControlKey(evt.keyCode)
       // stopped by another handler like Backspace or Enter
-      || evt.isPropagationStopped()) {
+      || evt.isPropagationStopped()
+      // ignore "paste" - propagation hasn't been stopped because it would cancel the respective "paste", "cut" events
+      || this.didPaste
+      // ignore "cut"
+      || this.didCut) {
       return;
+    }
+  
+    const [
+      [startNodeCaretStart, startNodeCaretEnd, startNode]
+    ] = selectionOffsets;
+    // select-and-type ?? delete selection first
+    if (startNodeCaretStart !== startNodeCaretEnd) {
+      doDelete(this.documentModel, selectionOffsets);
     }
     
     const [focusNodeId, caretOffset] = syncToDom(this.documentModel, selectionOffsets, evt);
@@ -388,11 +410,13 @@ export default class EditPost extends React.Component {
   }
   
   handleSyncFromDom(evt, selectionOffsets) {
-    // Stop all updates to the contenteditable div!
-    evt.stopPropagation();
-    evt.preventDefault();
-    
-    if (evt.type !== 'input' || this.didPaste) {
+    if (
+      // this is the only way to get an emoji keyboard insert without using a custom MutationObserver
+      evt.type !== 'input'
+      // don't sync the "v" from a paste operation
+      || this.didPaste
+      // don't sync the "x" from a cut operation
+      || this.didCut) {
       return;
     }
     
@@ -409,8 +433,15 @@ export default class EditPost extends React.Component {
   // MAIN "ON" EVENT CALLBACKS
   
   handleKeyDown = async (evt) => {
-    // any control keys being held down?
-    if (evt.metaKey || isControlKey(evt.keyCode)) {
+    if (
+      // ignore control or modifier keys
+      // unless related to a supported destructive operation like: "cut" or "paste"
+      (evt.metaKey || isControlKey(evt.keyCode))
+      // allow "cut"
+      && !(evt.metaKey && evt.keyCode === KEYCODE_X)
+      // allow "paste"
+      && !(evt.metaKey && evt.keyCode === KEYCODE_V)
+      ) {
       return;
     }
     const selectionOffsets = getHighlightedSelectionOffsets();
@@ -425,11 +456,13 @@ export default class EditPost extends React.Component {
     //  this is to unset nodes that are checked in commitUpdates() for setCaret()
     await this.handleBackspace(evt, selectionOffsets);
     // TODO this.handleDel(evt); // currently, no support for the 'Del' key
-    this.handleEnter(evt, selectionOffsets);
+    await this.handleEnter(evt, selectionOffsets);
+    await this.handlePaste(evt, selectionOffsets);
+    await this.handleCut(evt, selectionOffsets);
     this.handleSyncToDom(evt, selectionOffsets);
   }
   
-  handleKeyUp = (evt) => {
+  handleKeyUp = async (evt) => {
     // any control keys being held down?
     if (evt.metaKey) {
       return;
@@ -440,13 +473,17 @@ export default class EditPost extends React.Component {
     if (start.length === 0) {
       return;
     }
+    // because of "await"
+    evt.persist();
     
+    await this.handlePaste(evt, selectionOffsets);
     this.handleSyncFromDom(evt, selectionOffsets);
     moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
-    // since evt.inputType === 'inputFromPaste' isn't compatible with Edge
+    // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
     this.didPaste = false;
+    this.didCut = false;
   }
   
   handleMouseUp = (evt) => {
@@ -463,13 +500,72 @@ export default class EditPost extends React.Component {
     this.sectionEditClose();
   }
   
-  handlePaste = (evt) => {
-    // no other handlers please!
+  handleCut = async (evt, selectionOffsetsArg) => {
+    console.log("CUT", evt.type, evt.metaKey, evt.keyCode)
+    if (evt.type !== 'cut'
+      && !(evt.metaKey && evt.keyCode === KEYCODE_X)) {
+      return;
+    }
+    this.didCut = true;
+    const selectionOffsets = selectionOffsetsArg || getHighlightedSelectionOffsets();
+    const [
+      [startNodeCaretStart, startNodeCaretEnd, startNode]
+    ] = selectionOffsets;
+    const startNodeId = getNodeId(startNode);
+    // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
+    // we'll come back through from "paste" with clipboard data...
+    if (evt.type !== 'cut') {
+      if (startNodeCaretStart !== startNodeCaretEnd) {
+        doDelete(this.documentModel, selectionOffsets);
+      }
+      return;
+    }
+    // NOTE: have to manually set selection string into clipboard
+    const selectionString = document.getSelection().toString();
+    console.debug("CUT selection", selectionString);
+    evt.clipboardData.setData('text/plain', selectionString);
+    
+    // NOTE: if these get called on the 'keydown' event, they'll cancel the 'cut' event
+    evt.stopPropagation();
+    evt.preventDefault();
+  
+    // for commitUpdates() -> setCaret()
+    await this.closeAllEditContentMenus();
+    this.commitUpdates(startNodeId, startNodeCaretStart);
+  }
+  
+  handlePaste = async (evt, selectionOffsetsArg) => {
+    // NOTE: this handler needs to pass through twice on a "paste" event
+    // 1st: on "keydown" - this is to handle deleting selected text
+    // 2nd: on "paste" - now that the selection is clear, paste in the text
+    if (evt.type !== 'paste'
+      && !(evt.metaKey && evt.keyCode === KEYCODE_V)) {
+      return;
+    }
+    // this is to bypass the "keyup" & "input" handlers
     this.didPaste = true;
+    
+    const selectionOffsets = selectionOffsetsArg || getHighlightedSelectionOffsets();
+    const [
+      [startNodeCaretStart, startNodeCaretEnd, _]
+    ] = selectionOffsets;
+    // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
+    // we'll come back through from "paste" with clipboard data...
+    if (evt.type !== 'paste') {
+      if (startNodeCaretStart !== startNodeCaretEnd) {
+        doDelete(this.documentModel, selectionOffsets);
+      }
+      return;
+    }
+    // on "paste" this hasn't been set yet
+    evt.persist();
+    // NOTE: if these get called on the 'keydown' event, they'll cancel the 'paste' event
     evt.stopPropagation();
     evt.preventDefault();
     
-    const selectionOffsets = getHighlightedSelectionOffsets();
+    // for commitUpdates() -> setCaret()
+    await this.closeAllEditContentMenus();
+    
     const [focusNodeId, caretOffset] = doPaste(this.documentModel, selectionOffsets, evt.clipboardData);
     if (!focusNodeId) {
       return;
@@ -845,6 +941,7 @@ export default class EditPost extends React.Component {
                    onKeyUp={this.handleKeyUp}
                    onInput={this.handleKeyUp}
                    onPaste={this.handlePaste}
+                   onCut={this.handleCut}
               >
                 <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
               </div>
