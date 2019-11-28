@@ -93,7 +93,7 @@ export function imageUrlIsId(url) {
   // imageId is 64 character hex sha256 hash - assume all other input is a valid external url
   // this returns an array (truthy) of all string matches, in this case it should only be 1
   const ids = url.match(/\b[0-9A-F]{64}\b/gi);
-  return ids && ids.length === 1;
+  return ids && ids.length === 1 && ids[0].length === url.length;
 }
 
 export function deleteContentRange(content, startIdx, length) {
