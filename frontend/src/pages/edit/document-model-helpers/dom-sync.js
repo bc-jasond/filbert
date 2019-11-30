@@ -1,6 +1,6 @@
 import { getNodeId } from '../../../common/dom';
 import { getCharFromEvent } from '../../../common/utils';
-import { handleDomSyncCode } from '../helpers-by-section-type/handle-code';
+import { handleDomSyncCode } from './by-section-type/handle-code';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
 export function syncToDom(documentModel, selectionOffsets, evt) {

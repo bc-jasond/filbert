@@ -22,7 +22,7 @@ import {
   NewPost,
   PublishPost,
   SignedInUser,
-} from '../../common/layout-styled-components';
+} from '../../common/components/layout-styled-components';
 import Footer from '../footer';
 
 import { getUserName, signout } from '../../common/session';
@@ -56,15 +56,15 @@ import {
 } from '../../common/constants';
 import { lineHeight } from "../../common/css";
 
-import ContentNode from '../../common/content-node.component';
-import { moveCaret } from './helpers-document-model/caret';
-import { doDelete } from './helpers-document-model/delete';
+import ContentNode from '../../common/components/content-node.component';
+import { moveCaret } from './document-model-helpers/caret';
+import { doDelete } from './document-model-helpers/delete';
 import DocumentModel from './document-model';
-import { syncFromDom, syncToDom } from './helpers-document-model/dom-sync';
-import { insertSectionHelper } from './helpers-document-model/insert';
-import { doPaste } from './helpers-document-model/paste';
-import { selectionFormatAction } from './helpers-document-model/selection-format-action';
-import { doSplit } from './helpers-document-model/split';
+import { syncFromDom, syncToDom } from './document-model-helpers/dom-sync';
+import { insertSectionHelper } from './document-model-helpers/insert';
+import { doPaste } from './document-model-helpers/paste';
+import { selectionFormatAction } from './document-model-helpers/selection-format-action';
+import { doSplit } from './document-model-helpers/split';
 import UpdateManager from './update-manager';
 
 import {
@@ -77,7 +77,7 @@ import InsertSectionMenu from './components/insert-section-menu';
 import EditImageForm from './components/edit-image-form';
 import EditQuoteForm from './components/edit-quote-form';
 import FormatSelectionMenu from './components/format-selection-menu';
-import PublishPostForm from '../../common/edit-publish-post-form';
+import PublishPostForm from '../../common/components/edit-publish-post-form';
 
 import Page404 from '../404';
 

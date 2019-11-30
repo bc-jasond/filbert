@@ -39,32 +39,6 @@ export default class DocumentModel {
   infiniteLoopCount = 0;
   nodesByParentId = Map();
   
-  // this will trigger a shouldComponentUpdate -> true for re-rendering
-  // this function breaks references inside the nodesByParentId List for all ancestors of an updated node
-  setNodesByParentId(nodeId, updated) {
-    // replace the updated parent with new children
-    this.nodesByParentId = this.nodesByParentId.set(nodeId, updated);
-    if (nodeId === ROOT_NODE_PARENT_ID) {
-      return;
-    }
-    let currentId = nodeId;
-    // "touch" all ancestors to break references
-    while (currentId) {
-      const parentId = this.getParent(currentId).get('id') || ROOT_NODE_PARENT_ID;
-      const siblings = this.nodesByParentId.get(parentId);
-      const nodeIdx = siblings.findIndex(n => n.get('id') === currentId);
-      // TODO: find a better way to break the reference...
-      this.nodesByParentId = this.nodesByParentId.set(
-        parentId,
-        siblings.set(
-          nodeIdx,
-          Immutable.fromJS(this.getNode(currentId).toJS(), reviver),
-        )
-      );
-      currentId = this.getParent(currentId).get('id');
-    }
-  }
-  
   init(post, updateManager, jsonData = null) {
     this.post = Immutable.fromJS(post);
     // TODO: ideally this documentModel class doesn't have to know about the updateManager.
@@ -78,7 +52,7 @@ export default class DocumentModel {
     } else {
       this.root = getMapWithId({ type: NODE_TYPE_ROOT, parent_id: ROOT_NODE_PARENT_ID, position: 0 });
       this.rootId = this.root.get('id');
-      this.nodesByParentId = this.nodesByParentId.set(ROOT_NODE_PARENT_ID, List([this.root]));
+      this.nodesByParentId = Map().set(ROOT_NODE_PARENT_ID, List([this.root]));
     }
   }
   
@@ -119,17 +93,45 @@ export default class DocumentModel {
     return this.nodesByParentId.get(nodeId, List())
   }
   
-  setChildren(nodeId, children) {
-    this.setNodesByParentId(nodeId, children);
-    return this;
+  // this will trigger a shouldComponentUpdate -> true for re-rendering
+  // this function breaks references inside the nodesByParentId List for all ancestors of an updated node
+  setChildren(parentNodeId, children) {
+    // replace the updated parent with new children
+    this.nodesByParentId = this.nodesByParentId.set(parentNodeId, children);
+    if (parentNodeId === ROOT_NODE_PARENT_ID) {
+      return this;
+    }
+    let currentId = parentNodeId;
+    // "touch" all ancestors to break references
+    while (currentId) {
+      const parentId = this.getParent(currentId).get('id') || ROOT_NODE_PARENT_ID;
+      const siblings = this.nodesByParentId.get(parentId);
+      const currentIdx = siblings.findIndex(n => n.get('id') === currentId);
+      // TODO: find a better way to break the reference...
+      // HACK: delete & reset "id" to break deep equality (break reference)
+      const nodeWithNewReference = this.getNode(currentId)
+          .delete('id')
+          .set('id', currentId);
+      this.nodesByParentId = this.nodesByParentId.set(
+        parentId,
+        siblings.set(
+          currentIdx,
+          nodeWithNewReference,
+        )
+      );
+      // TODO: why have the root node in 2 places? once in this.nodesByParentId["null"] and also in this.root
+      //  refactor - the "null" parent key is unnecessary
+      if (currentId === this.rootId) {
+        this.root = nodeWithNewReference;
+      }
+      currentId = this.getParent(currentId).get('id');
+    }
+    return this
   }
   
   getSection(nodeId) {
     let sectionId = nodeId;
     while (!this.isSectionType(sectionId)) {
-      if (this.infiniteLoopCount++ > 1000) {
-        throw new Error('getSection is Out of Control!!!');
-      }
       sectionId = this.getParent(sectionId).get('id');
       if (!sectionId) {
         break;
@@ -158,11 +160,16 @@ export default class DocumentModel {
   }
   
   isFirstChild(nodeId) {
+    if (nodeId === this.rootId) {
+      return true;
+    }
     const parentId = this.getParent(nodeId).get('id');
     return this.getFirstChild(parentId).get('id') === nodeId;
   }
   
   /**
+   * used for setting caret position
+   *
    * @param nodeId
    * @returns note: returns a Map() with an 'id' for PRE tags - they won't be in the nodesByParentId list
    */
@@ -182,6 +189,9 @@ export default class DocumentModel {
   }
   
   isLastChild(nodeId) {
+    if (nodeId === this.rootId) {
+      return true;
+    }
     const parentId = this.getParent(nodeId).get('id');
     return this.getLastChild(parentId).get('id') === nodeId;
   }
@@ -261,7 +271,7 @@ export default class DocumentModel {
     const nodeIdx = siblings.findIndex(s => s.get('id') === nodeId);
     
     // update existing section
-    this.setNodesByParentId(sectionId, siblings.slice(0, nodeIdx));
+    this.setChildren(sectionId, siblings.slice(0, nodeIdx));
     // if all existing nodes moved to the new section, create a new P
     if (this.nodesByParentId.get(sectionId).size === 0) {
       this.insert(sectionId, NODE_TYPE_P, 0);
@@ -269,7 +279,7 @@ export default class DocumentModel {
     this.updateNodesForParent(sectionId);
     // new section
     const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
-    this.setNodesByParentId(newSectionId, siblings.slice(nodeIdx));
+    this.setChildren(newSectionId, siblings.slice(nodeIdx));
     // if all existing nodes stayed in the existing section, create a new P
     if (this.nodesByParentId.get(newSectionId).size === 0) {
       this.insert(newSectionId, NODE_TYPE_P, 0);
@@ -343,9 +353,9 @@ export default class DocumentModel {
     // left or right could be empty because the selectedNode was already deleted
     const rightNodes = this.nodesByParentId.get(rightSectionId, List());
     const leftNodes = this.nodesByParentId.get(leftSectionId, List());
-    this.setNodesByParentId(leftSectionId, leftNodes.concat(rightNodes));
+    this.setChildren(leftSectionId, leftNodes.concat(rightNodes));
     this.updateNodesForParent(leftSectionId);
-    this.setNodesByParentId(rightSectionId, List());
+    this.setChildren(rightSectionId, List());
     this.delete(rightSectionId);
   }
   
@@ -370,7 +380,7 @@ export default class DocumentModel {
       meta: meta || Map(),
     });
     this.updateManager.stageNodeUpdate(newNode.get('id'));
-    this.setNodesByParentId(parentId, siblings
+    this.setChildren(parentId, siblings
       .insert(newNode.get('position'), newNode)
     );
     // reindex children and persist changes
@@ -385,7 +395,7 @@ export default class DocumentModel {
     const siblings = this.nodesByParentId.get(parentId);
     const nodeIdx = siblings.findIndex(n => n.get('id') === nodeId);
     this.updateManager.stageNodeUpdate(nodeId);
-    this.setNodesByParentId(parentId, siblings.set(nodeIdx, node))
+    this.setChildren(parentId, siblings.set(nodeIdx, node))
     return nodeId
   }
   
@@ -407,7 +417,7 @@ export default class DocumentModel {
     const parentId = this.getParent(nodeId).get('id');
     const siblings = this.nodesByParentId.get(parentId, List());
     // filter this node out of its parent list
-    this.setNodesByParentId(
+    this.setChildren(
       parentId,
       siblings.filter(node => node.get('id') !== nodeId)
     );
@@ -425,16 +435,16 @@ export default class DocumentModel {
     //  it's clobbering deleted nodes with updates, it's a hot mess.
     console.info('UPDATE Nodes For PARENT ', parentId);
     const siblings = this.nodesByParentId.get(parentId, List());
-    this.setNodesByParentId(
+    this.setChildren(
       parentId,
       siblings
-      // reindex positions for remaining siblings
+        // reindex positions for remaining siblings
         .map((node, idx) => node
           .set('position', idx)
           .set('parent_id', parentId))
     );
     // since positions have changed, update all nodes for this parent
-    // TODO: make this smarter, maybe it's worth it
+    // TODO: make this simpler, get rid of this "position" field in the db and just used a linked list
     this.nodesByParentId.get(parentId, List()).forEach(node => {
       this.updateManager.stageNodeUpdate(node.get('id'));
     });

@@ -1,4 +1,4 @@
-import { NODE_TYPE_SECTION_QUOTE } from '../../../common/constants';
+import { NODE_TYPE_SECTION_QUOTE } from '../../../../common/constants';
 
 export function insertQuote(documentModel, selectedNodeId) {
   const selectedSectionId = documentModel.getSection(selectedNodeId).get('id');

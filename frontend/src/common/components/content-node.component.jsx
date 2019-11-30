@@ -22,7 +22,7 @@ import {
   SELECTION_ACTION_CODE,
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_LINK,
-} from './constants';
+} from '../constants';
 import {
   H1,
   H2,
@@ -53,11 +53,11 @@ import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
-} from './utils';
+} from '../utils';
 import {
   getContentForSelection,
   getSelectionKey,
-} from '../pages/edit/selection-helpers';
+} from '../../pages/edit/selection-helpers';
 
 const StyledDiv = styled.div``;
 

@@ -27,7 +27,7 @@ import {
   ListDrafts,
   NewPost,
   SignedInUser,
-} from '../common/layout-styled-components';
+} from '../common/components/layout-styled-components';
 import {
   StyledH2,
   PostRow,
@@ -39,7 +39,7 @@ import {
   PostAction,
   AuthorExpand,
   PostActionA,
-} from '../common/list-all-styled-components';
+} from '../common/components/list-all-styled-components';
 
 export default class AllPosts extends React.Component {
   constructor(props) {

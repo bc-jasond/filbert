@@ -1,16 +1,17 @@
+import { List} from 'immutable';
 import {
   NODE_TYPE_LI,
   NODE_TYPE_P,
-  NODE_TYPE_PRE,
+  NODE_TYPE_PRE, NODE_TYPE_SECTION_CODE,
   NODE_TYPE_SECTION_H1,
   NODE_TYPE_SECTION_H2
 } from '../../../common/constants';
 import { getNodeId } from '../../../common/dom';
 import { deleteContentRange } from '../../../common/utils';
-import { handleBackspaceCode, handleBackspaceCodeStructuralChange } from '../helpers-by-section-type/handle-code';
-import { handleBackspaceList } from '../helpers-by-section-type/handle-list';
-import { handleBackspaceParagraph } from '../helpers-by-section-type/handle-paragraph';
-import { handleBackspaceTitle } from '../helpers-by-section-type/handle-title';
+import { handleBackspaceCode, handleBackspaceCodeStructuralChange } from './by-section-type/handle-code';
+import { handleBackspaceList } from './by-section-type/handle-list';
+import { handleBackspaceParagraph } from './by-section-type/handle-paragraph';
+import { handleBackspaceTitle } from './by-section-type/handle-title';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
 /**
@@ -61,11 +62,19 @@ export function doDelete(documentModel, selectionOffsets) {
   let selectedNodeId = startNodeId;
   let hasStructuralUpdates = false;
   if (end) {
-    // NOTE: using "_" because the endNode start position will always be 0 here
     const [endNodeCaretStart, endNodeCaretEnd, endNode] = end;
-    const endNodeId = getNodeId(endNode);
-    let endNodeMap = documentModel.getNode(endNodeId);
-    const endNodeContent = endNodeMap.get('content', '');
+    let endNodeId = getNodeId(endNode);
+    // TODO: abstract this into a helper
+    let endNodeMap;
+    let endNodeContent;
+    if (endNodeId.includes('-')) {
+      const [nodeId, idx] = endNodeId.split('-');
+      endNodeMap = documentModel.getNode(nodeId);
+      endNodeContent = endNodeMap.getIn(['meta','lines'], List()).get(idx);
+    } else {
+      endNodeMap = documentModel.getNode(endNodeId);
+      endNodeContent = endNodeMap.get('content');
+    }
     const endDiffLength = endNodeCaretEnd - endNodeCaretStart;
     // Set this to update focusNode
     selectedNodeId = endNodeId;
@@ -73,7 +82,7 @@ export function doDelete(documentModel, selectionOffsets) {
     hasStructuralUpdates = true;
     
     switch (endNodeMap.get('type')) {
-      case NODE_TYPE_PRE: {
+      case NODE_TYPE_SECTION_CODE: {
         handleBackspaceCode(documentModel, endNodeId, 0, endDiffLength);
         break;
       }
@@ -91,9 +100,18 @@ export function doDelete(documentModel, selectionOffsets) {
     }
   }
   
+  // TODO: abstract this into a helper
+  let startNodeMap;
+  let startNodeContent;
+  if (startNodeId.includes('-')) {
+    const [nodeId, idx] = startNodeId.split('-');
+    startNodeMap = documentModel.getNode(nodeId);
+    startNodeContent = startNodeMap.getIn(['meta','lines'], List()).get(idx);
+  } else {
+    startNodeMap = documentModel.getNode(startNodeId);
+    startNodeContent = startNodeMap.get('content');
+  }
   
-  let startNodeMap = documentModel.getNode(startNodeId);
-  const startNodeContent = startNodeMap.get('content');
   const startDiffLength = startNodeCaretEnd - startNodeCaretStart;
   if ((startNodeCaretStart > 0 && startNodeContent) || startDiffLength > 0) {
     //  not at beginning of node text and node text isn't empty OR
@@ -103,7 +121,7 @@ export function doDelete(documentModel, selectionOffsets) {
     //  the former removes a character behind the caret and the latter removes one in front...
     
     switch (startNodeMap.get('type')) {
-      case NODE_TYPE_PRE: {
+      case NODE_TYPE_SECTION_CODE: {
         // console.debug('BACKSPACE PRE ', selectedNode);
         handleBackspaceCode(documentModel, selectedNodeId, startNodeCaretStart, startDiffLength);
         break;

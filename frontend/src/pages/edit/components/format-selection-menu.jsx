@@ -21,7 +21,7 @@ import {
   ButtonSeparator,
   PointClip,
   Arrow,
-} from '../../../common/shared-styled-components';
+} from '../../../common/components/shared-styled-components';
 
 import IconBoldSvg from '../../../../assets/icons/bold.svg';
 import IconItalicSvg from '../../../../assets/icons/italic.svg';

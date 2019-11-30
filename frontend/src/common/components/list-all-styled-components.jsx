@@ -1,6 +1,6 @@
 import styled, { css } from 'styled-components';
-import { darkGrey, grey } from './css';
-import { sansSerif } from './fonts.css';
+import { darkGrey, grey } from '../css';
+import { sansSerif } from '../fonts.css';
 import { A } from './layout-styled-components';
 import {
   H2,

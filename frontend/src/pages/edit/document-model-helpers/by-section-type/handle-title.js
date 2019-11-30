@@ -7,7 +7,7 @@ import {
   NODE_TYPE_SECTION_H1,
   NODE_TYPE_SECTION_H2,
   NODE_TYPE_SECTION_SPACER
-} from '../../../common/constants';
+} from '../../../../common/constants';
 
 export function handleBackspaceTitle(documentModel, selectedNodeId) {
   if (documentModel.isFirstChild(selectedNodeId)) {

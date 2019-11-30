@@ -17,10 +17,10 @@ import {
   Button,
   ButtonSpan,
   CancelButton,
-} from '../common/shared-styled-components';
+} from '../common/components/shared-styled-components';
 import {
   LogoLinkStyled,
-} from '../common/layout-styled-components';
+} from '../common/components/layout-styled-components';
 
 const Container = styled.div`
   display: flex;

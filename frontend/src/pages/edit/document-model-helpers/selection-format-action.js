@@ -6,8 +6,8 @@ import {
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2, SELECTION_ACTION_ITALIC, SELECTION_ACTION_LINK, SELECTION_ACTION_SITEINFO, SELECTION_LINK_URL
 } from '../../../common/constants';
-import { splitListReplaceListItemWithSection } from '../helpers-by-section-type/handle-list';
-import { paragraphToTitle, titleToParagraph } from '../helpers-by-section-type/handle-paragraph';
+import { splitListReplaceListItemWithSection } from './by-section-type/handle-list';
+import { paragraphToTitle, titleToParagraph } from './by-section-type/handle-paragraph';
 import { Selection, upsertSelection } from '../selection-helpers';
 
 export function selectionFormatAction(documentModel, node, selection, action) {

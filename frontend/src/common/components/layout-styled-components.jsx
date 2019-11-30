@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
-import GitHubSvg from '../../assets/icons/github-mark.svg';
-import LinkedInSvg from '../../assets/icons/linkedin-logo.svg';
-import InfoSvg from '../../assets/icons/info.svg';
-import { darkGrey, grey, lightGrey } from './css';
-import { monospaced, sansSerif } from './fonts.css';
+import GitHubSvg from '../../../assets/icons/github-mark.svg';
+import LinkedInSvg from '../../../assets/icons/linkedin-logo.svg';
+import InfoSvg from '../../../assets/icons/info.svg';
+import { darkGrey, grey, lightGrey } from '../css';
+import { monospaced, sansSerif } from '../fonts.css';
 import { NavButtonMixin } from './shared-styled-components';
 
 export const Header = styled.header`

@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components';
 import { Link } from 'react-router-dom';
-import { contentSerif, italicSerif, monospaced, sansSerif, titleSerif } from './fonts.css';
-import { blue, darkBlue, darkGrey, error, grey, lightBlue, lightGrey, mediumGrey, success } from "./css";
+import { contentSerif, italicSerif, monospaced, sansSerif, titleSerif } from '../fonts.css';
+import { blue, darkBlue, darkGrey, error, grey, lightBlue, lightGrey, mediumGrey, success } from "../css";
 
 const sectionWidthMixin = css`
   max-width: 740px;

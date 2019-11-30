@@ -20,11 +20,11 @@ import {
   ListDrafts,
   NewPost,
   SignedInUser,
-} from '../common/layout-styled-components';
+} from '../common/components/layout-styled-components';
 
 import Page404 from './404';
 
-import ContentNode from '../common/content-node.component';
+import ContentNode from '../common/components/content-node.component';
 
 export default class ViewPost extends React.Component {
   constructor(props) {

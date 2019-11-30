@@ -7,10 +7,10 @@ import {
   SELECTION_END,
   SELECTION_LINK_URL,
   SELECTION_START
-} from "../../common/constants";
+} from "../../../common/constants";
 
 const { fromJS } = require("immutable");
-const { reviver } = require("./document-model");
+const { reviver } = require("../document-model");
 const {
   Selection,
   formatSelections,
@@ -22,7 +22,7 @@ const {
   concatSelections,
   getContentForSelection,
   getSelectionKey
-} = require("./selection-helpers");
+} = require("../selection-helpers");
 
 const testContent = "And a second paragraph because";
 const nodeModelWithSelections = fromJS(

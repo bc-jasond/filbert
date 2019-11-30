@@ -7,10 +7,10 @@ import {
 } from '../../../common/constants';
 import { getNodeId, getNodeType } from '../../../common/dom';
 import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
-import { handleEnterCode } from '../helpers-by-section-type/handle-code';
-import { handleEnterList } from '../helpers-by-section-type/handle-list';
-import { handleEnterParagraph } from '../helpers-by-section-type/handle-paragraph';
-import { handleEnterTitle } from '../helpers-by-section-type/handle-title';
+import { handleEnterCode } from './by-section-type/handle-code';
+import { handleEnterList } from './by-section-type/handle-list';
+import { handleEnterParagraph } from './by-section-type/handle-paragraph';
+import { handleEnterTitle } from './by-section-type/handle-title';
 
 /**
  * @returns focusNodeId|undefined string i.e. "4eb7"

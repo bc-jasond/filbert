@@ -11,7 +11,7 @@ import {
 
 import styled, { css } from 'styled-components';
 import { grey } from '../../../common/css';
-import { Input, NavButtonMixin } from '../../../common/shared-styled-components';
+import { Input, NavButtonMixin } from '../../../common/components/shared-styled-components';
 
 const InsertSectionMenu = styled.div`
   position: absolute;

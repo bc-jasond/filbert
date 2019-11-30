@@ -6,7 +6,7 @@ import {
   LinkedInStyled,
   LogoLinkStyled,
   SocialLinksContainer
-} from '../common/layout-styled-components';
+} from '../common/components/layout-styled-components';
 
 export default () => (
   <Footer>

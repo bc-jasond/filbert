@@ -1,4 +1,4 @@
-import { NODE_TYPE_SECTION_IMAGE } from '../../../common/constants';
+import { NODE_TYPE_SECTION_IMAGE } from '../../../../common/constants';
 
 export function insertPhoto(documentModel, selectedNodeId, sectionMeta) {
   const selectedSectionId = documentModel.getSection(selectedNodeId).get('id');

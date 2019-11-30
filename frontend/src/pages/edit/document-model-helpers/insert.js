@@ -7,12 +7,12 @@ import {
   NODE_TYPE_SECTION_IMAGE, NODE_TYPE_SECTION_QUOTE,
   NODE_TYPE_SECTION_SPACER
 } from '../../../common/constants';
-import { insertCodeSection } from '../helpers-by-section-type/handle-code';
-import { insertPhoto } from '../helpers-by-section-type/handle-image';
-import { insertList } from '../helpers-by-section-type/handle-list';
-import { insertQuote } from '../helpers-by-section-type/handle-quote';
-import { insertSpacer } from '../helpers-by-section-type/handle-spacer';
-import { insertH1, insertH2 } from '../helpers-by-section-type/handle-title';
+import { insertCodeSection } from './by-section-type/handle-code';
+import { insertPhoto } from './by-section-type/handle-image';
+import { insertList } from './by-section-type/handle-list';
+import { insertQuote } from './by-section-type/handle-quote';
+import { insertSpacer } from './by-section-type/handle-spacer';
+import { insertH1, insertH2 } from './by-section-type/handle-title';
 
 /**
  * @return focusNodeId

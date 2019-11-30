@@ -14,7 +14,7 @@ import {
   MessageContainer,
 } from './shared-styled-components';
 
-import {formatPostDate} from './utils';
+import {formatPostDate} from '../utils';
 
 const publishPostFields = [
   {

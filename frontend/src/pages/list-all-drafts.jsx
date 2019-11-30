@@ -21,7 +21,7 @@ import {
   LinkStyledSignIn,
   NewPost,
   SignedInUser,
-} from '../common/layout-styled-components';
+} from '../common/components/layout-styled-components';
 import {
   StyledH2,
   PostRow,
@@ -31,8 +31,8 @@ import {
   PostMetaRow,
   PostMetaContentFirst,
   PostAction,
-} from '../common/list-all-styled-components';
-import PublishPostForm from '../common/edit-publish-post-form';
+} from '../common/components/list-all-styled-components';
+import PublishPostForm from '../common/components/edit-publish-post-form';
 
 export default class AllPosts extends React.Component {
   constructor(props) {

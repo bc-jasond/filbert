@@ -31,7 +31,7 @@ export function getMapWithId(obj) {
 
 export function cleanTextOrZeroLengthPlaceholder(text) {
   const cleaned = cleanText(text);
-  return cleaned.trim().length > 0 ? cleaned : ZERO_LENGTH_CHAR;
+  return cleaned.length > 0 ? cleaned : ZERO_LENGTH_CHAR;
 }
 
 export function cleanText(text = '') {

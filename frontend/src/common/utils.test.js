@@ -1,4 +1,10 @@
-const { Map } = require('immutable');
+import {
+  KEYCODE_SPACE,
+  KEYCODE_SPACE_NBSP,
+  ZERO_LENGTH_CHAR
+} from "./constants";
+
+const { Map } = require("immutable");
 const {
   confirmPromise,
   formatPostDate,
@@ -11,9 +17,9 @@ const {
   imageUrlIsId,
   deleteContentRange
 } = require("./utils");
+const { idRegExp } = require("./test-helpers");
 
 global.confirm = jest.fn().mockImplementation(arg => arg);
-const idRegExp = new RegExp(/[0-9a-f]{4}/);
 
 describe("utils", () => {
   test("confirmPromise", async () => {
@@ -38,21 +44,53 @@ describe("utils", () => {
   });
   test("getMapWithId", () => {
     const objWithId = {
-      id: '4455'
+      id: "4455"
     };
     const map = getMapWithId(objWithId);
     expect(Map.isMap(map)).toBe(true);
-    expect(map.get('id')).toBe('4455');
+    expect(map.get("id")).toBe("4455");
     const mapWithoutId = {
-      foo: 'bar'
+      foo: "bar"
     };
     const map2 = getMapWithId(mapWithoutId);
     expect(Map.isMap(map2)).toBe(true);
-    expect(idRegExp.test(map2.get('id'))).toBe(true);
-    expect(map2.get('foo')).toBe('bar');
+    expect(idRegExp.test(map2.get("id"))).toBe(true);
+    expect(map2.get("foo")).toBe("bar");
   });
-  test.todo("cleanTextOrZeroLengthPlaceholder");
-  test.todo("cleanText");
+  test("cleanTextOrZeroLengthPlaceholder", () => {
+    const clean = "Hi, I'm clean";
+    expect(cleanTextOrZeroLengthPlaceholder(clean)).toBe(clean);
+    expect(cleanTextOrZeroLengthPlaceholder().charAt(0)).toBe(
+      ZERO_LENGTH_CHAR
+    );
+  });
+  test("cleanText", () => {
+    const textWithPlaceholder = `${ZERO_LENGTH_CHAR}hey dawg`;
+    const textWithPlaceholderClean = cleanText(textWithPlaceholder);
+    expect(textWithPlaceholderClean).toMatchInlineSnapshot(`"hey dawg"`);
+    expect(textWithPlaceholderClean.length).toBe(
+      textWithPlaceholder.length - 1
+    );
+    const spacesAllOverThePlace =
+      "   And then     it happened, and it was great.   ";
+    const spacesAllOverThePlaceClean = cleanText(spacesAllOverThePlace);
+    expect(spacesAllOverThePlaceClean.charCodeAt(0)).toBe(KEYCODE_SPACE_NBSP);
+    expect(
+      spacesAllOverThePlaceClean.charCodeAt(
+        spacesAllOverThePlaceClean.length - 1
+      )
+    ).toBe(KEYCODE_SPACE_NBSP);
+    // test that spaces are "interleaved" with &nbsp; for proper display in HTML
+    let hasConsequtiveSpaces = false;
+    for (let i = 1; i < spacesAllOverThePlaceClean.length; i++) {
+      const prev = spacesAllOverThePlaceClean.charCodeAt(i - 1);
+      const current = spacesAllOverThePlaceClean.charCodeAt(i);
+      if (current === KEYCODE_SPACE && prev === KEYCODE_SPACE) {
+        hasConsequtiveSpaces = true;
+      }
+    }
+    expect(hasConsequtiveSpaces).toBe(false);
+  });
   test("getCharFromEvent", () => {
     const mockEventWithALetter = {
       keyCode: 0,
@@ -61,21 +99,22 @@ describe("utils", () => {
     expect(getCharFromEvent(mockEventWithALetter)).toBe("W");
     const mockEventWithEmoji = {
       nativeEvent: {
-        data: '👉'
+        data: "👉"
       }
-    }
-    expect(getCharFromEvent(mockEventWithEmoji)).toBe('👉')
+    };
+    expect(getCharFromEvent(mockEventWithEmoji)).toBe("👉");
   });
   test("getCanonicalFromTitle", () => {
     const canonical = getCanonicalFromTitle(
       "A SULTRY, stifling midday. Not a cloudlet in the sky. . . . The sun-baked grass had a disconsolate, hopeless look: even if there were rain it could never be green again. . . ."
     );
     // i.e. "a-sultry-stifling-midday-5940"
-    const pieces = canonical.split('-');
+    const pieces = canonical.split("-");
     expect(pieces.length).toBe(5);
     expect(idRegExp.test(pieces[pieces.length - 1])).toBe(true);
   });
   test("imageUrlIsId", () => {
+    expect(imageUrlIsId(100)).toBeUndefined()
     expect(
       imageUrlIsId(
         "313a8df039a32a3b708a982bed01c2bc7d6af316acf20a1e2a2aeef020a378e4"

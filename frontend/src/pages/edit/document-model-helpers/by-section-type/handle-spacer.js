@@ -1,4 +1,4 @@
-import { NODE_TYPE_SECTION_SPACER } from '../../../common/constants';
+import { NODE_TYPE_SECTION_SPACER } from '../../../../common/constants';
 
 export function insertSpacer(documentModel, selectedNodeId) {
   const selectedSectionId = documentModel.getSection(selectedNodeId).get('id');
