@@ -33,7 +33,8 @@ module.exports = {
     "/node_modules/",
     "jest.config.js",
     "webpack.config.js",
-    "coverage/"
+    "coverage/",
+    "test"
   ],
 
   // A list of reporter names that Jest uses when writing coverage reports

@@ -15,21 +15,22 @@ import {
   NODE_TYPE_LI,
   NODE_TYPE_OL,
   NODE_TYPE_PRE,
-  ROOT_NODE_PARENT_ID,
+  ROOT_NODE_PARENT_ID, SELECTION_START, SELECTION_END,
 } from '../../common/constants';
 import {
   cleanText,
   getMapWithId,
 } from '../../common/utils';
 import {
-  concatSelections,
-  selectionReviver,
+  concatSelections, Selection,
 } from './selection-helpers';
 
 export function reviver(key, value) {
-  return selectionReviver(key, value)
-    // ImmutableJS default behavior
-    || (isKeyed(value) ? value.toMap() : value.toList())
+  if (value.has(SELECTION_START) && value.has(SELECTION_END)) {
+    return new Selection(value)
+  }
+  // ImmutableJS default behavior
+  return isKeyed(value) ? value.toMap() : value.toList()
 }
 
 export default class DocumentModel {
@@ -110,8 +111,8 @@ export default class DocumentModel {
       // TODO: find a better way to break the reference...
       // HACK: delete & reset "id" to break deep equality (break reference)
       const nodeWithNewReference = this.getNode(currentId)
-          .delete('id')
-          .set('id', currentId);
+        .delete('id')
+        .set('id', currentId);
       this.nodesByParentId = this.nodesByParentId.set(
         parentId,
         siblings.set(
@@ -261,14 +262,21 @@ export default class DocumentModel {
     return this.insert(this.rootId, type, index, content, meta);
   }
   
+  /**
+   * this is essentially "splitSectionForInsert"
+   */
   splitSection(sectionId, nodeId) {
     const section = this.getNode(sectionId);
-    if (section.get('type') !== NODE_TYPE_SECTION_CONTENT) {
-      console.error('splitSection', section);
+    if (!section.get('id') || section.get('type') !== NODE_TYPE_SECTION_CONTENT) {
+      console.error('splitSection - bad section', section);
       throw new Error('splitSection - I only split CONTENT sections ATM')
     }
     const siblings = this.nodesByParentId.get(sectionId);
     const nodeIdx = siblings.findIndex(s => s.get('id') === nodeId);
+    if (nodeIdx === -1) {
+      console.error('splitSection - bad child', nodeId)
+      throw new Error(`splitSection - I can't find "${nodeId}" in section "${sectionId}"`)
+    }
     
     // update existing section
     this.setChildren(sectionId, siblings.slice(0, nodeIdx));
@@ -280,28 +288,34 @@ export default class DocumentModel {
     // new section
     const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
     this.setChildren(newSectionId, siblings.slice(nodeIdx));
-    // if all existing nodes stayed in the existing section, create a new P
-    if (this.nodesByParentId.get(newSectionId).size === 0) {
-      this.insert(newSectionId, NODE_TYPE_P, 0);
-    }
     this.updateNodesForParent(newSectionId);
   }
   
   /**
-   * NOTE: this splits a content section but is different from splitSection in these ways:
+   * for splitting part of P or LI content into an H1 or H2 section
+   *
+   * NOTE: this splits a content section but is different from splitSection() in these ways:
    *  1) it takes an index as a split point instead of a node
    *  2) it doesn't add placeholder Ps
    *  3) it deletes the existing section if there aren't any subsections
    *  4) it optionally creates the 2nd section (if there are subsections)
    */
   splitSectionForFormatChange(sectionId, nodeIdx) {
+    const section = this.getNode(sectionId);
+    if (!section.get('id') || section.get('type') !== NODE_TYPE_SECTION_CONTENT) {
+      console.error('splitSectionForFormatChange - bad section', section);
+      throw new Error('splitSectionForFormatChange - I only split CONTENT sections ATM')
+    }
     const subSections = this.getChildren(sectionId);
+    // NOTE nodeIdx could === subSections.size here because of a delete operation
+    if (nodeIdx < 0 || nodeIdx > subSections.size) {
+      console.error('splitSectionForFormatChange - index out of bounds', nodeIdx)
+      throw new Error(`splitSectionForFormatChange - index out of bounds "${nodeIdx}" in section "${sectionId}"`)
+    }
     
     // update existing list
     const leftSubSections = subSections.slice(0, nodeIdx);
-    if (leftSubSections.size === 0) {
-      this.delete(sectionId);
-    } else {
+    if (leftSubSections.size > 0) {
       this.setChildren(sectionId, leftSubSections);
       this.updateNodesForParent(sectionId);
     }
@@ -316,7 +330,11 @@ export default class DocumentModel {
     }
     
     // return offset to insert after or before
-    return leftSubSections.size > 0 ? 1 : 0;
+    if (leftSubSections.size === 0) {
+      this.delete(sectionId);
+      return 0;
+    }
+    return 1;
   }
   
   isParagraphType(nodeId) {
@@ -358,11 +376,7 @@ export default class DocumentModel {
     this.setChildren(rightSectionId, List());
     this.delete(rightSectionId);
   }
-  
-  getText(nodeId) {
-    return cleanText(this.getNode(nodeId).get('content', ''));
-  }
-  
+  // TODO: validate subsection / parent type combinations!
   insertSubSectionAfter(siblingId, type, content = '', meta = Map()) {
     const parentId = this.getParent(siblingId).get('id');
     const siblings = this.nodesByParentId.get(parentId, List());
@@ -450,6 +464,7 @@ export default class DocumentModel {
     });
   }
   
+  // TODO: need a way to focus "terminal" sections like IMAGE, SPACER, QUOTE
   canFocusNode(nodeId) {
     return [
       NODE_TYPE_SECTION_H1,
@@ -476,7 +491,10 @@ export default class DocumentModel {
         // TODO: this doesn't handle all cases yet
         focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getFirstChild(sectionId).get('id');
       } else {
-        const prevSectionId = this.getPrevSibling(sectionId).get('id');
+        let prevSectionId = sectionId;
+        do {
+          prevSectionId = this.getPrevSibling(prevSectionId).get('id');
+        } while (prevSectionId && !this.canFocusNode(prevSectionId) && this.getChildren(prevSectionId).size === 0)
         if (this.canFocusNode(prevSectionId)) {
           focusNodeId = prevSectionId;
         } else {
@@ -515,7 +533,10 @@ export default class DocumentModel {
       if (this.isLastChild(sectionId) || this.isOnlyChild(sectionId)) {
         focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getLastChild(sectionId).get('id');
       } else {
-        const nextSectionId = this.getNextSibling(sectionId).get('id');
+        let nextSectionId = sectionId;
+        do {
+          nextSectionId = this.getNextSibling(nextSectionId).get('id');
+        } while (nextSectionId && !this.canFocusNode(nextSectionId) && this.getChildren(nextSectionId).size === 0)
         if (this.canFocusNode(nextSectionId)) {
           focusNodeId = nextSectionId;
         } else {

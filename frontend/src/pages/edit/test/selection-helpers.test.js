@@ -14,7 +14,6 @@ const { reviver } = require("../document-model");
 const {
   Selection,
   formatSelections,
-  selectionReviver,
   adjustSelectionOffsetsAndCleanup,
   getSelection,
   upsertSelection,
@@ -120,7 +119,7 @@ describe("selectionReviver", () => {
       [SELECTION_END]: 8
     });
     expect(
-      fromJS({ [SELECTION_START]: 3, [SELECTION_END]: 8 }, selectionReviver)
+      fromJS({ [SELECTION_START]: 3, [SELECTION_END]: 8 }, reviver)
     ).toMatchInlineSnapshot(`
       Immutable.Record {
         "start": 3,

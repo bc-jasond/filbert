@@ -25,11 +25,6 @@ export const Selection = Record({
   [SELECTION_LINK_URL]: '',
 });
 
-export function selectionReviver(key, value) {
-  if (value.has(SELECTION_START) && value.has(SELECTION_END)) {
-    return new Selection(value)
-  }
-}
 export function formatSelections(s) {
   if (!List.isList(s)) {
     return '';

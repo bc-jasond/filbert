@@ -1,9 +1,18 @@
 import { Map, List } from 'immutable';
-import { NODE_TYPE_SECTION_H1, NODE_TYPE_SECTION_SPACER, ROOT_NODE_PARENT_ID } from '../../../common/constants';
+import {
+  NODE_TYPE_LI,
+  NODE_TYPE_P,
+  NODE_TYPE_SECTION_H1,
+  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_SECTION_SPACER,
+  ROOT_NODE_PARENT_ID
+} from '../../../common/constants';
 import {
   idRegExp,
   overrideConsole,
 } from '../../../common/test-helpers';
+
+import * as SelectionHelpers from '../selection-helpers';
 
 import DocumentModel from "../document-model";
 import { testPostWithAllTypesJS } from "./test-post-with-all-types";
@@ -88,7 +97,7 @@ describe("DocumentModel", () => {
   });
   test("getNextSibling", () => {
     // returns Map() when node is at last position
-    expect(documentModel.getNextSibling("eea2")).toBe(Map())
+    expect(documentModel.getNextSibling("eea1")).toBe(Map())
     expect(documentModel.getPrevSibling("eea2")).toMatchSnapshot()
   });
   test("getPrevSibling", () => {
@@ -151,7 +160,7 @@ describe("DocumentModel", () => {
       "e108",
     ].forEach(nodeId => expect(documentModel.isSectionType(nodeId)).toBe(true))
   });
-  test("insertSectionAfter", () =>{
+  test("insertSectionAfter", () => {
     const newSectionId = documentModel.insertSectionAfter("6ffb", NODE_TYPE_SECTION_H1, 'Another Large Heading')
     const newSection = documentModel.getNode(newSectionId);
     expect(documentModel.getNextSibling("6ffb").get('id')).toBe(newSection.get('id'));
@@ -163,19 +172,164 @@ describe("DocumentModel", () => {
     expect(documentModel.getPrevSibling("7c74").get('id')).toBe(newSection.get('id'));
     expect(documentModel.getPrevSibling(newSectionId)).toMatchSnapshot()
   });
-  test.todo("insertSection");
-  test.todo("splitSection");
-  test.todo("splitSectionForFormatChange");
-  test.todo("isParagraphType");
-  test.todo("mergeParagraphs");
-  test.todo("mergeSections");
-  test.todo("getText");
-  test.todo("insertSubSectionAfter");
+  test("insertSection", () => {
+    const newSectionId = documentModel.insertSection(NODE_TYPE_SECTION_H2, 1, 'Small Heading 2')
+    const newSection = documentModel.getNode(newSectionId);
+    expect(documentModel.getPrevSibling(newSectionId)).toMatchSnapshot()
+    expect(documentModel.getNextSibling(newSectionId)).toMatchSnapshot()
+    expect(documentModel.getNextSibling("7518")).toBe(newSection)
+  });
+  test("splitSection", () => {
+    let prevNextSection = documentModel.getNextSibling("6ffb");
+    documentModel.splitSection("6ffb", "4472");
+    const nextSibling = documentModel.getNextSibling("6ffb");
+    // splits CONTENT sections at a given node moving the given node to a new section below
+    expect(documentModel.getChildren("6ffb")).toMatchSnapshot()
+    expect(documentModel.getChildren("6ffb").get(0)).toBe(documentModel.getNode("2e29"))
+    expect(documentModel.getChildren(nextSibling.get('id')).get(0)).toBe(documentModel.getNode("4472"))
+    expect(documentModel.getNextSibling("6ffb")).not.toBe(prevNextSection);
+    // creates a placeholder P tag in "sectionId" when moving all children
+    prevNextSection = documentModel.getNextSibling("78d3")
+    const prevChildren = documentModel.getChildren("78d3")
+    documentModel.splitSection("78d3", "420f")
+    expect(documentModel.getNextSibling("78d3")).not.toBe(prevNextSection)
+    expect(documentModel.getChildren("78d3")).not.toBe(prevChildren)
+    // throws on bad sectionId
+    expect(() => {
+      documentModel.splitSection("badId", "420f")
+    }).toThrowError()
+    // throws on nodeId not a child of sectionId
+    expect(() => {
+      documentModel.splitSection("78d3", "fed1")
+    }).toThrowError()
+  });
+  test("splitSectionForFormatChange", () => {
+    // TODO: this function is dependent on splitListReplaceListItemWithSection() & paragraphToTitle()
+    //  basically, it gets called after the node being transformed has been deleted, so nodeIdx (usually an insert-before index)
+    //  actually refers to the position of the deleted node.
+    // splitting on first child should delete current section
+    let idxOffset = documentModel.splitSectionForFormatChange("7c74", 0)
+    expect(idxOffset).toBe(0)
+    expect(documentModel.getNode("7c74")).toBe(Map())
+    // splitting on last child - removes a child, doesn't insert a new section
+    let prevNextSection = documentModel.getNextSibling("6ffb");
+    let prevChildren = documentModel.getChildren("6ffb");
+    idxOffset = documentModel.splitSectionForFormatChange("6ffb", 2)
+    expect(idxOffset).toBe(1);
+    // one might assume this to be prevChildren.size - 1 but, it's just prevChildren.size because the node will have been deleted in one of the two calling functions mentioned above
+    expect(documentModel.getChildren("6ffb").size).toBe(prevChildren.size);
+    expect(documentModel.getNextSibling("6ffb")).toBe(prevNextSection);
+    // TODO: splitting in the middle
+  });
+  test("isParagraphType", () => {
+    [
+      // P
+      "33fc",
+      // LI
+      "4808",
+      // H1
+      "7518",
+      // h2
+      "7d65"
+    ].forEach(nodeId => expect(documentModel.isParagraphType(nodeId)).toBe(true));
+    [
+      // ROOT
+      documentModel.rootId,
+      // CONTENT
+      "6ffb",
+      // SPACER
+      "5060",
+      // OL
+      "eea2",
+      // IMAGE
+      "aa69",
+      // QUOTE
+      "e108",
+      // CODESECTION
+      "59cc"
+    ].forEach(nodeId => expect(documentModel.isParagraphType(nodeId)).toBe(false))
+  });
+  test("mergeParagraphs", () => {
+    const combinedContent = `${documentModel.getNode("4808").get('content')}${documentModel.getNode("098a").get('content')}`;
+    const spy = jest.spyOn(SelectionHelpers, 'concatSelections').mockImplementation(arg => arg)
+    documentModel.mergeParagraphs("4808", "098a")
+    expect(spy).toHaveBeenCalled()
+    expect(documentModel.getNode("4808").get('content')).toBe(combinedContent);
+  });
+  test("mergeSections", () => {
+    // merge content sections
+    documentModel.mergeSections(documentModel.getNode("8b4f"), documentModel.getNode("98db"))
+    expect(documentModel.getChildren("8b4f")).toMatchSnapshot()
+    expect(documentModel.getNode("98db")).toBe(Map())
+    // merge OL sub sections
+    documentModel.mergeSections(documentModel.getNode("eea2"), documentModel.getNode("eea1"))
+    expect(documentModel.getChildren("eea2")).toMatchSnapshot()
+    expect(documentModel.getNode("eea1")).toBe(Map())
+    // throws on unsupported sections
+    expect(() => {
+      documentModel.mergeSections(documentModel.getNode("8b4f"), documentModel.root)
+    }).toThrowError()
+  });
+  test("insertSubSectionAfter", () => {
+    // insert a P after a P
+    let parentId = documentModel.getParent("2e29").get('id');
+    let childCount = documentModel.getChildren(parentId).size;
+    let newSubSectionId = documentModel.insertSubSectionAfter("2e29", NODE_TYPE_P, 'new paragraph')
+    expect(documentModel.getNextSibling("2e29").get('id')).toBe(newSubSectionId)
+    expect(documentModel.getChildren(parentId).size).toBe(childCount + 1)
+    // insert an LI
+    parentId = documentModel.getParent("098a").get('id');
+    childCount = documentModel.getChildren(parentId).size;
+    newSubSectionId = documentModel.insertSubSectionAfter("098a", NODE_TYPE_LI, 'new list item')
+    expect(documentModel.getNextSibling("098a").get('id')).toBe(newSubSectionId)
+    expect(documentModel.getChildren(parentId).size).toBe(childCount + 1)
+  });
   test.todo("insert");
   test.todo("update");
   test.todo("delete");
   test.todo("updateNodesForParent");
-  test.todo("canFocusNode");
-  test.todo("getPreviousFocusNodeId");
-  test.todo("getNextFocusNodeId");
+  test("canFocusNode", () => {
+    [
+      // P
+      "33fc",
+      // LI
+      "4808",
+      // H1
+      "7518",
+      // h2
+      "7d65",
+      // pre
+      // TODO: how do I test this?
+    ].forEach(nodeId => expect(documentModel.canFocusNode(nodeId)).toBe(true));
+    [
+      // ROOT
+      documentModel.rootId,
+      // CONTENT
+      "6ffb",
+      // SPACER
+      "5060",
+      // OL
+      "eea2",
+      // IMAGE
+      "aa69",
+      // QUOTE
+      "e108",
+      // CODESECTION
+      "59cc"
+    ].forEach(nodeId => expect(documentModel.canFocusNode(nodeId)).toBe(false))
+  });
+  test("getPreviousFocusNodeId", () => {
+    expect(documentModel.getPreviousFocusNodeId(documentModel.rootId)).toMatchSnapshot()
+    expect(documentModel.getPreviousFocusNodeId("6ffb")).toMatchSnapshot()
+    expect(documentModel.getPreviousFocusNodeId("7d65")).toMatchSnapshot()
+    expect(documentModel.getPreviousFocusNodeId("4472")).toMatchSnapshot()
+    expect(documentModel.getPreviousFocusNodeId("21f3")).toMatchSnapshot()
+  });
+  test("getNextFocusNodeId", () => {
+    expect(documentModel.getNextFocusNodeId(documentModel.rootId)).toMatchSnapshot()
+    expect(documentModel.getNextFocusNodeId("7518")).toMatchSnapshot()
+    expect(documentModel.getNextFocusNodeId("4472")).toMatchSnapshot()
+    expect(documentModel.getNextFocusNodeId("6ffb")).toMatchSnapshot()
+    expect(documentModel.getNextFocusNodeId("098b")).toMatchSnapshot()
+  });
 });

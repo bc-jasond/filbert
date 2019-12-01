@@ -234,7 +234,24 @@ export const testPostWithAllTypesJS = {
         "type": "p",
         "content": "Another paragraph no formats",
         "meta": {}
-      }, { "post_id": 170, "id": "eea2", "parent_id": "7c74", "position": 1, "type": "ol", "content": "", "meta": {} }
+      }, {
+        "post_id": 170,
+        "id": "eea2",
+        "parent_id": "7c74",
+        "position": 1,
+        "type": "ol",
+        "content": "",
+        "meta": {}
+      },
+      {
+        "post_id": 170,
+        "id": "eea1",
+        "parent_id": "7c74",
+        "position": 2,
+        "type": "ol",
+        "content": "",
+        "meta": {}
+      }
     ],
     "8b4f": [
       {
@@ -420,6 +437,26 @@ export const testPostWithAllTypesJS = {
             }
           ]
         }
+      }
+    ],
+    "eea1": [
+      {
+        "post_id": 170,
+        "id": "4807",
+        "parent_id": "eea1",
+        "position": 0,
+        "type": "li",
+        "content": "List 2 several items",
+        "meta": {}
+      },
+      {
+        "post_id": 170,
+        "id": "098b",
+        "parent_id": "eea1",
+        "position": 1,
+        "type": "li",
+        "content": "List 2 another item here",
+        "meta": {}
       }
     ]
   }
