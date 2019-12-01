@@ -5,14 +5,14 @@ import {
   NEW_POST_URL_ID,
   NODE_TYPE_OL,
   NODE_TYPE_P,
-  NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_CONTENT,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_IMAGE,
-  NODE_TYPE_SECTION_QUOTE,
-  NODE_TYPE_SECTION_SPACER,
-  NODE_TYPE_SECTION_POSTLINK,
+  NODE_TYPE_CODE,
+  NODE_TYPE_CONTENT,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_IMAGE,
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_SPACER,
+  NODE_TYPE_POSTLINK,
   NODE_TYPE_ROOT,
   NODE_TYPE_LI,
   NODE_TYPE_PRE,
@@ -71,7 +71,7 @@ export default class ContentNode extends React.Component {
     switch (type || node.get('type')) {
       case NODE_TYPE_ROOT:
         return StyledDiv;
-      case NODE_TYPE_SECTION_CONTENT:
+      case NODE_TYPE_CONTENT:
         return ContentSection;
       case NODE_TYPE_OL:
         return Ol;
@@ -128,23 +128,23 @@ export default class ContentNode extends React.Component {
       /**
        * NON-RECURSIVE 'custom' SECTIONS
        */
-      case NODE_TYPE_SECTION_H1: {
+      case NODE_TYPE_H1: {
         return (<H1
-          data-type={NODE_TYPE_SECTION_H1}
+          data-type={NODE_TYPE_H1}
           name={node.get('id')}
           shouldShowPlaceholder={post && post.get('id', 'new') === NEW_POST_URL_ID && node.get('position') === 0 && cleanText(node.get('content', '')).length === 0}
         >
           {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
         </H1>);
       }
-      case NODE_TYPE_SECTION_H2: {
-        return (<H2 data-type={NODE_TYPE_SECTION_H2}
+      case NODE_TYPE_H2: {
+        return (<H2 data-type={NODE_TYPE_H2}
                     name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H2>);
       }
-      case NODE_TYPE_SECTION_SPACER: {
-        return (<SpacerSection data-type={NODE_TYPE_SECTION_SPACER} name={node.get('id')} contentEditable={false} />);
+      case NODE_TYPE_SPACER: {
+        return (<SpacerSection data-type={NODE_TYPE_SPACER} name={node.get('id')} contentEditable={false} />);
       }
-      case NODE_TYPE_SECTION_CODE: {
+      case NODE_TYPE_CODE: {
         const lines = node
           .getIn(['meta', 'lines'], List([cleanTextOrZeroLengthPlaceholder('')]));
         return (
@@ -155,7 +155,7 @@ export default class ContentNode extends React.Component {
           </CodeSection>
         );
       }
-      case NODE_TYPE_SECTION_IMAGE: {
+      case NODE_TYPE_IMAGE: {
         const meta = node.get('meta', Map());
         const w = meta.get('width');
         const h = meta.get('height');
@@ -173,7 +173,7 @@ export default class ContentNode extends React.Component {
           heightOverride = Math.min(w, 1000);
         }
         return (
-          <ImageSection data-type={NODE_TYPE_SECTION_IMAGE} name={node.get('id')} contentEditable={false}>
+          <ImageSection data-type={NODE_TYPE_IMAGE} name={node.get('id')} contentEditable={false}>
             <Figure heightOverride={heightOverride}>
               <ImagePlaceholderContainer w={w} h={h}>
                 <ImagePlaceholderFill w={w} h={h} />
@@ -192,14 +192,14 @@ export default class ContentNode extends React.Component {
           </ImageSection>
         );
       }
-      case NODE_TYPE_SECTION_QUOTE: {
+      case NODE_TYPE_QUOTE: {
         const id = node.get('id');
         const quote = node.getIn(['meta', 'quote'], '');
         const url = node.getIn(['meta', 'url'], '');
         const author = node.getIn(['meta', 'author'], '');
         const context = node.getIn(['meta', 'context'], '');
         return (
-          <ContentSection data-type={NODE_TYPE_SECTION_QUOTE} name={id} contentEditable={false}>
+          <ContentSection data-type={NODE_TYPE_QUOTE} name={id} contentEditable={false}>
             <QuoteP
               isEditing={isEditing}
               onClick={() => {
@@ -219,7 +219,7 @@ export default class ContentNode extends React.Component {
         );
       }
       // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
-      case NODE_TYPE_SECTION_POSTLINK: {
+      case NODE_TYPE_POSTLINK: {
         const to = node.getIn(['meta', 'to']);
         const Centered = styled.div`
           text-align: center;
@@ -247,7 +247,7 @@ export default class ContentNode extends React.Component {
        * SECTION TYPES
        */
       case NODE_TYPE_ROOT:
-      case NODE_TYPE_SECTION_CONTENT:
+      case NODE_TYPE_CONTENT:
       case NODE_TYPE_OL: {
         const StyledComponent = this.getSectionTagFromType();
         return (

@@ -41,9 +41,9 @@ import {
 } from '../../common/dom';
 
 import {
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_QUOTE,
-  NODE_TYPE_SECTION_IMAGE,
+  NODE_TYPE_H1,
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_IMAGE,
   KEYCODE_ENTER,
   KEYCODE_BACKSPACE,
   KEYCODE_ESC,
@@ -177,7 +177,7 @@ export default class EditPost extends React.Component {
     this.updateManager.init(postPlaceholder);
     this.documentModel.init(postPlaceholder, this.updateManager);
     this.updateManager.stageNodeUpdate(this.documentModel.rootId);
-    const focusNodeId = this.documentModel.insertSection(NODE_TYPE_SECTION_H1, 0);
+    const focusNodeId = this.documentModel.insertSection(NODE_TYPE_H1, 0);
     this.setState({ post: Map() });
     this.commitUpdates(focusNodeId);
   }
@@ -631,7 +631,7 @@ export default class EditPost extends React.Component {
       return;
     }
     await this.commitUpdates(focusNodeId);
-    if ([NODE_TYPE_SECTION_IMAGE, NODE_TYPE_SECTION_QUOTE].includes(sectionType)) {
+    if ([NODE_TYPE_IMAGE, NODE_TYPE_QUOTE].includes(sectionType)) {
       this.sectionEdit(focusNodeId)
     }
   }
@@ -656,11 +656,11 @@ export default class EditPost extends React.Component {
     }
     
     switch (section.get('type')) {
-      case NODE_TYPE_SECTION_IMAGE: {
+      case NODE_TYPE_IMAGE: {
         newState.editImageSectionNode = section;
         break;
       }
-      case NODE_TYPE_SECTION_QUOTE: {
+      case NODE_TYPE_QUOTE: {
         newState.editQuoteSectionNode = section;
         break;
       }

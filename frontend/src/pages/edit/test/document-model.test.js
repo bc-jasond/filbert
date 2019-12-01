@@ -2,9 +2,9 @@ import { Map, List } from 'immutable';
 import {
   NODE_TYPE_LI,
   NODE_TYPE_P,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_SPACER,
   ROOT_NODE_PARENT_ID
 } from '../../../common/constants';
 import {
@@ -161,19 +161,19 @@ describe("DocumentModel", () => {
     ].forEach(nodeId => expect(documentModel.isSectionType(nodeId)).toBe(true))
   });
   test("insertSectionAfter", () => {
-    const newSectionId = documentModel.insertSectionAfter("6ffb", NODE_TYPE_SECTION_H1, 'Another Large Heading')
+    const newSectionId = documentModel.insertSectionAfter("6ffb", NODE_TYPE_H1, 'Another Large Heading')
     const newSection = documentModel.getNode(newSectionId);
     expect(documentModel.getNextSibling("6ffb").get('id')).toBe(newSection.get('id'));
     expect(documentModel.getNextSibling(newSectionId)).toMatchSnapshot()
   });
   test("insertSectionBefore", () => {
-    const newSectionId = documentModel.insertSectionBefore("7c74", NODE_TYPE_SECTION_SPACER)
+    const newSectionId = documentModel.insertSectionBefore("7c74", NODE_TYPE_SPACER)
     const newSection = documentModel.getNode(newSectionId);
     expect(documentModel.getPrevSibling("7c74").get('id')).toBe(newSection.get('id'));
     expect(documentModel.getPrevSibling(newSectionId)).toMatchSnapshot()
   });
   test("insertSection", () => {
-    const newSectionId = documentModel.insertSection(NODE_TYPE_SECTION_H2, 1, 'Small Heading 2')
+    const newSectionId = documentModel.insertSection(NODE_TYPE_H2, 1, 'Small Heading 2')
     const newSection = documentModel.getNode(newSectionId);
     expect(documentModel.getPrevSibling(newSectionId)).toMatchSnapshot()
     expect(documentModel.getNextSibling(newSectionId)).toMatchSnapshot()

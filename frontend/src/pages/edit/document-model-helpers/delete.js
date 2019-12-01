@@ -2,9 +2,9 @@ import { List} from 'immutable';
 import {
   NODE_TYPE_LI,
   NODE_TYPE_P,
-  NODE_TYPE_PRE, NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2
+  NODE_TYPE_PRE, NODE_TYPE_CODE,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2
 } from '../../../common/constants';
 import { getNodeId } from '../../../common/dom';
 import { deleteContentRange } from '../../../common/utils';
@@ -82,7 +82,7 @@ export function doDelete(documentModel, selectionOffsets) {
     hasStructuralUpdates = true;
     
     switch (endNodeMap.get('type')) {
-      case NODE_TYPE_SECTION_CODE: {
+      case NODE_TYPE_CODE: {
         handleBackspaceCode(documentModel, endNodeId, 0, endDiffLength);
         break;
       }
@@ -121,7 +121,7 @@ export function doDelete(documentModel, selectionOffsets) {
     //  the former removes a character behind the caret and the latter removes one in front...
     
     switch (startNodeMap.get('type')) {
-      case NODE_TYPE_SECTION_CODE: {
+      case NODE_TYPE_CODE: {
         // console.debug('BACKSPACE PRE ', selectedNode);
         handleBackspaceCode(documentModel, selectedNodeId, startNodeCaretStart, startDiffLength);
         break;
@@ -182,8 +182,8 @@ export function doDelete(documentModel, selectionOffsets) {
       [focusNodeId, caretOffset] = handleBackspaceList(documentModel, selectedNodeId);
       break;
     }
-    case NODE_TYPE_SECTION_H1:
-    case NODE_TYPE_SECTION_H2: {
+    case NODE_TYPE_H1:
+    case NODE_TYPE_H2: {
       [focusNodeId, caretOffset] = handleBackspaceTitle(documentModel, selectedNodeId);
       break;
     }

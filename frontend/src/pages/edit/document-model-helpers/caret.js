@@ -1,4 +1,4 @@
-import { KEYCODE_UP_ARROW, NODE_TYPE_ROOT, NODE_TYPE_SECTION_SPACER } from '../../../common/constants';
+import { KEYCODE_UP_ARROW, NODE_TYPE_ROOT, NODE_TYPE_SPACER } from '../../../common/constants';
 import { getNodeId, setCaret } from '../../../common/dom';
 
 /**
@@ -30,7 +30,7 @@ export function moveCaret(documentModel, selectionOffsets, evt) {
     console.warn('CARET no node, bad selection: ', domNode);
     return;
   }
-  if (selectedNodeMap.get('type') === NODE_TYPE_SECTION_SPACER) {
+  if (selectedNodeMap.get('type') === NODE_TYPE_SPACER) {
     evt.stopPropagation();
     evt.preventDefault();
     const shouldFocusOnPrevious = evt.keyCode === KEYCODE_UP_ARROW;

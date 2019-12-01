@@ -2,10 +2,10 @@ import { List, Map } from 'immutable';
 
 import {
   NODE_TYPE_OL,
-  NODE_TYPE_P, NODE_TYPE_SECTION_CODE, NODE_TYPE_SECTION_CONTENT,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_SPACER
+  NODE_TYPE_P, NODE_TYPE_CODE, NODE_TYPE_CONTENT,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_SPACER
 } from '../../../../common/constants';
 import {
   adjustSelectionOffsetsAndCleanup,
@@ -21,15 +21,15 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
   if (documentModel.isFirstChild(selectedNodeId)) {
     prevSection = documentModel.getPrevSibling(selectedSection.get('id'));
     // delete a spacer?
-    if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+    if (prevSection.get('type') === NODE_TYPE_SPACER) {
       const spacerSectionId = prevSection.get('id');
       prevSection = documentModel.getPrevSibling(spacerSectionId);
       documentModel.delete(spacerSectionId);
     }
     
     switch (prevSection.get('type')) {
-      case NODE_TYPE_SECTION_H1:
-      case NODE_TYPE_SECTION_H2: {
+      case NODE_TYPE_H1:
+      case NODE_TYPE_H2: {
         documentModel.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
         documentModel.delete(selectedNodeId);
         if (wasOnlyChild) {
@@ -37,7 +37,7 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
         }
         return [prevSection.get('id'), prevSection.get('content').length];
       }
-      case NODE_TYPE_SECTION_CONTENT: {
+      case NODE_TYPE_CONTENT: {
         // TODO: merge CONTENT sections
         let lastChild = documentModel.getLastChild(prevSection.get('id'));
         if (lastChild.get('type') === NODE_TYPE_OL) {
@@ -49,7 +49,7 @@ export function handleBackspaceParagraph(documentModel, selectedNodeId) {
         documentModel.mergeSections(prevSection, selectedSection);
         return [lastChild.get('id'), lastChild.get('content').length];
       }
-      case NODE_TYPE_SECTION_CODE: {
+      case NODE_TYPE_CODE: {
         const lines = prevSection.getIn(['meta', 'lines'], List());
         const lastLine = lines.last();
         
@@ -95,7 +95,7 @@ export function handleEnterParagraph(documentModel, selectedNodeId, caretPositio
 export function titleToParagraph(documentModel, selectedNodeId) {
   const titleSection = documentModel.getNode(selectedNodeId);
   // change title section to content section
-  documentModel.update(titleSection.set('type', NODE_TYPE_SECTION_CONTENT));
+  documentModel.update(titleSection.set('type', NODE_TYPE_CONTENT));
   // insert paragraph
   return documentModel.insert(selectedNodeId, NODE_TYPE_P, 0, titleSection.get('content'));
 }

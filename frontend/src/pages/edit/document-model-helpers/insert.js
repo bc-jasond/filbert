@@ -1,11 +1,11 @@
 import { Map } from 'immutable';
 import {
   NODE_TYPE_OL,
-  NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_IMAGE, NODE_TYPE_SECTION_QUOTE,
-  NODE_TYPE_SECTION_SPACER
+  NODE_TYPE_CODE,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_IMAGE, NODE_TYPE_QUOTE,
+  NODE_TYPE_SPACER
 } from '../../../common/constants';
 import { insertCodeSection } from './by-section-type/handle-code';
 import { insertPhoto } from './by-section-type/handle-image';
@@ -23,19 +23,19 @@ export async function insertSectionHelper(documentModel, sectionType, selectedNo
     case NODE_TYPE_OL: {
       return insertList(documentModel, selectedNodeId);
     }
-    case NODE_TYPE_SECTION_CODE: {
+    case NODE_TYPE_CODE: {
       return insertCodeSection(documentModel, selectedNodeId);
     }
-    case NODE_TYPE_SECTION_SPACER: {
+    case NODE_TYPE_SPACER: {
       return insertSpacer(documentModel, selectedNodeId);
     }
-    case NODE_TYPE_SECTION_H1: {
+    case NODE_TYPE_H1: {
       return insertH1(documentModel, selectedNodeId);
     }
-    case NODE_TYPE_SECTION_H2: {
+    case NODE_TYPE_H2: {
       return insertH2(documentModel, selectedNodeId);
     }
-    case NODE_TYPE_SECTION_IMAGE: {
+    case NODE_TYPE_IMAGE: {
       const {
         imageId,
         width,
@@ -51,7 +51,7 @@ export async function insertSectionHelper(documentModel, sectionType, selectedNo
         }),
       );
     }
-    case NODE_TYPE_SECTION_QUOTE: {
+    case NODE_TYPE_QUOTE: {
       return insertQuote(documentModel, selectedNodeId);
     }
     default: {

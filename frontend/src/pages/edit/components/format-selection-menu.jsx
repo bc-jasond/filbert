@@ -10,8 +10,8 @@ import {
   SELECTION_LINK_URL,
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
 } from '../../../common/constants';
 import {
   SvgIconMixin,
@@ -103,10 +103,10 @@ export default ({
     </IconButton>
     <ButtonSeparator />
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_H1)}>
-      <IconH1 selected={nodeModel.get('type') === NODE_TYPE_SECTION_H1} />
+      <IconH1 selected={nodeModel.get('type') === NODE_TYPE_H1} />
     </IconButton>
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_H2)}>
-      <IconH2 selected={nodeModel.get('type') === NODE_TYPE_SECTION_H2} />
+      <IconH2 selected={nodeModel.get('type') === NODE_TYPE_H2} />
     </IconButton>
     <LinkInput
       ref={forwardRef}

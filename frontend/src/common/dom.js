@@ -1,6 +1,6 @@
 import {
-  NODE_TYPE_SECTION_CONTENT,
-  NODE_TYPE_SECTION_H1,
+  NODE_TYPE_CONTENT,
+  NODE_TYPE_H1,
   NODE_TYPE_P,
   NODE_TYPE_LI,
   DOM_TEXT_NODE_TYPE_ID,
@@ -325,7 +325,7 @@ export function getNodeId(node) {
 }
 
 export function getFirstHeadingContent() {
-  const [h1] = document.querySelectorAll(`[data-type='${NODE_TYPE_SECTION_H1}']`);
+  const [h1] = document.querySelectorAll(`[data-type='${NODE_TYPE_H1}']`);
   return h1 ? h1.textContent : '';
 }
 

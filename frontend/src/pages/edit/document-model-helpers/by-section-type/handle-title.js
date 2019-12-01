@@ -2,11 +2,11 @@ import { List, Map } from 'immutable';
 import {
   NODE_TYPE_OL,
   NODE_TYPE_P,
-  NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_CONTENT,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_SPACER
+  NODE_TYPE_CODE,
+  NODE_TYPE_CONTENT,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_SPACER
 } from '../../../../common/constants';
 
 export function handleBackspaceTitle(documentModel, selectedNodeId) {
@@ -17,19 +17,19 @@ export function handleBackspaceTitle(documentModel, selectedNodeId) {
   const selectedNode = documentModel.getNode(selectedNodeId);
   let prevSection = documentModel.getPrevSibling(selectedNodeId);
   // delete previous section (SPACER, etc)
-  if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+  if (prevSection.get('type') === NODE_TYPE_SPACER) {
     const spacerId = prevSection.get('id');
     prevSection = documentModel.getPrevSibling(spacerId);
     documentModel.delete(spacerId);
   }
   switch (prevSection.get('type')) {
-    case NODE_TYPE_SECTION_H1:
-    case NODE_TYPE_SECTION_H2: {
+    case NODE_TYPE_H1:
+    case NODE_TYPE_H2: {
       documentModel.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
       documentModel.delete(selectedNodeId);
       return [prevSection.get('id'), prevSection.get('content').length];
     }
-    case NODE_TYPE_SECTION_CONTENT: {
+    case NODE_TYPE_CONTENT: {
       let lastChild = documentModel.getLastChild(prevSection.get('id'));
       if (lastChild.get('type') === NODE_TYPE_OL) {
         // get last LI
@@ -39,12 +39,12 @@ export function handleBackspaceTitle(documentModel, selectedNodeId) {
       documentModel.update(lastChild.set('content', `${lastChild.get('content')}${selectedNode.get('content')}`));
       const nextSection = documentModel.getNextSibling(selectedNodeId);
       documentModel.delete(selectedNodeId);
-      if (nextSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
+      if (nextSection.get('type') === NODE_TYPE_CONTENT) {
         documentModel.mergeSections(prevSection, nextSection);
       }
       return [lastChild.get('id'), lastChild.get('content').length];
     }
-    case NODE_TYPE_SECTION_CODE: {
+    case NODE_TYPE_CODE: {
       const lines = prevSection.getIn(['meta', 'lines'], List());
       const lastLine = lines.last();
       
@@ -73,11 +73,11 @@ export function handleEnterTitle(documentModel, selectedNodeId, caretPosition, c
   documentModel.update(documentModel.getNode(selectedNodeId).set('content', contentLeft));
   const nextSibling = documentModel.getNextSibling(selectedNodeId);
   let nextSiblingId;
-  if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
+  if (nextSibling.get('type') === NODE_TYPE_CONTENT) {
     nextSiblingId = nextSibling.get('id');
   } else {
     // create a ContentSection
-    nextSiblingId = documentModel.insertSectionAfter(selectedNodeId, NODE_TYPE_SECTION_CONTENT);
+    nextSiblingId = documentModel.insertSectionAfter(selectedNodeId, NODE_TYPE_CONTENT);
   }
   // add to existing content section
   return documentModel.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
@@ -104,5 +104,5 @@ function insertTitle(documentModel, selectedNodeId, sectionType, shouldCopyConte
   return newSectionId;
 }
 
-export const insertH1 = (documentModel, selectedNodeId, shouldCopyContent = false) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_SECTION_H1);
-export const insertH2 = (documentModel, selectedNodeId, shouldCopyContent = false) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_SECTION_H2);
+export const insertH1 = (documentModel, selectedNodeId, shouldCopyContent = false) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_H1);
+export const insertH2 = (documentModel, selectedNodeId, shouldCopyContent = false) => insertTitle(documentModel, selectedNodeId, NODE_TYPE_H2);

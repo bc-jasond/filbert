@@ -4,14 +4,14 @@ import {
   NEW_POST_URL_ID,
   NODE_TYPE_P,
   NODE_TYPE_ROOT,
-  NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_CONTENT,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_IMAGE,
-  NODE_TYPE_SECTION_POSTLINK,
-  NODE_TYPE_SECTION_QUOTE,
-  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_CODE,
+  NODE_TYPE_CONTENT,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_IMAGE,
+  NODE_TYPE_POSTLINK,
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_SPACER,
   NODE_TYPE_LI,
   NODE_TYPE_OL,
   NODE_TYPE_PRE,
@@ -176,7 +176,7 @@ export default class DocumentModel {
    */
   getFirstChild(nodeId) {
     const node = this.getNode(nodeId);
-    if (node.get('type') === NODE_TYPE_SECTION_CODE) {
+    if (node.get('type') === NODE_TYPE_CODE) {
       return Map({
         id: `${nodeId}-0`
       });
@@ -203,7 +203,7 @@ export default class DocumentModel {
    */
   getLastChild(nodeId) {
     const node = this.getNode(nodeId);
-    if (node.get('type') === NODE_TYPE_SECTION_CODE) {
+    if (node.get('type') === NODE_TYPE_CODE) {
       return Map({
         id: `${nodeId}-${node.getIn(['meta', 'lines'], List()).size - 1}`
       });
@@ -222,14 +222,14 @@ export default class DocumentModel {
   
   isSectionType(nodeId) {
     return [
-      NODE_TYPE_SECTION_SPACER,
-      NODE_TYPE_SECTION_CONTENT,
-      NODE_TYPE_SECTION_H1,
-      NODE_TYPE_SECTION_H2,
-      NODE_TYPE_SECTION_POSTLINK,
-      NODE_TYPE_SECTION_QUOTE,
-      NODE_TYPE_SECTION_IMAGE,
-      NODE_TYPE_SECTION_CODE,
+      NODE_TYPE_SPACER,
+      NODE_TYPE_CONTENT,
+      NODE_TYPE_H1,
+      NODE_TYPE_H2,
+      NODE_TYPE_POSTLINK,
+      NODE_TYPE_QUOTE,
+      NODE_TYPE_IMAGE,
+      NODE_TYPE_CODE,
     ].includes(this.getNode(nodeId).get('type'))
   }
   
@@ -267,7 +267,7 @@ export default class DocumentModel {
    */
   splitSection(sectionId, nodeId) {
     const section = this.getNode(sectionId);
-    if (!section.get('id') || section.get('type') !== NODE_TYPE_SECTION_CONTENT) {
+    if (!section.get('id') || section.get('type') !== NODE_TYPE_CONTENT) {
       console.error('splitSection - bad section', section);
       throw new Error('splitSection - I only split CONTENT sections ATM')
     }
@@ -286,7 +286,7 @@ export default class DocumentModel {
     }
     this.updateNodesForParent(sectionId);
     // new section
-    const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
+    const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_CONTENT);
     this.setChildren(newSectionId, siblings.slice(nodeIdx));
     this.updateNodesForParent(newSectionId);
   }
@@ -302,7 +302,7 @@ export default class DocumentModel {
    */
   splitSectionForFormatChange(sectionId, nodeIdx) {
     const section = this.getNode(sectionId);
-    if (!section.get('id') || section.get('type') !== NODE_TYPE_SECTION_CONTENT) {
+    if (!section.get('id') || section.get('type') !== NODE_TYPE_CONTENT) {
       console.error('splitSectionForFormatChange - bad section', section);
       throw new Error('splitSectionForFormatChange - I only split CONTENT sections ATM')
     }
@@ -324,7 +324,7 @@ export default class DocumentModel {
     const rightSubSections = subSections.slice(nodeIdx);
     let newSectionId;
     if (rightSubSections.size > 0) {
-      newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
+      newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_CONTENT);
       this.setChildren(newSectionId, rightSubSections);
       this.updateNodesForParent(newSectionId);
     }
@@ -341,8 +341,8 @@ export default class DocumentModel {
     return [
       NODE_TYPE_P,
       NODE_TYPE_LI,
-      NODE_TYPE_SECTION_H1,
-      NODE_TYPE_SECTION_H2,
+      NODE_TYPE_H1,
+      NODE_TYPE_H2,
     ].includes(this.getNode(nodeId).get('type'))
   }
   
@@ -360,7 +360,7 @@ export default class DocumentModel {
   }
   
   mergeSections(left, right) {
-    if (!(left.get('type') === NODE_TYPE_SECTION_CONTENT && right.get('type') === NODE_TYPE_SECTION_CONTENT)
+    if (!(left.get('type') === NODE_TYPE_CONTENT && right.get('type') === NODE_TYPE_CONTENT)
       && !(left.get('type') === NODE_TYPE_OL && right.get('type') === NODE_TYPE_OL)) {
       console.error('mergeSections', left, right);
       throw new Error('mergeSections - I only merge CONTENT & OL sections ATM')
@@ -467,8 +467,8 @@ export default class DocumentModel {
   // TODO: need a way to focus "terminal" sections like IMAGE, SPACER, QUOTE
   canFocusNode(nodeId) {
     return [
-      NODE_TYPE_SECTION_H1,
-      NODE_TYPE_SECTION_H2,
+      NODE_TYPE_H1,
+      NODE_TYPE_H2,
       NODE_TYPE_P,
       NODE_TYPE_LI,
       NODE_TYPE_PRE,

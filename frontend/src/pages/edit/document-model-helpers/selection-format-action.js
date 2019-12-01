@@ -1,8 +1,8 @@
 import { Map } from 'immutable';
 import {
   NODE_TYPE_LI, NODE_TYPE_P,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2, SELECTION_ACTION_ITALIC, SELECTION_ACTION_LINK, SELECTION_ACTION_SITEINFO, SELECTION_LINK_URL
 } from '../../../common/constants';
@@ -16,7 +16,7 @@ export function selectionFormatAction(documentModel, node, selection, action) {
   console.info('HANDLE SELECTION ACTION: ', action, selection.toJS());
   
   if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
-    const sectionType = action === SELECTION_ACTION_H1 ? NODE_TYPE_SECTION_H1 : NODE_TYPE_SECTION_H2;
+    const sectionType = action === SELECTION_ACTION_H1 ? NODE_TYPE_H1 : NODE_TYPE_H2;
     const selectedNodeId = node.get('id');
     let focusNodeId;
     // list item -> H1 or H2

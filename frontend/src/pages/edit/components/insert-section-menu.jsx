@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   NODE_TYPE_OL,
-  NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_IMAGE,
-  NODE_TYPE_SECTION_QUOTE,
-  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_CODE,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_IMAGE,
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_SPACER,
 } from '../../../common/constants';
 
 import styled, { css } from 'styled-components';
@@ -95,22 +95,22 @@ export default ({
                              isOpen={insertMenuIsOpen} />
     <InsertSectionMenuItemsContainer autocomplete="off" autocorrect="off" autocapitalize="off"
                                      spellcheck="false" isOpen={insertMenuIsOpen}>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_H1)}>H1</InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_H2)}>H2</InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_CODE)}>code</InsertSectionItem>
+      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_H1)}>H1</InsertSectionItem>
+      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_H2)}>H2</InsertSectionItem>
+      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_CODE)}>code</InsertSectionItem>
       <InsertSectionItem onClick={() => insertSection(NODE_TYPE_OL)}>list</InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_SPACER)}>spacer</InsertSectionItem>
+      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SPACER)}>spacer</InsertSectionItem>
       <InsertSectionItem onClick={() => fileInputRef.current.click()}>
         photo
         <HiddenFileInput name="hidden-image-upload-file-input"
                          type="file"
                          onChange={(e) => {
-                           insertSection(NODE_TYPE_SECTION_IMAGE, e.target.files)
+                           insertSection(NODE_TYPE_IMAGE, e.target.files)
                          }}
                          accept="image/*"
                          ref={fileInputRef} />
       </InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SECTION_QUOTE)}>quote</InsertSectionItem>
+      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_QUOTE)}>quote</InsertSectionItem>
     </InsertSectionMenuItemsContainer>
   </InsertSectionMenu>
 )

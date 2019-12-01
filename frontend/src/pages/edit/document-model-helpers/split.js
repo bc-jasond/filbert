@@ -2,8 +2,8 @@ import {
   NODE_TYPE_LI,
   NODE_TYPE_P,
   NODE_TYPE_PRE,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2
+  NODE_TYPE_H1,
+  NODE_TYPE_H2
 } from '../../../common/constants';
 import { getNodeId, getNodeType } from '../../../common/dom';
 import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
@@ -40,8 +40,8 @@ export function doSplit(documentModel, selectionOffsets) {
     case NODE_TYPE_P: {
       return handleEnterParagraph(documentModel, selectedNodeId, caretPosition, selectedNodeContent);
     }
-    case NODE_TYPE_SECTION_H1: // fall-through
-    case NODE_TYPE_SECTION_H2: {
+    case NODE_TYPE_H1: // fall-through
+    case NODE_TYPE_H2: {
       return handleEnterTitle(documentModel, selectedNodeId, caretPosition, selectedNodeContent);
     }
     default: {

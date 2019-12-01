@@ -1,21 +1,21 @@
 export const NODE_TYPE_ROOT = 'root';
-// sections for layout - can only be children of the root node 'blogContent'
-export const NODE_TYPE_SECTION_H1 = 'h1';
-export const NODE_TYPE_SECTION_H2 = 'h2';
-export const NODE_TYPE_SECTION_SPACER = 'spacer';
-export const NODE_TYPE_SECTION_CONTENT = 'content';
-
-// opinionated sections - have fixed format, can't have children
-export const NODE_TYPE_SECTION_CODE = 'codesection';
-export const NODE_TYPE_SECTION_IMAGE = 'image';
-export const NODE_TYPE_SECTION_QUOTE = 'quote';
-export const NODE_TYPE_SECTION_POSTLINK = 'postlink';
-export const NODE_TYPE_OL = 'ol';
-
-// base nodes for content - must have a parent node of a section type
+// sections that can have text content
+export const NODE_TYPE_H1 = 'h1';
+export const NODE_TYPE_H2 = 'h2';
 export const NODE_TYPE_P = 'p';
 export const NODE_TYPE_PRE = 'pre';
 export const NODE_TYPE_LI = 'li';
+
+// sections that have "meta" content
+export const NODE_TYPE_SPACER = 'spacer';
+export const NODE_TYPE_IMAGE = 'image';
+export const NODE_TYPE_QUOTE = 'quote';
+export const NODE_TYPE_POSTLINK = 'postlink';
+
+// @deprecated sections - presentation layer only, not in the model
+export const NODE_TYPE_CONTENT = 'content';
+export const NODE_TYPE_CODE = 'codesection';
+export const NODE_TYPE_OL = 'ol';
 
 // EDITOR
 // TODO: this is a placeholder to be able to set the caret in an empty tag

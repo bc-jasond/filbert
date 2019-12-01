@@ -3,7 +3,7 @@ import {
   NODE_TYPE_LI,
   NODE_TYPE_OL,
   NODE_TYPE_P,
-  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_SPACER,
 } from '../../../../common/constants';
 import { cleanText } from '../../../../common/utils';
 import { splitSelectionsAtCaretOffset } from '../../selection-helpers';
@@ -16,7 +16,7 @@ export function handleBackspaceList(documentModel, selectedNodeId) {
       const selectedSection = documentModel.getSection(selectedOl.get('id'));
       prevSection = documentModel.getPrevSibling(selectedSection.get('id'));
       // delete a spacer?
-      if (prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+      if (prevSection.get('type') === NODE_TYPE_SPACER) {
         const spacerSectionId = prevSection.get('id');
         prevSection = documentModel.getPrevSibling(spacerSectionId);
         documentModel.delete(spacerSectionId);

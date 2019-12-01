@@ -1,9 +1,9 @@
 import { List } from 'immutable';
 import {
   NODE_TYPE_P,
-  NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_CONTENT,
-  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_CODE,
+  NODE_TYPE_CONTENT,
+  NODE_TYPE_SPACER,
 } from '../../../../common/constants';
 import { cleanText, deleteContentRange } from '../../../../common/utils';
 
@@ -36,7 +36,7 @@ export function handleBackspaceCodeStructuralChange(documentModel, selectedNodeI
   let prevLineContent = '';
   
   // delete the previous section?  Currently, only if CODE SECTION is empty and previous is a SPACER
-  if (lines.size === 1 && lineContent.length === 0 && prevSection.get('type') === NODE_TYPE_SECTION_SPACER) {
+  if (lines.size === 1 && lineContent.length === 0 && prevSection.get('type') === NODE_TYPE_SPACER) {
     const spacerId = prevSection.get('id');
     prevFocusNodeId = documentModel.getPreviousFocusNodeId(spacerId);
     documentModel.delete(spacerId);
@@ -46,7 +46,7 @@ export function handleBackspaceCodeStructuralChange(documentModel, selectedNodeI
     prevSection = documentModel.getPrevSibling(selectedSectionId);
     const nextSection = documentModel.getNextSibling(selectedSectionId);
     documentModel.delete(selectedSectionId);
-    if (prevSection.get('type') === NODE_TYPE_SECTION_CONTENT && nextSection.get('type') === NODE_TYPE_SECTION_CONTENT) {
+    if (prevSection.get('type') === NODE_TYPE_CONTENT && nextSection.get('type') === NODE_TYPE_CONTENT) {
       documentModel.mergeSections(prevSection, nextSection);
     }
   } else if (lineIdx > 0) {
@@ -91,11 +91,11 @@ export function handleEnterCode(documentModel, selectedNodeId, caretPosition, co
     // create a P tag (and optionally a CONTENT SECTION) after the OL - only if empty LI is last child (allows empty LIs in the middle of list)
     const nextSibling = documentModel.getNextSibling(selectedSectionId);
     let nextSiblingId;
-    if (nextSibling.get('type') === NODE_TYPE_SECTION_CONTENT) {
+    if (nextSibling.get('type') === NODE_TYPE_CONTENT) {
       nextSiblingId = nextSibling.get('id');
     } else {
       // create a ContentSection
-      nextSiblingId = documentModel.insertSectionAfter(selectedSectionId, NODE_TYPE_SECTION_CONTENT);
+      nextSiblingId = documentModel.insertSectionAfter(selectedSectionId, NODE_TYPE_CONTENT);
     }
     // add to existing content section
     return documentModel.insert(nextSiblingId, NODE_TYPE_P, 0, contentRight);
@@ -168,7 +168,7 @@ export function insertCodeSection(documentModel, selectedNodeId) {
   }
   const newSectionId = documentModel.insertSectionAfter(
     selectedSectionId,
-    NODE_TYPE_SECTION_CODE,
+    NODE_TYPE_CODE,
   );
   documentModel.delete(selectedNodeId);
   if (placeholderParagraphWasOnlyChild) {
