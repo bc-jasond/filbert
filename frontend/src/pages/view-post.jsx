@@ -1,10 +1,10 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
-import { ROOT_NODE_PARENT_ID } from '../common/constants';
 import { apiDelete, apiGet } from '../common/fetch';
 import { confirmPromise } from '../common/utils';
 import { getSession, getUserName, signout } from '../common/session';
+import { reviver } from '../pages/edit/document-model';
 
 import Footer from './footer';
 import {
@@ -32,8 +32,7 @@ export default class ViewPost extends React.Component {
     
     this.state = {
       post: Map(),
-      root: null,
-      nodesByParentId: {},
+      nodesById: Map(),
       shouldShow404: false,
       shouldRedirectToHome: false,
     }
@@ -42,10 +41,10 @@ export default class ViewPost extends React.Component {
   async componentDidMount() {
     try {
       const { post, contentNodes } = await apiGet(`/post/${this.props.match.params.canonical}`);
-      const nodesByParentId = fromJS(contentNodes);
-      // TODO: don't use 'null' as root node indicator
-      const root = nodesByParentId.get(ROOT_NODE_PARENT_ID).get(0);
-      this.setState({ post: fromJS(post), root, nodesByParentId, shouldShow404: false })
+      this.setState({
+        post: fromJS(post),
+        nodesById: fromJS(contentNodes, reviver),
+        shouldShow404: false })
     } catch (err) {
       console.error(err);
       this.setState({ pageContent: null, shouldShow404: true })
@@ -66,8 +65,7 @@ export default class ViewPost extends React.Component {
   render() {
     const {
       post,
-      root,
-      nodesByParentId,
+      nodesById,
       shouldShow404,
       shouldRedirectToHome,
     } = this.state;
@@ -103,8 +101,8 @@ export default class ViewPost extends React.Component {
         </Header>
         <HeaderSpacer />
         <Article>
-          {root && (
-            <ContentNode node={root} nodesByParentId={nodesByParentId} />
+          {nodesById.size > 0 && (
+            <ContentNode nodesById={nodesById} />
           )}
         </Article>
         <Footer />

@@ -18,6 +18,7 @@ const sharp = require('sharp');
 const {
   getKnex,
   getNodes,
+  getNodesFlat,
   bulkContentNodeUpsert,
   bulkContentNodeDelete,
   getMysqlDatetime,
@@ -130,7 +131,7 @@ async function main() {
         res.status(404).send({});
         return;
       }
-      const contentNodes = await getNodes(knex, post.id);
+      const contentNodes = await getNodesFlat(knex, post.id);
       if (loggedInUser) {
         post.canEdit = loggedInUser.id === post.user_id;
         post.canDelete = loggedInUser.id === post.user_id;
@@ -240,7 +241,7 @@ async function main() {
         res.status(404).send({});
         return;
       }
-      const contentNodes = await getNodes(knex, post.id);
+      const contentNodes = await getNodesFlat(knex, post.id);
       res.send({ post, contentNodes });
     })
     

@@ -3,17 +3,13 @@ import { List, Map } from 'immutable';
 import styled from 'styled-components';
 import {
   NEW_POST_URL_ID,
-  NODE_TYPE_OL,
   NODE_TYPE_P,
-  NODE_TYPE_CODE,
-  NODE_TYPE_CONTENT,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
   NODE_TYPE_QUOTE,
   NODE_TYPE_SPACER,
   NODE_TYPE_POSTLINK,
-  NODE_TYPE_ROOT,
   NODE_TYPE_LI,
   NODE_TYPE_PRE,
   SELECTION_ACTION_STRIKETHROUGH,
@@ -59,258 +55,290 @@ import {
   getSelectionKey,
 } from '../../pages/edit/selection-helpers';
 
+// TODO: is this wrapper div necessary?
 const StyledDiv = styled.div``;
 
-export default class ContentNode extends React.Component {
+export default class Content extends React.Component {
   constructor(props) {
     super(props);
   }
   
-  getSectionTagFromType(type = null) {
-    const { node } = this.props;
-    switch (type || node.get('type')) {
-      case NODE_TYPE_ROOT:
-        return StyledDiv;
-      case NODE_TYPE_CONTENT:
-        return ContentSection;
-      case NODE_TYPE_OL:
-        return Ol;
-      default:
-        throw new Error(`unknown type: ${node.get('type')}`);
+  current;
+  
+  getNextPTags() {
+    if (this.current.get('type') !== NODE_TYPE_P) {
+      return;
     }
+    const children = [];
+    while (this.current.get('type') === NODE_TYPE_P) {
+      children.push((
+        <P data-type={this.current.get('type')} name={this.current.get('id')}>
+          {this.getFormattedSelections(this.current)}
+        </P>
+      ))
+      this.next()
+    }
+    return children;
+  }
+  getNextLiTags() {
+    if (this.current.get('type') !== NODE_TYPE_LI) {
+      return;
+    }
+    const children = [];
+    while (this.current.get('type') === NODE_TYPE_LI) {
+      children.push((
+        <Li data-type={this.current.get('type')} name={this.current.get('id')}>
+          {this.getFormattedSelections(this.current)}
+        </Li>
+      ))
+      this.next()
+    }
+    return (<Ol>{children}</Ol>);
   }
   
-  getChildNodes() {
-    const {
-      post,
-      node,
-      nodesByParentId,
-      isEditing,
-    } = this.props;
-    console.debug('getChildNodes', nodesByParentId.get(node.get('id')))
-    return nodesByParentId
-      .get(node.get('id'), List())
-      .map(child => (
-        <ContentNode key={child.get('id')} post={post} node={child} nodesByParentId={nodesByParentId}
-                     isEditing={isEditing} />))
+  getContentSectionTags() {
+    const children = [];
+    let p;
+    let li;
+    do {
+      p = this.getNextPTags()
+      li = this.getNextLiTags()
+      if (p) {
+        children.push(...p)
+      }
+      if (li) {
+        children.push(li)
+      }
+    } while (p || li);
+    return (<ContentSection>{children}</ContentSection>)
+  }
+  getNextPreTags() {
+    const { nodesById } = this.props;
+    const children = [];
+    while (this.current.get('type') === NODE_TYPE_PRE) {
+      children.push((<Pre key={`${this.current.get('id')}`}
+                          data-type={NODE_TYPE_PRE}
+                          name={`${this.current.get('id')}`}>{cleanTextOrZeroLengthPlaceholder(this.current.get('content'))}</Pre>))
+      this.next()
+    }
+    return (<CodeSection>{children}</CodeSection>);
   }
   
-  shouldComponentUpdate(nextProps) {
-    const {
-      node,
-      nodesByParentId,
-    } = this.props;
-    
-    const { node: newNode } = nextProps;
-    const parentId = newNode.get('parent_id') || 'null';
-    const oldNode = nodesByParentId
-      .get(parentId)
-      .get(newNode.get('position'));
-    // component should update (re-render) if shallow equality changes. (NOTE: not value equality like Map.equals(OtherMap))
-    // this leverages ImmutableJS's new copies of nodes that have changed
-    // HOWEVER, it requires some shenanigans in documentModel to walk the flattened nodes list (key:parentId->[children])
-    // and update (or "touch") every ancestor of the updated node up to the root component replicating what ImmutableJS does under the hood with a hash trie structure
-    return oldNode !== newNode;
+  isFirstOfType(nodes, id) {
+  
+  }
+  
+  isLastOfType(nodes, id) {
+  
+  }
+  
+  getFirstNode() {
+    const { nodesById } = this.props;
+    const idSeen = new Set();
+    const nextSeen = new Set();
+    nodesById.forEach(node => {
+      idSeen.add(node.get('id'));
+      if (node.get('next_sibling_id')) {
+        nextSeen.add(node.get('next_sibling_id'));
+      }
+    })
+    const difference = new Set([...idSeen].filter(id => !nextSeen.has(id)))
+    const [first] = [...difference];
+    return nodesById.get(first);
+  }
+  
+  getFormattedSelections(node) {
+    const selections = node.getIn(['meta', 'selections'], List([Map()]));
+    let children = [];
+    selections.forEach((selection) => {
+      try {
+        const key = getSelectionKey(selection);
+        let selectionJsx = getContentForSelection(node, selection);
+      
+        if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
+          selectionJsx = (<StrikeText key={key}>{selectionJsx}</StrikeText>)
+        }
+        if (selection.get(SELECTION_ACTION_SITEINFO)) {
+          selectionJsx = (<SiteInfo key={key}>{selectionJsx}</SiteInfo>)
+        }
+        if (selection.get(SELECTION_ACTION_ITALIC)) {
+          selectionJsx = (<ItalicText key={key}>{selectionJsx}</ItalicText>)
+        }
+        if (selection.get(SELECTION_ACTION_CODE)) {
+          selectionJsx = (<Code key={key}>{selectionJsx}</Code>)
+        }
+        if (selection.get(SELECTION_ACTION_BOLD)) {
+          selectionJsx = (<BoldText key={key}>{selectionJsx}</BoldText>)
+        }
+        if (selection.get(SELECTION_ACTION_LINK)) {
+          selectionJsx = (<A key={key} href={selection.get('linkUrl')}>{selectionJsx}</A>)
+        }
+        children.push(selectionJsx);
+      } catch (err) {
+        console.warn(err);
+        // selections got corrupt, just display unformatted text
+        children = [node.get('content')];
+      }
+    })
+    return children;
+  }
+  
+  next() {
+    this.current = this.props.nodesById.get(this.current.get('next_sibling_id')) || Map();
   }
   
   render() {
     console.debug("ContentNode RENDER", this);
     const {
       post,
-      node,
       // this is a callback to the edit page, it passes a nodeId.
       // It's only for image & quote sections.  Maybe it could go?
       // TODO: add currentEditSectionId to show selected state (right now it's just on hover).
       // Maybe that can be computed somehow?
       isEditing,
     } = this.props;
-    switch (node.get('type')) {
-      /**
-       * NON-RECURSIVE 'custom' SECTIONS
-       */
-      case NODE_TYPE_H1: {
-        return (<H1
-          data-type={NODE_TYPE_H1}
-          name={node.get('id')}
-          shouldShowPlaceholder={post && post.get('id', 'new') === NEW_POST_URL_ID && node.get('position') === 0 && cleanText(node.get('content', '')).length === 0}
-        >
-          {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
-        </H1>);
-      }
-      case NODE_TYPE_H2: {
-        return (<H2 data-type={NODE_TYPE_H2}
-                    name={node.get('id')}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</H2>);
-      }
-      case NODE_TYPE_SPACER: {
-        return (<SpacerSection data-type={NODE_TYPE_SPACER} name={node.get('id')} contentEditable={false} />);
-      }
-      case NODE_TYPE_CODE: {
-        const lines = node
-          .getIn(['meta', 'lines'], List([cleanTextOrZeroLengthPlaceholder('')]));
-        return (
-          <CodeSection data-type={node.get('type')} name={node.get('id')}>
-            {lines.map((line, idx) => (<Pre key={`${node.get('id')}-${idx}`}
-                                            data-type={NODE_TYPE_PRE}
-                                            name={`${node.get('id')}-${idx}`}>{cleanTextOrZeroLengthPlaceholder(line)}</Pre>))}
-          </CodeSection>
-        );
-      }
-      case NODE_TYPE_IMAGE: {
-        const meta = node.get('meta', Map());
-        const w = meta.get('width');
-        const h = meta.get('height');
-        const urlField = meta.get('url') || '';
-        // construct our url from the hash OR assume 3rd party URL
-        const url = imageUrlIsId(urlField)
-          ? `${process.env.API_URL}/image/${urlField}`
-          : urlField;
-        const rotationDegrees = meta.get('rotationDegrees', 0);
-        let heightOverride;
-        // if the image is rotated left once or right once change the height of the image container
-        // to the width of the image to cover the increased/decreased dimension after CSS transform
-        if (rotationDegrees === 90 || rotationDegrees === 270) {
-          // current max-width of an ImageSection is 1000px...
-          heightOverride = Math.min(w, 1000);
+    const children = [];
+    this.current = this.getFirstNode();
+    while (this.current.get('id')) {
+      switch (this.current.get('type')) {
+        case NODE_TYPE_P:
+        case NODE_TYPE_LI: {
+          children.push(this.getContentSectionTags());
+          continue;
         }
-        return (
-          <ImageSection data-type={NODE_TYPE_IMAGE} name={node.get('id')} contentEditable={false}>
-            <Figure heightOverride={heightOverride}>
-              <ImagePlaceholderContainer w={w} h={h}>
-                <ImagePlaceholderFill w={w} h={h} />
-                {urlField.length > 0 && (<Img
-                  isEditing={isEditing}
-                  onClick={() => {
-                    if (!isEditing) return;
-                    isEditing(node.get('id'))
-                  }}
-                  rotationDegrees={rotationDegrees}
-                  src={url}
-                />)}
-              </ImagePlaceholderContainer>
-            </Figure>
-            <FigureCaption>{meta.get('caption')}</FigureCaption>
-          </ImageSection>
-        );
-      }
-      case NODE_TYPE_QUOTE: {
-        const id = node.get('id');
-        const quote = node.getIn(['meta', 'quote'], '');
-        const url = node.getIn(['meta', 'url'], '');
-        const author = node.getIn(['meta', 'author'], '');
-        const context = node.getIn(['meta', 'context'], '');
-        return (
-          <ContentSection data-type={NODE_TYPE_QUOTE} name={id} contentEditable={false}>
-            <QuoteP
-              isEditing={isEditing}
-              onClick={() => {
-                if (!isEditing) return;
-                isEditing(id)
-              }
-              }
-            >
-              {'💡Remember: '}
-              <ItalicText>
-                {quote && `"${quote}" `}
-                <A target="_blank" href={url}>{author && `-${author}`}</A>
-                <MiniText>{context && ` ${context}`}</MiniText>
-              </ItalicText>
-            </QuoteP>
-          </ContentSection>
-        );
-      }
-      // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
-      case NODE_TYPE_POSTLINK: {
-        const to = node.getIn(['meta', 'to']);
-        const Centered = styled.div`
+        case NODE_TYPE_PRE: {
+          children.push(this.getNextPreTags());
+          continue;
+        }
+        case NODE_TYPE_H1: {
+          children.push((<H1
+            data-type={NODE_TYPE_H1}
+            name={this.current.get('id')}
+            shouldShowPlaceholder={
+              post
+              && post.get('id', 'new') === NEW_POST_URL_ID
+              && this.current === this.getFirstNode()
+              && cleanText(this.current.get('content', '')).length === 0
+            }
+          >
+            {cleanTextOrZeroLengthPlaceholder(this.current.get('content'))}
+          </H1>));
+          this.next();
+          continue;
+        }
+        case NODE_TYPE_H2: {
+          children.push((<H2 data-type={NODE_TYPE_H2}
+                      name={this.current.get('id')}>{cleanTextOrZeroLengthPlaceholder(this.current.get('content'))}</H2>));
+          this.next();
+          continue;
+        }
+        case NODE_TYPE_SPACER: {
+          children.push((<SpacerSection data-type={NODE_TYPE_SPACER} name={this.current.get('id')} contentEditable={false} />));
+          this.next();
+          continue;
+        }
+        case NODE_TYPE_IMAGE: {
+          const meta = this.current.get('meta', Map());
+          const w = meta.get('width');
+          const h = meta.get('height');
+          const urlField = meta.get('url') || '';
+          // construct our url from the hash OR assume 3rd party URL
+          const url = imageUrlIsId(urlField)
+            ? `${process.env.API_URL}/image/${urlField}`
+            : urlField;
+          const rotationDegrees = meta.get('rotationDegrees', 0);
+          let heightOverride;
+          // if the image is rotated left once or right once change the height of the image container
+          // to the width of the image to cover the increased/decreased dimension after CSS transform
+          if (rotationDegrees === 90 || rotationDegrees === 270) {
+            // current max-width of an ImageSection is 1000px...
+            heightOverride = Math.min(w, 1000);
+          }
+          children.push((
+            <ImageSection data-type={NODE_TYPE_IMAGE} name={this.current.get('id')} contentEditable={false}>
+              <Figure heightOverride={heightOverride}>
+                <ImagePlaceholderContainer w={w} h={h}>
+                  <ImagePlaceholderFill w={w} h={h} />
+                  {urlField.length > 0 && (<Img
+                    isEditing={isEditing}
+                    onClick={() => {
+                      if (!isEditing) return;
+                      isEditing(this.current.get('id'))
+                    }}
+                    rotationDegrees={rotationDegrees}
+                    src={url}
+                  />)}
+                </ImagePlaceholderContainer>
+              </Figure>
+              <FigureCaption>{meta.get('caption')}</FigureCaption>
+            </ImageSection>
+          ))
+          this.next();
+          continue;
+        }
+        case NODE_TYPE_QUOTE: {
+          const id = this.current.get('id');
+          const quote = this.current.getIn(['meta', 'quote'], '');
+          const url = this.current.getIn(['meta', 'url'], '');
+          const author = this.current.getIn(['meta', 'author'], '');
+          const context = this.current.getIn(['meta', 'context'], '');
+          children.push((
+            <ContentSection data-type={NODE_TYPE_QUOTE} name={id} contentEditable={false}>
+              <QuoteP
+                isEditing={isEditing}
+                onClick={() => {
+                  if (!isEditing) return;
+                  isEditing(id)
+                }
+                }
+              >
+                {'💡Remember: '}
+                <ItalicText>
+                  {quote && `"${quote}" `}
+                  <A target="_blank" href={url}>{author && `-${author}`}</A>
+                  <MiniText>{context && ` ${context}`}</MiniText>
+                </ItalicText>
+              </QuoteP>
+            </ContentSection>
+          ));
+          this.next();
+          continue;
+        }
+        // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
+        case NODE_TYPE_POSTLINK: {
+          const to = this.current.getIn(['meta', 'to']);
+          const Centered = styled.div`
           text-align: center;
         `;
-        const PLarger = styled(P)`
+          const PLarger = styled(P)`
           font-size: larger;
         `;
-        return (
-          <Centered>
-            <ContentSection>
-              <PLarger><SiteInfo>Thanks for reading</SiteInfo></PLarger>
-            </ContentSection>
-            {to && (
+          children.push((
+            <Centered>
+              <ContentSection>
+                <PLarger><SiteInfo>Thanks for reading</SiteInfo></PLarger>
+              </ContentSection>
+              {to && (
+                <H2>
+                  Next Post 👉 <LinkStyled to={to}>{this.current.get('content')}</LinkStyled>
+                </H2>
+              )}
               <H2>
-                Next Post 👉 <LinkStyled to={to}>{node.get('content')}</LinkStyled>
+                👈 <LinkStyled to="/posts">Back to all Posts</LinkStyled>
               </H2>
-            )}
-            <H2>
-              👈 <LinkStyled to="/posts">Back to all Posts</LinkStyled>
-            </H2>
-          </Centered>
-        );
-      }
-      /**
-       * SECTION TYPES
-       */
-      case NODE_TYPE_ROOT:
-      case NODE_TYPE_CONTENT:
-      case NODE_TYPE_OL: {
-        const StyledComponent = this.getSectionTagFromType();
-        return (
-          <StyledComponent data-type={node.get('type')} name={node.get('id')}>
-            {this.getChildNodes()}
-          </StyledComponent>
-        )
-      }
-      /**
-       * PARAGRAPH TYPES
-       */
-      default: {
-        let StyledComponent;
-        switch (node.get('type')) {
-          case NODE_TYPE_P:
-            StyledComponent = P;
-            break;
-          case NODE_TYPE_LI:
-            StyledComponent = Li;
-            break;
-          default:
-            console.error('Error: Unknown type! ', node.get('type'));
-            return null;
+            </Centered>
+          ));
+          this.next();
+          continue;
         }
-        const selections = node.getIn(['meta', 'selections'], List([Map()]));
-        let children = [];
-        selections.forEach((selection) => {
-          try {
-            const key = getSelectionKey(selection);
-            let selectionJsx = getContentForSelection(node, selection);
-            
-            if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
-              selectionJsx = (<StrikeText key={key}>{selectionJsx}</StrikeText>)
-            }
-            if (selection.get(SELECTION_ACTION_SITEINFO)) {
-              selectionJsx = (<SiteInfo key={key}>{selectionJsx}</SiteInfo>)
-            }
-            if (selection.get(SELECTION_ACTION_ITALIC)) {
-              selectionJsx = (<ItalicText key={key}>{selectionJsx}</ItalicText>)
-            }
-            if (selection.get(SELECTION_ACTION_CODE)) {
-              selectionJsx = (<Code key={key}>{selectionJsx}</Code>)
-            }
-            if (selection.get(SELECTION_ACTION_BOLD)) {
-              selectionJsx = (<BoldText key={key}>{selectionJsx}</BoldText>)
-            }
-            if (selection.get(SELECTION_ACTION_LINK)) {
-              selectionJsx = (<A key={key} href={selection.get('linkUrl')}>{selectionJsx}</A>)
-            }
-            children.push(selectionJsx);
-          } catch (err) {
-            console.warn(err);
-            // selections got corrupt, just display unformatted text
-            children = [node.get('content')];
-          }
-        });
-        return (
-          <StyledComponent data-type={node.get('type')} name={node.get('id')} isEditing={isEditing}>
-            {children}
-          </StyledComponent>
-        )
+        default: {
+          console.error('Error: Unknown type! ', this.current.get('type'));
+        }
       }
     }
+    return (
+      <StyledDiv>{children}</StyledDiv>
+    )
   }
 }
 

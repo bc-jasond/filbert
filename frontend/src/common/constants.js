@@ -1,4 +1,3 @@
-export const NODE_TYPE_ROOT = 'root';
 // sections that can have text content
 export const NODE_TYPE_H1 = 'h1';
 export const NODE_TYPE_H2 = 'h2';
@@ -13,6 +12,7 @@ export const NODE_TYPE_QUOTE = 'quote';
 export const NODE_TYPE_POSTLINK = 'postlink';
 
 // @deprecated sections - presentation layer only, not in the model
+export const NODE_TYPE_ROOT = 'root';
 export const NODE_TYPE_CONTENT = 'content';
 export const NODE_TYPE_CODE = 'codesection';
 export const NODE_TYPE_OL = 'ol';

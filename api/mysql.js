@@ -48,6 +48,17 @@ export async function getNodes(knex, postId) {
   }, {})
 }
 
+export async function getNodesFlat(knex, postId) {
+  const nodesArray = await knex('content_node')
+    .where('post_id', postId);
+  
+  // flat map of nodeId => node
+  return nodesArray.reduce((acc, node) => {
+    acc[node.id] = node;
+    return acc;
+  }, {})
+}
+
 // TODO: 'touch' post on each update/delete of content or publish
 async function markPostUpdated(postId) {}
 
