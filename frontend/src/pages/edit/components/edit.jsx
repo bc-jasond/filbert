@@ -56,7 +56,7 @@ import {
 } from '../../../common/constants';
 import { lineHeight } from "../../../common/css";
 
-import ContentNode from '../../../common/components/document.component';
+import Document from '../../../common/components/document.component';
 import { moveCaret } from '../document-model-helpers/caret';
 import { doDelete } from '../document-model-helpers/delete';
 import DocumentModel from '../document-model';
@@ -93,7 +93,7 @@ export default class EditPost extends React.Component {
     
     this.state = {
       post: Map(),
-      nodesByParentId: Map(),
+      nodesById: Map(),
       shouldShow404: false,
       shouldRedirectToHome: false,
       shouldRedirectToDrafts: false,
@@ -202,7 +202,7 @@ export default class EditPost extends React.Component {
       const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
       this.setState({
         post: fromJS(post),
-        nodesByParentId: this.documentModel.nodesByParentId,
+        nodesById: this.documentModel.nodesByParentId,
         shouldShow404: false
       }, () => {
         const focusNodeId = this.documentModel.getNextFocusNodeId(this.documentModel.rootId);
@@ -212,7 +212,7 @@ export default class EditPost extends React.Component {
       })
     } catch (err) {
       // console.error(err);
-      this.setState({ nodesByParentId: Map(), shouldShow404: true })
+      this.setState({ nodesById: Map(), shouldShow404: true })
     }
   }
   updatePost = (fieldName, value) => {
@@ -304,7 +304,7 @@ export default class EditPost extends React.Component {
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
       this.setState({
-        nodesByParentId: this.documentModel.nodesByParentId,
+        nodesById: this.documentModel.nodesByParentId,
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,
@@ -880,7 +880,7 @@ export default class EditPost extends React.Component {
   render() {
     const {
       post,
-      nodesByParentId,
+      nodesById,
       shouldShow404,
       shouldRedirectToHome,
       shouldRedirectToDrafts,
@@ -909,8 +909,6 @@ export default class EditPost extends React.Component {
     if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
     if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
     
-    const root = this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID, List()).get(0, Map());
-    
     return (
       <React.Fragment>
         <main onMouseUp={this.handleMouseUp}>
@@ -933,7 +931,7 @@ export default class EditPost extends React.Component {
           </Header>
           <HeaderSpacer id="header-spacer" />
           <ArticleStyled>
-            {root.get('id') && (
+            {nodesById.size > 0 && (
               <div id="filbert-edit-container"
                    contentEditable={true}
                    suppressContentEditableWarning={true}
@@ -943,7 +941,7 @@ export default class EditPost extends React.Component {
                    onPaste={this.handlePaste}
                    onCut={this.handleCut}
               >
-                <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
+                <Document nodesById={nodesById} isEditing={this.sectionEdit} />
               </div>
             )}
           </ArticleStyled>
