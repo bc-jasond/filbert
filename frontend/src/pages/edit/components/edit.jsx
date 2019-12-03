@@ -9,7 +9,7 @@ import {
   apiPatch,
   apiPost,
   uploadImage,
-} from '../../common/fetch';
+} from '../../../common/fetch';
 import {
   Article,
   DeletePost,
@@ -22,15 +22,15 @@ import {
   NewPost,
   PublishPost,
   SignedInUser,
-} from '../../common/components/layout-styled-components';
-import Footer from '../footer';
+} from '../../../common/components/layout-styled-components';
+import Footer from '../../footer';
 
-import { getUserName, signout } from '../../common/session';
+import { getUserName, signout } from '../../../common/session';
 import {
   confirmPromise,
   getCanonicalFromTitle,
   imageUrlIsId,
-} from '../../common/utils';
+} from '../../../common/utils';
 import {
   getRange,
   getNodeId,
@@ -38,7 +38,7 @@ import {
   setCaret,
   getHighlightedSelectionOffsets,
   isControlKey,
-} from '../../common/dom';
+} from '../../../common/dom';
 
 import {
   NODE_TYPE_H1,
@@ -53,33 +53,33 @@ import {
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
   POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X, KEYCODE_V,
-} from '../../common/constants';
-import { lineHeight } from "../../common/css";
+} from '../../../common/constants';
+import { lineHeight } from "../../../common/css";
 
-import ContentNode from '../../common/components/content-node.component';
-import { moveCaret } from './document-model-helpers/caret';
-import { doDelete } from './document-model-helpers/delete';
-import DocumentModel from './document-model';
-import { syncFromDom, syncToDom } from './document-model-helpers/dom-sync';
-import { insertSectionHelper } from './document-model-helpers/insert';
-import { doPaste } from './document-model-helpers/paste';
-import { selectionFormatAction } from './document-model-helpers/selection-format-action';
-import { doSplit } from './document-model-helpers/split';
-import UpdateManager from './update-manager';
+import ContentNode from '../../../common/components/document.component';
+import { moveCaret } from '../document-model-helpers/caret';
+import { doDelete } from '../document-model-helpers/delete';
+import DocumentModel from '../document-model';
+import { syncFromDom, syncToDom } from '../document-model-helpers/dom-sync';
+import { insertSectionHelper } from '../document-model-helpers/insert';
+import { doPaste } from '../document-model-helpers/paste';
+import { selectionFormatAction } from '../document-model-helpers/selection-format-action';
+import { doSplit } from '../document-model-helpers/split';
+import UpdateManager from '../update-manager';
 
 import {
   Selection,
   getSelection,
   upsertSelection,
-} from './selection-helpers';
+} from '../selection-helpers';
 
-import InsertSectionMenu from './components/insert-section-menu';
-import EditImageForm from './components/edit-image-form';
-import EditQuoteForm from './components/edit-quote-form';
-import FormatSelectionMenu from './components/format-selection-menu';
-import PublishPostForm from '../../common/components/edit-publish-post-form';
+import InsertSectionMenu from './insert-section-menu';
+import EditImageForm from './edit-image-form';
+import EditQuoteForm from './edit-quote-form';
+import FormatSelectionMenu from './format-selection-menu';
+import PublishPostForm from '../../../common/components/edit-publish-post-form';
 
-import Page404 from '../404';
+import Page404 from '../../404';
 
 const ArticleStyled = styled(Article)`
   @media (max-width: 800px) {

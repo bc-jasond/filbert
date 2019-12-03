@@ -24,7 +24,7 @@ import {
 
 import Page404 from './404';
 
-import ContentNode from '../common/components/content-node.component';
+import Document from '../common/components/document.component';
 
 export default class ViewPost extends React.Component {
   constructor(props) {
@@ -102,7 +102,7 @@ export default class ViewPost extends React.Component {
         <HeaderSpacer />
         <Article>
           {nodesById.size > 0 && (
-            <ContentNode nodesById={nodesById} />
+            <Document nodesById={nodesById} />
           )}
         </Article>
         <Footer />

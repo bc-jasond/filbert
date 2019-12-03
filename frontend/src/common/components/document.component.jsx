@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, Map } from 'immutable';
+import { Map } from 'immutable';
 import styled from 'styled-components';
 import {
   NEW_POST_URL_ID,
@@ -12,12 +12,6 @@ import {
   NODE_TYPE_POSTLINK,
   NODE_TYPE_LI,
   NODE_TYPE_PRE,
-  SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_ITALIC,
-  SELECTION_ACTION_CODE,
-  SELECTION_ACTION_BOLD,
-  SELECTION_ACTION_LINK,
 } from '../constants';
 import {
   H1,
@@ -41,24 +35,15 @@ import {
   Img,
   FigureCaption,
   ImageSection,
-  StrikeText,
-  Code,
-  BoldText,
 } from './shared-styled-components';
 import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
   imageUrlIsId,
 } from '../utils';
-import {
-  getContentForSelection,
-  getSelectionKey,
-} from '../../pages/edit/selection-helpers';
+import { getFormattedSelections } from './render-helpers';
 
-// TODO: is this wrapper div necessary?
-const StyledDiv = styled.div``;
-
-export default class Content extends React.Component {
+export default class Document extends React.Component {
   constructor(props) {
     super(props);
   }
@@ -73,7 +58,7 @@ export default class Content extends React.Component {
     while (this.current.get('type') === NODE_TYPE_P) {
       children.push((
         <P data-type={this.current.get('type')} name={this.current.get('id')}>
-          {this.getFormattedSelections(this.current)}
+          {getFormattedSelections(this.current)}
         </P>
       ))
       this.next()
@@ -88,7 +73,7 @@ export default class Content extends React.Component {
     while (this.current.get('type') === NODE_TYPE_LI) {
       children.push((
         <Li data-type={this.current.get('type')} name={this.current.get('id')}>
-          {this.getFormattedSelections(this.current)}
+          {getFormattedSelections(this.current)}
         </Li>
       ))
       this.next()
@@ -113,7 +98,6 @@ export default class Content extends React.Component {
     return (<ContentSection>{children}</ContentSection>)
   }
   getNextPreTags() {
-    const { nodesById } = this.props;
     const children = [];
     while (this.current.get('type') === NODE_TYPE_PRE) {
       children.push((<Pre key={`${this.current.get('id')}`}
@@ -122,14 +106,6 @@ export default class Content extends React.Component {
       this.next()
     }
     return (<CodeSection>{children}</CodeSection>);
-  }
-  
-  isFirstOfType(nodes, id) {
-  
-  }
-  
-  isLastOfType(nodes, id) {
-  
   }
   
   getFirstNode() {
@@ -147,43 +123,7 @@ export default class Content extends React.Component {
     return nodesById.get(first);
   }
   
-  getFormattedSelections(node) {
-    const selections = node.getIn(['meta', 'selections'], List([Map()]));
-    let children = [];
-    selections.forEach((selection) => {
-      try {
-        const key = getSelectionKey(selection);
-        let selectionJsx = getContentForSelection(node, selection);
-      
-        if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
-          selectionJsx = (<StrikeText key={key}>{selectionJsx}</StrikeText>)
-        }
-        if (selection.get(SELECTION_ACTION_SITEINFO)) {
-          selectionJsx = (<SiteInfo key={key}>{selectionJsx}</SiteInfo>)
-        }
-        if (selection.get(SELECTION_ACTION_ITALIC)) {
-          selectionJsx = (<ItalicText key={key}>{selectionJsx}</ItalicText>)
-        }
-        if (selection.get(SELECTION_ACTION_CODE)) {
-          selectionJsx = (<Code key={key}>{selectionJsx}</Code>)
-        }
-        if (selection.get(SELECTION_ACTION_BOLD)) {
-          selectionJsx = (<BoldText key={key}>{selectionJsx}</BoldText>)
-        }
-        if (selection.get(SELECTION_ACTION_LINK)) {
-          selectionJsx = (<A key={key} href={selection.get('linkUrl')}>{selectionJsx}</A>)
-        }
-        children.push(selectionJsx);
-      } catch (err) {
-        console.warn(err);
-        // selections got corrupt, just display unformatted text
-        children = [node.get('content')];
-      }
-    })
-    return children;
-  }
-  
-  next() {
+  next = () => {
     this.current = this.props.nodesById.get(this.current.get('next_sibling_id')) || Map();
   }
   
@@ -337,7 +277,7 @@ export default class Content extends React.Component {
       }
     }
     return (
-      <StyledDiv>{children}</StyledDiv>
+      <React.Fragment>{children}</React.Fragment>
     )
   }
 }
