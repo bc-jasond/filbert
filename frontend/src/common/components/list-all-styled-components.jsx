@@ -3,11 +3,11 @@ import { darkGrey, grey } from '../css';
 import { sansSerif } from '../fonts.css';
 import { A } from './layout-styled-components';
 import {
-  H2,
+  H2Styled,
   NavButtonMixin,
 } from './shared-styled-components';
 
-export const StyledH2 = styled(H2)`
+export const StyledH2 = styled(H2Styled)`
   margin-left: 0;
   margin-right: 0;
 `;

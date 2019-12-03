@@ -1,15 +1,13 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
-import { apiDelete, apiGet } from '../common/fetch';
-import { confirmPromise } from '../common/utils';
+import { apiGet } from '../common/fetch';
 import { getSession, getUserName, signout } from '../common/session';
 import { reviver } from '../pages/edit/document-model';
 
 import Footer from './footer';
 import {
   Article,
-  DeletePost,
   EditPost,
   Header,
   HeaderContentContainer,
@@ -48,17 +46,6 @@ export default class ViewPost extends React.Component {
     } catch (err) {
       console.error(err);
       this.setState({ pageContent: null, shouldShow404: true })
-    }
-  }
-  
-  deletePost = async () => {
-    const { post } = this.state;
-    try {
-      await confirmPromise(`Delete post ${post.get('title')}?`);
-      await apiDelete(`/post/${post.get('id')}`);
-      this.setState({ shouldRedirectToHome: true });
-    } catch (err) {
-      console.error('Delete post error:', err)
     }
   }
   

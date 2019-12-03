@@ -1,6 +1,5 @@
 import React from 'react';
 import { Map } from 'immutable';
-import styled from 'styled-components';
 import {
   NEW_POST_URL_ID,
   NODE_TYPE_P,
@@ -14,36 +13,28 @@ import {
   NODE_TYPE_PRE,
 } from '../constants';
 import {
-  H1,
-  H2,
   ContentSection,
-  SpacerSection,
   CodeSection,
-  P,
-  QuoteP,
-  Pre,
   Ol,
-  Li,
-  LinkStyled,
   A,
-  ItalicText,
-  MiniText,
-  SiteInfo,
-  Figure,
-  ImagePlaceholderContainer,
-  ImagePlaceholderFill,
-  Img,
-  FigureCaption,
-  ImageSection,
 } from './shared-styled-components';
+import PostLink from './postlink';
+import Quote from './quote';
+import Image from './image';
+import Spacer from './spacer';
+import H2 from './h2';
+import H1 from './h1';
+import Pre from './pre';
+import P from './p';
+import Li from './li';
 import {
   cleanText,
-  cleanTextOrZeroLengthPlaceholder,
-  imageUrlIsId,
 } from '../utils';
-import { getFormattedSelections } from './render-helpers';
+import {
+  getFirstNode,
+} from './render-helpers';
 
-export default class Document extends React.Component {
+export default class Document extends React.PureComponent {
   constructor(props) {
     super(props);
   }
@@ -56,26 +47,19 @@ export default class Document extends React.Component {
     }
     const children = [];
     while (this.current.get('type') === NODE_TYPE_P) {
-      children.push((
-        <P data-type={this.current.get('type')} name={this.current.get('id')}>
-          {getFormattedSelections(this.current)}
-        </P>
-      ))
+      children.push(<P node={this.current} />)
       this.next()
     }
     return children;
   }
+  
   getNextLiTags() {
     if (this.current.get('type') !== NODE_TYPE_LI) {
       return;
     }
     const children = [];
     while (this.current.get('type') === NODE_TYPE_LI) {
-      children.push((
-        <Li data-type={this.current.get('type')} name={this.current.get('id')}>
-          {getFormattedSelections(this.current)}
-        </Li>
-      ))
+      children.push(<Li node={this.current} />)
       this.next()
     }
     return (<Ol>{children}</Ol>);
@@ -97,30 +81,14 @@ export default class Document extends React.Component {
     } while (p || li);
     return (<ContentSection>{children}</ContentSection>)
   }
+  
   getNextPreTags() {
     const children = [];
     while (this.current.get('type') === NODE_TYPE_PRE) {
-      children.push((<Pre key={`${this.current.get('id')}`}
-                          data-type={NODE_TYPE_PRE}
-                          name={`${this.current.get('id')}`}>{cleanTextOrZeroLengthPlaceholder(this.current.get('content'))}</Pre>))
+      children.push(<Pre node={this.current} />)
       this.next()
     }
     return (<CodeSection>{children}</CodeSection>);
-  }
-  
-  getFirstNode() {
-    const { nodesById } = this.props;
-    const idSeen = new Set();
-    const nextSeen = new Set();
-    nodesById.forEach(node => {
-      idSeen.add(node.get('id'));
-      if (node.get('next_sibling_id')) {
-        nextSeen.add(node.get('next_sibling_id'));
-      }
-    })
-    const difference = new Set([...idSeen].filter(id => !nextSeen.has(id)))
-    const [first] = [...difference];
-    return nodesById.get(first);
   }
   
   next = () => {
@@ -128,9 +96,10 @@ export default class Document extends React.Component {
   }
   
   render() {
-    console.debug("ContentNode RENDER", this);
+    console.debug("Document RENDER", this);
     const {
       post,
+      nodesById,
       // this is a callback to the edit page, it passes a nodeId.
       // It's only for image & quote sections.  Maybe it could go?
       // TODO: add currentEditSectionId to show selected state (right now it's just on hover).
@@ -138,143 +107,44 @@ export default class Document extends React.Component {
       isEditing,
     } = this.props;
     const children = [];
-    this.current = this.getFirstNode();
+    this.current = getFirstNode(nodesById);
     while (this.current.get('id')) {
-      switch (this.current.get('type')) {
-        case NODE_TYPE_P:
-        case NODE_TYPE_LI: {
-          children.push(this.getContentSectionTags());
-          continue;
-        }
-        case NODE_TYPE_PRE: {
-          children.push(this.getNextPreTags());
-          continue;
-        }
-        case NODE_TYPE_H1: {
-          children.push((<H1
-            data-type={NODE_TYPE_H1}
-            name={this.current.get('id')}
+      const currentType = this.current.get('type');
+      if (currentType === NODE_TYPE_P
+        || currentType === NODE_TYPE_LI) {
+        children.push(this.getContentSectionTags());
+        continue; // next() already in correct position
+      }
+      else if (currentType === NODE_TYPE_PRE) {
+        children.push(this.getNextPreTags());
+        continue; // next() already in correct position
+      } else if (currentType === NODE_TYPE_H1) {
+        children.push((
+          <H1
+            node={this.current}
             shouldShowPlaceholder={
               post
-              && post.get('id', 'new') === NEW_POST_URL_ID
-              && this.current === this.getFirstNode()
+              && post.get('id', NEW_POST_URL_ID) === NEW_POST_URL_ID
+              && this.current === getFirstNode(nodesById)
               && cleanText(this.current.get('content', '')).length === 0
             }
-          >
-            {cleanTextOrZeroLengthPlaceholder(this.current.get('content'))}
-          </H1>));
-          this.next();
-          continue;
-        }
-        case NODE_TYPE_H2: {
-          children.push((<H2 data-type={NODE_TYPE_H2}
-                      name={this.current.get('id')}>{cleanTextOrZeroLengthPlaceholder(this.current.get('content'))}</H2>));
-          this.next();
-          continue;
-        }
-        case NODE_TYPE_SPACER: {
-          children.push((<SpacerSection data-type={NODE_TYPE_SPACER} name={this.current.get('id')} contentEditable={false} />));
-          this.next();
-          continue;
-        }
-        case NODE_TYPE_IMAGE: {
-          const meta = this.current.get('meta', Map());
-          const w = meta.get('width');
-          const h = meta.get('height');
-          const urlField = meta.get('url') || '';
-          // construct our url from the hash OR assume 3rd party URL
-          const url = imageUrlIsId(urlField)
-            ? `${process.env.API_URL}/image/${urlField}`
-            : urlField;
-          const rotationDegrees = meta.get('rotationDegrees', 0);
-          let heightOverride;
-          // if the image is rotated left once or right once change the height of the image container
-          // to the width of the image to cover the increased/decreased dimension after CSS transform
-          if (rotationDegrees === 90 || rotationDegrees === 270) {
-            // current max-width of an ImageSection is 1000px...
-            heightOverride = Math.min(w, 1000);
-          }
-          children.push((
-            <ImageSection data-type={NODE_TYPE_IMAGE} name={this.current.get('id')} contentEditable={false}>
-              <Figure heightOverride={heightOverride}>
-                <ImagePlaceholderContainer w={w} h={h}>
-                  <ImagePlaceholderFill w={w} h={h} />
-                  {urlField.length > 0 && (<Img
-                    isEditing={isEditing}
-                    onClick={() => {
-                      if (!isEditing) return;
-                      isEditing(this.current.get('id'))
-                    }}
-                    rotationDegrees={rotationDegrees}
-                    src={url}
-                  />)}
-                </ImagePlaceholderContainer>
-              </Figure>
-              <FigureCaption>{meta.get('caption')}</FigureCaption>
-            </ImageSection>
-          ))
-          this.next();
-          continue;
-        }
-        case NODE_TYPE_QUOTE: {
-          const id = this.current.get('id');
-          const quote = this.current.getIn(['meta', 'quote'], '');
-          const url = this.current.getIn(['meta', 'url'], '');
-          const author = this.current.getIn(['meta', 'author'], '');
-          const context = this.current.getIn(['meta', 'context'], '');
-          children.push((
-            <ContentSection data-type={NODE_TYPE_QUOTE} name={id} contentEditable={false}>
-              <QuoteP
-                isEditing={isEditing}
-                onClick={() => {
-                  if (!isEditing) return;
-                  isEditing(id)
-                }
-                }
-              >
-                {'💡Remember: '}
-                <ItalicText>
-                  {quote && `"${quote}" `}
-                  <A target="_blank" href={url}>{author && `-${author}`}</A>
-                  <MiniText>{context && ` ${context}`}</MiniText>
-                </ItalicText>
-              </QuoteP>
-            </ContentSection>
-          ));
-          this.next();
-          continue;
-        }
-        // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
-        case NODE_TYPE_POSTLINK: {
-          const to = this.current.getIn(['meta', 'to']);
-          const Centered = styled.div`
-          text-align: center;
-        `;
-          const PLarger = styled(P)`
-          font-size: larger;
-        `;
-          children.push((
-            <Centered>
-              <ContentSection>
-                <PLarger><SiteInfo>Thanks for reading</SiteInfo></PLarger>
-              </ContentSection>
-              {to && (
-                <H2>
-                  Next Post 👉 <LinkStyled to={to}>{this.current.get('content')}</LinkStyled>
-                </H2>
-              )}
-              <H2>
-                👈 <LinkStyled to="/posts">Back to all Posts</LinkStyled>
-              </H2>
-            </Centered>
-          ));
-          this.next();
-          continue;
-        }
-        default: {
-          console.error('Error: Unknown type! ', this.current.get('type'));
-        }
+          />));
+      } else if (currentType === NODE_TYPE_H2) {
+        children.push(<H2 node={this.current} />);
+      } else if (currentType === NODE_TYPE_SPACER) {
+        children.push(<Spacer node={this.current} isEditing={isEditing} />);
+      } else if (currentType === NODE_TYPE_IMAGE) {
+        children.push(<Image node={this.current} isEditing={isEditing} />)
+      } else if (currentType === NODE_TYPE_QUOTE) {
+        children.push(<Quote node={this.current} isEditing={isEditing} />);
       }
+      // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
+      else if (currentType === NODE_TYPE_POSTLINK) {
+        children.push(<PostLink node={this.current} />);
+      } else {
+        console.error('Error: Unknown type! ', this.current.get('type'));
+      }
+      this.next();
     }
     return (
       <React.Fragment>{children}</React.Fragment>

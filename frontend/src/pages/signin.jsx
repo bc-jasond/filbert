@@ -5,7 +5,6 @@ import { Link, Redirect } from 'react-router-dom';
 import { signin } from '../common/session';
 
 import {
-  H1,
   H3,
   A,
   InputContainer,
@@ -16,7 +15,7 @@ import {
   MessageContainer,
   Button,
   ButtonSpan,
-  CancelButton,
+  CancelButton, H1Styled,
 } from '../common/components/shared-styled-components';
 import {
   LogoLinkStyled,
@@ -97,7 +96,7 @@ export default class SignIn extends React.Component {
       <Container>
         <SignInForm onSubmit={this.doLogin}>
           <StyledLinkStyled to="/">✍️ filbert</StyledLinkStyled>
-          <H1>Sign In</H1>
+          <H1Styled>Sign In</H1Styled>
           <H3>Want an account? <StyledA onClick={() => alert('Coming soon!')}>Click here</StyledA></H3>
           <InputContainer>
             <Label htmlFor="username" error={error}>Username</Label>

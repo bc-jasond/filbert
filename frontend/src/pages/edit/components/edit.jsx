@@ -48,7 +48,6 @@ import {
   KEYCODE_BACKSPACE,
   KEYCODE_ESC,
   NEW_POST_URL_ID,
-  ROOT_NODE_PARENT_ID,
   NODE_TYPE_P,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
@@ -201,8 +200,8 @@ export default class EditPost extends React.Component {
       this.documentModel.init(post, this.updateManager, contentNodes);
       const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
       this.setState({
-        post: fromJS(post),
-        nodesById: this.documentModel.nodesByParentId,
+        post: this.documentModel.post,
+        nodesById: this.documentModel.nodesById,
         shouldShow404: false
       }, () => {
         const focusNodeId = this.documentModel.getNextFocusNodeId(this.documentModel.rootId);
@@ -304,7 +303,7 @@ export default class EditPost extends React.Component {
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
       this.setState({
-        nodesById: this.documentModel.nodesByParentId,
+        nodesById: this.documentModel.nodesById,
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,

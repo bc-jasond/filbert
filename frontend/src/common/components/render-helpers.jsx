@@ -52,3 +52,17 @@ export function getFormattedSelections(node) {
   })
   return children;
 }
+
+export function getFirstNode(nodesById) {
+  const idSeen = new Set();
+  const nextSeen = new Set();
+  nodesById.forEach(node => {
+    idSeen.add(node.get('id'));
+    if (node.get('next_sibling_id')) {
+      nextSeen.add(node.get('next_sibling_id'));
+    }
+  })
+  const difference = new Set([...idSeen].filter(id => !nextSeen.has(id)))
+  const [firstId] = [...difference];
+  return nodesById.get(firstId);
+}
