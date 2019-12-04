@@ -353,7 +353,7 @@ export const NavButtonMixin = css`
 `;
 
 // LIL BLACK FORMS with ICONS
-export const LilBlackMenu = styled.div`
+export const LilSassyMenu = styled.div`
   position: absolute;
   transition: .1s top;
   top: ${p => p.top}px;

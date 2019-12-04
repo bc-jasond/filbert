@@ -9,7 +9,7 @@ import { getNodeId, getNodeType } from '../../../common/dom';
 import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
 import { handleEnterCode } from './by-section-type/handle-code';
 import { handleEnterList } from './by-section-type/handle-list';
-import { handleEnterParagraph } from './by-section-type/handle-paragraph';
+import { handleEnterTextType } from './by-section-type/handle-paragraph';
 import { handleEnterTitle } from './by-section-type/handle-title';
 
 /**
@@ -20,33 +20,16 @@ export function doSplit(documentModel, selectionOffsets) {
     [caretPosition, _, selectedNode],
   ] = selectionOffsets;
   const selectedNodeId = getNodeId(selectedNode);
-  const selectedNodeType = getNodeType(selectedNode);
   if (selectedNodeId === 'null' || !selectedNodeId) {
     console.warn('doSplit() bad selection, no id ', selectedNode);
     return;
+  }
+  if (documentModel.isMetaType(selectedNodeId)) {
+    console.info("doSplit() TODO: support MetaType sections")
   }
   
   console.info('doSplit()', selectedNode, caretPosition);
   // split selectedNodeContent at caret
   const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
-  
-  switch (selectedNodeType) {
-    case NODE_TYPE_PRE: {
-      return handleEnterCode(documentModel, selectedNodeId, caretPosition, selectedNodeContent);
-    }
-    case NODE_TYPE_LI: {
-      return handleEnterList(documentModel, selectedNodeId, caretPosition, selectedNodeContent);
-    }
-    case NODE_TYPE_P: {
-      return handleEnterParagraph(documentModel, selectedNodeId, caretPosition, selectedNodeContent);
-    }
-    case NODE_TYPE_H1: // fall-through
-    case NODE_TYPE_H2: {
-      return handleEnterTitle(documentModel, selectedNodeId, caretPosition, selectedNodeContent);
-    }
-    default: {
-      console.error("Can't handle ENTER!", selectedNodeType);
-      return;
-    }
-  }
+  return handleEnterTextType(documentModel, selectedNodeId, caretPosition, selectedNodeContent);
 }

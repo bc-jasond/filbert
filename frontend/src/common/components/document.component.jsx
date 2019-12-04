@@ -43,7 +43,7 @@ export default class Document extends React.PureComponent {
     }
     const children = [];
     while (this.current.get('type') === NODE_TYPE_P) {
-      children.push(<P node={this.current} />)
+      children.push(<P key={this.current.get('id')} node={this.current} />)
       this.next()
     }
     return children;
@@ -55,7 +55,7 @@ export default class Document extends React.PureComponent {
     }
     const children = [];
     while (this.current.get('type') === NODE_TYPE_LI) {
-      children.push(<Li node={this.current} />)
+      children.push(<Li key={this.current.get('id')} node={this.current} />)
       this.next()
     }
     return (<Ol>{children}</Ol>);

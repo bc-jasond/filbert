@@ -1,13 +1,13 @@
 import { Map } from 'immutable';
 import {
-  NODE_TYPE_LI, NODE_TYPE_P,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
+  NODE_TYPE_P,
   SELECTION_ACTION_H1,
-  SELECTION_ACTION_H2, SELECTION_ACTION_ITALIC, SELECTION_ACTION_LINK, SELECTION_ACTION_SITEINFO, SELECTION_LINK_URL
+  SELECTION_ACTION_H2,
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_LINK, SELECTION_ACTION_SITEINFO, SELECTION_LINK_URL
 } from '../../../common/constants';
-import { splitListReplaceListItemWithSection } from './by-section-type/handle-list';
-import { paragraphToTitle, titleToParagraph } from './by-section-type/handle-paragraph';
 import { Selection, upsertSelection } from '../selection-helpers';
 
 export function selectionFormatAction(documentModel, node, selection, action) {
@@ -15,24 +15,15 @@ export function selectionFormatAction(documentModel, node, selection, action) {
   
   console.info('HANDLE SELECTION ACTION: ', action, selection.toJS());
   
-  if ([SELECTION_ACTION_H1, SELECTION_ACTION_H2].includes(action)) {
-    const sectionType = action === SELECTION_ACTION_H1 ? NODE_TYPE_H1 : NODE_TYPE_H2;
-    const selectedNodeId = node.get('id');
-    let focusNodeId;
-    // list item -> H1 or H2
-    if (node.get('type') === NODE_TYPE_LI) {
-      focusNodeId = splitListReplaceListItemWithSection(documentModel, selectedNodeId, sectionType);
-    } else if (node.get('type') === NODE_TYPE_P) {
-      // paragraph -> H1 or H2
-      focusNodeId = paragraphToTitle(documentModel, selectedNodeId, sectionType);
-    } else if (node.get('type') === sectionType) {
-      // H1 or H2 -> paragraph
-      focusNodeId = titleToParagraph(documentModel, selectedNodeId);
-    } else {
-      // H1 -> H2 or H2 -> H1
-      focusNodeId = documentModel.update(node.set('type', sectionType));
-    }
-    return [focusNodeId, Map(), Selection()];
+  let newSectionType;
+  if (action === SELECTION_ACTION_H1) {
+    newSectionType = node.get('type') === NODE_TYPE_H1 ? NODE_TYPE_P : NODE_TYPE_H1;
+  } else if (action === SELECTION_ACTION_H2) {
+    newSectionType = node.get('type') === NODE_TYPE_H2 ? NODE_TYPE_P : NODE_TYPE_H2;
+  }
+  if (newSectionType) {
+    documentModel.update(node.set('type', newSectionType));
+    return [node.get('id'), Map(), Selection()];
   }
   
   let updatedSelectionModel = selection.set(action, !previousActionValue);

@@ -4,6 +4,7 @@ require = require('esm')(module/*, options*/);
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const figlet = require('figlet');
 const storage = multer.memoryStorage();
 const upload = multer({
   storage, // TODO: store in memory as Buffer - bad idea?
@@ -28,6 +29,13 @@ const { encrypt, decrypt, getChecksum } = require('./cipher');
 
 async function main() {
   try {
+    console.info(
+      figlet.textSync(
+        'filbert',
+        {
+          //font: 'Doh',
+        })
+    )
     const knex = await getKnex();
     
     const app = express();
@@ -448,7 +456,7 @@ async function main() {
     })
     
     app.listen(3001)
-    
+    console.info("Filbert API Started 👍")
   } catch (err) {
     console.error('main() error: ', err);
   }

@@ -77,13 +77,19 @@ export default class SignIn extends React.Component {
     try {
       const { username, password } = this.state;
       await signin(username, password);
-      this.setState({ success: 'All set 👍' })
+      this.setState({
+        error: null,
+        success: 'All set 👍',
+      })
       setTimeout(() => {
         this.setState({ shouldRedirect: true });
       }, 500)
     } catch (error) {
       console.error('Login Error: ', error);
-      this.setState({ error })
+      this.setState({
+        error,
+        success: null,
+      })
     }
   }
   

@@ -66,11 +66,10 @@ export async function bulkContentNodeUpsert(records) {
   if (records.length === 0) return;
   const knexInstance = await getKnex();
   const query = `
-    INSERT INTO content_node (post_id, id, parent_id, position, type, content, meta) VALUES
+    INSERT INTO content_node (post_id, id, next_sibling_id, type, content, meta) VALUES
     ${records.map(() => '(?)').join(',')}
     ON DUPLICATE KEY UPDATE
-    parent_id = VALUES(parent_id),
-    position = VALUES(position),
+    next_sibling_id = VALUES(next_sibling_id),
     type = VALUES(type),
     content = VALUES(content),
     meta = VALUES(meta)`;
@@ -83,8 +82,7 @@ export async function bulkContentNodeUpsert(records) {
       post_id,
       nodeId,
       // HACK: 'null' string for root node
-      node.parent_id !== 'null' ? node.parent_id : null,
-      node.position,
+      node.next_sibling_id !== 'null' ? node.next_sibling_id : null,
       node.type,
       node.content || '',
       JSON.stringify(node.meta || {}),
@@ -101,10 +99,7 @@ export async function bulkContentNodeDelete(records) {
   const recordIds = records.map(r => r[0]);
   const knexInstance = await getKnex();
   return knexInstance('content_node')
-    .where('post_id', postId)
-    .andWhere(builder => builder
-      .whereIn('id', recordIds)
-      .orWhereIn('parent_id', recordIds)
-    )
+    .whereIn('id', recordIds)
+    .andWhere('post_id', postId)
     .del();
 }

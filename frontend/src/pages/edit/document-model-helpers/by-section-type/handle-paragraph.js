@@ -5,88 +5,54 @@ import {
   NODE_TYPE_P, NODE_TYPE_CODE, NODE_TYPE_CONTENT,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
-  NODE_TYPE_SPACER
+  NODE_TYPE_SPACER, NODE_TYPE_LI
 } from '../../../../common/constants';
+import { cleanText } from '../../../../common/utils';
 import {
   adjustSelectionOffsetsAndCleanup,
   formatSelections,
   splitSelectionsAtCaretOffset
 } from '../../selection-helpers';
 
-export function handleBackspaceParagraph(documentModel, selectedNodeId) {
-  const selectedSection = documentModel.getSection(selectedNodeId);
-  const selectedNode = documentModel.getNode(selectedNodeId);
-  const wasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
-  let prevSection;
-  if (documentModel.isFirstChild(selectedNodeId)) {
-    prevSection = documentModel.getPrevSibling(selectedSection.get('id'));
-    // delete a spacer?
-    if (prevSection.get('type') === NODE_TYPE_SPACER) {
-      const spacerSectionId = prevSection.get('id');
-      prevSection = documentModel.getPrevSibling(spacerSectionId);
-      documentModel.delete(spacerSectionId);
-    }
-    
-    switch (prevSection.get('type')) {
-      case NODE_TYPE_H1:
-      case NODE_TYPE_H2: {
-        documentModel.update(prevSection.set('content', `${prevSection.get('content')}${selectedNode.get('content')}`));
-        documentModel.delete(selectedNodeId);
-        if (wasOnlyChild) {
-          documentModel.delete(selectedSection.get('id'));
-        }
-        return [prevSection.get('id'), prevSection.get('content').length];
-      }
-      case NODE_TYPE_CONTENT: {
-        // TODO: merge CONTENT sections
-        let lastChild = documentModel.getLastChild(prevSection.get('id'));
-        if (lastChild.get('type') === NODE_TYPE_OL) {
-          // get last LI
-          lastChild = documentModel.getLastChild(lastChild.get('id'));
-        }
-        // lastChild must be P
-        documentModel.mergeParagraphs(lastChild.get('id'), selectedNodeId);
-        documentModel.mergeSections(prevSection, selectedSection);
-        return [lastChild.get('id'), lastChild.get('content').length];
-      }
-      case NODE_TYPE_CODE: {
-        const lines = prevSection.getIn(['meta', 'lines'], List());
-        const lastLine = lines.last();
-        
-        documentModel.update(
-          prevSection.setIn(
-            ['meta', 'lines'],
-            lines
-              .pop()
-              .push(`${lastLine}${selectedNode.get('content')}`)
-          )
-        );
-        documentModel.delete(selectedNodeId);
-        if (wasOnlyChild) {
-          documentModel.delete(selectedSection.get('id'));
-        }
-        return [`${prevSection.get('id')}-${lines.size - 1}`, lastLine.length];
-      }
+export function handleBackspaceTextType(documentModel, selectedNodeId) {
+  let prevNode = documentModel.getPrevNode(selectedNodeId);
+  // if at beginning of first node, nothing to do
+  if (!prevNode.get('id')) {
+    return;
+  }
+  // delete a spacer?
+  if (prevNode.get('type') === NODE_TYPE_SPACER) {
+    documentModel.delete(prevNode.get('id'));
+    prevNode = documentModel.getPrevNode(selectedNodeId);
+    // might have had a spacer as a first section
+    if (!prevNode.get('id')) {
+      return;
     }
   }
-  // merge Ps within the same CONTENT section
-  let prevSibling = documentModel.getPrevSibling(selectedNodeId);
-  if (prevSibling.get('type') === NODE_TYPE_OL) {
-    prevSibling = documentModel.getLastChild(prevSibling.get('id'));
-  }
-  documentModel.mergeParagraphs(prevSibling.get('id'), selectedNodeId);
-  return [prevSibling.get('id'), prevSibling.get('content').length];
+  // optionally handles Selections
+  documentModel.mergeParagraphs(prevNode.get('id'), selectedNodeId)
+  return [prevNode.get('id'), prevNode.get('content').length];
 }
 
-export function handleEnterParagraph(documentModel, selectedNodeId, caretPosition, content) {
+export function handleEnterTextType(documentModel, selectedNodeId, caretPosition, content) {
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
-  const rightNodeId = documentModel.insertSubSectionAfter(selectedNodeId, NODE_TYPE_P, contentRight);
+  let selectedNodeType = documentModel.getNode(selectedNodeId).get('type');
+  // break out of list if user hits enter on empty last list item
+  if (documentModel.isLastOfType(selectedNodeId, NODE_TYPE_LI)
+    && cleanText(contentLeft).length === 0
+    && cleanText(contentRight).length === 0) {
+    // convert this LI to a P
+    return documentModel.update(documentModel.getNode(selectedNodeId).set('type', NODE_TYPE_P))
+  }
   
+  const rightNodeId = documentModel.insert(selectedNodeType, selectedNodeId, contentRight);
   let leftNode = documentModel.getNode(selectedNodeId).set('content', contentLeft);
   let rightNode = documentModel.getNode(rightNodeId);
-  [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
-  console.info('ENTER "paragraph" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', formatSelections(leftNode), 'right selections: ', formatSelections(rightNode));
+  if (documentModel.canHaveSelections(selectedNodeId)) {
+    [leftNode, rightNode] = splitSelectionsAtCaretOffset(leftNode, rightNode, caretPosition);
+  }
+  console.info('ENTER "TextType" content left: ', contentLeft, 'content right: ', contentRight, 'left selections: ', formatSelections(leftNode), 'right selections: ', formatSelections(rightNode));
   documentModel.update(leftNode);
   documentModel.update(rightNode);
   return rightNodeId;
@@ -125,7 +91,7 @@ export function paragraphToTitle(documentModel, selectedNodeId, sectionType) {
   return documentModel.insertSection(sectionType, sectionIdx + sectionOffset, content);
 }
 
-export function handlePasteParagraph(documentModel, selectedNodeId, caretPosition, clipboardText) {
+export function handlePasteTextType(documentModel, selectedNodeId, caretPosition, clipboardText) {
   let selectedNode = documentModel.getNode(selectedNodeId);
   const content = selectedNode.get('content') || '';
   const contentLeft = content.substring(0, caretPosition);

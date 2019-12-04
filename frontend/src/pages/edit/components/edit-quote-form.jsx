@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import {
   SvgIconMixin,
-  LilBlackMenu,
+  LilSassyMenu,
   IconButton,
   ButtonSeparator,
   PointClip,
@@ -16,7 +16,7 @@ const IconTrash = styled(IconTrashSvg)`
   ${SvgIconMixin};
 `;
 
-const EditImageMenu = styled(LilBlackMenu)`
+const EditImageMenu = styled(LilSassyMenu)`
   display: flex;
   flex-direction: column;
   justify-items: center;

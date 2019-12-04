@@ -70,14 +70,15 @@ export default class DocumentModel {
     this.updateManager = updateManager;
     if (jsonData) {
       this.nodesById = Immutable.fromJS(jsonData, reviver);
-      return;
+      return DocumentModel.getLastNode(this.nodesById).get('id');
     }
-    this.clearNodesAndSetTitlePlaceholder();
+    return this.clearNodesAndSetTitlePlaceholder();
   }
   
   clearNodesAndSetTitlePlaceholder() {
     const newTitle = getMapWithId({ type: NODE_TYPE_H1 });
     this.nodesById = Map().set(newTitle.get('id'), newTitle);
+    return newTitle.get('id');
   }
   
   getMapWithId(obj) {
@@ -96,7 +97,7 @@ export default class DocumentModel {
   getPrevNode(nodeId) {
     return this.nodesById
       .filter(n => n.get('next_sibling_id') === nodeId)
-      .first();
+      .first(Map())
   }
   getNextNode(nodeId) {
     return this.getNode(this.getNode(nodeId).get('next_sibling_id'));
@@ -144,12 +145,14 @@ export default class DocumentModel {
     let left = this.getNode(leftId);
     const right = this.getNode(rightId);
     left = left.set('content', `${left.get('content', '')}${right.get('content', '')}`);
-    left = concatSelections(left, right);
+    if (this.canHaveSelections(leftId)) {
+      left = concatSelections(left, right);
+    }
     this.update(left);
     this.delete(rightId);
   }
   
-  insert(type, neighborNodeId, content = '', meta = Map(), shouldInsertBefore = true) {
+  insert(type, neighborNodeId, content = '', meta = Map(), shouldInsertAfter = true) {
     let neighbor = this.getNode(neighborNodeId);
     if (!neighbor.get('id')) {
       throw new Error(`DocumentModel.insert() - bad neighbor id! ${neighborNodeId}`)
@@ -159,20 +162,20 @@ export default class DocumentModel {
       content: cleanText(content),
       meta,
     });
-    if (shouldInsertBefore) {
-      const oldNeighborPrev = this.getPrevNode(neighborNodeId);
-      if (oldNeighborPrev.get('id')) {
-        this.update(oldNeighborPrev.set('next_sibling_id', newNode.get('id')))
-      }
-      this.update(newNode.set('next_sibling_id', neighborNodeId))
-    }
-    // insert after
-    else {
+    if (shouldInsertAfter) {
       const oldNeighborNext = this.getNextNode(neighborNodeId);
       if (oldNeighborNext.get('id')) {
         this.update(newNode.set('next_sibling_id', oldNeighborNext.get('id')))
       }
       this.update(neighbor.set('next_sibling_id', newNode.get('id')))
+    }
+    // insert before
+    else {
+      const oldNeighborPrev = this.getPrevNode(neighborNodeId);
+      if (oldNeighborPrev.get('id')) {
+        this.update(oldNeighborPrev.set('next_sibling_id', newNode.get('id')))
+      }
+      this.update(newNode.set('next_sibling_id', neighborNodeId))
     }
     return newNode.get('id');
   }
@@ -203,7 +206,7 @@ export default class DocumentModel {
     else if (!nextNode.get('id')) {
       this.update(prevNode.delete('next_sibling_id'))
     }
-    // deleting first node - noop
+    // else - deleting first node - noop
   }
   
   // TODO: need a way to focus "terminal" sections like IMAGE, SPACER, QUOTE

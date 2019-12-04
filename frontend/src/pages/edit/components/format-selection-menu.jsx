@@ -15,7 +15,7 @@ import {
 } from '../../../common/constants';
 import {
   SvgIconMixin,
-  LilBlackMenu,
+  LilSassyMenu,
   IconButton,
   DarkInput,
   ButtonSeparator,
@@ -57,7 +57,7 @@ const IconH2 = styled(IconH2Svg)`
   ${SvgIconMixin};
 `;
 
-export const FormatSelectionMenu = styled(LilBlackMenu)`
+export const FormatSelectionMenu = styled(LilSassyMenu)`
   top: ${p => p.top - (p.shouldShowUrl ? 30 : 0)}px;
   left: ${p => p.left - 165}px; // 165 is half the width of the menu
 `;

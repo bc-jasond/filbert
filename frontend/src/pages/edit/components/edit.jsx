@@ -37,7 +37,7 @@ import {
   getFirstHeadingContent,
   setCaret,
   getHighlightedSelectionOffsets,
-  isControlKey,
+  isControlKey, getNodeType,
 } from '../../../common/dom';
 
 import {
@@ -174,9 +174,7 @@ export default class EditPost extends React.Component {
     console.debug("New PostNew PostNew PostNew PostNew PostNew Post");
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
     this.updateManager.init(postPlaceholder);
-    this.documentModel.init(postPlaceholder, this.updateManager);
-    this.updateManager.stageNodeUpdate(this.documentModel.rootId);
-    const focusNodeId = this.documentModel.insertSection(NODE_TYPE_H1, 0);
+    const focusNodeId = this.documentModel.init(postPlaceholder, this.updateManager);
     this.setState({ post: Map() });
     this.commitUpdates(focusNodeId);
   }
@@ -197,13 +195,13 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.match.params.id}`);
       this.updateManager.init(post);
-      this.documentModel.init(post, this.updateManager, contentNodes);
+      const lastNodeId = this.documentModel.init(post, this.updateManager, contentNodes);
       this.setState({
         post: this.documentModel.post,
         nodesById: this.documentModel.nodesById,
         shouldShow404: false
       }, () => {
-        setCaret(DocumentModel.getLastNode(this.documentModel.nodesById).get('id'), -1, true);
+        setCaret(lastNodeId, -1, true);
         this.manageInsertMenu();
         window.scrollTo(0, 0);
       })
@@ -806,7 +804,16 @@ export default class EditPost extends React.Component {
       middle,
       end,
     ] = selectionOffsets;
-    if (!selectedNode || startOffset === endOffset || isEscKey) {
+    if (
+      // no node
+      !selectedNode
+      // collapsed caret
+      || startOffset === endOffset
+      // hit esc
+      || isEscKey
+      // can't have Selections
+      || !this.documentModel.canHaveSelections(getNodeId(selectedNode))
+    ) {
       this.setState({
         formatSelectionNode: Map(),
         formatSelectionModel: Selection(),
@@ -826,7 +833,7 @@ export default class EditPost extends React.Component {
     const rect = range.getBoundingClientRect();
     const selectedNodeId = getNodeId(selectedNode);
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
-    // Top Offset (from top of document) - needs a heuristic, or I'm missing an API!
+    // Top Offset (from top of document) - needs a heuristic, or I'm missing an API!  do this with rems?
     // start with the top offset of the paragraph
     const paragraphTop = selectedNode.offsetTop;
     // get a percentage of where the start of the selection is relative to the length of the content
@@ -838,6 +845,7 @@ export default class EditPost extends React.Component {
     let fueraDeControlCounter = 1000;
     while (true) {
       if (fueraDeControlCounter === 0) {
+        console.warn("manageFormatSelectionMenu is ¡Fuera de Control!");
         break;
       }
       fueraDeControlCounter -= 1;
