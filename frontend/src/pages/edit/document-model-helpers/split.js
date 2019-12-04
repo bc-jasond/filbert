@@ -1,16 +1,6 @@
-import {
-  NODE_TYPE_LI,
-  NODE_TYPE_P,
-  NODE_TYPE_PRE,
-  NODE_TYPE_H1,
-  NODE_TYPE_H2
-} from '../../../common/constants';
-import { getNodeId, getNodeType } from '../../../common/dom';
+import { getNodeId } from '../../../common/dom';
 import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
-import { handleEnterCode } from './by-section-type/handle-code';
-import { handleEnterList } from './by-section-type/handle-list';
 import { handleEnterTextType } from './handle-text-type';
-import { handleEnterTitle } from './by-section-type/handle-title';
 
 /**
  * @returns focusNodeId|undefined string i.e. "4eb7"

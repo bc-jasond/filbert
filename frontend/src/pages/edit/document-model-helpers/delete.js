@@ -1,17 +1,6 @@
-import { List} from 'immutable';
-import {
-  NODE_TYPE_LI,
-  NODE_TYPE_P,
-  NODE_TYPE_PRE, NODE_TYPE_CODE,
-  NODE_TYPE_H1,
-  NODE_TYPE_H2
-} from '../../../common/constants';
 import { getNodeId } from '../../../common/dom';
 import { deleteContentRange } from '../../../common/utils';
-import { handleBackspaceCode, handleBackspaceCodeStructuralChange } from './by-section-type/handle-code';
-import { handleBackspaceList } from './by-section-type/handle-list';
 import { handleBackspaceTextType } from './handle-text-type';
-import { handleBackspaceTitle } from './by-section-type/handle-title';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
 /**

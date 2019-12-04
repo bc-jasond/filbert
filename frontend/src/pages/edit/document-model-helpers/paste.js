@@ -1,6 +1,4 @@
-import { NODE_TYPE_LI, NODE_TYPE_P, NODE_TYPE_PRE } from '../../../common/constants';
-import { getNodeId, getNodeType } from '../../../common/dom';
-import { handlePasteCode } from './by-section-type/handle-code';
+import { getNodeId } from '../../../common/dom';
 import { handlePasteTextType } from './handle-text-type';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
@@ -11,31 +9,14 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   if (!selectedNode) {
     return [];
   }
-  const selectedNodeType = getNodeType(selectedNode);
   const selectedNodeId = getNodeId(selectedNode);
   
   // split selectedNodeContent at caret
   const clipboardText = clipboardData.getData('text/plain');
   
-  let focusNodeId;
-  let focusIdx = caretPositionStart;
-  switch (selectedNodeType) {
-    case NODE_TYPE_PRE: {
-      [
-        focusNodeId,
-        focusIdx,
-      ] = handlePasteCode(documentModel, selectedNodeId, caretPositionStart, clipboardText);
-      break;
-    }
-    case NODE_TYPE_LI: // fall-through
-    case NODE_TYPE_P: {
-      [
-        focusNodeId,
-        focusIdx,
-      ] = handlePasteTextType(documentModel, selectedNodeId, caretPositionStart, clipboardText);
-    }
-    default: { /*NOOP*/
-    }
+  if (!documentModel.isTextType(selectedNodeId)) {
+    console.warn("doPaste() - trying to paste into a MetaType node is not supported", selectionOffsets, clipboardData)
+    return;
   }
-  return [focusNodeId, focusIdx];
+  return handlePasteTextType(documentModel, selectedNodeId, caretPositionStart, clipboardText);
 }

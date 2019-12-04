@@ -9,7 +9,7 @@ import {
   NODE_TYPE_SPACER,
   NODE_TYPE_POSTLINK,
   NODE_TYPE_LI,
-  NODE_TYPE_PRE,
+  NODE_TYPE_PRE, NODE_TYPE_ROOT,
 } from '../constants';
 import {
   ContentSection,
@@ -139,7 +139,7 @@ export default class Document extends React.PureComponent {
       this.next();
     }
     return (
-      <React.Fragment>{children}</React.Fragment>
+      <div data-type={NODE_TYPE_ROOT}>{children}</div>
     )
   }
 }

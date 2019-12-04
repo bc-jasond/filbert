@@ -1,12 +1,8 @@
-import Immutable, { isKeyed, List, Map } from 'immutable';
-import pre from '../../common/components/pre';
+import Immutable, { isKeyed, Map } from 'immutable';
 
 import {
   NEW_POST_URL_ID,
   NODE_TYPE_P,
-  NODE_TYPE_ROOT,
-  NODE_TYPE_CODE,
-  NODE_TYPE_CONTENT,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
@@ -14,9 +10,9 @@ import {
   NODE_TYPE_QUOTE,
   NODE_TYPE_SPACER,
   NODE_TYPE_LI,
-  NODE_TYPE_OL,
   NODE_TYPE_PRE,
-  ROOT_NODE_PARENT_ID, SELECTION_START, SELECTION_END,
+  SELECTION_START,
+  SELECTION_END,
 } from '../../common/constants';
 import {
   cleanText,

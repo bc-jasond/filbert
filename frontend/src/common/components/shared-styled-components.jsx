@@ -65,6 +65,7 @@ export const SpacerSection = styled(ContentSection)`
   }
 `;
 export const ImageSection = styled(ContentSection)`
+  overflow: hidden;
   max-width: 1000px;
   margin: 0 auto 52px;
 `;

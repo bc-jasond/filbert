@@ -1,11 +1,6 @@
-import { List, Map } from 'immutable';
-
 import {
-  NODE_TYPE_OL,
-  NODE_TYPE_P, NODE_TYPE_CODE, NODE_TYPE_CONTENT,
-  NODE_TYPE_H1,
-  NODE_TYPE_H2,
-  NODE_TYPE_SPACER, NODE_TYPE_LI
+  NODE_TYPE_P,
+  NODE_TYPE_SPACER,
 } from '../../../common/constants';
 import { cleanText } from '../../../common/utils';
 import {
@@ -66,39 +61,6 @@ export function handleEnterTextType(documentModel, selectedNodeId, caretPosition
   documentModel.update(leftNode);
   documentModel.update(rightNode);
   return rightNodeId;
-}
-
-export function titleToParagraph(documentModel, selectedNodeId) {
-  const titleSection = documentModel.getNode(selectedNodeId);
-  // change title section to content section
-  documentModel.update(titleSection.set('type', NODE_TYPE_CONTENT));
-  // insert paragraph
-  return documentModel.insert(selectedNodeId, NODE_TYPE_P, 0, titleSection.get('content'));
-}
-
-export function paragraphToTitle(documentModel, selectedNodeId, sectionType) {
-  const paragraph = documentModel.getNode(selectedNodeId);
-  const section = documentModel.getSection(selectedNodeId);
-  const sectionId = section.get('id');
-  const content = paragraph.get('content');
-  const paragraphWasOnlyChild = documentModel.isOnlyChild(selectedNodeId);
-  const paragraphIdx = documentModel
-    .getChildren(sectionId)
-    .findIndex(s => s.get('id') === selectedNodeId);
-  const sectionIdx = documentModel
-    .getChildren(documentModel.rootId)
-    .findIndex(s => s.get('id') === sectionId);
-  
-  documentModel.delete(selectedNodeId);
-  // non-split scenario - just update existing section
-  if (paragraphWasOnlyChild) {
-    return documentModel.update(section
-      .set('type', sectionType)
-      .set('content', content)
-    );
-  }
-  const sectionOffset = documentModel.splitSectionForFormatChange(sectionId, paragraphIdx);
-  return documentModel.insertSection(sectionType, sectionIdx + sectionOffset, content);
 }
 
 export function handlePasteTextType(documentModel, selectedNodeId, caretPosition, clipboardText) {

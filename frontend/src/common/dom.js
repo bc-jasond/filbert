@@ -1,5 +1,4 @@
 import {
-  NODE_TYPE_CONTENT,
   NODE_TYPE_H1,
   NODE_TYPE_P,
   NODE_TYPE_LI,

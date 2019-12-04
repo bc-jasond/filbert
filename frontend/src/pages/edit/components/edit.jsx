@@ -37,11 +37,10 @@ import {
   getFirstHeadingContent,
   setCaret,
   getHighlightedSelectionOffsets,
-  isControlKey, getNodeType,
+  isControlKey,
 } from '../../../common/dom';
 
 import {
-  NODE_TYPE_H1,
   NODE_TYPE_QUOTE,
   NODE_TYPE_IMAGE,
   KEYCODE_ENTER,
@@ -51,12 +50,11 @@ import {
   NODE_TYPE_P,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X, KEYCODE_V, NODE_TYPE_SPACER,
+  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X, KEYCODE_V, NODE_TYPE_SPACER, NODE_TYPE_ROOT,
 } from '../../../common/constants';
 import { lineHeight } from "../../../common/css";
 
 import Document from '../../../common/components/document.component';
-import { moveCaret } from '../document-model-helpers/caret';
 import { doDelete } from '../document-model-helpers/delete';
 import DocumentModel from '../document-model';
 import { syncFromDom, syncToDom } from '../document-model-helpers/dom-sync';
@@ -472,7 +470,6 @@ export default class EditPost extends React.Component {
     
     await this.handlePaste(evt, selectionOffsets);
     this.handleSyncFromDom(evt, selectionOffsets);
-    moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
     // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
@@ -487,7 +484,6 @@ export default class EditPost extends React.Component {
     if (start.length === 0) {
       return;
     }
-    moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
     // close edit section menus by default, this.sectionEdit() callback will fire after this to override
@@ -633,7 +629,8 @@ export default class EditPost extends React.Component {
         .set('type', sectionType)
         .set('meta', meta)
     );
-    if (sectionType === NODE_TYPE_SPACER) {
+    // TODO: just put a P after any MetaType - maybe only if it's the last
+    if (this.documentModel.isMetaType(focusNodeId) && DocumentModel.getLastNode(this.documentModel.nodesById).get('id') === focusNodeId) {
       focusNodeId = this.documentModel.insert(NODE_TYPE_P, focusNodeId);
     }
     await this.commitUpdates(focusNodeId);
@@ -693,7 +690,7 @@ export default class EditPost extends React.Component {
   sectionDelete = (sectionId) => {
     if (confirm('Delete?')) {
       this.sectionEditClose();
-      const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
+      const focusNodeId = this.documentModel.getPrevNode(sectionId);
       this.documentModel.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
@@ -706,7 +703,7 @@ export default class EditPost extends React.Component {
         await apiDelete(`/image/${urlField}`)
       }
       this.sectionEditClose();
-      const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
+      const focusNodeId = this.documentModel.getPrevNode(sectionId);
       this.documentModel.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
