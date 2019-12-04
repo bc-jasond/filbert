@@ -1,5 +1,6 @@
 import { getNodeId } from '../../../common/dom';
 import { deleteContentRange } from '../../../common/utils';
+import DocumentModel from '../document-model';
 import { handleBackspaceTextType } from './handle-text-type';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
@@ -7,9 +8,16 @@ import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
  * @returns {Array[] | Array[focusNodeId, caretOffset, shouldFocusLastChild]}
  */
 export function doDelete(documentModel, selectionOffsets) {
+  function deleteOrUpdateNode(diffLength, nodeId, startIdx, endIdx) {
+    let node = documentModel.getNode(nodeId);
+    const content = node.get('content');
+    // only some of endNode's content has been selected, delete that content
+    node = node.set('content', deleteContentRange(content, startIdx, diffLength));
+    node = adjustSelectionOffsetsAndCleanup(node, content, endIdx, diffLength === 0 ? -1 : -diffLength);
+    documentModel.update(node);
+  }
   const [
     [startNodeCaretStart, startNodeCaretEnd, startNode],
-    middle,
     end,
   ] = selectionOffsets;
   const startNodeId = getNodeId(startNode);
@@ -35,7 +43,11 @@ export function doDelete(documentModel, selectionOffsets) {
    */
   
   // there are completely highlighted nodes in the middle of the selection - just delete them
-  if (middle) {
+  if (end) {
+    const [_, __, endNode] = end;
+    const endNodeId = getNodeId(endNode);
+    const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
+    console.info("doDelete() - middle nodes", middle);
     middle.forEach(nodeId => {
       documentModel.delete(nodeId);
     });
@@ -57,19 +69,11 @@ export function doDelete(documentModel, selectionOffsets) {
     let endNodeId = getNodeId(endNode);
     // TODO: abstract this into a helper
     let endNodeMap = documentModel.getNode(endNodeId);
-    const endNodeContent = endNodeMap.get('content');
     const endDiffLength = endNodeCaretEnd - endNodeCaretStart;
     // Set this to update focusNode
     selectedNodeId = endNodeId;
     // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
-    if (endDiffLength === endNodeContent.length) {
-      documentModel.delete(endNodeId);
-    } else {
-      // only some of endNode's content has been selected, delete that content
-      endNodeMap = endNodeMap.set('content', deleteContentRange(endNodeContent, 0, endDiffLength));
-      endNodeMap = adjustSelectionOffsetsAndCleanup(endNodeMap, endNodeContent, endNodeCaretEnd, endDiffLength === 0 ? -1 : -endDiffLength);
-      documentModel.update(endNodeMap);
-    }
+    deleteOrUpdateNode(endDiffLength, endNodeId, 0, endNodeCaretEnd);
   }
   
   // TODO: abstract this into a helper
@@ -85,14 +89,7 @@ export function doDelete(documentModel, selectionOffsets) {
     //  the former removes a character behind the caret and the latter removes one in front...
     
     // all of the startNode's content has been selected, delete it
-    if (startDiffLength === startNodeContent.length) {
-      documentModel.delete(startNodeId);
-    } else {
-      // only some of endNode's content has been selected, delete that content
-      startNodeMap = startNodeMap.set('content', deleteContentRange(startNodeContent, startNodeCaretStart, startDiffLength));
-      startNodeMap = adjustSelectionOffsetsAndCleanup(startNodeMap, startNodeContent, startNodeCaretEnd, startDiffLength === 0 ? -1 : -startDiffLength);
-      documentModel.update(startNodeMap);
-    }
+    deleteOrUpdateNode(startDiffLength, startNodeId, startNodeCaretStart, startNodeCaretEnd);
     
     // NOTE: Calling setState here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS

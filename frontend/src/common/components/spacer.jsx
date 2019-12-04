@@ -9,8 +9,9 @@ export default class Spacer extends React.PureComponent {
       node,
       isEditing,
     } = this.props;
+    const id = node.get('id');
     return (
-      <SpacerSection data-type={NODE_TYPE_SPACER} name={node.get('id')}
+      <SpacerSection data-type={NODE_TYPE_SPACER} name={id}
                      isEditing={isEditing}
                      onClick={() => isEditing && isEditing(id)} contentEditable={false} />
     )

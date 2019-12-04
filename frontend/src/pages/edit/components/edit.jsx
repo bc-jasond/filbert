@@ -809,7 +809,6 @@ export default class EditPost extends React.Component {
     const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
     const [
       [startOffset, endOffset, selectedNode],
-      middle,
       end,
     ] = selectionOffsets;
     if (
@@ -835,7 +834,7 @@ export default class EditPost extends React.Component {
       return;
     }
     const range = getRange();
-    console.info('SELECTION: ', startOffset, endOffset, end, middle, range, range.getBoundingClientRect());
+    console.info('SELECTION: ', startOffset, endOffset, end, range, range.getBoundingClientRect());
     const rect = range.getBoundingClientRect();
     const selectedNodeId = getNodeId(selectedNode);
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);

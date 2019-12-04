@@ -98,6 +98,21 @@ export default class DocumentModel {
   getNextNode(nodeId) {
     return this.getNode(this.getNode(nodeId).get('next_sibling_id'));
   }
+  getNodesBetween(leftNodeId, rightNodeId) {
+    const leftNode = this.getNode(leftNodeId);
+    const rightNode = this.getNode(rightNodeId);
+    if (!leftNode.get('id') || !rightNode.get('id')) {
+      console.error("getNodesBetween() - must have valid start and end nodes", leftNodeId, rightNodeId);
+      return [];
+    }
+    const middleNodeIds = [];
+    let nextNode = this.getNextNode(leftNodeId);
+    while (nextNode.get('id') !== rightNodeId) {
+      middleNodeIds.push(nextNode.get('id'));
+      nextNode = this.getNextNode(nextNode.get('id'));
+    }
+    return middleNodeIds;
+  }
   
   isFirstOfType(nodeId, type) {
     return this.getPrevNode(nodeId).get('type') !== type;

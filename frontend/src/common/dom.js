@@ -32,7 +32,7 @@ import {
   KEYCODE_F11,
   KEYCODE_F12,
   KEYCODE_PRINT_SCREEN,
-  DOM_ELEMENT_NODE_TYPE_ID, NODE_TYPE_ROOT, ROOT_NODE_PARENT_ID,
+  DOM_ELEMENT_NODE_TYPE_ID,
 } from './constants';
  import {cleanText} from "./utils";
 
@@ -112,108 +112,12 @@ function getParagraphContentOffset(formattingNode, paragraph) {
   return offset;
 }
 
-function getPathToAncestorByChildIdx(node, ancestor) {
-  const path = [];
-  let parent = node.parentNode;
-  while (node !== ancestor) {
-    // add the node id to make sure we compare apples to apples child index values
-    path.push([Array.prototype.indexOf.call(parent.childNodes, node), getNodeId(parent)]);
-    parent = parent.parentNode;
-    node = node.parentNode;
-  }
-  path.push([0, ROOT_NODE_PARENT_ID]); // make ancestor's index always 0 since it acts as a root node
-  return path.reverse();
-}
-
-function getAllChildIdsForNode(node) {
-  const ids = [];
-  const queue = [node];
-  while (queue.length) {
-    const current = queue.shift();
-    const id = getNodeId(current);
-    if (!id) {
-      continue;
-    }
-    ids.push(id);
-    queue.push(...current.childNodes)
-  }
-  return ids;
-}
-
-/**
- * 1) find path (array of childNodes indeces for each level of the tree) for ancestor -> startNode
- * 2) find path for ancestor -> endNode
- * 3) use DFS bounding inside start & end indeces for each level
- * 4) returned ids list will contain all "completely highlighted" nodes
- */
-function getAllNodesWithIdsBetweenTwoNodes(startNode, endNode, commonAncestor) {
-  const nodes = [];
-  // commonAncestor will be a Section, an OL or Root
-  const startPath = getPathToAncestorByChildIdx(startNode, commonAncestor);
-  const endPath = getPathToAncestorByChildIdx(endNode, commonAncestor);
-  
-  function inner(current, level) {
-    const id = getNodeId(current);
-    if (!id) {
-      return;
-    }
-    let startIdxBoundary = -1;
-    let startIdxAtLevel;
-    let startNodeIdAtLevel = 'foo';
-    if (Array.isArray(startPath[level])) {
-      [startIdxAtLevel, startNodeIdAtLevel] = startPath[level];
-    }
-  
-    let endIdxBoundary = current.parentNode.childNodes.length;
-    let endIdxAtLevel;
-    let endNodeIdAtLevel = 'bar';
-    if (Array.isArray(endPath[level])) {
-      [endIdxAtLevel, endNodeIdAtLevel] = endPath[level];
-    }
-    
-    const currentIdx = current === commonAncestor ? 0 : Array.prototype.indexOf.call(current.parentNode.childNodes, current);
-    // adjust boundaries depending on which path the current shares a parent with - to make sure we stay "inside the triangle"
-    const currentHasSameParentAsStartPath = getNodeId(current.parentNode) === startNodeIdAtLevel;
-    const currentHasSameParentAsEndPath = getNodeId(current.parentNode) === endNodeIdAtLevel;
-    if (getNodeType(current) === NODE_TYPE_ROOT || (currentHasSameParentAsStartPath && currentHasSameParentAsEndPath)) {
-      // children of the same parent - use level indexes, otherwise keep defaults
-      startIdxBoundary = startIdxAtLevel;
-      endIdxBoundary = endIdxAtLevel;
-    } else if (currentHasSameParentAsStartPath) {
-      // grab nodes "from startIdx to length"
-      startIdxBoundary = startIdxAtLevel;
-    } else {
-      // grab nodes "from 0 up to endIdx"
-      endIdxBoundary = endIdxAtLevel;
-    }
-    
-    // don't recurse if nodes are "outside" the index, however
-    // do recurse if currentIdx === startIdx or currentIdx === endIdx
-    if (currentIdx < startIdxBoundary || currentIdx > endIdxBoundary) {
-      return;
-    }
-    // use less-than (without equals) to exclude nodes in start or end path
-    if (startIdxBoundary < currentIdx && currentIdx < endIdxBoundary) {
-      // recursively get all ids for this node
-      nodes.push(...getAllChildIdsForNode(current));
-      // don't continue outer recursion
-      return;
-    }
-    for (let i = 0; i < current.childNodes.length; i++) {
-      inner(current.childNodes[i], level + 1)
-    }
-  }
-  inner(commonAncestor, 0);
-  return nodes;
-}
-
 /**
  * Once formatting is applied to a paragraph, subsequent selections could yield a child formatting element <em>, <strong>, etc. as the Range commonAncestorContainer
  * But, we need to express selections in terms of an offset within the parent content (AKA first ancestor with a 'name' attribute)
  *
  * @return [
  *  [start, end, nodeId], // starting node & offset
- *  [start, end, nodeId], // *optional list of nodeIds completely enveloped by highlight
  *  [nodeId...],          // *optional ending node & offset, if user has highlighted across > 1 nodes
  * ]
  */
@@ -224,7 +128,7 @@ export function getHighlightedSelectionOffsets() {
   }
   const startNode = getFirstAncestorWithId(range.startContainer);
   const endNode = getFirstAncestorWithId(range.endContainer);
-  const commonAncestor = range.commonAncestorContainer;
+  // const commonAncestor = range.commonAncestorContainer;
   const rangeStartOffset = range.startOffset;
   const rangeEndOffset = range.endOffset;
   
@@ -259,11 +163,9 @@ export function getHighlightedSelectionOffsets() {
   }
   
   console.debug('getHighlightedSelectionOffsets MULTIPLE NODES');
-  const middle = getAllNodesWithIdsBetweenTwoNodes(startNode, endNode, commonAncestor);
-  
   //const selectedTextStart = startNode.textContent.slice(start[0]);
   //const selectedTextEnd = endNode.textContent.slice(0, end[1]);
-  return [start, middle, end];
+  return [start, end];
 }
 
 /**

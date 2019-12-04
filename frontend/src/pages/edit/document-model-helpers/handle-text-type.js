@@ -3,6 +3,7 @@ import {
   NODE_TYPE_SPACER,
 } from '../../../common/constants';
 import { cleanText } from '../../../common/utils';
+import DocumentModel from '../document-model';
 import {
   adjustSelectionOffsetsAndCleanup,
   formatSelections,
@@ -28,8 +29,8 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
     }
   }
   if (!documentModel.isTextType(prevNode.get('id'))) {
-    // delete an empty TextType node
-    if (documentModel.getNode(selectedNodeId).get('content').length === 0) {
+    // delete an empty TextType node if it's not the last node in the document
+    if (documentModel.getNode(selectedNodeId).get('content').length === 0 && DocumentModel.getLastNode(documentModel.nodesById).get('id') !== selectedNodeId) {
       documentModel.delete(selectedNodeId);
     }
     return [prevNode.get('id')];
