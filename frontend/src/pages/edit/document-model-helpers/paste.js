@@ -1,7 +1,7 @@
 import { NODE_TYPE_LI, NODE_TYPE_P, NODE_TYPE_PRE } from '../../../common/constants';
 import { getNodeId, getNodeType } from '../../../common/dom';
 import { handlePasteCode } from './by-section-type/handle-code';
-import { handlePasteTextType } from './by-section-type/handle-paragraph';
+import { handlePasteTextType } from './handle-text-type';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   const [

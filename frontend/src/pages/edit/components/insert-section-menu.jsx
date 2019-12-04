@@ -1,7 +1,7 @@
 import React from 'react';
 import {
-  NODE_TYPE_OL,
-  NODE_TYPE_CODE,
+  NODE_TYPE_LI,
+  NODE_TYPE_PRE,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
@@ -97,8 +97,8 @@ export default ({
                                      spellcheck="false" isOpen={insertMenuIsOpen}>
       <InsertSectionItem onClick={() => insertSection(NODE_TYPE_H1)}>H1</InsertSectionItem>
       <InsertSectionItem onClick={() => insertSection(NODE_TYPE_H2)}>H2</InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_CODE)}>code</InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_OL)}>list</InsertSectionItem>
+      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_PRE)}>code</InsertSectionItem>
+      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_LI)}>list</InsertSectionItem>
       <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SPACER)}>spacer</InsertSectionItem>
       <InsertSectionItem onClick={() => fileInputRef.current.click()}>
         photo

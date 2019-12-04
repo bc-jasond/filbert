@@ -26,6 +26,10 @@ export function selectionFormatAction(documentModel, node, selection, action) {
     return [node.get('id'), Map(), Selection()];
   }
   
+  if (!documentModel.canHaveSelections(node.get('id'))) {
+    return [node.get('id'), Map(), Selection()];
+  }
+  
   let updatedSelectionModel = selection.set(action, !previousActionValue);
   // selection can be either italic or siteinfo, not both
   if (action === SELECTION_ACTION_ITALIC && updatedSelectionModel.get(SELECTION_ACTION_ITALIC)) {

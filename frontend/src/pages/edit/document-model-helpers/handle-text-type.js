@@ -6,28 +6,38 @@ import {
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_SPACER, NODE_TYPE_LI
-} from '../../../../common/constants';
-import { cleanText } from '../../../../common/utils';
+} from '../../../common/constants';
+import { cleanText } from '../../../common/utils';
 import {
   adjustSelectionOffsetsAndCleanup,
   formatSelections,
   splitSelectionsAtCaretOffset
-} from '../../selection-helpers';
+} from '../selection-helpers';
 
 export function handleBackspaceTextType(documentModel, selectedNodeId) {
+  const current = documentModel.getNode(selectedNodeId);
   let prevNode = documentModel.getPrevNode(selectedNodeId);
   // if at beginning of first node, nothing to do
   if (!prevNode.get('id')) {
-    return;
+    return [];
   }
   // delete a spacer?
-  if (prevNode.get('type') === NODE_TYPE_SPACER) {
-    documentModel.delete(prevNode.get('id'));
-    prevNode = documentModel.getPrevNode(selectedNodeId);
-    // might have had a spacer as a first section
+  while (prevNode.get('type') === NODE_TYPE_SPACER) {
+    current;
+    const prevNodeId = prevNode.get('id');
+    prevNode = documentModel.getPrevNode(prevNode.get('id'));
+    documentModel.delete(prevNodeId);
+    // might have had a spacer as a first section or delete up to a MetaType node
     if (!prevNode.get('id')) {
-      return;
+      return [prevNode.get('id')];
     }
+  }
+  if (!documentModel.isTextType(prevNode.get('id'))) {
+    // delete an empty TextType node
+    if (documentModel.getNode(selectedNodeId).get('content').length === 0) {
+      documentModel.delete(selectedNodeId);
+    }
+    return [prevNode.get('id')];
   }
   // optionally handles Selections
   documentModel.mergeParagraphs(prevNode.get('id'), selectedNodeId)
@@ -39,11 +49,11 @@ export function handleEnterTextType(documentModel, selectedNodeId, caretPosition
   const contentRight = content.substring(caretPosition);
   let selectedNodeType = documentModel.getNode(selectedNodeId).get('type');
   // break out of list if user hits enter on empty last list item
-  if (documentModel.isLastOfType(selectedNodeId, NODE_TYPE_LI)
-    && cleanText(contentLeft).length === 0
-    && cleanText(contentRight).length === 0) {
-    // convert this LI to a P
-    return documentModel.update(documentModel.getNode(selectedNodeId).set('type', NODE_TYPE_P))
+  if (cleanText(contentLeft).length === 0
+    && cleanText(contentRight).length === 0
+    && documentModel.isLastOfType(selectedNodeId)) {
+      // convert empty sections to a P on enter
+      return documentModel.update(documentModel.getNode(selectedNodeId).set('type', NODE_TYPE_P))
   }
   
   const rightNodeId = documentModel.insert(selectedNodeType, selectedNodeId, contentRight);

@@ -51,7 +51,7 @@ import {
   NODE_TYPE_P,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X, KEYCODE_V,
+  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X, KEYCODE_V, NODE_TYPE_SPACER,
 } from '../../../common/constants';
 import { lineHeight } from "../../../common/css";
 
@@ -60,7 +60,6 @@ import { moveCaret } from '../document-model-helpers/caret';
 import { doDelete } from '../document-model-helpers/delete';
 import DocumentModel from '../document-model';
 import { syncFromDom, syncToDom } from '../document-model-helpers/dom-sync';
-import { insertSectionHelper } from '../document-model-helpers/insert';
 import { doPaste } from '../document-model-helpers/paste';
 import { selectionFormatAction } from '../document-model-helpers/selection-format-action';
 import { doSplit } from '../document-model-helpers/split';
@@ -616,14 +615,26 @@ export default class EditPost extends React.Component {
    * INSERT SECTIONS
    */
   insertSection = async (sectionType, [firstFile] = []) => {
-    const focusNodeId = await insertSectionHelper(
-      this.documentModel,
-      sectionType,
-      this.insertMenuSelectedNodeId,
-      this.uploadFile.bind(this, firstFile),
+    let meta = Map();
+    if (sectionType === NODE_TYPE_IMAGE) {
+      const {
+        imageId,
+        width,
+        height,
+      } = await this.uploadFile(firstFile);
+      meta = Map({
+        url: imageId,
+        width,
+        height,
+      });
+    }
+    let focusNodeId = this.documentModel.update(
+      this.documentModel.getNode(this.insertMenuSelectedNodeId)
+        .set('type', sectionType)
+        .set('meta', meta)
     );
-    if (!focusNodeId) {
-      return;
+    if (sectionType === NODE_TYPE_SPACER) {
+      focusNodeId = this.documentModel.insert(NODE_TYPE_P, focusNodeId);
     }
     await this.commitUpdates(focusNodeId);
     if ([NODE_TYPE_IMAGE, NODE_TYPE_QUOTE].includes(sectionType)) {
@@ -811,8 +822,6 @@ export default class EditPost extends React.Component {
       || startOffset === endOffset
       // hit esc
       || isEscKey
-      // can't have Selections
-      || !this.documentModel.canHaveSelections(getNodeId(selectedNode))
     ) {
       this.setState({
         formatSelectionNode: Map(),

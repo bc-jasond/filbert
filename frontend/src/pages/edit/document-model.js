@@ -59,7 +59,7 @@ export default class DocumentModel {
   static getLastNode(nodesById) {
     return nodesById
       .filter(n => !n.get('next_sibling_id'))
-      .first();
+      .first(Map());
   }
   
   init(post, updateManager = {}, jsonData = null) {
@@ -107,7 +107,8 @@ export default class DocumentModel {
     return this.getPrevNode(nodeId).get('type') !== type;
   }
   
-  isLastOfType(nodeId, type) {
+  isLastOfType(nodeId) {
+    const type = this.getNode(nodeId).get('type');
     return this.getNextNode(nodeId).get('type') !== type;
   }
   
@@ -164,9 +165,9 @@ export default class DocumentModel {
     });
     if (shouldInsertAfter) {
       const oldNeighborNext = this.getNextNode(neighborNodeId);
-      if (oldNeighborNext.get('id')) {
-        this.update(newNode.set('next_sibling_id', oldNeighborNext.get('id')))
-      }
+      this.update(!oldNeighborNext.get('id')
+        ? newNode
+        : newNode.set('next_sibling_id', oldNeighborNext.get('id')))
       this.update(neighbor.set('next_sibling_id', newNode.get('id')))
     }
     // insert before

@@ -9,7 +9,7 @@ import { getNodeId, getNodeType } from '../../../common/dom';
 import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
 import { handleEnterCode } from './by-section-type/handle-code';
 import { handleEnterList } from './by-section-type/handle-list';
-import { handleEnterTextType } from './by-section-type/handle-paragraph';
+import { handleEnterTextType } from './handle-text-type';
 import { handleEnterTitle } from './by-section-type/handle-title';
 
 /**

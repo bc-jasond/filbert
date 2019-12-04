@@ -81,8 +81,7 @@ export async function bulkContentNodeUpsert(records) {
     values.push([
       post_id,
       nodeId,
-      // HACK: 'null' string for root node
-      node.next_sibling_id !== 'null' ? node.next_sibling_id : null,
+      node.next_sibling_id || null,
       node.type,
       node.content || '',
       JSON.stringify(node.meta || {}),

@@ -10,7 +10,7 @@ import { getNodeId } from '../../../common/dom';
 import { deleteContentRange } from '../../../common/utils';
 import { handleBackspaceCode, handleBackspaceCodeStructuralChange } from './by-section-type/handle-code';
 import { handleBackspaceList } from './by-section-type/handle-list';
-import { handleBackspaceTextType } from './by-section-type/handle-paragraph';
+import { handleBackspaceTextType } from './handle-text-type';
 import { handleBackspaceTitle } from './by-section-type/handle-title';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
