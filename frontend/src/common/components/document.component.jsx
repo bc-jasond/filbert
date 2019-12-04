@@ -1,7 +1,6 @@
 import React from 'react';
 import { Map } from 'immutable';
 import {
-  NEW_POST_URL_ID,
   NODE_TYPE_P,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
@@ -16,7 +15,6 @@ import {
   ContentSection,
   CodeSection,
   Ol,
-  A,
 } from './shared-styled-components';
 import PostLink from './postlink';
 import Quote from './quote';
@@ -30,9 +28,7 @@ import Li from './li';
 import {
   cleanText,
 } from '../utils';
-import {
-  getFirstNode,
-} from './render-helpers';
+import DocumentModel from '../../pages/edit/document-model';
 
 export default class Document extends React.PureComponent {
   constructor(props) {
@@ -98,16 +94,14 @@ export default class Document extends React.PureComponent {
   render() {
     console.debug("Document RENDER", this);
     const {
-      post,
       nodesById,
-      // this is a callback to the edit page, it passes a nodeId.
-      // It's only for image & quote sections.  Maybe it could go?
+      // TODO: rename this callback to the edit page, it passes a nodeId - setCurrentEditSectionId()?
+      // It's for "meta" sections to be marked as "in edit mode"
       // TODO: add currentEditSectionId to show selected state (right now it's just on hover).
-      // Maybe that can be computed somehow?
       isEditing,
     } = this.props;
     const children = [];
-    this.current = getFirstNode(nodesById);
+    this.current = DocumentModel.getFirstNode(nodesById);
     while (this.current.get('id')) {
       const currentType = this.current.get('type');
       if (currentType === NODE_TYPE_P
@@ -123,9 +117,7 @@ export default class Document extends React.PureComponent {
           <H1
             node={this.current}
             shouldShowPlaceholder={
-              post
-              && post.get('id', NEW_POST_URL_ID) === NEW_POST_URL_ID
-              && this.current === getFirstNode(nodesById)
+              nodesById.size === 1
               && cleanText(this.current.get('content', '')).length === 0
             }
           />));

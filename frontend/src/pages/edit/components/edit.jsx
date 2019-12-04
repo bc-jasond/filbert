@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { List, Map, fromJS } from 'immutable';
+import { Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
 import {
@@ -198,19 +198,17 @@ export default class EditPost extends React.Component {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.match.params.id}`);
       this.updateManager.init(post);
       this.documentModel.init(post, this.updateManager, contentNodes);
-      const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
       this.setState({
         post: this.documentModel.post,
         nodesById: this.documentModel.nodesById,
         shouldShow404: false
       }, () => {
-        const focusNodeId = this.documentModel.getNextFocusNodeId(this.documentModel.rootId);
-        setCaret(focusNodeId, -1, true);
+        setCaret(DocumentModel.getLastNode(this.documentModel.nodesById).get('id'), -1, true);
         this.manageInsertMenu();
         window.scrollTo(0, 0);
       })
     } catch (err) {
-      // console.error(err);
+      console.error(err);
       this.setState({ nodesById: Map(), shouldShow404: true })
     }
   }
