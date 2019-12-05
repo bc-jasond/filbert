@@ -114,7 +114,8 @@ export default class DocumentModel {
     return middleNodeIds;
   }
   
-  isFirstOfType(nodeId, type) {
+  isFirstOfType(nodeId) {
+    const type = this.getNode(nodeId).get('type');
     return this.getPrevNode(nodeId).get('type') !== type;
   }
   

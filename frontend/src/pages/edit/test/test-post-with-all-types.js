@@ -1,463 +1,366 @@
 export const testPostWithAllTypesJS = {
   "post": {
-    "id": 170,
+    "id": 175,
     "user_id": 1,
-    "canonical": "large-heading-d1aa",
+    "canonical": "large-heading-0044",
     "title": "Large Heading",
     "abstract": null,
-    "created": "2019-11-28T22:10:15.000Z",
-    "updated": "2019-11-28T22:10:15.000Z",
+    "created": "2019-12-05T07:46:51.000Z",
+    "updated": "2019-12-05T07:46:51.000Z",
     "published": null,
     "deleted": null
-  }, "contentNodes": {
-    "null": [
-      {
-        "post_id": 170,
-        "id": "60dc",
-        "parent_id": null,
-        "position": 0,
-        "type": "root",
-        "content": "",
-        "meta": {}
+  },
+  "contentNodes": {
+    "9615": {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small Heading",
+      "meta": {}
+    },
+    "fd25": {
+      "post_id": 175,
+      "id": "fd25",
+      "next_sibling_id": "f063",
+      "type": "pre",
+      "content": "var someCode = \"here\";",
+      "meta": {}
+    },
+    "f063": {
+      "post_id": 175,
+      "id": "f063",
+      "next_sibling_id": "61cf",
+      "type": "pre",
+      "content": "function getIt(sendIt) {",
+      "meta": {}
+    },
+    "4add": {
+      "post_id": 175,
+      "id": "4add",
+      "next_sibling_id": "09a0",
+      "type": "image",
+      "content": "",
+      "meta": {
+        "url": "b38d29e7bbd96a4df4d7ac1fa442de358702b1635319c696f27c23c2bcc9d70d",
+        "width": 669,
+        "height": 1000,
+        "caption": "Kinzua Dam '91",
+        "rotationDegrees": 90
       }
-    ],
-    "60dc": [
-      {
-        "post_id": 170,
-        "id": "7518",
-        "parent_id": "60dc",
-        "position": 0,
-        "type": "h1",
-        "content": "Large Heading",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "6ffb",
-        "parent_id": "60dc",
-        "position": 1,
-        "type": "content",
-        "content": "",
-        "meta": {}
-      },
-      { "post_id": 170, "id": "4147", "parent_id": "60dc", "position": 2, "type": "spacer", "content": "", "meta": {} },
-      {
-        "post_id": 170,
-        "id": "7d65",
-        "parent_id": "60dc",
-        "position": 3,
-        "type": "h2",
-        "content": "Small Heading",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "7c74",
-        "parent_id": "60dc",
-        "position": 4,
-        "type": "content",
-        "content": "",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "59cc",
-        "parent_id": "60dc",
-        "position": 5,
-        "type": "codesection",
-        "content": "",
-        "meta": { "lines": ["var heresACodeSection = true;", "function longRead() {", "  return someLongText", "}"] }
-      },
-      { "post_id": 170, "id": "5060", "parent_id": "60dc", "position": 6, "type": "spacer", "content": "", "meta": {} },
-      {
-        "post_id": 170,
-        "id": "8b4f",
-        "parent_id": "60dc",
-        "position": 7,
-        "type": "content",
-        "content": "",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "aa69",
-        "parent_id": "60dc",
-        "position": 8,
-        "type": "image",
-        "content": "",
-        "meta": {
-          "url": "e7ee13c234d5b7f6fcd5bdfb5fdbd5d7ac25f4b417a37f23b4cb1a8ae4a279f1",
-          "width": 681,
-          "height": 1000,
-          "caption": "Kinzua Dam '91",
-          "rotationDegrees": 90
-        }
-      },
-      {
-        "post_id": 170,
-        "id": "78d3",
-        "parent_id": "60dc",
-        "position": 9,
-        "type": "content",
-        "content": "",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "e108",
-        "parent_id": "60dc",
-        "position": 10,
-        "type": "quote",
-        "content": "",
-        "meta": {
-          "url": "https://www.theguardian.com/theguardian/2007/sep/13/greatinterviews",
-          "quote": "It's an attempt to bring the figurative thing up on to the nervous system more violently and more poignantly.",
-          "author": "Frances Bacon",
-          "context": "interviews with David Sylvester in 1963, 1966 and 1979"
-        }
-      },
-      {
-        "post_id": 170,
-        "id": "98db",
-        "parent_id": "60dc",
-        "position": 11,
-        "type": "content",
-        "content": "",
-        "meta": {}
+    },
+    "cce3": {
+      "post_id": 175,
+      "id": "cce3",
+      "next_sibling_id": null,
+      "type": "p",
+      "content": "Make sure we have a P on the end so we can delete",
+      "meta": {}
+    },
+    "8e34": {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "621e",
+      "type": "h1",
+      "content": "Large Heading",
+      "meta": {}
+    },
+    "7a38": {
+      "post_id": 175,
+      "id": "7a38",
+      "next_sibling_id": "43eb",
+      "type": "pre",
+      "content": "}",
+      "meta": {}
+    },
+    "621e": {
+      "post_id": 175,
+      "id": "621e",
+      "next_sibling_id": "f677",
+      "type": "p",
+      "content": "First paragraph with no formats",
+      "meta": {}
+    },
+    "f677": {
+      "post_id": 175,
+      "id": "f677",
+      "next_sibling_id": "db70",
+      "type": "p",
+      "content": "Second paragraph with some formats",
+      "meta": {
+        "selections": [
+          {
+            "start": 0,
+            "end": 17,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 17,
+            "end": 21,
+            "selection-bold": true,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 21,
+            "end": 22,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 22,
+            "end": 26,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": true,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 26,
+            "end": 27,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 27,
+            "end": 34,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": true,
+            "linkUrl": "http://some.site"
+          }
+        ]
       }
-    ],
-    "6ffb": [
-      {
-        "post_id": 170,
-        "id": "2e29",
-        "parent_id": "6ffb",
-        "position": 0,
-        "type": "p",
-        "content": "Paragraph with no formats",
-        "meta": {}
-      }, {
-        "post_id": 170,
-        "id": "4472",
-        "parent_id": "6ffb",
-        "position": 1,
-        "type": "p",
-        "content": "Paragraph with some formats",
-        "meta": {
-          "selections": [
-            {
-              "end": 10,
-              "start": 0,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 14,
-              "start": 10,
-              "linkUrl": "http://some.site",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": true,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 15,
-              "start": 14,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 19,
-              "start": 15,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": true,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 20,
-              "start": 19,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 27,
-              "start": 20,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": true
-            }
-          ]
-        }
+    },
+    "151c": {
+      "post_id": 175,
+      "id": "151c",
+      "next_sibling_id": "fd25",
+      "type": "li",
+      "content": "One with a bunch of formats and stuff",
+      "meta": {
+        "selections": [
+          {
+            "start": 0,
+            "end": 4,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 4,
+            "end": 8,
+            "selection-bold": true,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 8,
+            "end": 9,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 9,
+            "end": 10,
+            "selection-bold": false,
+            "selection-italic": true,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 10,
+            "end": 11,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 11,
+            "end": 16,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": true,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 16,
+            "end": 17,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 17,
+            "end": 19,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": true,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 20,
+            "end": 27,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": true,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 27,
+            "end": 32,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": ""
+          },
+          {
+            "start": 32,
+            "end": 37,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": true,
+            "linkUrl": "http://yep.com"
+          }
+        ]
       }
-    ],
-    "78d3": [
-      {
-        "post_id": 170,
-        "id": "420f",
-        "parent_id": "78d3",
-        "position": 0,
-        "type": "p",
-        "content": "",
-        "meta": {}
+    },
+    "db70": {
+      "post_id": 175,
+      "id": "db70",
+      "next_sibling_id": "9615",
+      "type": "spacer",
+      "content": "",
+      "meta": {}
+    },
+    "09a0": {
+      "post_id": 175,
+      "id": "09a0",
+      "next_sibling_id": "c67c",
+      "type": "h2",
+      "content": "Here's a big quote",
+      "meta": {}
+    },
+    "43eb": {
+      "post_id": 175,
+      "id": "43eb",
+      "next_sibling_id": "4add",
+      "type": "pre",
+      "content": "getIt();",
+      "meta": {}
+    },
+    "9fa0": {
+      "post_id": 175,
+      "id": "9fa0",
+      "next_sibling_id": "151c",
+      "type": "li",
+      "content": "Another item here",
+      "meta": {}
+    },
+    "61cf": {
+      "post_id": 175,
+      "id": "61cf",
+      "next_sibling_id": "7a38",
+      "type": "pre",
+      "content": "  const yep = false;",
+      "meta": {}
+    },
+    "56da": {
+      "post_id": 175,
+      "id": "56da",
+      "next_sibling_id": "9fa0",
+      "type": "li",
+      "content": "Here's a list",
+      "meta": {}
+    },
+    "c67c": {
+      "post_id": 175,
+      "id": "c67c",
+      "next_sibling_id": "cce3",
+      "type": "quote",
+      "content": "",
+      "meta": {
+        "url": "https://www.theguardian.com/theguardian/2007/sep/13/greatinterviews",
+        "quote": "It's an attempt to bring the figurative thing up on to the nervous system more violently and more poignantly.",
+        "author": "Frances Bacon",
+        "context": "interviews with David Sylvester in 1963, 1966 and 1979"
       }
-    ],
-    "7c74": [
-      {
-        "post_id": 170,
-        "id": "fed1",
-        "parent_id": "7c74",
-        "position": 0,
-        "type": "p",
-        "content": "Another paragraph no formats",
-        "meta": {}
-      }, {
-        "post_id": 170,
-        "id": "eea2",
-        "parent_id": "7c74",
-        "position": 1,
-        "type": "ol",
-        "content": "",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "eea1",
-        "parent_id": "7c74",
-        "position": 2,
-        "type": "ol",
-        "content": "",
-        "meta": {}
-      }
-    ],
-    "8b4f": [
-      {
-        "post_id": 170,
-        "id": "21f3",
-        "parent_id": "8b4f",
-        "position": 0,
-        "type": "p",
-        "content": "",
-        "meta": {}
-      }
-    ],
-    "98db": [
-      {
-        "post_id": 170,
-        "id": "33fc",
-        "parent_id": "98db",
-        "position": 0,
-        "type": "p",
-        "content": "",
-        "meta": {}
-      }
-    ],
-    "eea2": [
-      {
-        "post_id": 170,
-        "id": "4808",
-        "parent_id": "eea2",
-        "position": 0,
-        "type": "li",
-        "content": "A list of several items",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "098a",
-        "parent_id": "eea2",
-        "position": 1,
-        "type": "li",
-        "content": "Some other item here",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "4b8c",
-        "parent_id": "eea2",
-        "position": 2,
-        "type": "li",
-        "content": "This one has a bunch of formats",
-        "meta": {
-          "selections": [
-            {
-              "end": 5,
-              "start": 0,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 8,
-              "start": 5,
-              "linkUrl": "",
-              "selection-bold": true,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 9,
-              "start": 8,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 12,
-              "start": 9,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": true,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 13,
-              "start": 12,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 14,
-              "start": 13,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": true,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 15,
-              "start": 14,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 20,
-              "start": 15,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": true,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 21,
-              "start": 20,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 23,
-              "start": 21,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": true
-            },
-            {
-              "end": 24,
-              "start": 23,
-              "linkUrl": "",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": false,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            },
-            {
-              "end": 31,
-              "start": 24,
-              "linkUrl": "http://some.site",
-              "selection-bold": false,
-              "selection-code": false,
-              "selection-link": true,
-              "selection-italic": false,
-              "selection-siteinfo": false,
-              "selection-strikethrough": false
-            }
-          ]
-        }
-      }
-    ],
-    "eea1": [
-      {
-        "post_id": 170,
-        "id": "4807",
-        "parent_id": "eea1",
-        "position": 0,
-        "type": "li",
-        "content": "List 2 several items",
-        "meta": {}
-      },
-      {
-        "post_id": 170,
-        "id": "098b",
-        "parent_id": "eea1",
-        "position": 1,
-        "type": "li",
-        "content": "List 2 another item here",
-        "meta": {}
-      }
-    ]
+    }
   }
 }
