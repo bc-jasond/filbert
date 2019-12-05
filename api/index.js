@@ -18,7 +18,6 @@ const sharp = require('sharp');
 
 const {
   getKnex,
-  getNodes,
   getNodesFlat,
   bulkContentNodeUpsert,
   bulkContentNodeDelete,

@@ -23,9 +23,9 @@ export default class PostLink extends React.PureComponent {
             Next Post 👉 <LinkStyled to={to}>{node.get('content')}</LinkStyled>
           </H2Styled>
         )}
-        <H2>
+        <H2Styled>
           👈 <LinkStyled to="/posts">Back to all Posts</LinkStyled>
-        </H2>
+        </H2Styled>
       </Centered>
     )
   }

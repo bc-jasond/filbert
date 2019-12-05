@@ -62,6 +62,21 @@ export async function getNodesFlat(knex, postId) {
 // TODO: 'touch' post on each update/delete of content or publish
 async function markPostUpdated(postId) {}
 
+/**
+ * batch updates, note this is all vanilla JS, so remember to convert from Immutable
+ *
+ * @param records [
+ *                  [
+ *                    "ea32", // nodeId
+ *                    {
+ *                      post_id: 1, // postId - will override one in "node" if present
+ *                      node: {} // Map().toJS()
+ *                    }
+ *                  ],
+ *                  ...
+ *                ]
+ * @returns {Knex.Raw<TResult>}
+ */
 export async function bulkContentNodeUpsert(records) {
   if (records.length === 0) return;
   const knexInstance = await getKnex();
