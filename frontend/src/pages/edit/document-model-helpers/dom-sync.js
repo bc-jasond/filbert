@@ -1,17 +1,15 @@
-import { getNodeId } from '../../../common/dom';
 import { getCharFromEvent } from '../../../common/utils';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
 export function syncToDom(documentModel, selectionOffsets, evt) {
   const [
-    [caretPositionStart, _, selectedNode],
+    [caretPositionStart, _, selectedNodeId],
   ] = selectionOffsets;
-  const selectedNodeId = getNodeId(selectedNode);
   if (selectedNodeId === 'null' || !selectedNodeId) {
-    console.warn('To DOM SYNC - bad selection, no id ', selectedNode);
+    console.warn('To DOM SYNC - bad selection, no id ', selectedNodeId);
     return [];
   }
-  console.info('To DOM SYNC', selectedNode, 'offset', caretPositionStart);
+  console.info('To DOM SYNC', selectedNodeId, 'offset', caretPositionStart);
   
   const newChar = getCharFromEvent(evt);
   if (newChar.length > 1) {
@@ -33,14 +31,13 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
 
 export function syncFromDom(documentModel, selectionOffsets, evt) {
   const [
-    [caretPositionStart, _, selectedNode],
+    [caretPositionStart, _, selectedNodeId],
   ] = selectionOffsets;
-  const selectedNodeId = getNodeId(selectedNode);
   if (selectedNodeId === 'null' || !selectedNodeId) {
-    console.warn('From DOM SYNC - bad selection, no id ', selectedNode);
+    console.warn('From DOM SYNC - bad selection, no id ', selectedNodeId);
     return [];
   }
-  console.info('From DOM SYNC', selectedNode, 'offset', caretPositionStart);
+  console.info('From DOM SYNC', selectedNodeId, 'offset', caretPositionStart);
   
   // NOTE: following for emojis keyboard insert only...
   const emoji = getCharFromEvent(evt);

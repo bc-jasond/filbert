@@ -63,6 +63,13 @@ export const SpacerSection = styled(ContentSection)`
     margin: 0 auto;
     width: 266px;
   }
+  border: 4px solid ${p => p.isEditing ? lightBlue : 'transparent'};
+  ${p => p.isEditMode && `
+    &:hover {
+      cursor: pointer;
+      border: 4px solid ${lightBlue};
+    }
+  `}
 `;
 export const ImageSection = styled(ContentSection)`
   overflow: hidden;
@@ -74,8 +81,8 @@ export const PStyled = styled.p`
   margin-bottom: 32px;
 `;
 export const QuoteP = styled(PStyled)`
-  border: 4px solid transparent;
-  ${p => p.isEditing && `
+  border: 4px solid ${p => p.isEditing ? lightBlue : 'transparent'};
+  ${p => p.isEditMode && `
     &:hover {
       cursor: pointer;
       border: 4px solid ${lightBlue};
@@ -214,8 +221,8 @@ export const Img = styled.img`
   margin: 0;
   display: block;
   max-width: 100%;
-  border: 4px solid ${p => p.shouldShowBorder ? lightBlue : 'transparent'};
-  ${p => p.isEditing && `
+  border: 4px solid ${p => p.isEditing ? lightBlue : 'transparent'};
+  ${p => p.isEditMode && `
     &:hover {
       cursor: pointer;
       border: 4px solid ${lightBlue};

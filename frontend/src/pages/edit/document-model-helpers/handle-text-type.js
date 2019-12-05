@@ -1,9 +1,7 @@
 import {
   NODE_TYPE_P,
-  NODE_TYPE_SPACER,
 } from '../../../common/constants';
 import { cleanText } from '../../../common/utils';
-import DocumentModel from '../document-model';
 import {
   adjustSelectionOffsetsAndCleanup,
   formatSelections,
@@ -11,33 +9,22 @@ import {
 } from '../selection-helpers';
 
 export function handleBackspaceTextType(documentModel, selectedNodeId) {
-  const current = documentModel.getNode(selectedNodeId);
   let prevNode = documentModel.getPrevNode(selectedNodeId);
+  let prevNodeId = prevNode.get('id')
   // if at beginning of first node, nothing to do
-  if (!prevNode.get('id')) {
+  if (!prevNodeId) {
     return [];
   }
-  // delete a spacer?
-  while (prevNode.get('type') === NODE_TYPE_SPACER) {
-    current;
-    const prevNodeId = prevNode.get('id');
-    prevNode = documentModel.getPrevNode(prevNode.get('id'));
-    documentModel.delete(prevNodeId);
-    // might have had a spacer as a first section or delete up to a MetaType node
-    if (!prevNode.get('id')) {
-      return [prevNode.get('id')];
-    }
-  }
-  if (!documentModel.isTextType(prevNode.get('id'))) {
-    // delete an empty TextType node if it's not the last node in the document
-    if (documentModel.getNode(selectedNodeId).get('content').length === 0 && DocumentModel.getLastNode(documentModel.nodesById).get('id') !== selectedNodeId) {
+  if (!documentModel.isTextType(prevNodeId)) {
+    // delete an empty TextType node
+    if (documentModel.getNode(selectedNodeId).get('content').length === 0) {
       documentModel.delete(selectedNodeId);
     }
-    return [prevNode.get('id')];
+    return [prevNodeId];
   }
   // optionally handles Selections
-  documentModel.mergeParagraphs(prevNode.get('id'), selectedNodeId)
-  return [prevNode.get('id'), prevNode.get('content').length];
+  documentModel.mergeParagraphs(prevNodeId, selectedNodeId)
+  return [prevNodeId, prevNode.get('content').length];
 }
 
 export function handleEnterTextType(documentModel, selectedNodeId, caretPosition, content) {

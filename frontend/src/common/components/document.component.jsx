@@ -95,10 +95,8 @@ export default class Document extends React.PureComponent {
     console.debug("Document RENDER", this);
     const {
       nodesById,
-      // TODO: rename this callback to the edit page, it passes a nodeId - setCurrentEditSectionId()?
-      // It's for "meta" sections to be marked as "in edit mode"
-      // TODO: add currentEditSectionId to show selected state (right now it's just on hover).
-      isEditing,
+      currentEditNode,
+      setEditNodeId,
     } = this.props;
     const children = [];
     this.current = DocumentModel.getFirstNode(nodesById);
@@ -124,11 +122,11 @@ export default class Document extends React.PureComponent {
       } else if (currentType === NODE_TYPE_H2) {
         children.push(<H2 node={this.current} />);
       } else if (currentType === NODE_TYPE_SPACER) {
-        children.push(<Spacer node={this.current} isEditing={isEditing} />);
+        children.push(<Spacer node={this.current} currentEditNode={currentEditNode} setEditNodeId={setEditNodeId} />);
       } else if (currentType === NODE_TYPE_IMAGE) {
-        children.push(<Image node={this.current} isEditing={isEditing} />)
+        children.push(<Image node={this.current} currentEditNode={currentEditNode} setEditNodeId={setEditNodeId} />)
       } else if (currentType === NODE_TYPE_QUOTE) {
-        children.push(<Quote node={this.current} isEditing={isEditing} />);
+        children.push(<Quote node={this.current} currentEditNode={currentEditNode} setEditNodeId={setEditNodeId} />);
       }
       // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
       else if (currentType === NODE_TYPE_POSTLINK) {

@@ -46,8 +46,7 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   }
   console.info('setCaret containerNode ', nodeId);
   // has a text node?
-  const sel = window.getSelection();
-  sel.removeAllRanges();
+  const sel = removeAllRanges();
   const range = document.createRange();
   // find text node, if present
   infiniteLoopCount = 0;
@@ -83,6 +82,12 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   } else {
     console.warn(`setCaret - couldn't find a text node inside of `, nodeId);
   }
+}
+
+export function removeAllRanges() {
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  return sel;
 }
 
 export function getRange() {
@@ -143,7 +148,7 @@ export function getHighlightedSelectionOffsets() {
     startOffset = 0;
   }
   // in consumer code range.collapsed can be checked by start[0] === start[1]
-  const start = [startOffset, range.collapsed ? startOffset : cleanText(startNode.textContent).length, startNode];
+  const start = [startOffset, range.collapsed ? startOffset : cleanText(startNode.textContent).length, getNodeId(startNode)];
   if (range.collapsed) {
     return [start];
   }
@@ -154,7 +159,7 @@ export function getHighlightedSelectionOffsets() {
   if (rangeEndOffset === 1 && cleanText(endNode.textContent).length === 0) {
     endOffset = 0;
   }
-  const end = [0, endOffset, endNode];
+  const end = [0, endOffset, getNodeId(endNode)];
   
   if (startNode === endNode) {
     start[1] = endOffset;
@@ -223,6 +228,11 @@ export function getNodeId(node) {
   return (node && node.getAttribute)
     ? node.getAttribute('name')
     : null;
+}
+
+export function getNodeById(nodeId) {
+  const [first] = document.getElementsByName(nodeId);
+  return first;
 }
 
 export function getFirstHeadingContent() {

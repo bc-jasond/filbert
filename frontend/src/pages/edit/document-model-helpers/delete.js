@@ -1,6 +1,4 @@
-import { getNodeId } from '../../../common/dom';
 import { deleteContentRange } from '../../../common/utils';
-import DocumentModel from '../document-model';
 import { handleBackspaceTextType } from './handle-text-type';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
@@ -10,6 +8,10 @@ import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 export function doDelete(documentModel, selectionOffsets) {
   function deleteOrUpdateNode(diffLength, nodeId, startIdx, endIdx) {
     let node = documentModel.getNode(nodeId);
+    if (documentModel.isMetaType(nodeId)) {
+      documentModel.delete(node);
+      return;
+    }
     const content = node.get('content');
     // only some of endNode's content has been selected, delete that content
     node = node.set('content', deleteContentRange(content, startIdx, diffLength));
@@ -17,12 +19,11 @@ export function doDelete(documentModel, selectionOffsets) {
     documentModel.update(node);
   }
   const [
-    [startNodeCaretStart, startNodeCaretEnd, startNode],
+    [startNodeCaretStart, startNodeCaretEnd, startNodeId],
     end,
   ] = selectionOffsets;
-  const startNodeId = getNodeId(startNode);
   if (startNodeId === 'null' || !startNodeId) {
-    console.warn('doDelete() bad selection, no id ', startNode);
+    console.warn('doDelete() bad selection, no id ', startNodeId);
     return [];
   }
   
@@ -42,10 +43,9 @@ export function doDelete(documentModel, selectionOffsets) {
    * 10) startNode and endNode are the same type
    */
   
-  // there are completely highlighted nodes in the middle of the selection - just delete them
+  // if there are completely highlighted nodes in the middle of the selection - just delete them
   if (end) {
-    const [_, __, endNode] = end;
-    const endNodeId = getNodeId(endNode);
+    const [_, __, endNodeId] = end;
     const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
     console.info("doDelete() - middle nodes", middle);
     middle.forEach(nodeId => {
@@ -65,10 +65,7 @@ export function doDelete(documentModel, selectionOffsets) {
   if (end) {
     // since we're spanning more than one node, we might merge (if we don't delete the "end" node)
     doesMergeParagraphs = true;
-    const [endNodeCaretStart, endNodeCaretEnd, endNode] = end;
-    let endNodeId = getNodeId(endNode);
-    // TODO: abstract this into a helper
-    let endNodeMap = documentModel.getNode(endNodeId);
+    const [endNodeCaretStart, endNodeCaretEnd, endNodeId] = end;
     const endDiffLength = endNodeCaretEnd - endNodeCaretStart;
     // Set this to update focusNode
     selectedNodeId = endNodeId;
@@ -76,7 +73,6 @@ export function doDelete(documentModel, selectionOffsets) {
     deleteOrUpdateNode(endDiffLength, endNodeId, 0, endNodeCaretEnd);
   }
   
-  // TODO: abstract this into a helper
   let startNodeMap = documentModel.getNode(startNodeId);
   const startNodeContent = startNodeMap.get('content');
   
@@ -91,10 +87,8 @@ export function doDelete(documentModel, selectionOffsets) {
     // all of the startNode's content has been selected, delete it
     deleteOrUpdateNode(startDiffLength, startNodeId, startNodeCaretStart, startNodeCaretEnd);
     
-    // NOTE: Calling setState here will force all changed nodes to rerender.
-    //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
-    // ALSO: reaching this code means we don't need to continue to the "structural" handlers below.
-    //  We'll place the caret where the selection ended and the user can hit backspace again to "heal" or merge sections
+    // NOTE: reaching this code means we don't need to merge any nodes.  If the user deleted all text in the current node
+    //  we'll place the caret where the selection ended and the user can hit backspace again to merge sections
     if (!doesMergeParagraphs) {
       return [selectedNodeId, startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart];
     }
@@ -114,9 +108,13 @@ export function doDelete(documentModel, selectionOffsets) {
    *
    *  UPDATE 3: wow, so much easier using a linked list data structure to represent the document, le sigh 🤦‍♀️
    */
+  let focusNodeId;
+  let caretOffset;
   if (documentModel.isMetaType(selectedNodeId)) {
-    console.info("doDelete() TODO: support MetaType sections")
+    focusNodeId = documentModel.getPrevNode(selectedNodeId).get('id');
+    documentModel.delete(selectedNodeId);
+  } else {
+    [focusNodeId, caretOffset] = handleBackspaceTextType(documentModel, selectedNodeId);
   }
-  const [focusNodeId, caretOffset] = handleBackspaceTextType(documentModel, selectedNodeId);
   return [focusNodeId, caretOffset, true];
 }

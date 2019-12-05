@@ -15,7 +15,8 @@ export default class Image extends React.PureComponent {
     console.debug("Image RENDER", this);
     const {
       node,
-      isEditing,
+      currentEditNode,
+      setEditNodeId,
     } = this.props;
     const id = node.get('id');
     const meta = node.get('meta', Map());
@@ -40,8 +41,9 @@ export default class Image extends React.PureComponent {
           <ImagePlaceholderContainer w={w} h={h}>
             <ImagePlaceholderFill w={w} h={h} />
             {urlField.length > 0 && (<Img
-              isEditing={isEditing}
-              onClick={() => isEditing && isEditing(id)}
+              isEditMode={setEditNodeId}
+              isEditing={currentEditNode && currentEditNode.get('id') === id}
+              onClick={() => setEditNodeId && setEditNodeId(id)}
               rotationDegrees={rotationDegrees}
               src={url}
             />)}

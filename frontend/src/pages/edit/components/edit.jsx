@@ -37,7 +37,7 @@ import {
   getFirstHeadingContent,
   setCaret,
   getHighlightedSelectionOffsets,
-  isControlKey,
+  isControlKey, removeAllRanges, getNodeById,
 } from '../../../common/dom';
 
 import {
@@ -98,8 +98,7 @@ export default class EditPost extends React.Component {
       insertMenuIsOpen: false,
       insertMenuTopOffset: 0,
       insertMenuLeftOffset: 0,
-      editImageSectionNode: Map(),
-      editQuoteSectionNode: Map(),
+      editSectionNode: Map(),
       editSectionMetaFormTopOffset: 0,
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
@@ -274,19 +273,17 @@ export default class EditPost extends React.Component {
   
   anyEditContentMenuIsOpen = () => {
     const {
-    formatSelectionNode,
-      editImageSectionNode ,
-      editQuoteSectionNode,
+      formatSelectionNode,
+      editSectionNode,
     } = this.state;
-    return formatSelectionNode.get('id') || editImageSectionNode.get('id') || editQuoteSectionNode.get('id')
+    return formatSelectionNode.get('id') || editSectionNode.get('id')
   }
   
   closeAllEditContentMenus = async () => {
     return new Promise(resolve => {
       this.setState({
         formatSelectionNode: Map(),
-        editImageSectionNode: Map(),
-        editQuoteSectionNode: Map(),
+        editSectionNode: Map(),
       }, resolve)
     });
   }
@@ -295,12 +292,16 @@ export default class EditPost extends React.Component {
     // TODO: optimistically save updated nodes - look ma, no errors!
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
-      this.setState({
+      const newState = {
         nodesById: this.documentModel.nodesById,
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
-        editSectionId: null,
-      }, () => {
+      };
+      if (this.documentModel.isMetaType(focusNodeId)) {
+        removeAllRanges();
+        newState.editSectionNode = this.documentModel.getNode(focusNodeId);
+      }
+      this.setState(newState, () => {
         // if we're on /edit/new, we don't save until user hits "enter"
         if (this.props.match.params.id !== NEW_POST_URL_ID) {
           this.saveContentBatchDebounce();
@@ -334,7 +335,7 @@ export default class EditPost extends React.Component {
     // NOTE: must wait for state have been set or setCaret will check stale values
     await this.closeAllEditContentMenus();
     
-    this.commitUpdates(focusNodeId, caretOffset, shouldFocusLastNode);
+    await this.commitUpdates(focusNodeId, caretOffset, shouldFocusLastNode);
   }
   
   /**
@@ -381,7 +382,7 @@ export default class EditPost extends React.Component {
     }
   
     const [
-      [startNodeCaretStart, startNodeCaretEnd, startNode]
+      [startNodeCaretStart, startNodeCaretEnd, _]
     ] = selectionOffsets;
     // select-and-type ?? delete selection first
     if (startNodeCaretStart !== startNodeCaretEnd) {
@@ -436,10 +437,17 @@ export default class EditPost extends React.Component {
       ) {
       return;
     }
-    const selectionOffsets = getHighlightedSelectionOffsets();
+    let selectionOffsets = getHighlightedSelectionOffsets();
     const [start] = selectionOffsets;
     if (start.length === 0) {
-      return;
+      const { editSectionNode } = this.state;
+      // if there's a MetaNode selected, override DOM selection
+      if (!editSectionNode.get('id')) {
+        return;
+      }
+      selectionOffsets = [
+        [0, 0, editSectionNode.get('id')]
+      ];
     }
     // since we're `await`ing below we need to persist this evt object or React will clean it up
     evt.persist();
@@ -460,10 +468,17 @@ export default class EditPost extends React.Component {
       return;
     }
     //console.debug('KeyUp: ', evt)
-    const selectionOffsets = getHighlightedSelectionOffsets();
+    let selectionOffsets = getHighlightedSelectionOffsets();
     const [start] = selectionOffsets;
     if (start.length === 0) {
-      return;
+      const { editSectionNode } = this.state;
+      // if there's a MetaNode selected, override DOM selection
+      if (!editSectionNode.get('id')) {
+        return;
+      }
+      selectionOffsets = [
+        [0, 0, editSectionNode.get('id')]
+      ];
     }
     // because of "await"
     evt.persist();
@@ -479,10 +494,17 @@ export default class EditPost extends React.Component {
   
   handleMouseUp = (evt) => {
     //console.debug('MouseUp: ', evt)
-    const selectionOffsets = getHighlightedSelectionOffsets();
+    let selectionOffsets = getHighlightedSelectionOffsets();
     const [start] = selectionOffsets;
     if (start.length === 0) {
-      return;
+      const { editSectionNode } = this.state;
+      // if there's a MetaNode selected, override DOM selection
+      if (!editSectionNode.get('id')) {
+        return;
+      }
+      selectionOffsets = [
+        [0, 0, editSectionNode.get('id')]
+      ];
     }
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
@@ -499,9 +521,8 @@ export default class EditPost extends React.Component {
     this.didCut = true;
     const selectionOffsets = selectionOffsetsArg || getHighlightedSelectionOffsets();
     const [
-      [startNodeCaretStart, startNodeCaretEnd, startNode]
+      [startNodeCaretStart, startNodeCaretEnd, startNodeId]
     ] = selectionOffsets;
-    const startNodeId = getNodeId(startNode);
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "paste" with clipboard data...
     if (evt.type !== 'cut') {
@@ -567,11 +588,12 @@ export default class EditPost extends React.Component {
   manageInsertMenu(selectionOffsetsArg) {
     const selectionOffsets = selectionOffsetsArg || getHighlightedSelectionOffsets();
     const [
-      [caretPositionStart, caretPositionEnd, selectedNode]
+      [caretPositionStart, caretPositionEnd, selectedNodeId]
     ] = selectionOffsets;
     // save current nodeId because the selection will disappear when the insert menu is shown
-    this.insertMenuSelectedNodeId = getNodeId(selectedNode);
+    this.insertMenuSelectedNodeId = selectedNodeId;
     const selectedNodeMap = this.documentModel.getNode(this.insertMenuSelectedNodeId);
+    const selectedNode = getNodeById(selectedNodeId);
     
     if (selectedNode
       && caretPositionStart === caretPositionEnd
@@ -624,24 +646,26 @@ export default class EditPost extends React.Component {
         height,
       });
     }
-    let focusNodeId = this.documentModel.update(
+    const newSectionId = this.documentModel.update(
       this.documentModel.getNode(this.insertMenuSelectedNodeId)
         .set('type', sectionType)
         .set('meta', meta)
     );
-    // TODO: just put a P after any MetaType - maybe only if it's the last
+    let focusNodeId = newSectionId;
+    // TODO: put a P after any MetaType - maybe only if it's the last node in the document
     if (this.documentModel.isMetaType(focusNodeId) && DocumentModel.getLastNode(this.documentModel.nodesById).get('id') === focusNodeId) {
       focusNodeId = this.documentModel.insert(NODE_TYPE_P, focusNodeId);
     }
     await this.commitUpdates(focusNodeId);
-    if ([NODE_TYPE_IMAGE, NODE_TYPE_QUOTE].includes(sectionType)) {
-      this.sectionEdit(focusNodeId)
+    if ([NODE_TYPE_IMAGE, NODE_TYPE_QUOTE, NODE_TYPE_SPACER].includes(sectionType)) {
+      this.sectionEdit(newSectionId)
     }
   }
   
   sectionEdit = (sectionId) => {
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = this.documentModel.getNode(sectionId);
+    removeAllRanges();
     console.log('SECTION CALLBACK ', sectionId);
     
     const newState = {
@@ -653,20 +677,8 @@ export default class EditPost extends React.Component {
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
       // hide edit section menu by default
-      editImageSectionNode: Map(),
-      editQuoteSectionNode: Map(),
+      editSectionNode: section,
       editSectionMetaFormTopOffset: sectionDomNode.offsetTop,
-    }
-    
-    switch (section.get('type')) {
-      case NODE_TYPE_IMAGE: {
-        newState.editImageSectionNode = section;
-        break;
-      }
-      case NODE_TYPE_QUOTE: {
-        newState.editQuoteSectionNode = section;
-        break;
-      }
     }
     
     this.setState(newState, () => {
@@ -683,8 +695,7 @@ export default class EditPost extends React.Component {
   }
   sectionEditClose = () => {
     this.setState({
-      editImageSectionNode: Map(),
-      editQuoteSectionNode: Map(),
+      editSectionNode: Map(),
     });
   }
   sectionDelete = (sectionId) => {
@@ -697,8 +708,8 @@ export default class EditPost extends React.Component {
   }
   sectionDeleteImage = async (sectionId) => {
     if (confirm('Delete?')) {
-      const { editImageSectionNode } = this.state;
-      const urlField = editImageSectionNode.getIn(['meta', 'url']);
+      const { editSectionNode } = this.state;
+      const urlField = editSectionNode.getIn(['meta', 'url']);
       if (imageUrlIsId(urlField)) {
         await apiDelete(`/image/${urlField}`)
       }
@@ -725,20 +736,20 @@ export default class EditPost extends React.Component {
   }
   
   replaceImageFile = async ([firstFile]) => {
-    const { editImageSectionNode } = this.state;
+    const { editSectionNode } = this.state;
     const {
       imageId,
       width,
       height,
     } = await this.uploadFile(firstFile);
-    const updatedImageSectionNode = editImageSectionNode
+    const updatedImageSectionNode = editSectionNode
       .deleteIn(['meta', 'rotationDegrees'])
       .setIn(['meta', 'url'], imageId)
       .setIn(['meta', 'width'], width)
       .setIn(['meta', 'height'], height);
     this.documentModel.update(updatedImageSectionNode);
     this.setState({
-      editImageSectionNode: updatedImageSectionNode,
+      editSectionNode: updatedImageSectionNode,
     }, async () => {
       await this.commitUpdates()
     })
@@ -746,12 +757,12 @@ export default class EditPost extends React.Component {
   
   updateImageCaption = (value) => {
     const {
-      editImageSectionNode,
+      editSectionNode,
     } = this.state;
-    const updatedImageSectionNode = editImageSectionNode.setIn(['meta', 'caption'], value);
+    const updatedImageSectionNode = editSectionNode.setIn(['meta', 'caption'], value);
     this.documentModel.update(updatedImageSectionNode);
     this.setState({
-      editImageSectionNode: updatedImageSectionNode,
+      editSectionNode: updatedImageSectionNode,
     }, async () => {
       await this.commitUpdates();
     })
@@ -759,14 +770,14 @@ export default class EditPost extends React.Component {
   
   imageRotate = () => {
     const {
-      editImageSectionNode,
+      editSectionNode,
     } = this.state;
-    const currentRotationDegrees = editImageSectionNode.getIn(['meta', 'rotationDegrees'], 0);
+    const currentRotationDegrees = editSectionNode.getIn(['meta', 'rotationDegrees'], 0);
     const updatedRotationDegrees = currentRotationDegrees === 270 ? 0 : currentRotationDegrees + 90;
-    let updatedImageSectionNode = editImageSectionNode.setIn(['meta', 'rotationDegrees'], updatedRotationDegrees);
+    let updatedImageSectionNode = editSectionNode.setIn(['meta', 'rotationDegrees'], updatedRotationDegrees);
     this.documentModel.update(updatedImageSectionNode);
     this.setState({
-      editImageSectionNode: updatedImageSectionNode,
+      editSectionNode: updatedImageSectionNode,
     }, async () => {
       await this.commitUpdates();
     });
@@ -774,12 +785,12 @@ export default class EditPost extends React.Component {
   
   updateQuoteMeta = (value, metaKey) => {
     const {
-      editQuoteSectionNode,
+      editSectionNode,
     } = this.state;
-    const updatedQuoteSectionNode = editQuoteSectionNode.setIn(['meta', metaKey], value);
+    const updatedQuoteSectionNode = editSectionNode.setIn(['meta', metaKey], value);
     this.documentModel.update(updatedQuoteSectionNode);
     this.setState({
-      editQuoteSectionNode: updatedQuoteSectionNode,
+      editSectionNode: updatedQuoteSectionNode,
     }, async () => {
       await this.commitUpdates();
     })
@@ -808,12 +819,12 @@ export default class EditPost extends React.Component {
   manageFormatSelectionMenu(evt, selectionOffsets) {
     const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
     const [
-      [startOffset, endOffset, selectedNode],
+      [startOffset, endOffset, selectedNodeId],
       end,
     ] = selectionOffsets;
     if (
       // no node
-      !selectedNode
+      !selectedNodeId
       // collapsed caret
       || startOffset === endOffset
       // hit esc
@@ -836,7 +847,7 @@ export default class EditPost extends React.Component {
     const range = getRange();
     console.info('SELECTION: ', startOffset, endOffset, end, range, range.getBoundingClientRect());
     const rect = range.getBoundingClientRect();
-    const selectedNodeId = getNodeId(selectedNode);
+    const selectedNode = getNodeById(selectedNodeId);
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
     // Top Offset (from top of document) - needs a heuristic, or I'm missing an API!  do this with rems?
     // start with the top offset of the paragraph
@@ -899,8 +910,7 @@ export default class EditPost extends React.Component {
       insertMenuIsOpen,
       insertMenuTopOffset,
       insertMenuLeftOffset,
-      editImageSectionNode,
-      editQuoteSectionNode,
+      editSectionNode,
       editSectionMetaFormTopOffset,
       formatSelectionNode,
       formatSelectionMenuTopOffset,
@@ -951,7 +961,7 @@ export default class EditPost extends React.Component {
                    onPaste={this.handlePaste}
                    onCut={this.handleCut}
               >
-                <Document nodesById={nodesById} isEditing={this.sectionEdit} />
+                <Document nodesById={nodesById} currentEditNode={editSectionNode} setEditNodeId={this.sectionEdit} />
               </div>
             )}
           </ArticleStyled>
@@ -974,18 +984,18 @@ export default class EditPost extends React.Component {
           insertMenuIsOpen={insertMenuIsOpen}
           insertSection={this.insertSection}
         />)}
-        {editImageSectionNode.get('id') && (<EditImageForm
+        {editSectionNode.get('type') === NODE_TYPE_IMAGE && (<EditImageForm
           offsetTop={editSectionMetaFormTopOffset}
-          nodeModel={editImageSectionNode}
+          nodeModel={editSectionNode}
           uploadFile={this.replaceImageFile}
           updateImageCaption={this.updateImageCaption}
           sectionDelete={this.sectionDeleteImage}
           imageRotate={this.imageRotate}
           forwardRef={this.getInputForwardedRef}
         />)}
-        {editQuoteSectionNode.get('id') && (<EditQuoteForm
+        {editSectionNode.get('type') === NODE_TYPE_QUOTE && (<EditQuoteForm
           offsetTop={editSectionMetaFormTopOffset}
-          nodeModel={editQuoteSectionNode}
+          nodeModel={editSectionNode}
           updateMeta={this.updateQuoteMeta}
           sectionDelete={this.sectionDelete}
           forwardRef={this.getInputForwardedRef}

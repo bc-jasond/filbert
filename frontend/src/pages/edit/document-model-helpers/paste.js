@@ -1,15 +1,13 @@
-import { getNodeId } from '../../../common/dom';
 import { handlePasteTextType } from './handle-text-type';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   const [
-    [caretPositionStart, _, selectedNode],
+    [caretPositionStart, _, selectedNodeId],
   ] = selectionOffsets;
   
-  if (!selectedNode) {
+  if (!selectedNodeId) {
     return [];
   }
-  const selectedNodeId = getNodeId(selectedNode);
   
   // split selectedNodeContent at caret
   const clipboardText = clipboardData.getData('text/plain');

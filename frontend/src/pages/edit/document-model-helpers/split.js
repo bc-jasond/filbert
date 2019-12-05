@@ -1,4 +1,3 @@
-import { getNodeId } from '../../../common/dom';
 import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
 import { handleEnterTextType } from './handle-text-type';
 
@@ -7,19 +6,18 @@ import { handleEnterTextType } from './handle-text-type';
  */
 export function doSplit(documentModel, selectionOffsets) {
   const [
-    [caretPosition, _, selectedNode],
+    [caretPosition, _, selectedNodeId],
   ] = selectionOffsets;
-  const selectedNodeId = getNodeId(selectedNode);
   if (selectedNodeId === 'null' || !selectedNodeId) {
-    console.warn('doSplit() bad selection, no id ', selectedNode);
+    console.warn('doSplit() bad selection, no id ', selectedNodeId);
     return;
   }
   if (documentModel.isMetaType(selectedNodeId)) {
     console.info("doSplit() TODO: support MetaType sections")
   }
   
-  console.info('doSplit()', selectedNode, caretPosition);
+  console.info('doSplit()', selectedNodeId, caretPosition);
   // split selectedNodeContent at caret
-  const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(selectedNode.textContent);
+  const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(documentModel.getNode(selectedNodeId).get('content'));
   return handleEnterTextType(documentModel, selectedNodeId, caretPosition, selectedNodeContent);
 }

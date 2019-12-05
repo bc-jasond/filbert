@@ -1,13 +1,14 @@
 import React from 'react';
 import { NODE_TYPE_QUOTE } from '../constants';
-import { A, ContentSection, ItalicText, MiniText, QuoteP } from './shared-styled-components';
+import { A, ContentSection, Img, ItalicText, MiniText, QuoteP } from './shared-styled-components';
 
 export default class Quote extends React.PureComponent {
   render() {
     console.debug("Quote RENDER", this);
     const {
       node,
-      isEditing,
+      currentEditNode,
+      setEditNodeId,
     } = this.props;
     const id = node.get('id');
     const quote = node.getIn(['meta', 'quote'], '');
@@ -17,8 +18,9 @@ export default class Quote extends React.PureComponent {
     return (
       <ContentSection data-type={NODE_TYPE_QUOTE} name={id} contentEditable={false}>
         <QuoteP
-          isEditing={isEditing}
-          onClick={() => isEditing && isEditing(id)}
+          isEditMode={setEditNodeId}
+          isEditing={currentEditNode && currentEditNode.get('id') === id}
+          onClick={() => setEditNodeId && setEditNodeId(id)}
         >
           {'💡Remember: '}
           <ItalicText>
