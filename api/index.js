@@ -4,6 +4,7 @@ require = require('esm')(module/*, options*/);
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const figlet = require('figlet');
 const storage = multer.memoryStorage();
 const upload = multer({
   storage, // TODO: store in memory as Buffer - bad idea?
@@ -17,7 +18,7 @@ const sharp = require('sharp');
 
 const {
   getKnex,
-  getNodes,
+  getNodesFlat,
   bulkContentNodeUpsert,
   bulkContentNodeDelete,
   getMysqlDatetime,
@@ -27,6 +28,13 @@ const { encrypt, decrypt, getChecksum } = require('./cipher');
 
 async function main() {
   try {
+    console.info(
+      figlet.textSync(
+        'filbert',
+        {
+          //font: 'Doh',
+        })
+    )
     const knex = await getKnex();
     
     const app = express();
@@ -130,7 +138,7 @@ async function main() {
         res.status(404).send({});
         return;
       }
-      const contentNodes = await getNodes(knex, post.id);
+      const contentNodes = await getNodesFlat(knex, post.id);
       if (loggedInUser) {
         post.canEdit = loggedInUser.id === post.user_id;
         post.canDelete = loggedInUser.id === post.user_id;
@@ -240,7 +248,7 @@ async function main() {
         res.status(404).send({});
         return;
       }
-      const contentNodes = await getNodes(knex, post.id);
+      const contentNodes = await getNodesFlat(knex, post.id);
       res.send({ post, contentNodes });
     })
     
@@ -447,7 +455,7 @@ async function main() {
     })
     
     app.listen(3001)
-    
+    console.info("Filbert API Started 👍")
   } catch (err) {
     console.error('main() error: ', err);
   }

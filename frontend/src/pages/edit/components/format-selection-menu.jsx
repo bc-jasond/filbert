@@ -10,12 +10,12 @@ import {
   SELECTION_LINK_URL,
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
 } from '../../../common/constants';
 import {
   SvgIconMixin,
-  LilBlackMenu,
+  LilSassyMenu,
   IconButton,
   DarkInput,
   ButtonSeparator,
@@ -57,7 +57,7 @@ const IconH2 = styled(IconH2Svg)`
   ${SvgIconMixin};
 `;
 
-export const FormatSelectionMenu = styled(LilBlackMenu)`
+export const FormatSelectionMenu = styled(LilSassyMenu)`
   top: ${p => p.top - (p.shouldShowUrl ? 30 : 0)}px;
   left: ${p => p.left - 165}px; // 165 is half the width of the menu
 `;
@@ -103,10 +103,10 @@ export default ({
     </IconButton>
     <ButtonSeparator />
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_H1)}>
-      <IconH1 selected={nodeModel.get('type') === NODE_TYPE_SECTION_H1} />
+      <IconH1 selected={nodeModel.get('type') === NODE_TYPE_H1} />
     </IconButton>
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_H2)}>
-      <IconH2 selected={nodeModel.get('type') === NODE_TYPE_SECTION_H2} />
+      <IconH2 selected={nodeModel.get('type') === NODE_TYPE_H2} />
     </IconButton>
     <LinkInput
       ref={forwardRef}

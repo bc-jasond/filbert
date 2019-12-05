@@ -18,7 +18,7 @@ import ListAllPosts from './pages/list-all-posts';
 import ListAllDrafts from './pages/list-all-drafts';
 import ViewPost from './pages/view-post';
 import SignIn from './pages/signin';
-import EditPost from './pages/edit/edit';
+import EditPost from './pages/edit/components/edit';
 
 const App = () => (
   <React.Fragment>

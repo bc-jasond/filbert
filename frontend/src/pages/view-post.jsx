@@ -1,15 +1,13 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
-import { ROOT_NODE_PARENT_ID } from '../common/constants';
-import { apiDelete, apiGet } from '../common/fetch';
-import { confirmPromise } from '../common/utils';
+import { apiGet } from '../common/fetch';
 import { getSession, getUserName, signout } from '../common/session';
+import { reviver } from '../pages/edit/document-model';
 
 import Footer from './footer';
 import {
   Article,
-  DeletePost,
   EditPost,
   Header,
   HeaderContentContainer,
@@ -24,7 +22,7 @@ import {
 
 import Page404 from './404';
 
-import ContentNode from '../common/components/content-node.component';
+import Document from '../common/components/document.component';
 
 export default class ViewPost extends React.Component {
   constructor(props) {
@@ -32,8 +30,7 @@ export default class ViewPost extends React.Component {
     
     this.state = {
       post: Map(),
-      root: null,
-      nodesByParentId: {},
+      nodesById: Map(),
       shouldShow404: false,
       shouldRedirectToHome: false,
     }
@@ -42,32 +39,20 @@ export default class ViewPost extends React.Component {
   async componentDidMount() {
     try {
       const { post, contentNodes } = await apiGet(`/post/${this.props.match.params.canonical}`);
-      const nodesByParentId = fromJS(contentNodes);
-      // TODO: don't use 'null' as root node indicator
-      const root = nodesByParentId.get(ROOT_NODE_PARENT_ID).get(0);
-      this.setState({ post: fromJS(post), root, nodesByParentId, shouldShow404: false })
+      this.setState({
+        post: fromJS(post),
+        nodesById: fromJS(contentNodes, reviver),
+        shouldShow404: false })
     } catch (err) {
       console.error(err);
       this.setState({ pageContent: null, shouldShow404: true })
     }
   }
   
-  deletePost = async () => {
-    const { post } = this.state;
-    try {
-      await confirmPromise(`Delete post ${post.get('title')}?`);
-      await apiDelete(`/post/${post.get('id')}`);
-      this.setState({ shouldRedirectToHome: true });
-    } catch (err) {
-      console.error('Delete post error:', err)
-    }
-  }
-  
   render() {
     const {
       post,
-      root,
-      nodesByParentId,
+      nodesById,
       shouldShow404,
       shouldRedirectToHome,
     } = this.state;
@@ -103,8 +88,8 @@ export default class ViewPost extends React.Component {
         </Header>
         <HeaderSpacer />
         <Article>
-          {root && (
-            <ContentNode node={root} nodesByParentId={nodesByParentId} />
+          {nodesById.size > 0 && (
+            <Document nodesById={nodesById} />
           )}
         </Article>
         <Footer />

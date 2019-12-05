@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import {
-  H1,
   Button,
   ButtonSpan,
   CancelButton,
@@ -11,7 +10,7 @@ import {
   Label,
   ErrorMessage,
   SuccessMessage,
-  MessageContainer,
+  MessageContainer, H1Styled,
 } from './shared-styled-components';
 
 import {formatPostDate} from '../utils';
@@ -61,7 +60,7 @@ export default ({
                 }) => (
   <PublishPostFormContainer>
     <PublishPostForm>
-      <H1>{`${post.get('published') ? 'Post' : 'Draft'}: Details & Publish`}</H1>
+      <H1Styled>{`${post.get('published') ? 'Post' : 'Draft'}: Details & Publish`}</H1Styled>
       {publishPostFields.map(({fieldName, StyledComponent, disabled}, idx) => {
           const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
           return (

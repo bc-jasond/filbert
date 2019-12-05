@@ -7,7 +7,7 @@ const sectionWidthMixin = css`
   max-width: 740px;
   margin: 0 auto;
 `;
-export const H1 = styled.h1`
+export const H1Styled = styled.h1`
   ${sectionWidthMixin}
   font-family: ${titleSerif}, serif;
   font-size: 46px;
@@ -21,7 +21,7 @@ export const H1 = styled.h1`
     }
   `}
 `;
-export const H2 = styled.h2`
+export const H2Styled = styled.h2`
  ${sectionWidthMixin}
   margin-top: 30px;
   margin-bottom: 8px;
@@ -65,14 +65,15 @@ export const SpacerSection = styled(ContentSection)`
   }
 `;
 export const ImageSection = styled(ContentSection)`
+  overflow: hidden;
   max-width: 1000px;
   margin: 0 auto 52px;
 `;
-export const P = styled.p`
+export const PStyled = styled.p`
   position: relative;
   margin-bottom: 32px;
 `;
-export const QuoteP = styled(P)`
+export const QuoteP = styled(PStyled)`
   border: 4px solid transparent;
   ${p => p.isEditing && `
     &:hover {
@@ -81,7 +82,7 @@ export const QuoteP = styled(P)`
     }
   `}
 `;
-export const Pre = styled.pre`
+export const PreStyled = styled.pre`
   font: inherit;
   margin: 0;
   &::before {
@@ -113,7 +114,7 @@ export const Ol = styled.ol`
   word-wrap: break-word;
   visibility: visible;
 `;
-export const Li = styled.li`
+export const LiStyled = styled.li`
   margin-left: 30px;
   margin-bottom: 14px;
   &::before {
@@ -353,7 +354,7 @@ export const NavButtonMixin = css`
 `;
 
 // LIL BLACK FORMS with ICONS
-export const LilBlackMenu = styled.div`
+export const LilSassyMenu = styled.div`
   position: absolute;
   transition: .1s top;
   top: ${p => p.top}px;

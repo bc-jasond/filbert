@@ -1,21 +1,18 @@
-import Immutable, { isKeyed, List, Map } from 'immutable';
+import Immutable, { isKeyed, Map } from 'immutable';
 
 import {
   NEW_POST_URL_ID,
   NODE_TYPE_P,
-  NODE_TYPE_ROOT,
-  NODE_TYPE_SECTION_CODE,
-  NODE_TYPE_SECTION_CONTENT,
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_H2,
-  NODE_TYPE_SECTION_IMAGE,
-  NODE_TYPE_SECTION_POSTLINK,
-  NODE_TYPE_SECTION_QUOTE,
-  NODE_TYPE_SECTION_SPACER,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_IMAGE,
+  NODE_TYPE_POSTLINK,
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_SPACER,
   NODE_TYPE_LI,
-  NODE_TYPE_OL,
   NODE_TYPE_PRE,
-  ROOT_NODE_PARENT_ID, SELECTION_START, SELECTION_END,
+  SELECTION_START,
+  SELECTION_END,
 } from '../../common/constants';
 import {
   cleanText,
@@ -35,26 +32,49 @@ export function reviver(key, value) {
 
 export default class DocumentModel {
   post;
-  root;
-  rootId;
-  infiniteLoopCount = 0;
-  nodesByParentId = Map();
+  updateManager;
+  nodesById = Map();
   
-  init(post, updateManager, jsonData = null) {
+  static getFirstNode(nodesById) {
+    const idSeen = new Set();
+    const nextSeen = new Set();
+    nodesById.forEach(node => {
+      idSeen.add(node.get('id'));
+      if (node.get('next_sibling_id')) {
+        nextSeen.add(node.get('next_sibling_id'));
+      }
+    })
+    const difference = new Set([...idSeen].filter(id => !nextSeen.has(id)))
+    if (difference.size !== 1) {
+      console.error("DocumentError.getFirstNode() - more than one node isn't pointed to by another node!", difference)
+    }
+    const [firstId] = [...difference];
+    return nodesById.get(firstId);
+  }
+  
+  static getLastNode(nodesById) {
+    return nodesById
+      .filter(n => !n.get('next_sibling_id'))
+      .first(Map());
+  }
+  
+  init(post, updateManager = {}, jsonData = null) {
     this.post = Immutable.fromJS(post);
     // TODO: ideally this documentModel class doesn't have to know about the updateManager.
     // But, it's nice to make one call from the consumer (edit.jsx + helpers) that handles the documentModel
     // and the updateManager behind the scenes.  That orchestration would have to move either out into edit.jsx or into another helper class
     this.updateManager = updateManager;
     if (jsonData) {
-      this.nodesByParentId = Immutable.fromJS(jsonData, reviver);
-      this.root = this.getFirstChild(ROOT_NODE_PARENT_ID);
-      this.rootId = this.root.get('id');
-    } else {
-      this.root = getMapWithId({ type: NODE_TYPE_ROOT, parent_id: ROOT_NODE_PARENT_ID, position: 0 });
-      this.rootId = this.root.get('id');
-      this.nodesByParentId = Map().set(ROOT_NODE_PARENT_ID, List([this.root]));
+      this.nodesById = Immutable.fromJS(jsonData, reviver);
+      return DocumentModel.getLastNode(this.nodesById).get('id');
     }
+    return this.clearNodesAndSetTitlePlaceholder();
+  }
+  
+  clearNodesAndSetTitlePlaceholder() {
+    const newTitle = getMapWithId({ type: NODE_TYPE_H1 });
+    this.nodesById = Map().set(newTitle.get('id'), newTitle);
+    return newTitle.get('id');
   }
   
   getMapWithId(obj) {
@@ -62,501 +82,145 @@ export default class DocumentModel {
   }
   
   getNode(nodeId) {
-    this.infiniteLoopCount = 0;
-    // trying to find the parent of the root node makes for noisy logs
-    if ([null, "null"].includes(nodeId)) return Map();
-    if (this.rootId === nodeId) return this.root;
-    
-    const queue = [this.rootId];
-    while (queue.length) {
-      if (this.infiniteLoopCount++ > 1000) {
-        throw new Error('getNode is Fuera de Control!!!');
-      }
-      const currentList = this.nodesByParentId.get(queue.shift(), List());
-      const node = currentList.find(node => node.get('id') === nodeId);
-      if (node) {
-        return node;
-      }
-      currentList.forEach(n => {
-        queue.push(n.get('id'));
-      })
+    const node = this.nodesById.get(nodeId);
+    if (node) {
+      return node;
     }
     console.warn(`getNode id: ${nodeId} - not found!`);
     return Map();
   }
   
-  getParent(nodeId) {
-    const node = this.getNode(nodeId);
-    return this.getNode(node.get('parent_id'));
+  getPrevNode(nodeId) {
+    return this.nodesById
+      .filter(n => n.get('next_sibling_id') === nodeId)
+      .first(Map())
   }
-  
-  getChildren(nodeId) {
-    return this.nodesByParentId.get(nodeId, List())
+  getNextNode(nodeId) {
+    return this.getNode(this.getNode(nodeId).get('next_sibling_id'));
   }
-  
-  // this will trigger a shouldComponentUpdate -> true for re-rendering
-  // this function breaks references inside the nodesByParentId List for all ancestors of an updated node
-  setChildren(parentNodeId, children) {
-    // replace the updated parent with new children
-    this.nodesByParentId = this.nodesByParentId.set(parentNodeId, children);
-    if (parentNodeId === ROOT_NODE_PARENT_ID) {
-      return this;
+  getNodesBetween(leftNodeId, rightNodeId) {
+    const leftNode = this.getNode(leftNodeId);
+    const rightNode = this.getNode(rightNodeId);
+    if (!leftNode.get('id') || !rightNode.get('id')) {
+      console.error("getNodesBetween() - must have valid start and end nodes", leftNodeId, rightNodeId);
+      return [];
     }
-    let currentId = parentNodeId;
-    // "touch" all ancestors to break references
-    while (currentId) {
-      const parentId = this.getParent(currentId).get('id') || ROOT_NODE_PARENT_ID;
-      const siblings = this.nodesByParentId.get(parentId);
-      const currentIdx = siblings.findIndex(n => n.get('id') === currentId);
-      // TODO: find a better way to break the reference...
-      // HACK: delete & reset "id" to break deep equality (break reference)
-      const nodeWithNewReference = this.getNode(currentId)
-        .delete('id')
-        .set('id', currentId);
-      this.nodesByParentId = this.nodesByParentId.set(
-        parentId,
-        siblings.set(
-          currentIdx,
-          nodeWithNewReference,
-        )
-      );
-      // TODO: why have the root node in 2 places? once in this.nodesByParentId["null"] and also in this.root
-      //  refactor - the "null" parent key is unnecessary
-      if (currentId === this.rootId) {
-        this.root = nodeWithNewReference;
-      }
-      currentId = this.getParent(currentId).get('id');
+    const middleNodeIds = [];
+    let nextNode = this.getNextNode(leftNodeId);
+    while (nextNode.get('id') !== rightNodeId) {
+      middleNodeIds.push(nextNode.get('id'));
+      nextNode = this.getNextNode(nextNode.get('id'));
     }
-    return this
+    return middleNodeIds;
   }
   
-  getSection(nodeId) {
-    let sectionId = nodeId;
-    while (!this.isSectionType(sectionId)) {
-      sectionId = this.getParent(sectionId).get('id');
-      if (!sectionId) {
-        break;
-      }
-    }
-    return this.getNode(sectionId);
+  isFirstOfType(nodeId) {
+    const type = this.getNode(nodeId).get('type');
+    return this.getPrevNode(nodeId).get('type') !== type;
   }
   
-  getSibling(nodeId, prev = true) {
-    const parent = this.getParent(nodeId);
-    if (parent.size === 0) {
-      return Map();
-    }
-    const siblings = this.nodesByParentId.get(parent.get('id'));
-    const idx = siblings.findIndex(s => s.get('id') === nodeId);
-    if ((prev && idx === 0) || (!prev && idx === siblings.size - 1)) return Map();
-    return siblings.get(prev ? idx - 1 : idx + 1);
+  isLastOfType(nodeId) {
+    const type = this.getNode(nodeId).get('type');
+    return this.getNextNode(nodeId).get('type') !== type;
   }
   
-  getNextSibling(nodeId) {
-    return this.getSibling(nodeId, false);
-  }
-  
-  getPrevSibling(nodeId) {
-    return this.getSibling(nodeId);
-  }
-  
-  isFirstChild(nodeId) {
-    if (nodeId === this.rootId) {
-      return true;
-    }
-    const parentId = this.getParent(nodeId).get('id');
-    return this.getFirstChild(parentId).get('id') === nodeId;
-  }
-  
-  /**
-   * used for setting caret position
-   *
-   * @param nodeId
-   * @returns note: returns a Map() with an 'id' for PRE tags - they won't be in the nodesByParentId list
-   */
-  getFirstChild(nodeId) {
-    const node = this.getNode(nodeId);
-    if (node.get('type') === NODE_TYPE_SECTION_CODE) {
-      return Map({
-        id: `${nodeId}-0`
-      });
-    }
-    const siblings = this.nodesByParentId.get(nodeId, List());
-    if (siblings.size === 0) {
-      console.warn('getFirstChild - no children! ', nodeId);
-      return Map();
-    }
-    return siblings.first();
-  }
-  
-  isLastChild(nodeId) {
-    if (nodeId === this.rootId) {
-      return true;
-    }
-    const parentId = this.getParent(nodeId).get('id');
-    return this.getLastChild(parentId).get('id') === nodeId;
-  }
-  
-  /**
-   * @param nodeId
-   * @returns note: returns a Map() with an 'id' for PRE tags - they won't be in the nodesByParentId list
-   */
-  getLastChild(nodeId) {
-    const node = this.getNode(nodeId);
-    if (node.get('type') === NODE_TYPE_SECTION_CODE) {
-      return Map({
-        id: `${nodeId}-${node.getIn(['meta', 'lines'], List()).size - 1}`
-      });
-    }
-    const siblings = this.nodesByParentId.get(nodeId, List());
-    if (siblings.size === 0) {
-      console.warn('getLastChild - no children! ', nodeId);
-      return Map();
-    }
-    return siblings.last();
-  }
-  
-  isOnlyChild(nodeId) {
-    return this.isFirstChild(nodeId) && this.isLastChild(nodeId);
-  }
-  
-  isSectionType(nodeId) {
+  isTextType(nodeId) {
     return [
-      NODE_TYPE_SECTION_SPACER,
-      NODE_TYPE_SECTION_CONTENT,
-      NODE_TYPE_SECTION_H1,
-      NODE_TYPE_SECTION_H2,
-      NODE_TYPE_SECTION_POSTLINK,
-      NODE_TYPE_SECTION_QUOTE,
-      NODE_TYPE_SECTION_IMAGE,
-      NODE_TYPE_SECTION_CODE,
+      NODE_TYPE_H1,
+      NODE_TYPE_H2,
+      NODE_TYPE_PRE,
+      NODE_TYPE_P,
+      NODE_TYPE_LI,
     ].includes(this.getNode(nodeId).get('type'))
   }
   
-  insertSectionAfter(sectionId, type, content = '', meta = Map()) {
-    // parent must be root
-    const sections = this.nodesByParentId.get(this.rootId, List());
-    const siblingIndex = sections.findIndex(s => s.get('id') === sectionId);
-    if (siblingIndex === -1) {
-      const errorMessage = 'insertSectionAfter - sibling section not found';
-      console.error(errorMessage, sectionId);
-      throw new Error(errorMessage);
-    }
-    return this.insertSection(type, siblingIndex + 1, content, meta);
-  }
-  
-  insertSectionBefore(sectionId, type, content = '', meta = Map()) {
-    // parent must be root
-    const sections = this.nodesByParentId.get(this.rootId, List());
-    const siblingIndex = sections.findIndex(s => s.get('id') === sectionId);
-    if (siblingIndex === -1) {
-      const errorMessage = 'insertSectionBefore - sibling section not found';
-      console.error(errorMessage, sectionId);
-      throw new Error(errorMessage);
-    }
-    return this.insert(this.rootId, type, siblingIndex, content, meta);
-  }
-  
-  insertSection(type, index = -1, content = '', meta = Map()) {
-    // parent must be root
-    return this.insert(this.rootId, type, index, content, meta);
-  }
-  
-  /**
-   * this is essentially "splitSectionForInsert"
-   */
-  splitSection(sectionId, nodeId) {
-    const section = this.getNode(sectionId);
-    if (!section.get('id') || section.get('type') !== NODE_TYPE_SECTION_CONTENT) {
-      console.error('splitSection - bad section', section);
-      throw new Error('splitSection - I only split CONTENT sections ATM')
-    }
-    const siblings = this.nodesByParentId.get(sectionId);
-    const nodeIdx = siblings.findIndex(s => s.get('id') === nodeId);
-    if (nodeIdx === -1) {
-      console.error('splitSection - bad child', nodeId)
-      throw new Error(`splitSection - I can't find "${nodeId}" in section "${sectionId}"`)
-    }
-    
-    // update existing section
-    this.setChildren(sectionId, siblings.slice(0, nodeIdx));
-    // if all existing nodes moved to the new section, create a new P
-    if (this.nodesByParentId.get(sectionId).size === 0) {
-      this.insert(sectionId, NODE_TYPE_P, 0);
-    }
-    this.updateNodesForParent(sectionId);
-    // new section
-    const newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
-    this.setChildren(newSectionId, siblings.slice(nodeIdx));
-    this.updateNodesForParent(newSectionId);
-  }
-  
-  /**
-   * for splitting part of P or LI content into an H1 or H2 section
-   *
-   * NOTE: this splits a content section but is different from splitSection() in these ways:
-   *  1) it takes an index as a split point instead of a node
-   *  2) it doesn't add placeholder Ps
-   *  3) it deletes the existing section if there aren't any subsections
-   *  4) it optionally creates the 2nd section (if there are subsections)
-   */
-  splitSectionForFormatChange(sectionId, nodeIdx) {
-    const section = this.getNode(sectionId);
-    if (!section.get('id') || section.get('type') !== NODE_TYPE_SECTION_CONTENT) {
-      console.error('splitSectionForFormatChange - bad section', section);
-      throw new Error('splitSectionForFormatChange - I only split CONTENT sections ATM')
-    }
-    const subSections = this.getChildren(sectionId);
-    // NOTE nodeIdx could === subSections.size here because of a delete operation
-    if (nodeIdx < 0 || nodeIdx > subSections.size) {
-      console.error('splitSectionForFormatChange - index out of bounds', nodeIdx)
-      throw new Error(`splitSectionForFormatChange - index out of bounds "${nodeIdx}" in section "${sectionId}"`)
-    }
-    
-    // update existing list
-    const leftSubSections = subSections.slice(0, nodeIdx);
-    if (leftSubSections.size > 0) {
-      this.setChildren(sectionId, leftSubSections);
-      this.updateNodesForParent(sectionId);
-    }
-    
-    // new list
-    const rightSubSections = subSections.slice(nodeIdx);
-    let newSectionId;
-    if (rightSubSections.size > 0) {
-      newSectionId = this.insertSectionAfter(sectionId, NODE_TYPE_SECTION_CONTENT);
-      this.setChildren(newSectionId, rightSubSections);
-      this.updateNodesForParent(newSectionId);
-    }
-    
-    // return offset to insert after or before
-    if (leftSubSections.size === 0) {
-      this.delete(sectionId);
-      return 0;
-    }
-    return 1;
-  }
-  
-  isParagraphType(nodeId) {
+  canHaveSelections(nodeId) {
     return [
       NODE_TYPE_P,
       NODE_TYPE_LI,
-      NODE_TYPE_SECTION_H1,
-      NODE_TYPE_SECTION_H2,
+    ].includes(this.getNode(nodeId).get('type'))
+  }
+  
+  isMetaType(nodeId) {
+    return [
+      NODE_TYPE_SPACER,
+      NODE_TYPE_POSTLINK,
+      NODE_TYPE_QUOTE,
+      NODE_TYPE_IMAGE,
     ].includes(this.getNode(nodeId).get('type'))
   }
   
   mergeParagraphs(leftId, rightId) {
-    if (!(this.isParagraphType(leftId) && this.isParagraphType(rightId))) {
+    if (!(this.isTextType(leftId) && this.isTextType(rightId))) {
       console.error('mergeParagraphs - can`t do it!', leftId, rightId);
       throw new Error('mergeParagraphs - invalid paragraphs')
     }
     let left = this.getNode(leftId);
     const right = this.getNode(rightId);
     left = left.set('content', `${left.get('content', '')}${right.get('content', '')}`);
-    left = concatSelections(left, right);
+    if (this.canHaveSelections(leftId)) {
+      left = concatSelections(left, right);
+    }
     this.update(left);
     this.delete(rightId);
   }
   
-  mergeSections(left, right) {
-    if (!(left.get('type') === NODE_TYPE_SECTION_CONTENT && right.get('type') === NODE_TYPE_SECTION_CONTENT)
-      && !(left.get('type') === NODE_TYPE_OL && right.get('type') === NODE_TYPE_OL)) {
-      console.error('mergeSections', left, right);
-      throw new Error('mergeSections - I only merge CONTENT & OL sections ATM')
+  insert(type, neighborNodeId, content = '', meta = Map(), shouldInsertAfter = true) {
+    let neighbor = this.getNode(neighborNodeId);
+    if (!neighbor.get('id')) {
+      throw new Error(`DocumentModel.insert() - bad neighbor id! ${neighborNodeId}`)
     }
-    const leftSectionId = left.get('id');
-    const rightSectionId = right.get('id');
-    console.info('mergingSections ', leftSectionId, rightSectionId);
-    // left or right could be empty because the selectedNode was already deleted
-    const rightNodes = this.nodesByParentId.get(rightSectionId, List());
-    const leftNodes = this.nodesByParentId.get(leftSectionId, List());
-    this.setChildren(leftSectionId, leftNodes.concat(rightNodes));
-    this.updateNodesForParent(leftSectionId);
-    this.setChildren(rightSectionId, List());
-    this.delete(rightSectionId);
-  }
-  // TODO: validate subsection / parent type combinations!
-  insertSubSectionAfter(siblingId, type, content = '', meta = Map()) {
-    const parentId = this.getParent(siblingId).get('id');
-    const siblings = this.nodesByParentId.get(parentId, List());
-    const siblingIdx = siblings.findIndex(s => s.get('id') === siblingId);
-    return this.insert(parentId, type, siblingIdx + 1, content, meta);
-  }
-  
-  insert(parentId, type, index, content, meta) {
-    const siblings = this.nodesByParentId.get(parentId, List());
     let newNode = this.getMapWithId({
       type,
-      parent_id: parentId,
-      position: index,
       content: cleanText(content),
-      meta: meta || Map(),
+      meta,
     });
-    this.updateManager.stageNodeUpdate(newNode.get('id'));
-    this.setChildren(parentId, siblings
-      .insert(newNode.get('position'), newNode)
-    );
-    // reindex children and persist changes
-    this.updateNodesForParent(parentId);
-    // update all nodes
+    if (shouldInsertAfter) {
+      const oldNeighborNext = this.getNextNode(neighborNodeId);
+      this.update(!oldNeighborNext.get('id')
+        ? newNode
+        : newNode.set('next_sibling_id', oldNeighborNext.get('id')))
+      this.update(neighbor.set('next_sibling_id', newNode.get('id')))
+    }
+    // insert before
+    else {
+      const oldNeighborPrev = this.getPrevNode(neighborNodeId);
+      if (oldNeighborPrev.get('id')) {
+        this.update(oldNeighborPrev.set('next_sibling_id', newNode.get('id')))
+      }
+      this.update(newNode.set('next_sibling_id', neighborNodeId))
+    }
     return newNode.get('id');
   }
   
   update(node) {
     const nodeId = node.get('id');
-    const parentId = this.getParent(nodeId).get('id') || ROOT_NODE_PARENT_ID;
-    const siblings = this.nodesByParentId.get(parentId);
-    const nodeIdx = siblings.findIndex(n => n.get('id') === nodeId);
     this.updateManager.stageNodeUpdate(nodeId);
-    this.setChildren(parentId, siblings.set(nodeIdx, node))
+    this.nodesById = this.nodesById.set(nodeId, node)
     return nodeId
   }
   
-  /**
-   * delete a node and all of it's children
-   */
   delete(nodeId) {
-    if (nodeId === this.rootId) {
-      console.error('edit pipeline - delete - trying to delete the root node!')
-      return;
-    }
-    // check if node is already deleted
-    if (this.updateManager.nodeHasBeenStagedForDelete(nodeId)) {
-      console.info('edit pipeline - already deleted ', nodeId);
-      return;
-    }
     // mark this node deleted
     this.updateManager.stageNodeDelete(nodeId);
-    const parentId = this.getParent(nodeId).get('id');
-    const siblings = this.nodesByParentId.get(parentId, List());
-    // filter this node out of its parent list
-    this.setChildren(
-      parentId,
-      siblings.filter(node => node.get('id') !== nodeId)
-    );
-    // delete this node's children list
-    // NOTE: don't stage delete it's children, they might have moved to another section during a merge
-    this.nodesByParentId = this.nodesByParentId.delete(nodeId);
-    // reindex children and persist changes
-    this.updateNodesForParent(parentId);
-    // TODO: safe guard against integrity constraint violations, clean up illegal state
-    // TODO: add integrity constraints AKA, node type can only have children of type [x,y,z]
-  }
-  
-  updateNodesForParent(parentId) {
-    // TODO: this is getting called 7 times when inserting a CodeSection
-    //  it's clobbering deleted nodes with updates, it's a hot mess.
-    console.info('UPDATE Nodes For PARENT ', parentId);
-    const siblings = this.nodesByParentId.get(parentId, List());
-    this.setChildren(
-      parentId,
-      siblings
-        // reindex positions for remaining siblings
-        .map((node, idx) => node
-          .set('position', idx)
-          .set('parent_id', parentId))
-    );
-    // since positions have changed, update all nodes for this parent
-    // TODO: make this simpler, get rid of this "position" field in the db and just used a linked list
-    this.nodesByParentId.get(parentId, List()).forEach(node => {
-      this.updateManager.stageNodeUpdate(node.get('id'));
-    });
+    const prevNode = this.getPrevNode(nodeId);
+    const nextNode = this.getNextNode(nodeId);
+    // delete first, then update pointers
+    this.nodesById = this.nodesById.delete(nodeId);
+    // deleting the only node in the document
+    if (!prevNode.get('id') && !nextNode.get('id')) {
+      this.clearNodesAndSetTitlePlaceholder()
+    }
+    // deleting somewhere in the middle
+    else if (prevNode.get('id') && nextNode.get('id')) {
+      this.update(prevNode.set('next_sibling_id', nextNode.get('id')))
+    }
+    // deleting last node - unset "next" reference
+    else if (!nextNode.get('id')) {
+      this.update(prevNode.delete('next_sibling_id'))
+    }
+    // else - deleting first node - noop
   }
   
   // TODO: need a way to focus "terminal" sections like IMAGE, SPACER, QUOTE
-  canFocusNode(nodeId) {
-    return [
-      NODE_TYPE_SECTION_H1,
-      NODE_TYPE_SECTION_H2,
-      NODE_TYPE_P,
-      NODE_TYPE_LI,
-      NODE_TYPE_PRE,
-    ].includes(this.getNode(nodeId).get('type'));
-  }
-  
-  getPreviousFocusNodeId(nodeId) {
-    let focusNodeId;
-    if (nodeId === this.rootId || this.isSectionType(nodeId)) {
-      let sectionId = nodeId;
-      if (nodeId === this.rootId) {
-        // nodeId is ROOT - get first section
-        console.info('getPreviousFocusNodeId for ROOT ', nodeId);
-        sectionId = this.getFirstChild(nodeId).get('id');
-      }
-      // nodeId is a Section
-      // TODO: some 'sections' are actually 'subsections' that can be focused - this design is probably a bad idea
-      console.info('getPreviousFocusNodeId for SECTION', sectionId);
-      if (this.isFirstChild(sectionId) || this.isOnlyChild(sectionId)) {
-        // TODO: this doesn't handle all cases yet
-        focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getFirstChild(sectionId).get('id');
-      } else {
-        let prevSectionId = sectionId;
-        do {
-          prevSectionId = this.getPrevSibling(prevSectionId).get('id');
-        } while (prevSectionId && !this.canFocusNode(prevSectionId) && this.getChildren(prevSectionId).size === 0)
-        if (this.canFocusNode(prevSectionId)) {
-          focusNodeId = prevSectionId;
-        } else {
-          const lastChild = this.getLastChild(prevSectionId);
-          focusNodeId = this.canFocusNode(lastChild.get('id')) ? lastChild.get('id') : this.getLastChild(lastChild.get('id')).get('id')
-        }
-      }
-    } else {
-      // nodeId is a P or bad things
-      console.info('getPreviousFocusNodeId for P', nodeId);
-      if (this.isOnlyChild(nodeId) || this.isFirstChild(nodeId)) {
-        focusNodeId = nodeId;
-      } else {
-        focusNodeId = this.getPrevSibling(nodeId).get('id');
-      }
-    }
-    if (!focusNodeId) {
-      console.error(`getPreviousFocusNodeId - can't find a node before `, nodeId, ' type ', this.getNode(nodeId).get('type'));
-    }
-    console.info('getPreviousFocusNodeId found: ', focusNodeId);
-    return focusNodeId;
-  }
-  
-  getNextFocusNodeId(nodeId) {
-    let focusNodeId;
-    if (nodeId === this.rootId || this.isSectionType(nodeId)) {
-      let sectionId = nodeId;
-      if (nodeId === this.rootId) {
-        // nodeId is ROOT
-        console.info('getNextFocusNodeId for ROOT ', nodeId);
-        sectionId = this.getLastChild(nodeId).get('id');
-      }
-      // nodeId is a Section
-      // TODO: some 'sections' are actually 'subsections' that can be focused - this design is probably a bad idea
-      console.info('getNextFocusNodeId for SECTION', sectionId);
-      if (this.isLastChild(sectionId) || this.isOnlyChild(sectionId)) {
-        focusNodeId = this.canFocusNode(sectionId) ? sectionId : this.getLastChild(sectionId).get('id');
-      } else {
-        let nextSectionId = sectionId;
-        do {
-          nextSectionId = this.getNextSibling(nextSectionId).get('id');
-        } while (nextSectionId && !this.canFocusNode(nextSectionId) && this.getChildren(nextSectionId).size === 0)
-        if (this.canFocusNode(nextSectionId)) {
-          focusNodeId = nextSectionId;
-        } else {
-          const firstChild = this.getFirstChild(nextSectionId);
-          focusNodeId = this.canFocusNode(firstChild.get('id')) ? firstChild.get('id') : this.getFirstChild(firstChild.get('id')).get('id')
-        }
-      }
-    } else {
-      // nodeId is a P
-      console.info('getNextFocusNodeId for P', nodeId);
-      if (this.isOnlyChild(nodeId) || this.isLastChild(nodeId)) {
-        focusNodeId = nodeId;
-      } else {
-        focusNodeId = this.getNextSibling(nodeId).get('id');
-      }
-    }
-    if (!focusNodeId) {
-      console.error(`getNextFocusNodeId - can't find a node after: `, nodeId, ', type: ', this.getNode(nodeId).get('type'));
-    }
-    console.info('getNextFocusNodeId found: ', focusNodeId, ', type: ', this.getNode(focusNodeId).get('type'));
-    return focusNodeId;
-  }
 }

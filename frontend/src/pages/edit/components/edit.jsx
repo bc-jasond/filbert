@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { List, Map, fromJS } from 'immutable';
+import { Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
 import {
@@ -9,7 +9,7 @@ import {
   apiPatch,
   apiPost,
   uploadImage,
-} from '../../common/fetch';
+} from '../../../common/fetch';
 import {
   Article,
   DeletePost,
@@ -22,15 +22,15 @@ import {
   NewPost,
   PublishPost,
   SignedInUser,
-} from '../../common/components/layout-styled-components';
-import Footer from '../footer';
+} from '../../../common/components/layout-styled-components';
+import Footer from '../../footer';
 
-import { getUserName, signout } from '../../common/session';
+import { getUserName, signout } from '../../../common/session';
 import {
   confirmPromise,
   getCanonicalFromTitle,
   imageUrlIsId,
-} from '../../common/utils';
+} from '../../../common/utils';
 import {
   getRange,
   getNodeId,
@@ -38,48 +38,44 @@ import {
   setCaret,
   getHighlightedSelectionOffsets,
   isControlKey,
-} from '../../common/dom';
+} from '../../../common/dom';
 
 import {
-  NODE_TYPE_SECTION_H1,
-  NODE_TYPE_SECTION_QUOTE,
-  NODE_TYPE_SECTION_IMAGE,
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_IMAGE,
   KEYCODE_ENTER,
   KEYCODE_BACKSPACE,
   KEYCODE_ESC,
   NEW_POST_URL_ID,
-  ROOT_NODE_PARENT_ID,
   NODE_TYPE_P,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X, KEYCODE_V,
-} from '../../common/constants';
-import { lineHeight } from "../../common/css";
+  POST_ACTION_REDIRECT_TIMEOUT, KEYCODE_X, KEYCODE_V, NODE_TYPE_SPACER, NODE_TYPE_ROOT,
+} from '../../../common/constants';
+import { lineHeight } from "../../../common/css";
 
-import ContentNode from '../../common/components/content-node.component';
-import { moveCaret } from './document-model-helpers/caret';
-import { doDelete } from './document-model-helpers/delete';
-import DocumentModel from './document-model';
-import { syncFromDom, syncToDom } from './document-model-helpers/dom-sync';
-import { insertSectionHelper } from './document-model-helpers/insert';
-import { doPaste } from './document-model-helpers/paste';
-import { selectionFormatAction } from './document-model-helpers/selection-format-action';
-import { doSplit } from './document-model-helpers/split';
-import UpdateManager from './update-manager';
+import Document from '../../../common/components/document.component';
+import { doDelete } from '../document-model-helpers/delete';
+import DocumentModel from '../document-model';
+import { syncFromDom, syncToDom } from '../document-model-helpers/dom-sync';
+import { doPaste } from '../document-model-helpers/paste';
+import { selectionFormatAction } from '../document-model-helpers/selection-format-action';
+import { doSplit } from '../document-model-helpers/split';
+import UpdateManager from '../update-manager';
 
 import {
   Selection,
   getSelection,
   upsertSelection,
-} from './selection-helpers';
+} from '../selection-helpers';
 
-import InsertSectionMenu from './components/insert-section-menu';
-import EditImageForm from './components/edit-image-form';
-import EditQuoteForm from './components/edit-quote-form';
-import FormatSelectionMenu from './components/format-selection-menu';
-import PublishPostForm from '../../common/components/edit-publish-post-form';
+import InsertSectionMenu from './insert-section-menu';
+import EditImageForm from './edit-image-form';
+import EditQuoteForm from './edit-quote-form';
+import FormatSelectionMenu from './format-selection-menu';
+import PublishPostForm from '../../../common/components/edit-publish-post-form';
 
-import Page404 from '../404';
+import Page404 from '../../404';
 
 const ArticleStyled = styled(Article)`
   @media (max-width: 800px) {
@@ -93,7 +89,7 @@ export default class EditPost extends React.Component {
     
     this.state = {
       post: Map(),
-      nodesByParentId: Map(),
+      nodesById: Map(),
       shouldShow404: false,
       shouldRedirectToHome: false,
       shouldRedirectToDrafts: false,
@@ -175,9 +171,7 @@ export default class EditPost extends React.Component {
     console.debug("New PostNew PostNew PostNew PostNew PostNew Post");
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
     this.updateManager.init(postPlaceholder);
-    this.documentModel.init(postPlaceholder, this.updateManager);
-    this.updateManager.stageNodeUpdate(this.documentModel.rootId);
-    const focusNodeId = this.documentModel.insertSection(NODE_TYPE_SECTION_H1, 0);
+    const focusNodeId = this.documentModel.init(postPlaceholder, this.updateManager);
     this.setState({ post: Map() });
     this.commitUpdates(focusNodeId);
   }
@@ -198,21 +192,19 @@ export default class EditPost extends React.Component {
     try {
       const { post, contentNodes } = await apiGet(`/edit/${this.props.match.params.id}`);
       this.updateManager.init(post);
-      this.documentModel.init(post, this.updateManager, contentNodes);
-      const focusNodeId = this.documentModel.getPreviousFocusNodeId(this.documentModel.rootId);
+      const lastNodeId = this.documentModel.init(post, this.updateManager, contentNodes);
       this.setState({
-        post: fromJS(post),
-        nodesByParentId: this.documentModel.nodesByParentId,
+        post: this.documentModel.post,
+        nodesById: this.documentModel.nodesById,
         shouldShow404: false
       }, () => {
-        const focusNodeId = this.documentModel.getNextFocusNodeId(this.documentModel.rootId);
-        setCaret(focusNodeId, -1, true);
+        setCaret(lastNodeId, -1, true);
         this.manageInsertMenu();
         window.scrollTo(0, 0);
       })
     } catch (err) {
-      // console.error(err);
-      this.setState({ nodesByParentId: Map(), shouldShow404: true })
+      console.error(err);
+      this.setState({ nodesById: Map(), shouldShow404: true })
     }
   }
   updatePost = (fieldName, value) => {
@@ -304,7 +296,7 @@ export default class EditPost extends React.Component {
     return new Promise((resolve, reject) => {
       // roll with state changes TODO: handle errors - roll back?
       this.setState({
-        nodesByParentId: this.documentModel.nodesByParentId,
+        nodesById: this.documentModel.nodesById,
         shouldShowInsertMenu: false,
         insertMenuIsOpen: false,
         editSectionId: null,
@@ -478,7 +470,6 @@ export default class EditPost extends React.Component {
     
     await this.handlePaste(evt, selectionOffsets);
     this.handleSyncFromDom(evt, selectionOffsets);
-    moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
     // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
@@ -493,7 +484,6 @@ export default class EditPost extends React.Component {
     if (start.length === 0) {
       return;
     }
-    moveCaret(this.documentModel, selectionOffsets, evt);
     this.manageInsertMenu(selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
     // close edit section menus by default, this.sectionEdit() callback will fire after this to override
@@ -621,17 +611,30 @@ export default class EditPost extends React.Component {
    * INSERT SECTIONS
    */
   insertSection = async (sectionType, [firstFile] = []) => {
-    const focusNodeId = await insertSectionHelper(
-      this.documentModel,
-      sectionType,
-      this.insertMenuSelectedNodeId,
-      this.uploadFile.bind(this, firstFile),
+    let meta = Map();
+    if (sectionType === NODE_TYPE_IMAGE) {
+      const {
+        imageId,
+        width,
+        height,
+      } = await this.uploadFile(firstFile);
+      meta = Map({
+        url: imageId,
+        width,
+        height,
+      });
+    }
+    let focusNodeId = this.documentModel.update(
+      this.documentModel.getNode(this.insertMenuSelectedNodeId)
+        .set('type', sectionType)
+        .set('meta', meta)
     );
-    if (!focusNodeId) {
-      return;
+    // TODO: just put a P after any MetaType - maybe only if it's the last
+    if (this.documentModel.isMetaType(focusNodeId) && DocumentModel.getLastNode(this.documentModel.nodesById).get('id') === focusNodeId) {
+      focusNodeId = this.documentModel.insert(NODE_TYPE_P, focusNodeId);
     }
     await this.commitUpdates(focusNodeId);
-    if ([NODE_TYPE_SECTION_IMAGE, NODE_TYPE_SECTION_QUOTE].includes(sectionType)) {
+    if ([NODE_TYPE_IMAGE, NODE_TYPE_QUOTE].includes(sectionType)) {
       this.sectionEdit(focusNodeId)
     }
   }
@@ -656,11 +659,11 @@ export default class EditPost extends React.Component {
     }
     
     switch (section.get('type')) {
-      case NODE_TYPE_SECTION_IMAGE: {
+      case NODE_TYPE_IMAGE: {
         newState.editImageSectionNode = section;
         break;
       }
-      case NODE_TYPE_SECTION_QUOTE: {
+      case NODE_TYPE_QUOTE: {
         newState.editQuoteSectionNode = section;
         break;
       }
@@ -687,7 +690,7 @@ export default class EditPost extends React.Component {
   sectionDelete = (sectionId) => {
     if (confirm('Delete?')) {
       this.sectionEditClose();
-      const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
+      const focusNodeId = this.documentModel.getPrevNode(sectionId);
       this.documentModel.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
@@ -700,7 +703,7 @@ export default class EditPost extends React.Component {
         await apiDelete(`/image/${urlField}`)
       }
       this.sectionEditClose();
-      const focusNodeId = this.documentModel.getNextFocusNodeId(sectionId);
+      const focusNodeId = this.documentModel.getPrevNode(sectionId);
       this.documentModel.delete(sectionId);
       this.commitUpdates(focusNodeId);
     }
@@ -806,10 +809,16 @@ export default class EditPost extends React.Component {
     const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
     const [
       [startOffset, endOffset, selectedNode],
-      middle,
       end,
     ] = selectionOffsets;
-    if (!selectedNode || startOffset === endOffset || isEscKey) {
+    if (
+      // no node
+      !selectedNode
+      // collapsed caret
+      || startOffset === endOffset
+      // hit esc
+      || isEscKey
+    ) {
       this.setState({
         formatSelectionNode: Map(),
         formatSelectionModel: Selection(),
@@ -825,11 +834,11 @@ export default class EditPost extends React.Component {
       return;
     }
     const range = getRange();
-    console.info('SELECTION: ', startOffset, endOffset, end, middle, range, range.getBoundingClientRect());
+    console.info('SELECTION: ', startOffset, endOffset, end, range, range.getBoundingClientRect());
     const rect = range.getBoundingClientRect();
     const selectedNodeId = getNodeId(selectedNode);
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
-    // Top Offset (from top of document) - needs a heuristic, or I'm missing an API!
+    // Top Offset (from top of document) - needs a heuristic, or I'm missing an API!  do this with rems?
     // start with the top offset of the paragraph
     const paragraphTop = selectedNode.offsetTop;
     // get a percentage of where the start of the selection is relative to the length of the content
@@ -841,6 +850,7 @@ export default class EditPost extends React.Component {
     let fueraDeControlCounter = 1000;
     while (true) {
       if (fueraDeControlCounter === 0) {
+        console.warn("manageFormatSelectionMenu is ¡Fuera de Control!");
         break;
       }
       fueraDeControlCounter -= 1;
@@ -880,7 +890,7 @@ export default class EditPost extends React.Component {
   render() {
     const {
       post,
-      nodesByParentId,
+      nodesById,
       shouldShow404,
       shouldRedirectToHome,
       shouldRedirectToDrafts,
@@ -909,8 +919,6 @@ export default class EditPost extends React.Component {
     if (shouldRedirectToEditWithId) return (<Redirect to={`/edit/${shouldRedirectToEditWithId}`} />);
     if (shouldRedirectToPublishedPostId) return (<Redirect to={`/posts/${shouldRedirectToPublishedPostId}`} />);
     
-    const root = this.documentModel.nodesByParentId.get(ROOT_NODE_PARENT_ID, List()).get(0, Map());
-    
     return (
       <React.Fragment>
         <main onMouseUp={this.handleMouseUp}>
@@ -933,7 +941,7 @@ export default class EditPost extends React.Component {
           </Header>
           <HeaderSpacer id="header-spacer" />
           <ArticleStyled>
-            {root.get('id') && (
+            {nodesById.size > 0 && (
               <div id="filbert-edit-container"
                    contentEditable={true}
                    suppressContentEditableWarning={true}
@@ -943,7 +951,7 @@ export default class EditPost extends React.Component {
                    onPaste={this.handlePaste}
                    onCut={this.handleCut}
               >
-                <ContentNode post={post} node={root} nodesByParentId={nodesByParentId} isEditing={this.sectionEdit} />
+                <Document nodesById={nodesById} isEditing={this.sectionEdit} />
               </div>
             )}
           </ArticleStyled>

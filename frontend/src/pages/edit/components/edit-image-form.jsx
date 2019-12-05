@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import {
   SvgIconMixin,
-  LilBlackMenu,
+  LilSassyMenu,
   IconButton,
   DarkInput,
   ButtonSeparator,
@@ -29,7 +29,7 @@ const IconRotate = styled(IconRotateSvg)`
 const HiddenFileInput = styled.input`
   display: none;
 `;
-export const EditImageMenu = styled(LilBlackMenu)`
+export const EditImageMenu = styled(LilSassyMenu)`
   display: flex;
   align-items: center;
   justify-items: center;
