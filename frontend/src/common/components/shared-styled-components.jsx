@@ -154,15 +154,13 @@ export const LinkStyled = styled(Link)`
  ${linkMixin}
 `;
 export const Code = styled.code`
-  display: inline-block;
   font-family: ${monospaced}, monospace;
   font-size: 18px;
   background: ${lightGrey};
-  padding: 0 4px;
+  padding: 4px;
   margin: 0 2px;
 `;
 export const SiteInfo = styled.span`
-  display: inline-block;
   font-family: ${sansSerif}, sans-serif;
 `;
 export const ItalicText = styled.em`
