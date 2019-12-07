@@ -82,6 +82,9 @@ export default class DocumentModel {
   }
   
   getNode(nodeId) {
+    if (!nodeId) {
+      return Map();
+    }
     const node = this.nodesById.get(nodeId);
     if (node) {
       return node;

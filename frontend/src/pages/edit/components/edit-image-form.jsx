@@ -13,6 +13,7 @@ import {
 import IconImageSvg from '../../../../assets/icons/image.svg';
 import IconTrashSvg from '../../../../assets/icons/trash.svg';
 import IconRotateSvg from '../../../../assets/icons/rotate.svg';
+import { KEYCODE_ENTER, KEYCODE_ESC } from '../../../common/constants';
 
 const fileInputRef = React.createRef();
 
@@ -46,9 +47,10 @@ export default ({
                   offsetTop,
                   nodeModel,
                   uploadFile,
-                  updateImageCaption,
+                  updateMeta,
                   sectionDelete,
                   imageRotate,
+                  closeMenu,
                   forwardRef,
                 }) => (
   <EditImageMenu data-is-menu={true} top={offsetTop}>
@@ -65,7 +67,14 @@ export default ({
     <ImageCaptionInput
       ref={forwardRef}
       placeholder="Enter Image Caption here..."
-      onChange={(e) => updateImageCaption(e.target.value)}
+      onChange={(e) => updateMeta('caption', e.target.value)}
+      onKeyDown={(e) => {
+        if ([KEYCODE_ESC, KEYCODE_ENTER].includes(e.keyCode)) {
+          e.stopPropagation()
+          e.preventDefault()
+          closeMenu();
+        }
+      }}
       value={nodeModel.getIn(['meta', 'caption'], '')}
     />
     <PointClip>

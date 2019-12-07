@@ -7,7 +7,11 @@ import Pace from './common/pace';
 
 Pace();
 
-// console.debug = () => {};
+if (process.env.isProduction) {
+  console.debug = () => {};
+  console.info = () => {};
+  console.log = () => {};
+}
 
 ReactDOM.render(
   process.env.isProduction ? <App /> : <AppWithHot />,

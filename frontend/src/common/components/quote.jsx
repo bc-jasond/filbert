@@ -7,7 +7,7 @@ export default class Quote extends React.PureComponent {
     console.debug("Quote RENDER", this);
     const {
       node,
-      currentEditNode,
+      isEditing,
       setEditNodeId,
     } = this.props;
     const id = node.get('id');
@@ -16,10 +16,10 @@ export default class Quote extends React.PureComponent {
     const author = node.getIn(['meta', 'author'], '');
     const context = node.getIn(['meta', 'context'], '');
     return (
-      <ContentSection data-type={NODE_TYPE_QUOTE} name={id} contentEditable={false}>
+      <ContentSection data-type={NODE_TYPE_QUOTE} name={id}>
         <QuoteP
           isEditMode={setEditNodeId}
-          isEditing={currentEditNode && currentEditNode.get('id') === id}
+          isEditing={isEditing}
           onClick={() => setEditNodeId && setEditNodeId(id)}
         >
           {'💡Remember: '}

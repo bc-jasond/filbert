@@ -32,7 +32,7 @@ import {
   KEYCODE_F11,
   KEYCODE_F12,
   KEYCODE_PRINT_SCREEN,
-  DOM_ELEMENT_NODE_TYPE_ID,
+  DOM_ELEMENT_NODE_TYPE_ID, KEYCODE_ENTER,
 } from './constants';
  import {cleanText} from "./utils";
 
@@ -249,6 +249,7 @@ export function isControlKey(code) {
     KEYCODE_ALT,
     KEYCODE_CTRL,
     KEYCODE_CAPS_LOCK,
+    KEYCODE_ENTER,
     KEYCODE_ESC,
     KEYCODE_PAGE_UP,
     KEYCODE_PAGE_DOWN,

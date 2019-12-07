@@ -122,11 +122,11 @@ export default class Document extends React.PureComponent {
       } else if (currentType === NODE_TYPE_H2) {
         children.push(<H2 node={this.current} />);
       } else if (currentType === NODE_TYPE_SPACER) {
-        children.push(<Spacer node={this.current} currentEditNode={currentEditNode} setEditNodeId={setEditNodeId} />);
+        children.push(<Spacer node={this.current} isEditing={currentEditNode.get('id') === this.current.get('id')} setEditNodeId={setEditNodeId} />);
       } else if (currentType === NODE_TYPE_IMAGE) {
-        children.push(<Image node={this.current} currentEditNode={currentEditNode} setEditNodeId={setEditNodeId} />)
+        children.push(<Image node={this.current} isEditing={currentEditNode.get('id') === this.current.get('id')} setEditNodeId={setEditNodeId} />)
       } else if (currentType === NODE_TYPE_QUOTE) {
-        children.push(<Quote node={this.current} currentEditNode={currentEditNode} setEditNodeId={setEditNodeId} />);
+        children.push(<Quote node={this.current} isEditing={currentEditNode.get('id') === this.current.get('id')} setEditNodeId={setEditNodeId} />);
       }
       // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
       else if (currentType === NODE_TYPE_POSTLINK) {

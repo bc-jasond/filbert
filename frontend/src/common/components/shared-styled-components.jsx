@@ -7,6 +7,15 @@ const sectionWidthMixin = css`
   max-width: 740px;
   margin: 0 auto;
 `;
+const editSectionBorderMixin = css`
+  border: 4px solid ${p => p.isEditing ? blue : 'transparent'};
+  ${p => p.isEditMode && `
+    &:hover {
+      cursor: pointer;
+      border: 4px solid ${p.isEditing ? blue : lightBlue};
+    }
+  `}
+`;
 export const H1Styled = styled.h1`
   ${sectionWidthMixin}
   font-family: ${titleSerif}, serif;
@@ -63,13 +72,7 @@ export const SpacerSection = styled(ContentSection)`
     margin: 0 auto;
     width: 266px;
   }
-  border: 4px solid ${p => p.isEditing ? lightBlue : 'transparent'};
-  ${p => p.isEditMode && `
-    &:hover {
-      cursor: pointer;
-      border: 4px solid ${lightBlue};
-    }
-  `}
+  ${editSectionBorderMixin};
 `;
 export const ImageSection = styled(ContentSection)`
   overflow: hidden;
@@ -81,13 +84,7 @@ export const PStyled = styled.p`
   margin-bottom: 32px;
 `;
 export const QuoteP = styled(PStyled)`
-  border: 4px solid ${p => p.isEditing ? lightBlue : 'transparent'};
-  ${p => p.isEditMode && `
-    &:hover {
-      cursor: pointer;
-      border: 4px solid ${lightBlue};
-    }
-  `}
+  ${editSectionBorderMixin};
 `;
 export const PreStyled = styled.pre`
   font: inherit;
@@ -219,13 +216,7 @@ export const Img = styled.img`
   margin: 0;
   display: block;
   max-width: 100%;
-  border: 4px solid ${p => p.isEditing ? lightBlue : 'transparent'};
-  ${p => p.isEditMode && `
-    &:hover {
-      cursor: pointer;
-      border: 4px solid ${lightBlue};
-    }
-  `}
+  ${editSectionBorderMixin};
   ${p => p.rotationDegrees === 90 && `
     transform-origin: left;
     transform: translate(50%, -50%) rotate(90deg) ;
@@ -358,7 +349,7 @@ export const NavButtonMixin = css`
   `}
 `;
 
-// LIL BLACK FORMS with ICONS
+// LIL SASSY FORMS with ICONS
 export const LilSassyMenu = styled.div`
   position: absolute;
   transition: .1s top;

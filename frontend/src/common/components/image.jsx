@@ -15,7 +15,7 @@ export default class Image extends React.PureComponent {
     console.debug("Image RENDER", this);
     const {
       node,
-      currentEditNode,
+      isEditing,
       setEditNodeId,
     } = this.props;
     const id = node.get('id');
@@ -36,13 +36,13 @@ export default class Image extends React.PureComponent {
       heightOverride = Math.min(w, 1000);
     }
     return (
-      <ImageSection data-type={NODE_TYPE_IMAGE} name={id} contentEditable={false}>
+      <ImageSection data-type={NODE_TYPE_IMAGE} name={id}>
         <Figure heightOverride={heightOverride}>
           <ImagePlaceholderContainer w={w} h={h}>
             <ImagePlaceholderFill w={w} h={h} />
             {urlField.length > 0 && (<Img
               isEditMode={setEditNodeId}
-              isEditing={currentEditNode && currentEditNode.get('id') === id}
+              isEditing={isEditing}
               onClick={() => setEditNodeId && setEditNodeId(id)}
               rotationDegrees={rotationDegrees}
               src={url}

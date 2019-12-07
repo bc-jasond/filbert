@@ -10,13 +10,14 @@ import {
   Arrow, DarkInput,
 } from '../../../common/components/shared-styled-components';
 import IconTrashSvg from '../../../../assets/icons/trash.svg';
+import { KEYCODE_ENTER, KEYCODE_ESC } from '../../../common/constants';
 
 const IconTrash = styled(IconTrashSvg)`
   height: 32px;
   ${SvgIconMixin};
 `;
 
-const EditImageMenu = styled(LilSassyMenu)`
+const EditQuoteMenu = styled(LilSassyMenu)`
   display: flex;
   flex-direction: column;
   justify-items: center;
@@ -52,43 +53,57 @@ export default ({
                   updateMeta,
                   sectionDelete,
                   forwardRef,
-                }) => (
-  <EditImageMenu data-is-menu={true} top={offsetTop}>
-    <Row>
-      <IconButton onClick={() => sectionDelete(nodeModel.get('id'))}>
-        <IconTrash />
-      </IconButton>
-      <ButtonSeparator />
-      <QuoteInput
-        ref={forwardRef}
-        placeholder="Enter Quote here..."
-        onChange={(e) => updateMeta(e.target.value, 'quote')}
-        value={nodeModel.getIn(['meta', 'quote'], '')}
-      />
-    </Row>
-    <Row>
-      <UrlInput
-        placeholder="Enter Url here..."
-        onChange={(e) => updateMeta(e.target.value, 'url')}
-        value={nodeModel.getIn(['meta', 'url'], '')}
-      />
-    </Row>
-    <Row>
-      <AuthorInput
-        placeholder="Enter Author here..."
-        onChange={(e) => updateMeta(e.target.value, 'author')}
-        value={nodeModel.getIn(['meta', 'author'], '')}
-      />
-    </Row>
-    <Row>
-      <ContextInput
-        placeholder="Enter Context here..."
-        onChange={(e) => updateMeta(e.target.value, 'context')}
-        value={nodeModel.getIn(['meta', 'context'], '')}
-      />
-    </Row>
-    <PointClip>
-      <Arrow />
-    </PointClip>
-  </EditImageMenu>
-)
+                  closeMenu,
+                }) => {
+  function handleKeyDown(e) {
+    if ([KEYCODE_ESC, KEYCODE_ENTER].includes(e.keyCode)) {
+      e.stopPropagation()
+      e.preventDefault()
+      closeMenu();
+    }
+  }
+  return (
+    <EditQuoteMenu data-is-menu={true} top={offsetTop}>
+      <Row>
+        <IconButton onClick={() => sectionDelete(nodeModel.get('id'))}>
+          <IconTrash />
+        </IconButton>
+        <ButtonSeparator />
+        <QuoteInput
+          ref={forwardRef}
+          placeholder="Enter Quote here..."
+          onChange={(e) => updateMeta( 'quote', e.target.value)}
+          value={nodeModel.getIn(['meta', 'quote'], '')}
+          onKeyDown={handleKeyDown}
+        />
+      </Row>
+      <Row>
+        <UrlInput
+          placeholder="Enter Url here..."
+          onChange={(e) => updateMeta('url', e.target.value)}
+          value={nodeModel.getIn(['meta', 'url'], '')}
+          onKeyDown={handleKeyDown}
+        />
+      </Row>
+      <Row>
+        <AuthorInput
+          placeholder="Enter Author here..."
+          onChange={(e) => updateMeta('author', e.target.value)}
+          value={nodeModel.getIn(['meta', 'author'], '')}
+          onKeyDown={handleKeyDown}
+        />
+      </Row>
+      <Row>
+        <ContextInput
+          placeholder="Enter Context here..."
+          onChange={(e) => updateMeta('context', e.target.value)}
+          value={nodeModel.getIn(['meta', 'context'], '')}
+          onKeyDown={handleKeyDown}
+        />
+      </Row>
+      <PointClip>
+        <Arrow />
+      </PointClip>
+    </EditQuoteMenu>
+  )
+}
