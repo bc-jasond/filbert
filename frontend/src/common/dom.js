@@ -32,9 +32,10 @@ import {
   KEYCODE_F11,
   KEYCODE_F12,
   KEYCODE_PRINT_SCREEN,
-  DOM_ELEMENT_NODE_TYPE_ID, KEYCODE_ENTER,
+  DOM_ELEMENT_NODE_TYPE_ID,
+  KEYCODE_ENTER
 } from './constants';
- import {cleanText} from "./utils";
+import { cleanText } from './utils';
 
 let infiniteLoopCount = 0;
 
@@ -52,7 +53,10 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   infiniteLoopCount = 0;
   let textNode;
   if ([NODE_TYPE_P, NODE_TYPE_LI].includes(containerNode.dataset.type)) {
-    [textNode, offset] = getChildTextNodeAndOffsetFromParentOffset(containerNode, offset);
+    [textNode, offset] = getChildTextNodeAndOffsetFromParentOffset(
+      containerNode,
+      offset
+    );
   } else {
     const queue = [...containerNode.childNodes];
     while (queue.length) {
@@ -108,7 +112,10 @@ function getParagraphContentOffset(formattingNode, paragraph) {
     formattingNode = formattingNode.parentElement;
   }
   // find the index of the immediate child
-  const rangeIdx = Array.prototype.indexOf.call(paragraph.childNodes, formattingNode);
+  const rangeIdx = Array.prototype.indexOf.call(
+    paragraph.childNodes,
+    formattingNode
+  );
   let offset = 0;
   for (let i = 0; i < rangeIdx; i++) {
     // for each child of the paragraph that precedes our current range - add the length of it's content to the offset
@@ -136,23 +143,30 @@ export function getHighlightedSelectionOffsets() {
   // const commonAncestor = range.commonAncestorContainer;
   const rangeStartOffset = range.startOffset;
   const rangeEndOffset = range.endOffset;
-  
+
   if (startNode === null || endNode === null) {
     return [[]];
   }
-  
-  const startNodeOffset = getParagraphContentOffset(range.startContainer, startNode);
+
+  const startNodeOffset = getParagraphContentOffset(
+    range.startContainer,
+    startNode
+  );
   let startOffset = rangeStartOffset + startNodeOffset;
   // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
   if (rangeStartOffset === 1 && cleanText(startNode.textContent).length === 0) {
     startOffset = 0;
   }
   // in consumer code range.collapsed can be checked by start[0] === start[1]
-  const start = [startOffset, range.collapsed ? startOffset : cleanText(startNode.textContent).length, getNodeId(startNode)];
+  const start = [
+    startOffset,
+    range.collapsed ? startOffset : cleanText(startNode.textContent).length,
+    getNodeId(startNode)
+  ];
   if (range.collapsed) {
     return [start];
   }
-  
+
   const endNodeOffset = getParagraphContentOffset(range.endContainer, endNode);
   let endOffset = rangeEndOffset + endNodeOffset;
   // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
@@ -160,13 +174,13 @@ export function getHighlightedSelectionOffsets() {
     endOffset = 0;
   }
   const end = [0, endOffset, getNodeId(endNode)];
-  
+
   if (startNode === endNode) {
     start[1] = endOffset;
     console.debug('getHighlightedSelectionOffsets SINGLE NODE');
     return [start];
   }
-  
+
   console.debug('getHighlightedSelectionOffsets MULTIPLE NODES');
   //const selectedTextStart = startNode.textContent.slice(start[0]);
   //const selectedTextEnd = endNode.textContent.slice(0, end[1]);
@@ -177,13 +191,22 @@ export function getHighlightedSelectionOffsets() {
  * TODO: When React re-renders after setState() to apply formatting changes, the highlight is lost.
  *  Use this to replace it.
  */
-export function replaceHighlightedSelection(startNode, startOffset, endNode, endOffset) {}
+export function replaceHighlightedSelection(
+  startNode,
+  startOffset,
+  endNode,
+  endOffset
+) {}
 
 /**
  * given an offset in a parent 'paragraph', return a child text node and child offset
  */
-export function getChildTextNodeAndOffsetFromParentOffset(parent, parentOffset) {
-  let childOffset = parentOffset === -1 ? parent.textContent.length : parentOffset;
+export function getChildTextNodeAndOffsetFromParentOffset(
+  parent,
+  parentOffset
+) {
+  let childOffset =
+    parentOffset === -1 ? parent.textContent.length : parentOffset;
   const textNodesOnlyFlattened = [];
   const queue = [...parent.childNodes];
   while (queue.length) {
@@ -208,7 +231,11 @@ export function getChildTextNodeAndOffsetFromParentOffset(parent, parentOffset) 
 
 export function getFirstAncestorWithId(domNode) {
   if (!domNode) return;
-  if (domNode.nodeType === DOM_ELEMENT_NODE_TYPE_ID && domNode.getAttribute('name')) return domNode;
+  if (
+    domNode.nodeType === DOM_ELEMENT_NODE_TYPE_ID &&
+    domNode.getAttribute('name')
+  )
+    return domNode;
   // walk ancestors until one has a truthy 'name' attribute
   // 'name' === id in the db
   let current = domNode.parentElement;
@@ -219,15 +246,11 @@ export function getFirstAncestorWithId(domNode) {
 }
 
 export function getNodeType(node) {
-  return (node && node.dataset)
-    ? node.dataset.type
-    : null;
+  return node && node.dataset ? node.dataset.type : null;
 }
 
 export function getNodeId(node) {
-  return (node && node.getAttribute)
-    ? node.getAttribute('name')
-    : null;
+  return node && node.getAttribute ? node.getAttribute('name') : null;
 }
 
 export function getNodeById(nodeId) {
@@ -271,6 +294,6 @@ export function isControlKey(code) {
     KEYCODE_F10,
     KEYCODE_F11,
     KEYCODE_F12,
-    KEYCODE_PRINT_SCREEN,
+    KEYCODE_PRINT_SCREEN
   ].includes(code);
 }

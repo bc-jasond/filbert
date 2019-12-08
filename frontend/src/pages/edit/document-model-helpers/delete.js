@@ -16,20 +16,28 @@ export function doDelete(documentModel, selectionOffsets) {
     }
     const content = node.get('content');
     // only some of endNode's content has been selected, delete that content
-    node = node.set('content', deleteContentRange(content, startIdx, diffLength));
-    node = adjustSelectionOffsetsAndCleanup(node, content, endIdx, diffLength === 0 ? -1 : -diffLength);
+    node = node.set(
+      'content',
+      deleteContentRange(content, startIdx, diffLength)
+    );
+    node = adjustSelectionOffsetsAndCleanup(
+      node,
+      content,
+      endIdx,
+      diffLength === 0 ? -1 : -diffLength
+    );
     documentModel.update(node);
   }
   const [
     [startNodeCaretStart, startNodeCaretEnd, startNodeId],
-    end,
+    end
   ] = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('doDelete() bad selection, no id ', startNodeId);
     return [];
   }
-  
-  console.info('doDelete()', selectionOffsets)
+
+  console.info('doDelete()', selectionOffsets);
   /**
    * Backspace scenarios:
    *
@@ -44,17 +52,17 @@ export function doDelete(documentModel, selectionOffsets) {
    * 9) endNode is completely selected
    * 10) startNode and endNode are the same type
    */
-  
+
   // if there are completely highlighted nodes in the middle of the selection - just delete them
   if (end) {
     const [_, __, endNodeId] = end;
     const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
-    console.info("doDelete() - middle nodes", middle);
+    console.info('doDelete() - middle nodes', middle);
     middle.forEach(nodeId => {
       documentModel.delete(nodeId);
     });
   }
-  
+
   /**
    * the selection spans more than one node
    * 1 - delete the highlighted text
@@ -74,10 +82,10 @@ export function doDelete(documentModel, selectionOffsets) {
     // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
     deleteOrUpdateNode(endDiffLength, endNodeId, 0, endNodeCaretEnd);
   }
-  
+
   let startNodeMap = documentModel.getNode(startNodeId);
   const startNodeContent = startNodeMap.get('content');
-  
+
   const startDiffLength = startNodeCaretEnd - startNodeCaretStart;
   if ((startNodeCaretStart > 0 && startNodeContent) || startDiffLength > 0) {
     //  not at beginning of node text and node text isn't empty OR
@@ -85,17 +93,25 @@ export function doDelete(documentModel, selectionOffsets) {
     //
     // NOTE: need to distinguish between collapsed caret backspace and highlight 1 char backspace
     //  the former removes a character behind the caret and the latter removes one in front...
-    
+
     // all of the startNode's content has been selected, delete it
-    deleteOrUpdateNode(startDiffLength, startNodeId, startNodeCaretStart, startNodeCaretEnd);
-    
+    deleteOrUpdateNode(
+      startDiffLength,
+      startNodeId,
+      startNodeCaretStart,
+      startNodeCaretEnd
+    );
+
     // NOTE: reaching this code means we don't need to merge any nodes.  If the user deleted all text in the current node
     //  we'll place the caret where the selection ended and the user can hit backspace again to merge sections
     if (!doesMergeParagraphs) {
-      return [selectedNodeId, startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart];
+      return [
+        selectedNodeId,
+        startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart
+      ];
     }
   }
-  
+
   /**
    * TODO: make these into sets of atomic commands that are added to a queue,
    *  then make a 'flush' command to process this queue.
@@ -121,11 +137,14 @@ export function doDelete(documentModel, selectionOffsets) {
     if (selectedNode.get('type') === NODE_TYPE_IMAGE) {
       const urlField = selectedNode.getIn(['meta', 'url']);
       if (imageUrlIsId(urlField)) {
-        apiDelete(`/image/${urlField}`)
+        apiDelete(`/image/${urlField}`);
       }
     }
   } else {
-    [focusNodeId, caretOffset] = handleBackspaceTextType(documentModel, selectedNodeId);
+    [focusNodeId, caretOffset] = handleBackspaceTextType(
+      documentModel,
+      selectedNodeId
+    );
   }
   return [focusNodeId, caretOffset, true];
 }

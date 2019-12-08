@@ -1,5 +1,5 @@
-import ReactDOM from "react-dom";
-import React from "react";
+import ReactDOM from 'react-dom';
+import React from 'react';
 
 import App, { AppWithHot } from './app';
 
@@ -15,5 +15,5 @@ if (process.env.isProduction) {
 
 ReactDOM.render(
   process.env.isProduction ? <App /> : <AppWithHot />,
-  document.getElementById('app'),
+  document.getElementById('app')
 );

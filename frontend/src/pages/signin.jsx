@@ -15,11 +15,10 @@ import {
   MessageContainer,
   Button,
   ButtonSpan,
-  CancelButton, H1Styled,
+  CancelButton,
+  H1Styled
 } from '../common/components/shared-styled-components';
-import {
-  LogoLinkStyled,
-} from '../common/components/layout-styled-components';
+import { LogoLinkStyled } from '../common/components/layout-styled-components';
 
 const Container = styled.div`
   display: flex;
@@ -55,68 +54,86 @@ export default class SignIn extends React.Component {
       password: '',
       error: null,
       success: null,
-      shouldRedirect: false,
-    }
+      shouldRedirect: false
+    };
   }
-  
+
   componentDidMount() {
     if (usernameRef && usernameRef.current) {
       usernameRef.current.focus();
     }
   }
-  
-  updateUsername = (event) => {
-    this.setState({ username: event.target.value, error: null })
-  }
-  updatePassword = (event) => {
-    this.setState({ password: event.target.value, error: null })
-  }
-  
-  doLogin = async (event) => {
+
+  updateUsername = event => {
+    this.setState({ username: event.target.value, error: null });
+  };
+  updatePassword = event => {
+    this.setState({ password: event.target.value, error: null });
+  };
+
+  doLogin = async event => {
     event.preventDefault();
     try {
       const { username, password } = this.state;
       await signin(username, password);
       this.setState({
         error: null,
-        success: 'All set 👍',
-      })
+        success: 'All set 👍'
+      });
       setTimeout(() => {
         this.setState({ shouldRedirect: true });
-      }, 500)
+      }, 500);
     } catch (error) {
       console.error('Login Error: ', error);
       this.setState({
         error,
-        success: null,
-      })
+        success: null
+      });
     }
-  }
-  
+  };
+
   render() {
     const { error, success, shouldRedirect } = this.state;
     if (shouldRedirect) {
-      return (<Redirect push to="/" />);
+      return <Redirect push to="/" />;
     }
     return (
       <Container>
         <SignInForm onSubmit={this.doLogin}>
           <StyledLinkStyled to="/">✍️ filbert</StyledLinkStyled>
           <H1Styled>Sign In</H1Styled>
-          <H3>Want an account? <StyledA onClick={() => alert('Coming soon!')}>Click here</StyledA></H3>
+          <H3>
+            Want an account?{' '}
+            <StyledA onClick={() => alert('Coming soon!')}>Click here</StyledA>
+          </H3>
           <InputContainer>
-            <Label htmlFor="username" error={error}>Username</Label>
-            <Input name="username" type="text" value={this.state.username} onChange={this.updateUsername}
-                   error={error} ref={usernameRef} />
+            <Label htmlFor="username" error={error}>
+              Username
+            </Label>
+            <Input
+              name="username"
+              type="text"
+              value={this.state.username}
+              onChange={this.updateUsername}
+              error={error}
+              ref={usernameRef}
+            />
           </InputContainer>
           <InputContainer>
-            <Label htmlFor="password" error={error}>Password</Label>
-            <Input name="password" type="password" value={this.state.password} onChange={this.updatePassword}
-                   error={error} />
+            <Label htmlFor="password" error={error}>
+              Password
+            </Label>
+            <Input
+              name="password"
+              type="password"
+              value={this.state.password}
+              onChange={this.updatePassword}
+              error={error}
+            />
           </InputContainer>
           <MessageContainer>
-            {error && (<ErrorMessage>Try again. 👮</ErrorMessage>)}
-            {success && (<SuccessMessage>{success}</SuccessMessage>)}
+            {error && <ErrorMessage>Try again. 👮</ErrorMessage>}
+            {success && <SuccessMessage>{success}</SuccessMessage>}
           </MessageContainer>
           <Button type="submit">
             <ButtonSpan>Sign In</ButtonSpan>

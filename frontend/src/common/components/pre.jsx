@@ -5,11 +5,12 @@ import { PreStyled } from './shared-styled-components';
 
 export default class Pre extends React.PureComponent {
   render() {
-    console.debug("Pre RENDER", this);
+    console.debug('Pre RENDER', this);
     const { node } = this.props;
     return (
-      <PreStyled data-type={NODE_TYPE_PRE}
-           name={`${node.get('id')}`}>{cleanTextOrZeroLengthPlaceholder(node.get('content'))}</PreStyled>
-    )
+      <PreStyled data-type={NODE_TYPE_PRE} name={`${node.get('id')}`}>
+        {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
+      </PreStyled>
+    );
   }
 }

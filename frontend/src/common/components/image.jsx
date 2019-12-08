@@ -6,18 +6,15 @@ import {
   Figure,
   FigureCaption,
   ImagePlaceholderContainer,
-  ImagePlaceholderFill, ImageSection,
+  ImagePlaceholderFill,
+  ImageSection,
   Img
 } from './shared-styled-components';
 
 export default class Image extends React.PureComponent {
   render() {
-    console.debug("Image RENDER", this);
-    const {
-      node,
-      isEditing,
-      setEditNodeId,
-    } = this.props;
+    console.debug('Image RENDER', this);
+    const { node, isEditing, setEditNodeId } = this.props;
     const id = node.get('id');
     const meta = node.get('meta', Map());
     const w = meta.get('width');
@@ -40,17 +37,19 @@ export default class Image extends React.PureComponent {
         <Figure heightOverride={heightOverride}>
           <ImagePlaceholderContainer w={w} h={h}>
             <ImagePlaceholderFill w={w} h={h} />
-            {urlField.length > 0 && (<Img
-              isEditMode={setEditNodeId}
-              isEditing={isEditing}
-              onClick={() => setEditNodeId && setEditNodeId(id)}
-              rotationDegrees={rotationDegrees}
-              src={url}
-            />)}
+            {urlField.length > 0 && (
+              <Img
+                isEditMode={setEditNodeId}
+                isEditing={isEditing}
+                onClick={() => setEditNodeId && setEditNodeId(id)}
+                rotationDegrees={rotationDegrees}
+                src={url}
+              />
+            )}
           </ImagePlaceholderContainer>
         </Figure>
         <FigureCaption>{meta.get('caption')}</FigureCaption>
       </ImageSection>
-    )
+    );
   }
 }

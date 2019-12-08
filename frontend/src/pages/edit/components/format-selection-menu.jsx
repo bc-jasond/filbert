@@ -11,7 +11,7 @@ import {
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2,
   NODE_TYPE_H1,
-  NODE_TYPE_H2,
+  NODE_TYPE_H2
 } from '../../../common/constants';
 import {
   SvgIconMixin,
@@ -20,7 +20,7 @@ import {
   DarkInput,
   ButtonSeparator,
   PointClip,
-  Arrow,
+  Arrow
 } from '../../../common/components/shared-styled-components';
 
 import IconBoldSvg from '../../../../assets/icons/bold.svg';
@@ -65,8 +65,10 @@ export const LinkInput = styled(DarkInput)`
   display: block;
   height: 0;
   padding: 0;
-  transition: .05s height;
-  ${p => p.selected && `
+  transition: 0.05s height;
+  ${p =>
+    p.selected &&
+    `
     padding: 12px;
     padding-top: 0;
     height: 30px;
@@ -74,15 +76,19 @@ export const LinkInput = styled(DarkInput)`
 `;
 
 export default ({
-                  offsetTop,
-                  offsetLeft,
-                  nodeModel,
-                  selectionModel,
-                  selectionAction,
-                  updateLinkUrl,
-                  forwardRef,
-                }) => (
-  <FormatSelectionMenu shouldShowUrl={selectionModel.get(SELECTION_ACTION_LINK)} top={offsetTop} left={offsetLeft}>
+  offsetTop,
+  offsetLeft,
+  nodeModel,
+  selectionModel,
+  selectionAction,
+  updateLinkUrl,
+  forwardRef
+}) => (
+  <FormatSelectionMenu
+    shouldShowUrl={selectionModel.get(SELECTION_ACTION_LINK)}
+    top={offsetTop}
+    left={offsetLeft}
+  >
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_BOLD)}>
       <IconBold selected={selectionModel.get(SELECTION_ACTION_BOLD)} />
     </IconButton>
@@ -96,7 +102,9 @@ export default ({
       <IconSiteinfo selected={selectionModel.get(SELECTION_ACTION_SITEINFO)} />
     </IconButton>
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_STRIKETHROUGH)}>
-      <IconStrikethrough selected={selectionModel.get(SELECTION_ACTION_STRIKETHROUGH)} />
+      <IconStrikethrough
+        selected={selectionModel.get(SELECTION_ACTION_STRIKETHROUGH)}
+      />
     </IconButton>
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_LINK)}>
       <IconLink selected={selectionModel.get(SELECTION_ACTION_LINK)} />
@@ -112,11 +120,11 @@ export default ({
       ref={forwardRef}
       placeholder="Enter URL here..."
       selected={selectionModel.get(SELECTION_ACTION_LINK)}
-      onChange={(e) => updateLinkUrl(e.target.value)}
+      onChange={e => updateLinkUrl(e.target.value)}
       value={selectionModel.get(SELECTION_LINK_URL)}
     />
     <PointClip>
       <Arrow />
     </PointClip>
   </FormatSelectionMenu>
-)
+);

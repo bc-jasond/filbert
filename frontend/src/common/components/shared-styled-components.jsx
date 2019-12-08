@@ -1,15 +1,33 @@
 import styled, { css } from 'styled-components';
 import { Link } from 'react-router-dom';
-import { contentSerif, italicSerif, monospaced, sansSerif, titleSerif } from '../fonts.css';
-import { blue, darkBlue, darkGrey, error, grey, lightBlue, lightGrey, mediumGrey, success } from "../css";
+import {
+  contentSerif,
+  italicSerif,
+  monospaced,
+  sansSerif,
+  titleSerif
+} from '../fonts.css';
+import {
+  blue,
+  darkBlue,
+  darkGrey,
+  error,
+  grey,
+  lightBlue,
+  lightGrey,
+  mediumGrey,
+  success
+} from '../css';
 
 const sectionWidthMixin = css`
   max-width: 740px;
   margin: 0 auto;
 `;
 const editSectionBorderMixin = css`
-  border: 4px solid ${p => p.isEditing ? blue : 'transparent'};
-  ${p => p.isEditMode && `
+  border: 4px solid ${p => (p.isEditing ? blue : 'transparent')};
+  ${p =>
+    p.isEditMode &&
+    `
     &:hover {
       cursor: pointer;
       border: 4px solid ${p.isEditing ? blue : lightBlue};
@@ -22,7 +40,9 @@ export const H1Styled = styled.h1`
   font-size: 46px;
   line-height: 1.25;
   margin-bottom: 24px;
-  ${p => p.shouldShowPlaceholder && `
+  ${p =>
+    p.shouldShowPlaceholder &&
+    `
     &::before {
       content: 'Write a title and hit enter...';
       position: absolute;
@@ -31,18 +51,18 @@ export const H1Styled = styled.h1`
   `}
 `;
 export const H2Styled = styled.h2`
- ${sectionWidthMixin}
+  ${sectionWidthMixin}
   margin-top: 30px;
   margin-bottom: 8px;
   font-weight: 600;
   --x-height-multiplier: 0.342;
   --baseline-multiplier: 0.22;
-  font-family: ${sansSerif},sans-serif;
-  letter-spacing: -.02em;
+  font-family: ${sansSerif}, sans-serif;
+  letter-spacing: -0.02em;
   font-style: normal;
   font-size: 32px;
   line-height: 1.22;
-  letter-spacing: -.012em;
+  letter-spacing: -0.012em;
 `;
 export const H3 = styled.h3`
   text-overflow: ellipsis;
@@ -95,13 +115,14 @@ export const PreStyled = styled.pre`
     color: ${mediumGrey};
     counter-increment: code;
     content: counter(code);
-  }`;
+  }
+`;
 export const CodeSection = styled(ContentSection)`
   font-family: ${monospaced}, monospace;
   font-size: 16px;
   max-height: 350px;
-  letter-spacing: -.03em;
-  word-spacing: -.2em;
+  letter-spacing: -0.03em;
+  word-spacing: -0.2em;
   line-height: 1.75;
   background: ${lightGrey};
   padding: 20px;
@@ -125,7 +146,7 @@ export const LiStyled = styled.li`
     box-sizing: border-box;
     padding-right: 12px;
     counter-increment: post;
-    content: counter(post) ".";
+    content: counter(post) '.';
     position: absolute;
     display: inline-block;
     width: 78px;
@@ -138,17 +159,25 @@ const linkMixin = css`
   font: inherit;
   text-decoration: none;
   background-repeat: repeat-x;
-  background-image: linear-gradient(to right,${darkGrey} 100%,rgba(0,0,0,0) 0);
-  background-image: linear-gradient(to right,currentColor 100%,currentColor 0);
+  background-image: linear-gradient(
+    to right,
+    ${darkGrey} 100%,
+    rgba(0, 0, 0, 0) 0
+  );
+  background-image: linear-gradient(
+    to right,
+    currentColor 100%,
+    currentColor 0
+  );
   background-size: 1px 1px;
   background-position: 0 1.05em;
   background-position: 0 calc(1em + 1px);
 `;
 export const A = styled.a`
- ${linkMixin}
+  ${linkMixin}
 `;
 export const LinkStyled = styled(Link)`
- ${linkMixin}
+  ${linkMixin}
 `;
 export const Code = styled.code`
   font-family: ${monospaced}, monospace;
@@ -176,7 +205,7 @@ const miniText = css`
   font-style: normal;
   font-size: 16px;
   line-height: 1.4;
-  color: rgba(0,0,0,.68);
+  color: rgba(0, 0, 0, 0.68);
   letter-spacing: 0;
 `;
 export const MiniText = styled.span`
@@ -185,7 +214,9 @@ export const MiniText = styled.span`
 export const Figure = styled.figure`
   padding: 5px 0;
   position: relative;
-  ${p => Number.isInteger(p.heightOverride) && `
+  ${p =>
+    Number.isInteger(p.heightOverride) &&
+    `
     height: ${p.heightOverride}px;
   `}
 `;
@@ -217,14 +248,20 @@ export const Img = styled.img`
   display: block;
   max-width: 100%;
   ${editSectionBorderMixin};
-  ${p => p.rotationDegrees === 90 && `
+  ${p =>
+    p.rotationDegrees === 90 &&
+    `
     transform-origin: left;
     transform: translate(50%, -50%) rotate(90deg) ;
   `}
-  ${p => p.rotationDegrees === 180 && `
+  ${p =>
+    p.rotationDegrees === 180 &&
+    `
     transform: scale(1,-1) ;
   `}
-  ${p => p.rotationDegrees === 270 && `
+  ${p =>
+    p.rotationDegrees === 270 &&
+    `
     transform-origin: right;
     transform: translate(-50%, -50%) rotate(-90deg) ;
   `}
@@ -247,9 +284,11 @@ export const Input = styled.input`
   border-radius: 2px;
   border: 1px solid ${grey};
   padding: 2px 8px;
-  ${p => p.error && css`
-    border-color: ${error};
-  `}
+  ${p =>
+    p.error &&
+    css`
+      border-color: ${error};
+    `}
 `;
 export const TextArea = styled.textarea`
   font-size: 18px;
@@ -260,17 +299,21 @@ export const TextArea = styled.textarea`
   border: 1px solid ${grey};
   padding: 2px 8px;
   min-height: 200px;
-  ${p => p.error && css`
-    border-color: ${error};
-  `}
+  ${p =>
+    p.error &&
+    css`
+      border-color: ${error};
+    `}
 `;
 export const Label = styled.label`
   text-transform: capitalize;
   margin-bottom: 4px;
   font-family: ${sansSerif};
-  ${p => p.error && css`
-    color: ${error};
-  `}
+  ${p =>
+    p.error &&
+    css`
+      color: ${error};
+    `}
 `;
 export const SuccessMessage = styled.span`
   font-family: inherit;
@@ -299,16 +342,18 @@ export const Button = styled.button`
   -webkit-appearance: none;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-  
+
   &:hover {
     background: ${darkBlue};
   }
-  ${p => p.disabled && css`
-    background: ${mediumGrey};
-    &:hover {
+  ${p =>
+    p.disabled &&
+    css`
       background: ${mediumGrey};
-    }
-  `}
+      &:hover {
+        background: ${mediumGrey};
+      }
+    `}
 `;
 export const CancelButton = styled(Button)`
   background: ${mediumGrey};
@@ -343,7 +388,9 @@ export const NavButtonMixin = css`
     color: white;
     background-color: ${lightBlue};
   }
-  ${p => p.isOpen && `
+  ${p =>
+    p.isOpen &&
+    `
     color: white;
     background-color: ${lightBlue};
   `}
@@ -352,10 +399,10 @@ export const NavButtonMixin = css`
 // LIL SASSY FORMS with ICONS
 export const LilSassyMenu = styled.div`
   position: absolute;
-  transition: .1s top;
+  transition: 0.1s top;
   top: ${p => p.top}px;
   z-index: 13;
-  background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
+  background-image: linear-gradient(to bottom, rgba(49, 49, 47, 0.99), #262625);
   background-repeat: repeat-x;
   border-radius: 5px;
   padding: 0 10px;
@@ -370,16 +417,18 @@ export const SvgIconMixin = css`
   &:hover {
     fill: ${blue};
   }
-  ${p => p.selected && `
+  ${p =>
+    p.selected &&
+    `
     fill: ${darkBlue};
   `}
 `;
 export const IconButton = styled.button`
   position: relative;
-  background: rgba(0,0,0,0);
+  background: rgba(0, 0, 0, 0);
   color: white;
   font-size: 16px;
-  transition: .1s background-color,.1s border-color,.1s color,.1s fill;
+  transition: 0.1s background-color, 0.1s border-color, 0.1s color, 0.1s fill;
   border: 0;
   display: inline-block;
   vertical-align: middle;
@@ -393,7 +442,7 @@ export const IconButton = styled.button`
 `;
 export const DarkInput = styled.input`
   flex: 1;
-  background: rgba(0,0,0,0);
+  background: rgba(0, 0, 0, 0);
   color: #fff;
   border: none;
   outline: 0;
@@ -407,7 +456,7 @@ export const ButtonSeparator = styled.div`
   width: 1px;
   margin: 0 6px;
   height: 24px;
-  background: rgba(255,255,255,.2);
+  background: rgba(255, 255, 255, 0.2);
 `;
 export const PointClip = styled.div`
   position: absolute;
@@ -421,5 +470,5 @@ export const Arrow = styled.span`
   width: 20px;
   height: 20px;
   background-color: #262625;
-  transform: rotate(45deg) scale(.5);
+  transform: rotate(45deg) scale(0.5);
 `;

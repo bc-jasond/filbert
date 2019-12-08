@@ -13,7 +13,7 @@ export const Header = styled.header`
   box-sizing: border-box;
   z-index: 12;
   width: 100%;
-  background: rgba(255,255,255,.97);
+  background: rgba(255, 255, 255, 0.97);
   letter-spacing: 0;
   font-weight: 400;
   font-style: normal;
@@ -108,10 +108,10 @@ export const SocialIcon = css`
   height: 32px;
   width: 34px;
   margin: 20px 10px 0 10px;
-  transition: fill .375s;
+  transition: fill 0.375s;
   fill: ${grey};
   &:hover {
-    transition: fill .375s;
+    transition: fill 0.375s;
     fill: ${darkGrey};
   }
 `;

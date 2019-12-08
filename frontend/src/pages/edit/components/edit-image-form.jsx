@@ -8,7 +8,7 @@ import {
   DarkInput,
   ButtonSeparator,
   PointClip,
-  Arrow,
+  Arrow
 } from '../../../common/components/shared-styled-components';
 import IconImageSvg from '../../../../assets/icons/image.svg';
 import IconRotateSvg from '../../../../assets/icons/rotate.svg';
@@ -32,20 +32,20 @@ export const EditImageMenu = styled(LilSassyMenu)`
   top: ${p => p.top + 10}px;
   width: 400px;
   margin: 0 auto;
-  left:50%;
-  margin-left:-200px;
+  left: 50%;
+  margin-left: -200px;
 `;
 export const ImageCaptionInput = styled(DarkInput)`
   margin: 0 8px;
 `;
 export default ({
-                  offsetTop,
-                  nodeModel,
-                  uploadFile,
-                  updateMeta,
-                  imageRotate,
-                  forwardRef,
-                }) => (
+  offsetTop,
+  nodeModel,
+  uploadFile,
+  updateMeta,
+  imageRotate,
+  forwardRef
+}) => (
   <EditImageMenu data-is-menu={true} top={offsetTop}>
     <IconButton onClick={() => fileInputRef.current.click()}>
       <IconImage />
@@ -57,18 +57,20 @@ export default ({
     <ImageCaptionInput
       ref={forwardRef}
       placeholder="Enter Image Caption here..."
-      onChange={(e) => updateMeta('caption', e.target.value)}
+      onChange={e => updateMeta('caption', e.target.value)}
       value={nodeModel.getIn(['meta', 'caption'], '')}
     />
     <PointClip>
       <Arrow />
     </PointClip>
-    <HiddenFileInput name="hidden-image-upload-file-input"
-                     type="file"
-                     onChange={(e) => {
-                       uploadFile(e.target.files)
-                     }}
-                     accept="image/*"
-                     ref={fileInputRef} />
+    <HiddenFileInput
+      name="hidden-image-upload-file-input"
+      type="file"
+      onChange={e => {
+        uploadFile(e.target.files);
+      }}
+      accept="image/*"
+      ref={fileInputRef}
+    />
   </EditImageMenu>
-)
+);

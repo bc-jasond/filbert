@@ -1,19 +1,20 @@
 // ESM - remove after ECMAScript Module support is past Experimental node v14 ?
-require = require('esm')(module/*, options*/);
+require = require("esm")(module /*, options*/);
 
-const express = require('express');
-const cors = require('cors');
-const multer = require('multer');
-const figlet = require('figlet');
+const express = require("express");
+const cors = require("cors");
+const multer = require("multer");
+const figlet = require("figlet");
 const storage = multer.memoryStorage();
 const upload = multer({
   storage, // TODO: store in memory as Buffer - bad idea?
   //dest: './uploads/', // store in filesystem
-  limits: { // busboy option
-    fileSize: 16777216, // 16MB in bytes max size for mysql MEDIUMBLOB
+  limits: {
+    // busboy option
+    fileSize: 16777216 // 16MB in bytes max size for mysql MEDIUMBLOB
   }
 });
-const sharp = require('sharp');
+const sharp = require("sharp");
 // const util = require('util');  for util.inspect()
 
 const {
@@ -21,104 +22,107 @@ const {
   getNodesFlat,
   bulkContentNodeUpsert,
   bulkContentNodeDelete,
-  getMysqlDatetime,
-} = require('./mysql');
-const { checkPassword } = require('./user');
-const { encrypt, decrypt, getChecksum } = require('./cipher');
+  getMysqlDatetime
+} = require("./mysql");
+const { checkPassword } = require("./user");
+const { encrypt, decrypt, getChecksum } = require("./cipher");
 
 async function main() {
   try {
     console.info(
-      figlet.textSync(
-        'filbert',
-        {
-          //font: 'Doh',
-        })
-    )
+      figlet.textSync("filbert", {
+        //font: 'Doh',
+      })
+    );
     const knex = await getKnex();
-    
+
     const app = express();
     app.use(express.json());
-    app.use(cors(/* TODO: whitelist *.filbert.xyz in PRODUCTION */))
-    
+    app.use(cors(/* TODO: whitelist *.filbert.xyz in PRODUCTION */));
+
     /**
      * parse Authorization header, add logged in user to req object
      */
     app.use(async (req, res, next) => {
       try {
-        const { headers: { authorization } } = req;
+        const {
+          headers: { authorization }
+        } = req;
         // decrypt Authorization header
         // assign 'loggedInUser' session to req for all routes
         // TODO: json encoded string 'null'?
-        if (authorization && authorization != 'null') {
-          console.info('Authorization Header: ', authorization, typeof authorization);
+        if (authorization && authorization != "null") {
+          console.info(
+            "Authorization Header: ",
+            authorization,
+            typeof authorization
+          );
           // TODO: add expiry time lol
           // TODO: add refresh token & flow
           req.loggedInUser = JSON.parse(decrypt(authorization));
         }
         next();
       } catch (err) {
-        console.error('Authorization header Error, continuing anyway...', err);
+        console.error("Authorization header Error, continuing anyway...", err);
         next();
       }
-    })
-    
-    app.post('/signin', async (req, res) => {
+    });
+
+    app.post("/signin", async (req, res) => {
       try {
         const { username, password } = req.body;
-        const [user] = await knex('user')
-          .where('username', username);
-        
+        const [user] = await knex("user").where("username", username);
+
         if (!user) {
-          res.status(401).send({ error: 'Invalid credentials' })
+          res.status(401).send({ error: "Invalid credentials" });
           return;
         }
-        
+
         const passwordDoesMatch = await checkPassword(password, user.password);
-        
+
         if (!passwordDoesMatch) {
-          res.status(401).send({ error: 'Invalid credentials' })
+          res.status(401).send({ error: "Invalid credentials" });
           return;
         }
-        
+
         res.send({
           token: encrypt(JSON.stringify(user)),
           session: {
             username: user.username,
-            userId: user.id,
-          },
+            userId: user.id
+          }
         });
       } catch (err) {
-        console.error('Signin Error: ', err)
-        res.status(401).send({})
+        console.error("Signin Error: ", err);
+        res.status(401).send({});
       }
-    })
-    
-    app.get('/post', async (req, res) => {
+    });
+
+    app.get("/post", async (req, res) => {
       const { loggedInUser } = req;
-      const posts = await knex('post')
+      const posts = await knex("post")
         .select(
-          'post.id',
-          'user_id',
-          'canonical',
-          'title',
-          'abstract',
-          'post.created',
-          'updated',
-          'published',
-          'post.deleted',
-          'username',
+          "post.id",
+          "user_id",
+          "canonical",
+          "title",
+          "abstract",
+          "post.created",
+          "updated",
+          "published",
+          "post.deleted",
+          "username"
         )
-        .innerJoin('user', 'post.user_id', 'user.id')
-        .whereNotNull('published')
-        .orderBy('published', 'desc')
+        .innerJoin("user", "post.user_id", "user.id")
+        .whereNotNull("published")
+        .orderBy("published", "desc")
         .limit(250);
-      
+
       if (!loggedInUser) {
         res.send(posts);
         return;
       }
-      
+
       res.send(
         posts.map(post => {
           post.canEdit = loggedInUser.id === post.user_id;
@@ -127,13 +131,12 @@ async function main() {
           return post;
         })
       );
-    })
-    
-    app.get('/post/:canonical', async (req, res) => {
+    });
+
+    app.get("/post/:canonical", async (req, res) => {
       const { loggedInUser } = req;
       const { canonical } = req.params;
-      const [post] = await knex('post')
-        .where({ canonical });
+      const [post] = await knex("post").where({ canonical });
       if (!post) {
         res.status(404).send({});
         return;
@@ -145,78 +148,76 @@ async function main() {
         post.canPublish = loggedInUser.id === post.user_id;
       }
       res.send({ post, contentNodes });
-    })
-    
-    app.get('/image/:id', async (req, res) => {
+    });
+
+    app.get("/image/:id", async (req, res) => {
       const { id } = req.params;
-      const [image] = await knex('image')
-        .where({ id });
+      const [image] = await knex("image").where({ id });
       if (!image) {
         res.status(404).send({});
         return;
       }
       res.contentType(image.mime_type);
       res.send(image.file_data);
-    })
-    
+    });
+
     /**
      * authenticated routes - all routes defined after this middleware require a logged in user
      */
     app.use(async (req, res, next) => {
       if (!req.loggedInUser) {
-        console.error('No User Found', req.method, req.url, req.headers);
+        console.error("No User Found", req.method, req.url, req.headers);
         res.status(401).send({});
         return;
       }
       next();
-    })
-    
+    });
+
     /**
      * creates a new draft for logged in user
      */
-    app.post('/post', async (req, res) => {
+    app.post("/post", async (req, res) => {
       const user_id = req.loggedInUser.id;
       const { title, canonical } = req.body;
       const [postId] = await knex
         .insert({ user_id, title, canonical })
-        .into('post');
+        .into("post");
       res.send({ postId });
-    })
-    
+    });
+
     /**
      * save post fields - like title, canonical & abstract
      */
-    app.patch('/post/:id', async (req, res) => {
+    app.patch("/post/:id", async (req, res) => {
       const { id } = req.params;
       const { title, canonical, abstract } = req.body;
-      const [post] = await knex('post')
-        .where({
-          user_id: req.loggedInUser.id,
-          id,
-        });
+      const [post] = await knex("post").where({
+        user_id: req.loggedInUser.id,
+        id
+      });
       if (!post) {
         res.status(404).send({});
         return;
       }
-      const result = await knex('post')
+      const result = await knex("post")
         .update({ title, canonical, abstract })
         .where({
           user_id: req.loggedInUser.id,
-          id,
-        })
-      res.send({})
-    })
-    
+          id
+        });
+      res.send({});
+    });
+
     /**
      * delete a post
      */
-    app.delete('/post/:id', async (req, res) => {
+    app.delete("/post/:id", async (req, res) => {
       const { id } = req.params;
-      const [post] = await knex('post')
-        .whereNotNull('published')
+      const [post] = await knex("post")
+        .whereNotNull("published")
         .andWhere({
           user_id: req.loggedInUser.id,
-          id,
+          id
         });
       if (!post) {
         res.status(404).send({});
@@ -225,60 +226,60 @@ async function main() {
       /**
        * DANGER ZONE!!!
        */
-      await knex('content_node')
-        .where('post_id', post.id)
+      await knex("content_node")
+        .where("post_id", post.id)
         .del();
-      await knex('post')
-        .where('id', post.id)
+      await knex("post")
+        .where("id", post.id)
         .del();
       res.status(204).send({});
-    })
-    
+    });
+
     /**
      * get post for editing
      */
-    app.get('/edit/:id', async (req, res) => {
+    app.get("/edit/:id", async (req, res) => {
       const { id } = req.params;
-      const [post] = await knex('post')
-        .where({
-          id,
-          user_id: req.loggedInUser.id,
-        });
+      const [post] = await knex("post").where({
+        id,
+        user_id: req.loggedInUser.id
+      });
       if (!post) {
         res.status(404).send({});
         return;
       }
       const contentNodes = await getNodesFlat(knex, post.id);
       res.send({ post, contentNodes });
-    })
-    
+    });
+
     /**
      * takes a list of 1 or more content nodes to update and/or delete for a post
      */
-    app.post('/content', async (req, res) => {
+    app.post("/content", async (req, res) => {
       try {
-        const updates = req.body.filter(change => change[1].action === 'update');
-        const deletes = req.body.filter(change => change[1].action === 'delete');
+        const updates = req.body.filter(
+          change => change[1].action === "update"
+        );
+        const deletes = req.body.filter(
+          change => change[1].action === "delete"
+        );
         // TODO: put in transaction
         // TODO: validate updates, trim invalid selections, orphaned nodes, etc.
         const updateResult = await bulkContentNodeUpsert(updates);
         const deleteResult = await bulkContentNodeDelete(deletes);
         res.send({ updateResult, deleteResult });
       } catch (err) {
-        console.error('POST /content Error: ', err);
-        res.status(500).send({})
+        console.error("POST /content Error: ", err);
+        res.status(500).send({});
       }
-    })
-    
+    });
+
     /**
      * upload image!
      */
-    app.post('/image', upload.single('fileData'), async (req, res) => {
+    app.post("/image", upload.single("fileData"), async (req, res) => {
       try {
-        const {
-          body,
-          file,
-        } = req;
+        const { body, file } = req;
         // TODO: this whole approach to deduping files isn't worth it, it adds complexity and edge cases
         //  we really need to lock the whole table and do all these operations in a transaction
         //  a simpler alternative would be to use a guid, and not dedupe at all. Then just use a cronjob every so often to delete images whose ids aren't in content_node
@@ -288,17 +289,17 @@ async function main() {
         // see if the image already exists, deduped by user, not globally
         const existingImageWhereClause = {
           user_id: parseInt(body.userId, 10),
-          id: checksum,
+          id: checksum
         };
-        const [existingImage] = await knex('image')
-          .select('id', 'width', 'height')
+        const [existingImage] = await knex("image")
+          .select("id", "width", "height")
           .where(existingImageWhereClause);
         // if image already exists, just increment counter and return meta
         if (existingImage) {
           res.status(200).send({
             imageId: existingImage.id,
             width: existingImage.width,
-            height: existingImage.height,
+            height: existingImage.height
           });
           return;
         }
@@ -316,126 +317,127 @@ async function main() {
             .toBuffer();
           imgMeta = await sharp(fileBuffer).metadata();
         }
-        console.log('IMAGE META', imgMeta);
-        await knex('image')
-          .insert({
-            user_id: parseInt(body.userId, 10),
-            id: checksum,
-            mime_type: file.mimetype,
-            file_data: fileBuffer,
-            encoding: file.encoding,
-            width: imgMeta.width,
-            height: imgMeta.height,
-          });
+        console.log("IMAGE META", imgMeta);
+        await knex("image").insert({
+          user_id: parseInt(body.userId, 10),
+          id: checksum,
+          mime_type: file.mimetype,
+          file_data: fileBuffer,
+          encoding: file.encoding,
+          width: imgMeta.width,
+          height: imgMeta.height
+        });
         res.status(201).send({
           imageId: checksum,
           width: imgMeta.width,
-          height: imgMeta.height,
-        })
+          height: imgMeta.height
+        });
       } catch (err) {
         delete req.file; // free this up ASAP!
-        console.error('POST /image Error: ', err);
-        res.status(500).send({})
+        console.error("POST /image Error: ", err);
+        res.status(500).send({});
       }
-    })
-    
-    app.delete('/image/:id', async (req, res) => {
+    });
+
+    app.delete("/image/:id", async (req, res) => {
       const { id } = req.params;
       // TODO: transaction, select for update
       const imageWhereClause = {
         id,
-        user_id: req.loggedInUser.id,
+        user_id: req.loggedInUser.id
       };
-      const [image] = await knex('image')
-        .select('id')
+      const [image] = await knex("image")
+        .select("id")
         .where(imageWhereClause);
       if (!image) {
         res.status(404).send({});
         return;
       }
-      
+
       // TODO: slow query warning!  But, also just move this to a cron job
       //  1) run once a day, put all image ids that aren't referenced in a content_node meta into a image_delete_staging table with the date.  remove image ids from table that have been used again
       //  2) delete all ids with times older than X days, clear these entries from image_delete_staging
-      const numTimesUsed = await knex('content_node')
-        .where('type', 'image')
-        .andWhere('meta', 'like', `%${id}%`);
+      const numTimesUsed = await knex("content_node")
+        .where("type", "image")
+        .andWhere("meta", "like", `%${id}%`);
 
       if (numTimesUsed.length < 2) {
         // delete image!
-        await knex('image')
+        await knex("image")
           .where(imageWhereClause)
           .del();
       }
       res.status(204).send({});
-    })
-    
+    });
+
     /**
      * list drafts for logged in user
      */
-    app.get('/draft', async (req, res) => {
-      const posts = await knex('post')
+    app.get("/draft", async (req, res) => {
+      const posts = await knex("post")
         .select(
-          'post.id',
-          'user_id',
-          'canonical',
-          'title',
-          'abstract',
-          'post.created',
-          'updated',
-          'published',
-          'post.deleted',
-          'username',
+          "post.id",
+          "user_id",
+          "canonical",
+          "title",
+          "abstract",
+          "post.created",
+          "updated",
+          "published",
+          "post.deleted",
+          "username"
         )
-        .innerJoin('user', 'post.user_id', 'user.id')
-        .whereNull('published')
-        .andWhere('post.user_id', req.loggedInUser.id)
-        .orderBy('post.created', 'desc')
+        .innerJoin("user", "post.user_id", "user.id")
+        .whereNull("published")
+        .andWhere("post.user_id", req.loggedInUser.id)
+        .orderBy("post.created", "desc")
         .limit(250);
-      
+
       res.send(posts);
-    })
-    
+    });
+
     /**
      * publish a draft - this is a one-time operation
      */
-    app.post('/publish/:id', async (req, res) => {
+    app.post("/publish/:id", async (req, res) => {
       const { id } = req.params;
-      const [post] = await knex('post')
-        .whereNull('published')
+      const [post] = await knex("post")
+        .whereNull("published")
         .andWhere({
           user_id: req.loggedInUser.id,
-          id,
+          id
         });
       if (!post) {
         res.status(404).send({});
         return;
       }
       if (!post.canonical) {
-        res.status(400).send({ message: "Error: Can't publish a draft with no canonical URL" });
+        res.status(400).send({
+          message: "Error: Can't publish a draft with no canonical URL"
+        });
         return;
       }
-      await knex('post')
+      await knex("post")
         .update({ published: getMysqlDatetime() })
         .where({
           user_id: req.loggedInUser.id,
-          id,
-        })
+          id
+        });
       res.send({});
-    })
-    
+    });
+
     /**
      * delete a draft (and content nodes) for logged in user
      */
-    app.delete('/draft/:id', async (req, res) => {
+    app.delete("/draft/:id", async (req, res) => {
       const { id } = req.params;
-      const [post] = await knex('post')
-        .whereNull('published')
+      const [post] = await knex("post")
+        .whereNull("published")
         .andWhere({
           user_id: req.loggedInUser.id,
-          id,
+          id
         });
-      
+
       if (!post) {
         res.status(404).send({});
         return;
@@ -444,20 +446,20 @@ async function main() {
        * DANGER ZONE!!!
        */
       // TODO: transaction
-      await knex('content_node')
-        .where('post_id', id)
+      await knex("content_node")
+        .where("post_id", id)
         .del();
-      await knex('post')
-        .where('id', id)
+      await knex("post")
+        .where("id", id)
         .del();
-      
+
       res.status(204).send({});
-    })
-    
-    app.listen(3001)
-    console.info("Filbert API Started 👍")
+    });
+
+    app.listen(3001);
+    console.info("Filbert API Started 👍");
   } catch (err) {
-    console.error('main() error: ', err);
+    console.error("main() error: ", err);
   }
 }
 

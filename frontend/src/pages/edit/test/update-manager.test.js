@@ -1,17 +1,17 @@
-import { Map } from "immutable";
-import UpdateManager from "../update-manager";
+import { Map } from 'immutable';
+import UpdateManager from '../update-manager';
 import { overrideConsole } from '../../../common/test-helpers';
 
 const testPostJS = {
   id: 1,
   user_id: 1,
-  canonical: "hello-world",
-  title: "Hello World!",
+  canonical: 'hello-world',
+  title: 'Hello World!',
   abstract:
-    "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
-  created: "2019-05-18 17:28:55",
-  updated: "2019-05-25 00:36:52",
-  published: "2019-01-04 00:00:00",
+    'Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.',
+  created: '2019-05-18 17:28:55',
+  updated: '2019-05-25 00:36:52',
+  published: '2019-01-04 00:00:00',
   deleted: null
 };
 
@@ -23,8 +23,8 @@ beforeEach(() => {
   updateManager.init(testPostJS);
 });
 
-describe("UpdateManager", () => {
-  test("init method", () => {
+describe('UpdateManager', () => {
+  test('init method', () => {
     expect(updateManager).toMatchInlineSnapshot(`
       UpdateManager {
         "nodeUpdates": Immutable.Map {},
@@ -42,18 +42,18 @@ describe("UpdateManager", () => {
       }
     `);
   });
-  test("stageNodeUpdate method", () => {
+  test('stageNodeUpdate method', () => {
     updateManager.stageNodeUpdate();
     expect(updateManager.nodeUpdates.size).toBe(0);
     updateManager.stageNodeUpdate(null);
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeUpdate("null");
+    updateManager.stageNodeUpdate('null');
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeUpdate("undefined");
+    updateManager.stageNodeUpdate('undefined');
     expect(updateManager.nodeUpdates.size).toBe(0);
     // test that last-write-wins, update overwrites delete
-    updateManager.stageNodeDelete("foo");
-    updateManager.stageNodeUpdate("foo");
+    updateManager.stageNodeDelete('foo');
+    updateManager.stageNodeUpdate('foo');
     expect(updateManager).toMatchInlineSnapshot(`
       UpdateManager {
         "nodeUpdates": Immutable.Map {
@@ -76,18 +76,18 @@ describe("UpdateManager", () => {
       }
     `);
   });
-  test("stageNodeDelete method", () => {
+  test('stageNodeDelete method', () => {
     updateManager.stageNodeDelete();
     expect(updateManager.nodeUpdates.size).toBe(0);
     updateManager.stageNodeDelete(null);
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeDelete("null");
+    updateManager.stageNodeDelete('null');
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeDelete("undefined");
+    updateManager.stageNodeDelete('undefined');
     expect(updateManager.nodeUpdates.size).toBe(0);
     // test that last-write-wins, delete overwrites update
-    updateManager.stageNodeUpdate("foo");
-    updateManager.stageNodeDelete("foo");
+    updateManager.stageNodeUpdate('foo');
+    updateManager.stageNodeDelete('foo');
     expect(updateManager).toMatchInlineSnapshot(`
       UpdateManager {
         "nodeUpdates": Immutable.Map {
@@ -110,30 +110,30 @@ describe("UpdateManager", () => {
       }
     `);
   });
-  test("nodeHasBeenStagedForDelete method", () => {
-    updateManager.stageNodeUpdate("foo");
-    expect(updateManager.nodeHasBeenStagedForDelete("foo")).toBe(false);
-    updateManager.stageNodeDelete("foo");
-    expect(updateManager.nodeHasBeenStagedForDelete("foo")).toBe(true);
+  test('nodeHasBeenStagedForDelete method', () => {
+    updateManager.stageNodeUpdate('foo');
+    expect(updateManager.nodeHasBeenStagedForDelete('foo')).toBe(false);
+    updateManager.stageNodeDelete('foo');
+    expect(updateManager.nodeHasBeenStagedForDelete('foo')).toBe(true);
   });
-  test("addPostIdToUpdates method", () => {
+  test('addPostIdToUpdates method', () => {
     // mimic a "not-yet-saved" post
     updateManager.init({});
-    updateManager.stageNodeUpdate("bar");
-    expect(updateManager.nodeUpdates.get("bar").get("post_id")).toBeUndefined();
+    updateManager.stageNodeUpdate('bar');
+    expect(updateManager.nodeUpdates.get('bar').get('post_id')).toBeUndefined();
     updateManager.addPostIdToUpdates(1);
-    expect(updateManager.nodeUpdates.get("bar").get("post_id")).toBe(1);
+    expect(updateManager.nodeUpdates.get('bar').get('post_id')).toBe(1);
   });
-  test("updates method", () => {
+  test('updates method', () => {
     // filter out ids that are "falsy", "null" or not found in the documentModel
-    updateManager.stageNodeUpdate("foo");
-    updateManager.stageNodeUpdate("qux");
-    updateManager.stageNodeDelete("bar");
-    updateManager.stageNodeUpdate("badId");
+    updateManager.stageNodeUpdate('foo');
+    updateManager.stageNodeUpdate('qux');
+    updateManager.stageNodeDelete('bar');
+    updateManager.stageNodeUpdate('badId');
     const documentModelMock = {
       getNode: jest
         .fn()
-        .mockImplementation(id => (id === "badId" ? Map() : Map({ id })))
+        .mockImplementation(id => (id === 'badId' ? Map() : Map({ id })))
     };
     const updatesJS = updateManager.updates(documentModelMock);
     expect(updatesJS).toMatchInlineSnapshot(`
@@ -168,10 +168,10 @@ describe("UpdateManager", () => {
       ]
     `);
   });
-  test("clearUpdates method", () => {
-    updateManager.stageNodeUpdate("foo");
-    updateManager.stageNodeUpdate("qux");
-    updateManager.stageNodeDelete("bar");
+  test('clearUpdates method', () => {
+    updateManager.stageNodeUpdate('foo');
+    updateManager.stageNodeUpdate('qux');
+    updateManager.stageNodeDelete('bar');
     expect(updateManager.nodeUpdates.size).toBe(3);
     updateManager.clearUpdates();
     expect(updateManager.nodeUpdates.size).toBe(0);

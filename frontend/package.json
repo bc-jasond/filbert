@@ -15,7 +15,9 @@
     "build-prod": "webpack -p --mode production",
     "start": "webpack-dev-server --hot --mode development",
     "start-prod": "webpack-dev-server --hot --mode production",
-    "start-prod-local": "USE_LOCALHOST_API=true webpack-dev-server --hot --mode production"
+    "start-prod-local": "USE_LOCALHOST_API=true webpack-dev-server --hot --mode production",
+    "pretty": "prettier --parser=babel --single-quote --write \"**/*.{js,jsx}\"",
+    "pretty-ci": "prettier --parser=babel --single-quote --check -l \"**/*.{js,jsx}\""
   },
   "dependencies": {
     "@babel/core": "^7.2.2",

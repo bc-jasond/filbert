@@ -2,10 +2,7 @@ import { createGlobalStyle } from 'styled-components';
 
 import { contentSerif } from './common/fonts.css';
 
-import {
-  darkGrey,
-  lightGrey,
-} from './common/css';
+import { darkGrey, lightGrey } from './common/css';
 
 export default createGlobalStyle`
 /* http://meyerweb.com/eric/tools/css/reset/ 

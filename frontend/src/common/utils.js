@@ -1,11 +1,15 @@
 import { Map } from 'immutable';
 
-import { KEYCODE_SPACE, KEYCODE_SPACE_NBSP, ZERO_LENGTH_CHAR } from './constants';
+import {
+  KEYCODE_SPACE,
+  KEYCODE_SPACE_NBSP,
+  ZERO_LENGTH_CHAR
+} from './constants';
 
 export function confirmPromise(msg) {
   return new Promise((resolve, reject) => {
     confirm(msg) ? resolve() : reject();
-  })
+  });
 }
 
 export function formatPostDate(dateStr) {
@@ -49,8 +53,10 @@ export function cleanText(text = '') {
     // 1) a space at the beginning
     // 2) a space at the end
     // 3) more than 1 space in a row
-    if (current === KEYCODE_SPACE
-      && (i === 0 || i === text.length - 1 || last === KEYCODE_SPACE)) {
+    if (
+      current === KEYCODE_SPACE &&
+      (i === 0 || i === text.length - 1 || last === KEYCODE_SPACE)
+    ) {
       const nbsp = String.fromCharCode(KEYCODE_SPACE_NBSP);
       final += nbsp;
       last = nbsp;
@@ -63,7 +69,7 @@ export function cleanText(text = '') {
 }
 
 export function getCharFromEvent(evt) {
-  if (evt && typeof evt.keyCode !== "undefined") {
+  if (evt && typeof evt.keyCode !== 'undefined') {
     // for normal "found on the keyboard" characters
     return evt.key;
   }
@@ -77,13 +83,13 @@ export function getCanonicalFromTitle(title) {
     .substring(0, 25)
     .toLowerCase()
     // remove all whitespace, replace with hyphen
-    .replace(/\s+/g, "-")
+    .replace(/\s+/g, '-')
     // keep only alpha numeric chars
-    .replace(/[^0-9a-z-]/g, "");
+    .replace(/[^0-9a-z-]/g, '');
   // append a hash
   canonical += '-' + s4();
   // dedupe hyphens
-  return canonical.replace(/-+/g, "-");
+  return canonical.replace(/-+/g, '-');
 }
 
 export function imageUrlIsId(url) {

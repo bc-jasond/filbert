@@ -8,10 +8,10 @@ function getBaseConfig() {
     cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
     headers: {
       'Content-Type': 'application/json',
-      Authorization: getAuthToken(),
+      Authorization: getAuthToken()
     },
     redirect: 'follow', // manual, *follow, error
-    referrer: 'no-referrer', // no-referrer, *client
+    referrer: 'no-referrer' // no-referrer, *client
   };
 }
 

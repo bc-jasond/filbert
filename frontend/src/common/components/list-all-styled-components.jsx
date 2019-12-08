@@ -2,10 +2,7 @@ import styled, { css } from 'styled-components';
 import { darkGrey, grey } from '../css';
 import { sansSerif } from '../fonts.css';
 import { A } from './layout-styled-components';
-import {
-  H2Styled,
-  NavButtonMixin,
-} from './shared-styled-components';
+import { H2Styled, NavButtonMixin } from './shared-styled-components';
 
 export const StyledH2 = styled(H2Styled)`
   margin-left: 0;
@@ -54,7 +51,7 @@ export const MetaFont = css`
   font-size: 15.8px;
   line-height: 20px;
   font-style: normal;
-`
+`;
 export const MetaContent = css`
   ${MetaFont}
   color: ${grey};
@@ -82,7 +79,6 @@ export const PostAction = styled.span`
   ${NavButtonMixin};
   ${MetaFont};
   padding: 7px 9px;
-  
 `;
 export const PostActionA = styled(A)`
   ${NavButtonMixin};

@@ -9,9 +9,9 @@ import {
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
   SELECTION_START,
-  SELECTION_END,
+  SELECTION_END
 } from '../../common/constants';
-import {cleanTextOrZeroLengthPlaceholder} from "../../common/utils";
+import { cleanTextOrZeroLengthPlaceholder } from '../../common/utils';
 
 export const Selection = Record({
   [SELECTION_START]: 0,
@@ -22,14 +22,18 @@ export const Selection = Record({
   [SELECTION_ACTION_STRIKETHROUGH]: false,
   [SELECTION_ACTION_SITEINFO]: false,
   [SELECTION_ACTION_LINK]: false,
-  [SELECTION_LINK_URL]: '',
+  [SELECTION_LINK_URL]: ''
 });
 
 export function formatSelections(s) {
   if (!List.isList(s)) {
     return '';
   }
-  return `${s.reduce((acc, v) => `${acc} | start: ${v.get(SELECTION_START)}, end: ${v.get(SELECTION_END)}`, '')} |`;
+  return `${s.reduce(
+    (acc, v) =>
+      `${acc} | start: ${v.get(SELECTION_START)}, end: ${v.get(SELECTION_END)}`,
+    ''
+  )} |`;
 }
 
 /**
@@ -50,7 +54,7 @@ function selectionsHaveDifferentFormats(left, right) {
     SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_SITEINFO,
     SELECTION_ACTION_LINK,
-    SELECTION_LINK_URL,
+    SELECTION_LINK_URL
   ].reduce((acc, key) => acc || left.get(key) !== right.get(key), false);
 }
 
@@ -72,10 +76,15 @@ function fillEnds(nodeModel) {
     maxEnd = Math.max(maxEnd, s.get(SELECTION_END));
   });
   if (minStart > 0) {
-    newSelections = newSelections.insert(0, Selection({[SELECTION_START]: 0, [SELECTION_END]: minStart}));
+    newSelections = newSelections.insert(
+      0,
+      Selection({ [SELECTION_START]: 0, [SELECTION_END]: minStart })
+    );
   }
   if (maxEnd < contentLength) {
-    newSelections = newSelections.push(Selection({[SELECTION_START]: maxEnd, [SELECTION_END]: contentLength}))
+    newSelections = newSelections.push(
+      Selection({ [SELECTION_START]: maxEnd, [SELECTION_END]: contentLength })
+    );
   }
   if (!selections.equals(newSelections)) {
     console.info('FILL ENDS      ', formatSelections(newSelections));
@@ -105,7 +114,10 @@ function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
   let current = selections.first();
   for (let i = 1; i < selections.size; i++) {
     const next = selections.get(i, Selection());
-    if (current === selections.last() || selectionsHaveDifferentFormats(current, next)) {
+    if (
+      current === selections.last() ||
+      selectionsHaveDifferentFormats(current, next)
+    ) {
       newSelections = newSelections.push(current);
       current = next;
     } else {
@@ -115,7 +127,10 @@ function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
   }
   newSelections = newSelections.push(current);
   // SUPER PERFORMANCE OPTIMIZATION: if there's only one Selection and it's empty - unset 'selections'
-  if (newSelections.size === 1 && !selectionsHaveDifferentFormats(newSelections.get(0), Selection())) {
+  if (
+    newSelections.size === 1 &&
+    !selectionsHaveDifferentFormats(newSelections.get(0), Selection())
+  ) {
     return nodeModel.deleteIn(['meta', 'selections']);
   }
   if (!selections.equals(newSelections)) {
@@ -136,26 +151,38 @@ function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
  *
  * adjusts selection offsets (and removes selections) after these events: paste, keydown, delete 1 char, delete selection of 1 or more chars
  */
-export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', start = 0, count = 0) {
+export function adjustSelectionOffsetsAndCleanup(
+  nodeModel,
+  beforeContent = '',
+  start = 0,
+  count = 0
+) {
   const diffRangeStart = Math.min(start, start + count);
   const diffRangeEnd = Math.max(start, start + count);
   const doesRemoveCharacters = count < 0;
   // compare beforeContent length for delete operations, nodeMode.get('content') for add operations
-  const contentLength = Math.max(nodeModel.get('content', '').length, beforeContent.length);
+  const contentLength = Math.max(
+    nodeModel.get('content', '').length,
+    beforeContent.length
+  );
   // validate input
   if (
     // don't test for no-op case
-    !(start === 0 && count === 0)
+    !(start === 0 && count === 0) &&
     // can't start before 0
-    && (start < 0
-    // can't start beyond contentLength
-    || start > contentLength
-    // trying to delete too far left (past 0)
-    || start + count < 0
-    // trying to add too far right (past contentLength)
-    || start + count > contentLength)
+    (start < 0 ||
+      // can't start beyond contentLength
+      start > contentLength ||
+      // trying to delete too far left (past 0)
+      start + count < 0 ||
+      // trying to add too far right (past contentLength)
+      start + count > contentLength)
   ) {
-    throw new Error(`adjustSelectionOffsetsAndCleanup out of bounds!\n${JSON.stringify(nodeModel.toJS())}\n${start}\n${count}`);
+    throw new Error(
+      `adjustSelectionOffsetsAndCleanup out of bounds!\n${JSON.stringify(
+        nodeModel.toJS()
+      )}\n${start}\n${count}`
+    );
   }
   const selections = getSelections(nodeModel);
   if (selections.size === 0) {
@@ -163,13 +190,16 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', 
   }
   let newSelections = List();
   // TODO: might need to account for the 'placeholder' character here...
-  
+
   for (let i = 0; i < selections.size; i++) {
     let current = selections.get(i);
     //const currentJS = current.toJS();
     if (doesRemoveCharacters) {
       // selection completely enveloped by diff - skip
-      if (current.get(SELECTION_START) >= diffRangeStart && current.get(SELECTION_END) <= diffRangeEnd) {
+      if (
+        current.get(SELECTION_START) >= diffRangeStart &&
+        current.get(SELECTION_END) <= diffRangeEnd
+      ) {
         continue;
       }
       // selection comes before diff - push as is
@@ -178,40 +208,61 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', 
         continue;
       }
       // selection overlaps diff to the left - set end to diffRangeStart
-      if (current.get(SELECTION_START) < diffRangeStart && current.get(SELECTION_END) <= diffRangeEnd) {
-        newSelections = newSelections.push(current.set(SELECTION_END, diffRangeStart));
+      if (
+        current.get(SELECTION_START) < diffRangeStart &&
+        current.get(SELECTION_END) <= diffRangeEnd
+      ) {
+        newSelections = newSelections.push(
+          current.set(SELECTION_END, diffRangeStart)
+        );
         continue;
       }
       // diff completely inside selection - add "count" to end
-      if (current.get(SELECTION_START) <= diffRangeStart && current.get(SELECTION_END) > diffRangeEnd) {
+      if (
+        current.get(SELECTION_START) <= diffRangeStart &&
+        current.get(SELECTION_END) > diffRangeEnd
+      ) {
         newSelections = newSelections.push(
           current.set(SELECTION_END, current.get(SELECTION_END) + count)
         );
         continue;
       }
       // selection overlaps diff to the right - set start to diffRangeStart, add "count" to end
-      if (current.get(SELECTION_START) < diffRangeEnd && current.get(SELECTION_END) > diffRangeEnd) {
+      if (
+        current.get(SELECTION_START) < diffRangeEnd &&
+        current.get(SELECTION_END) > diffRangeEnd
+      ) {
         newSelections = newSelections.push(
           current
-          .set(SELECTION_START, diffRangeStart)
-          .set(SELECTION_END, current.get(SELECTION_END) + count)
+            .set(SELECTION_START, diffRangeStart)
+            .set(SELECTION_END, current.get(SELECTION_END) + count)
         );
         continue;
       }
       // selection comes after diff - add "count" to start, add "count" to end
-      if (current.get(SELECTION_START) >= diffRangeEnd && current.get(SELECTION_END) > diffRangeEnd) {
-        newSelections = newSelections.push(current
-          .set(SELECTION_START, current.get(SELECTION_START) + count)
-          .set(SELECTION_END, current.get(SELECTION_END) + count)
+      if (
+        current.get(SELECTION_START) >= diffRangeEnd &&
+        current.get(SELECTION_END) > diffRangeEnd
+      ) {
+        newSelections = newSelections.push(
+          current
+            .set(SELECTION_START, current.get(SELECTION_START) + count)
+            .set(SELECTION_END, current.get(SELECTION_END) + count)
         );
       }
     } else {
       // ADDING characters
       if (current.get(SELECTION_START) >= start) {
-        current = current.set(SELECTION_START, current.get(SELECTION_START) + count)
+        current = current.set(
+          SELECTION_START,
+          current.get(SELECTION_START) + count
+        );
       }
       if (current.get(SELECTION_END) >= start) {
-        current = current.set(SELECTION_END, current.get(SELECTION_END) + count)
+        current = current.set(
+          SELECTION_END,
+          current.get(SELECTION_END) + count
+        );
       }
       newSelections = newSelections.push(current);
     }
@@ -219,7 +270,16 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', 
 
   let newModel = nodeModel;
   if (!selections.equals(newSelections)) {
-    console.info('ADJUST         ', formatSelections(newSelections), ' -- offset: ', start, ' count: ', count, ' content length: ', contentLength);
+    console.info(
+      'ADJUST         ',
+      formatSelections(newSelections),
+      ' -- offset: ',
+      start,
+      ' count: ',
+      count,
+      ' content length: ',
+      contentLength
+    );
     newModel = setSelections(nodeModel, newSelections);
   }
   newModel = fillEnds(newModel);
@@ -235,7 +295,11 @@ export function adjustSelectionOffsetsAndCleanup(nodeModel, beforeContent = '', 
  */
 export function getSelection(nodeModel, start, end) {
   const selections = getSelections(nodeModel);
-  let newSelection = selections.find(s => s.get(SELECTION_START) === start && s.get(SELECTION_END) === end, null, Selection());
+  let newSelection = selections.find(
+    s => s.get(SELECTION_START) === start && s.get(SELECTION_END) === end,
+    null,
+    Selection()
+  );
   // selection already exists?
   if (newSelection.get(SELECTION_END) === end) {
     return newSelection;
@@ -247,7 +311,7 @@ export function getSelection(nodeModel, start, end) {
   if (selections.size === 0) {
     return newSelection;
   }
-  
+
   newSelection = newSelection
     // set all to true for && mask against all overlapping selections
     .set(SELECTION_ACTION_BOLD, true)
@@ -255,31 +319,40 @@ export function getSelection(nodeModel, start, end) {
     .set(SELECTION_ACTION_CODE, true)
     .set(SELECTION_ACTION_STRIKETHROUGH, true)
     .set(SELECTION_ACTION_SITEINFO, true);
-  
+
   // applyFormatsOfOverlappingSelections
   // applies "intersection" of formats from all overlapping Selections
   return selections
-    .filter(s =>
-      // newSelection overlaps s to the right
-      (newSelection.get(SELECTION_START) >= s.get(SELECTION_START) && newSelection.get(SELECTION_START) <= s.get(SELECTION_END))
-      // newSelection overlaps s to the left
-      || (newSelection.get(SELECTION_END) >= s.get(SELECTION_START) && newSelection.get(SELECTION_END) <= s.get(SELECTION_END))
-      // newSelection envelops s completely
-      || (newSelection.get(SELECTION_START) < s.get(SELECTION_START) && newSelection.get(SELECTION_END) > s.get(SELECTION_END))
-      // newSelection is completely enveloped by s
-      || (newSelection.get(SELECTION_START) >= s.get(SELECTION_START) && newSelection.get(SELECTION_END) <= s.get(SELECTION_END))
+    .filter(
+      s =>
+        // newSelection overlaps s to the right
+        (newSelection.get(SELECTION_START) >= s.get(SELECTION_START) &&
+          newSelection.get(SELECTION_START) <= s.get(SELECTION_END)) ||
+        // newSelection overlaps s to the left
+        (newSelection.get(SELECTION_END) >= s.get(SELECTION_START) &&
+          newSelection.get(SELECTION_END) <= s.get(SELECTION_END)) ||
+        // newSelection envelops s completely
+        (newSelection.get(SELECTION_START) < s.get(SELECTION_START) &&
+          newSelection.get(SELECTION_END) > s.get(SELECTION_END)) ||
+        // newSelection is completely enveloped by s
+        (newSelection.get(SELECTION_START) >= s.get(SELECTION_START) &&
+          newSelection.get(SELECTION_END) <= s.get(SELECTION_END))
     )
     .unshift(newSelection)
-    .reduce((acc, selection) => acc.mergeWith(
-      (oldVal, newVal, key) => {
-        // don't blow away non-formatting related values like SELECTION_START or SELECTION_END
-        if ([SELECTION_START, SELECTION_END, SELECTION_LINK_URL].includes(key)) {
-          return oldVal
-        }
-        // NOTE: for "union" of all formats use ||, for "intersection" of all formats use &&
-        return newVal && oldVal
-      },
-      selection), newSelection);
+    .reduce(
+      (acc, selection) =>
+        acc.mergeWith((oldVal, newVal, key) => {
+          // don't blow away non-formatting related values like SELECTION_START or SELECTION_END
+          if (
+            [SELECTION_START, SELECTION_END, SELECTION_LINK_URL].includes(key)
+          ) {
+            return oldVal;
+          }
+          // NOTE: for "union" of all formats use ||, for "intersection" of all formats use &&
+          return newVal && oldVal;
+        }, selection),
+      newSelection
+    );
 }
 
 /**
@@ -305,20 +378,27 @@ export function upsertSelection(nodeModel, newSelection) {
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
     // current selection IS newSelection
-    if (current.get(SELECTION_START) === newSelection.get(SELECTION_START) && current.get(SELECTION_END) === newSelection.get(SELECTION_END)) {
+    if (
+      current.get(SELECTION_START) === newSelection.get(SELECTION_START) &&
+      current.get(SELECTION_END) === newSelection.get(SELECTION_END)
+    ) {
       newSelections = newSelections.push(newSelection);
       didPushNewSelection = true;
       continue;
     }
     // current selection doesn't overlap - push it
-    if (current.get(SELECTION_END) <= newSelection.get(SELECTION_START) || current.get(SELECTION_START) >= newSelection.get(SELECTION_END)) {
+    if (
+      current.get(SELECTION_END) <= newSelection.get(SELECTION_START) ||
+      current.get(SELECTION_START) >= newSelection.get(SELECTION_END)
+    ) {
       newSelections = newSelections.push(current);
       continue;
     }
     // current selection overlaps to the left
     if (current.get(SELECTION_START) < newSelection.get(SELECTION_START)) {
-      newSelections = newSelections
-        .push(current.set(SELECTION_END, newSelection.get(SELECTION_START)))
+      newSelections = newSelections.push(
+        current.set(SELECTION_END, newSelection.get(SELECTION_START))
+      );
     }
     // push new selection
     if (!didPushNewSelection) {
@@ -327,14 +407,16 @@ export function upsertSelection(nodeModel, newSelection) {
     }
     // current selection overlaps to the right
     if (current.get(SELECTION_END) > newSelection.get(SELECTION_END)) {
-      newSelections = newSelections.push(current.set(SELECTION_START, newSelection.get(SELECTION_END)));
+      newSelections = newSelections.push(
+        current.set(SELECTION_START, newSelection.get(SELECTION_END))
+      );
     }
     // current selection falls completely within newSelection - skip since it's styles have already been merged with `applyFormatsOfOverlappingSelections` (noop)
     // if (current.get(SELECTION_START) >= newSelection.get(SELECTION_START) && current.get(SELECTION_END) <= newSelection.get(SELECTION_END)) {
     //   continue;
     // }
   }
-  
+
   nodeModel = setSelections(nodeModel, newSelections);
   return adjustSelectionOffsetsAndCleanup(nodeModel);
 }
@@ -347,7 +429,11 @@ export function upsertSelection(nodeModel, newSelection) {
  * @param caretOffset
  * @returns {List<any>[]}
  */
-export function splitSelectionsAtCaretOffset(leftNodeModel, rightNodeModel, caretOffset) {
+export function splitSelectionsAtCaretOffset(
+  leftNodeModel,
+  rightNodeModel,
+  caretOffset
+) {
   let left = List();
   let right = List();
   const selections = getSelections(leftNodeModel);
@@ -359,18 +445,19 @@ export function splitSelectionsAtCaretOffset(leftNodeModel, rightNodeModel, care
       continue;
     }
     if (current.get(SELECTION_START) >= caretOffset) {
-      right = right.push(current
-        .set(SELECTION_START, current.get(SELECTION_START) - caretOffset)
-        .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
+      right = right.push(
+        current
+          .set(SELECTION_START, current.get(SELECTION_START) - caretOffset)
+          .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
       );
       continue;
     }
     // caretOffset must be in the middle of a selection, split
-    left = left.push(current
-      .set(SELECTION_END, caretOffset));
-    right = right.push(current
-      .set(SELECTION_START, 0)
-      .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
+    left = left.push(current.set(SELECTION_END, caretOffset));
+    right = right.push(
+      current
+        .set(SELECTION_START, 0)
+        .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
     );
   }
   leftNodeModel = setSelections(leftNodeModel, left);
@@ -388,16 +475,19 @@ export function concatSelections(leftModel, rightModel) {
   if (leftOffset === -1) {
     // left node has no selections - substitute content length
     // NOTE: left and right content has already been merged, subtract the right length!
-    leftOffset = leftModel.get('content','').length - rightModel.get('content', '').length;
+    leftOffset =
+      leftModel.get('content', '').length -
+      rightModel.get('content', '').length;
   }
   // add all right selections with left offsets
   // NOTE: if left.last() and right.first() have the same formats, they'll be merged in mergeAdjacent
   for (let i = 0; i < right.size; i++) {
     const current = right.get(i);
-    newSelections = newSelections.push(current
-      .set(SELECTION_START, current.get(SELECTION_START) + leftOffset)
-      .set(SELECTION_END, current.get(SELECTION_END) + leftOffset)
-    )
+    newSelections = newSelections.push(
+      current
+        .set(SELECTION_START, current.get(SELECTION_START) + leftOffset)
+        .set(SELECTION_END, current.get(SELECTION_END) + leftOffset)
+    );
   }
   leftModel = setSelections(leftModel, newSelections);
   return adjustSelectionOffsetsAndCleanup(leftModel);
@@ -413,11 +503,22 @@ export function getContentForSelection(node, selection) {
   }
   const startOffset = selection.get(SELECTION_START, -1);
   const endOffset = selection.get(SELECTION_END, Number.MAX_SAFE_INTEGER);
-  if (startOffset > content.length || startOffset < 0 || endOffset > content.length || endOffset < 0) {
-    throw new Error(`getContentForSelection - Selection offsets are out of bounds!\nContent: ${content}\nSelection: ${JSON.stringify(selection.toJS())}`);
+  if (
+    startOffset > content.length ||
+    startOffset < 0 ||
+    endOffset > content.length ||
+    endOffset < 0
+  ) {
+    throw new Error(
+      `getContentForSelection - Selection offsets are out of bounds!\nContent: ${content}\nSelection: ${JSON.stringify(
+        selection.toJS()
+      )}`
+    );
   }
   // NOTE: content.substring(undefined, undefined) works like: content.substring(0, content.length)
-  return cleanTextOrZeroLengthPlaceholder(content.substring(startOffset, endOffset));
+  return cleanTextOrZeroLengthPlaceholder(
+    content.substring(startOffset, endOffset)
+  );
 }
 
 export function getSelectionKey(s) {
@@ -427,8 +528,8 @@ export function getSelectionKey(s) {
     SELECTION_ACTION_CODE,
     SELECTION_ACTION_SITEINFO,
     SELECTION_ACTION_STRIKETHROUGH,
-    SELECTION_ACTION_LINK,
+    SELECTION_ACTION_LINK
   ]
-    .map(fmt => s.get(fmt) ? 1 : 0)
+    .map(fmt => (s.get(fmt) ? 1 : 0))
     .join('-')}`;
 }

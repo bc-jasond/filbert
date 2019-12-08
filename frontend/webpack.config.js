@@ -10,7 +10,7 @@ module.exports = (env, argv) => {
     entry.push('react-hot-loader/patch');
   }
   entry.push('./src/index.jsx');
-  
+
   const config = {
     mode: isProduction ? 'production' : 'dev',
     entry,
@@ -32,24 +32,21 @@ module.exports = (env, argv) => {
               loader: 'file-loader',
               options: {
                 name: '[name].[ext]',
-                outputPath: 'fonts/',
+                outputPath: 'fonts/'
               }
             }
           ],
-          exclude: /node_modules/,
+          exclude: /node_modules/
         },
         {
           test: /\.svg$/,
           use: 'svg-react-loader',
-          exclude: /node_modules/,
-        },
+          exclude: /node_modules/
+        }
       ]
     },
     resolve: {
-      extensions: [
-        '.js',
-        '.jsx'
-      ]
+      extensions: ['.js', '.jsx']
     },
     devtool: isProduction ? '' : 'inline-source-map',
     devServer: {
@@ -57,7 +54,7 @@ module.exports = (env, argv) => {
       host: '0.0.0.0',
       disableHostCheck: true,
       watchContentBase: true,
-      before: (app) => {
+      before: app => {
         app.use(express.static('assets'));
       },
       historyApiFallback: {
@@ -66,24 +63,28 @@ module.exports = (env, argv) => {
         rewrites: [
           {
             from: /\.woff$/,
-            to: context => '/fonts/' + context.parsedUrl.pathname.split('/').pop(),
+            to: context =>
+              '/fonts/' + context.parsedUrl.pathname.split('/').pop()
           },
           {
             from: /\.js$/,
-            to: context => '/' + context.parsedUrl.pathname.split('/').pop(),
-          },
-        ],
+            to: context => '/' + context.parsedUrl.pathname.split('/').pop()
+          }
+        ]
       },
-      port: 8080,
+      port: 8080
     },
     plugins: [
       new HtmlWebpackPlugin({
         template: 'src/index.html',
-        shouldLoadGoogleAnalytics: false, //isProduction,
+        shouldLoadGoogleAnalytics: false //isProduction,
       }),
       new webpack.DefinePlugin({
-        'process.env.API_URL': isProduction && !process.env.USE_LOCALHOST_API ? "'https://api.filbert.xyz'" : "'http://localhost:3001'",
-        'process.env.isProduction': isProduction,
+        'process.env.API_URL':
+          isProduction && !process.env.USE_LOCALHOST_API
+            ? "'https://api.filbert.xyz'"
+            : "'http://localhost:3001'",
+        'process.env.isProduction': isProduction
       })
     ],
     optimization: {
@@ -98,6 +99,6 @@ module.exports = (env, argv) => {
         }
       }
     }
-  }
+  };
   return config;
-}
+};

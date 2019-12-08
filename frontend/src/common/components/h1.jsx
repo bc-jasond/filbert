@@ -5,11 +5,8 @@ import { H1Styled } from './shared-styled-components';
 
 export default class H1 extends React.PureComponent {
   render() {
-    console.debug("H1 RENDER", this);
-    const {
-      node,
-      shouldShowPlaceholder,
-    } = this.props;
+    console.debug('H1 RENDER', this);
+    const { node, shouldShowPlaceholder } = this.props;
     return (
       <H1Styled
         data-type={NODE_TYPE_H1}
@@ -18,6 +15,6 @@ export default class H1 extends React.PureComponent {
       >
         {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
       </H1Styled>
-    )
+    );
   }
 }
