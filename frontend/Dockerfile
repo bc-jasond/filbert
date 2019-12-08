@@ -7,7 +7,7 @@ COPY assets /work/assets/
 COPY src /work/src/
 COPY ["yarn.lock","webpack.config.js","package.json",".babelrc","/work/"]
 
-RUN yarn; \
+RUN yarn --prod; \
  yarn build-prod;
 
 # serve up my lil homepage

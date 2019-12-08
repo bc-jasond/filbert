@@ -1,5 +1,4 @@
 import React from 'react';
-import { hot } from 'react-hot-loader';
 
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom';
 
@@ -15,7 +14,7 @@ import ViewPost from './pages/view-post';
 import SignIn from './pages/signin';
 import EditPost from './pages/edit/components/edit';
 
-const App = () => (
+export default () => (
   <React.Fragment>
     <BrowserRouter>
       <Switch>
@@ -37,5 +36,3 @@ const App = () => (
   </React.Fragment>
 );
 
-export default App;
-export const AppWithHot = hot(module)(App);

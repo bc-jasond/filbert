@@ -1,7 +1,8 @@
 import ReactDOM from 'react-dom';
 import React from 'react';
 
-import App, { AppWithHot } from './app';
+import App from './app';
+import {AppWithHot} from './app-hot';
 
 import Pace from './common/pace';
 

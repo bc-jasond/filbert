@@ -12,13 +12,14 @@
     "test": "jest --collectCoverage=false",
     "test-watch": "jest --bail --notify --watchAll",
     "test-coverage": "jest --coverage",
-    "build-prod": "webpack -p --mode production",
+    "build-prod": "webpack --config webpack-prod.config.js -p --mode production",
     "start": "webpack-dev-server --hot --mode development",
-    "start-prod": "webpack-dev-server --hot --mode production",
+    "start-prod": "webpack-dev-server --config webpack-prod.config.js -p --mode production",
     "start-prod-local": "USE_LOCALHOST_API=true webpack-dev-server --hot --mode production",
     "pretty": "prettier --parser=babel --single-quote --write \"**/*.{js,jsx}\"",
     "pretty-ci": "prettier --parser=babel --single-quote --check -l \"**/*.{js,jsx}\""
   },
+  "sideEffects": false,
   "dependencies": {
     "@babel/core": "^7.2.2",
     "@babel/plugin-proposal-class-properties": "^7.3.4",
@@ -35,8 +36,7 @@
     "jest": "^24.9.0",
     "prettier": "^1.19.1",
     "react": "^16.12.0",
-    "react-dom": "npm:@hot-loader/react-dom@^16.12.0",
-    "react-hot-loader": "^4.12.18",
+    "react-dom": "^16.12.0",
     "react-router-dom": "^5.1.2",
     "set-value": "^3.0.1",
     "styled-components": "^4.4.0",
@@ -45,6 +45,7 @@
     "webpack-cli": "^3.1.2"
   },
   "devDependencies": {
+    "react-hot-loader": "^4.12.18",
     "webpack-dev-server": "^3.1.14"
   }
 }
