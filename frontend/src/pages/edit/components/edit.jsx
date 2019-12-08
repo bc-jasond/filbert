@@ -474,9 +474,9 @@ export default class EditPost extends React.Component {
     if (evt.keyCode !== KEYCODE_ENTER) {
       return;
     }
-    // ignore if there's a selected MetaType node
-    const { editSectionNode } = this.state;
-    if (editSectionNode.get('id')) {
+    // ignore if there's a selected MetaType node's menu is open
+    const { shouldShowEditSectionMenu } = this.state;
+    if (shouldShowEditSectionMenu) {
       return;
     }
 
@@ -762,7 +762,7 @@ export default class EditPost extends React.Component {
     if (!selectedNodeId) {
       return;
     }
-    console.info('MANAGE INSERT');
+    console.debug('MANAGE INSERT');
     // save current nodeId because the selection will disappear when the insert menu is shown
     this.insertMenuSelectedNodeId = selectedNodeId;
     const selectedNodeMap = this.documentModel.getNode(

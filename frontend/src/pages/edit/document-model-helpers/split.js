@@ -1,4 +1,5 @@
 import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
+import { handleEnterMetaType } from './handle-meta-type';
 import { handleEnterTextType } from './handle-text-type';
 
 /**
@@ -11,10 +12,11 @@ export function doSplit(documentModel, selectionOffsets) {
     return;
   }
   if (documentModel.isMetaType(selectedNodeId)) {
-    console.info('doSplit() TODO: support MetaType sections');
+    console.debug('doSplit() MetaType');
+    return handleEnterMetaType(documentModel, selectedNodeId);
   }
 
-  console.info('doSplit()', selectedNodeId, caretPosition);
+  console.debug('doSplit()', selectedNodeId, caretPosition);
   // split selectedNodeContent at caret
   const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(
     documentModel.getNode(selectedNodeId).get('content')

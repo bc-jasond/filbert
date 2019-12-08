@@ -439,7 +439,7 @@ export function splitSelectionsAtCaretOffset(
   const selections = getSelections(leftNodeModel);
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
-    const currentJS = current.toJS();
+    //const currentJS = current.toJS();
     if (current.get(SELECTION_END) <= caretOffset) {
       left = left.push(current);
       continue;

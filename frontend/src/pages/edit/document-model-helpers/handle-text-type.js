@@ -1,4 +1,4 @@
-import { NODE_TYPE_P } from '../../../common/constants';
+import { NODE_TYPE_LI, NODE_TYPE_P, NODE_TYPE_PRE } from '../../../common/constants';
 import { cleanText } from '../../../common/utils';
 import {
   adjustSelectionOffsetsAndCleanup,
@@ -27,35 +27,58 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
 
 export function handleEnterTextType(
   documentModel,
-  selectedNodeId,
+  leftNodeId,
   caretPosition,
   content
 ) {
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
-  let selectedNodeType = documentModel.getNode(selectedNodeId).get('type');
-  // break out of list if user hits enter on empty last list item
+  let leftNodeType = documentModel.getNode(leftNodeId).get('type');
+  let didConvertLeftNodeToP = false;
+  // user hits enter on empty list or code item, and it's the last of type, always convert to P
+  // to break out of a list or code section
   if (
     cleanText(contentLeft).length === 0 &&
     cleanText(contentRight).length === 0 &&
-    documentModel.isLastOfType(selectedNodeId)
+    [NODE_TYPE_PRE, NODE_TYPE_LI].includes(leftNodeType) &&
+    documentModel.isLastOfType(leftNodeId)
   ) {
     // convert empty sections to a P on enter
     return documentModel.update(
-      documentModel.getNode(selectedNodeId).set('type', NODE_TYPE_P)
+      documentModel.getNode(leftNodeId).set('type', NODE_TYPE_P)
     );
+  }
+  // for all other node types: if user hits enter at beginning of line (always true for MetaType),
+  // insert an empty P before
+  if (
+    ![NODE_TYPE_PRE, NODE_TYPE_LI].includes(leftNodeType) &&
+    cleanText(contentLeft).length === 0
+  ) {
+    didConvertLeftNodeToP = true;
+    documentModel.update(
+      documentModel.getNode(leftNodeId).set('type', NODE_TYPE_P)
+    );
+  }
+  // for all other node types: if user hits enter at end of line,
+  // convert new line to P
+  if (
+    ![NODE_TYPE_PRE, NODE_TYPE_LI].includes(leftNodeType) &&
+    cleanText(contentRight).length === 0
+  ) {
+    leftNodeType = NODE_TYPE_P;
   }
 
   const rightNodeId = documentModel.insert(
-    selectedNodeType,
-    selectedNodeId,
+    leftNodeType,
+    leftNodeId,
     contentRight
   );
   let leftNode = documentModel
-    .getNode(selectedNodeId)
+    .getNode(leftNodeId)
     .set('content', contentLeft);
   let rightNode = documentModel.getNode(rightNodeId);
-  if (documentModel.canHaveSelections(selectedNodeId)) {
+  // if the original selected node can have Selections - move them to the right node if needed
+  if (documentModel.canHaveSelections(leftNodeId)) {
     [leftNode, rightNode] = splitSelectionsAtCaretOffset(
       leftNode,
       rightNode,
@@ -74,7 +97,7 @@ export function handleEnterTextType(
   );
   documentModel.update(leftNode);
   documentModel.update(rightNode);
-  return rightNodeId;
+  return didConvertLeftNodeToP ? leftNodeId : rightNodeId;
 }
 
 export function handlePasteTextType(
