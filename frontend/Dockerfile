@@ -5,7 +5,7 @@ ENV NODE_ENV=production
 WORKDIR /work
 COPY assets /work/assets/
 COPY src /work/src/
-COPY ["yarn.lock","webpack.config.js","package.json",".babelrc","/work/"]
+COPY ["yarn.lock","webpack-prod.config.js","package.json",".babelrc","/work/"]
 
 RUN yarn --prod; \
  yarn build-prod;
