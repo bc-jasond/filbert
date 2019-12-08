@@ -15,7 +15,7 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
   let prevNodeId = prevNode.get('id');
   // if at beginning of first node, nothing to do
   if (!prevNodeId) {
-    return [];
+    return [selectedNodeId];
   }
   if (!documentModel.isTextType(prevNodeId)) {
     // delete an empty TextType node
