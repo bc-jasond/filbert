@@ -40,7 +40,10 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   console.info('From DOM SYNC', selectedNodeId, 'offset', caretPositionStart);
   
   // NOTE: following for emojis keyboard insert only...
-  const emoji = getCharFromEvent(evt);
+  const emoji = evt.data
+  if (!emoji) {
+    return;
+  }
   
   let selectedNodeMap = documentModel.getNode(selectedNodeId);
   const beforeContentMap = selectedNodeMap.get('content') || '';

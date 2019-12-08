@@ -68,7 +68,7 @@ export function getCharFromEvent(evt) {
     return evt.key;
   }
   // for OS X emoji keyboard insert
-  return evt.nativeEvent.data;
+  return evt.data;
 }
 
 export function getCanonicalFromTitle(title) {

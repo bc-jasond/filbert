@@ -1,4 +1,6 @@
-import { deleteContentRange } from '../../../common/utils';
+import { NODE_TYPE_IMAGE } from '../../../common/constants';
+import { apiDelete } from '../../../common/fetch';
+import { deleteContentRange, imageUrlIsId } from '../../../common/utils';
 import { handleBackspaceTextType } from './handle-text-type';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
@@ -113,6 +115,15 @@ export function doDelete(documentModel, selectionOffsets) {
   if (documentModel.isMetaType(selectedNodeId)) {
     focusNodeId = documentModel.getPrevNode(selectedNodeId).get('id');
     documentModel.delete(selectedNodeId);
+    const selectedNode = documentModel.getNode(selectedNodeId);
+    // Don't forget to delete that image from the DB!
+    // TODO: move this to a job that checks for unused images every so often
+    if (selectedNode.get('type') === NODE_TYPE_IMAGE) {
+      const urlField = selectedNode.getIn(['meta', 'url']);
+      if (imageUrlIsId(urlField)) {
+        apiDelete(`/image/${urlField}`)
+      }
+    }
   } else {
     [focusNodeId, caretOffset] = handleBackspaceTextType(documentModel, selectedNodeId);
   }
