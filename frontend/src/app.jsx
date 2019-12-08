@@ -35,4 +35,3 @@ export default () => (
     <CssPace />
   </React.Fragment>
 );
-

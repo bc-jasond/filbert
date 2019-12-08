@@ -2,7 +2,7 @@ import ReactDOM from 'react-dom';
 import React from 'react';
 
 import App from './app';
-import {AppWithHot} from './app-hot';
+import { AppWithHot } from './app-hot';
 
 import Pace from './common/pace';
 

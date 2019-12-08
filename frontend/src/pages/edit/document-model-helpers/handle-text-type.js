@@ -1,4 +1,8 @@
-import { NODE_TYPE_LI, NODE_TYPE_P, NODE_TYPE_PRE } from '../../../common/constants';
+import {
+  NODE_TYPE_LI,
+  NODE_TYPE_P,
+  NODE_TYPE_PRE
+} from '../../../common/constants';
 import { cleanText } from '../../../common/utils';
 import {
   adjustSelectionOffsetsAndCleanup,
@@ -73,9 +77,7 @@ export function handleEnterTextType(
     leftNodeId,
     contentRight
   );
-  let leftNode = documentModel
-    .getNode(leftNodeId)
-    .set('content', contentLeft);
+  let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
   let rightNode = documentModel.getNode(rightNodeId);
   // if the original selected node can have Selections - move them to the right node if needed
   if (documentModel.canHaveSelections(leftNodeId)) {
