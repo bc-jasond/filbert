@@ -576,7 +576,6 @@ export default class EditPost extends React.Component {
       //
       // AFTER setTimeout - put all "keyUp" handlers here, basically anything detecting where the caret landed
       //
-      console.debug("KEYDOWN deferred");
       // the caret position will have changed, reset it
       selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
       //console.debug('KeyDown: ', evt)
@@ -589,6 +588,7 @@ export default class EditPost extends React.Component {
       await this.manageInsertMenu(selectionOffsets);
       this.manageFormatSelectionMenu(evt, selectionOffsets);
       this.willBeHandledByKeydown = false;
+      console.debug("KEYDOWN deferred", evt);
     }, 0);
   }
   

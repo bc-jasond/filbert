@@ -14,7 +14,8 @@
     "test-coverage": "jest --coverage",
     "build-prod": "webpack -p --mode production",
     "start": "webpack-dev-server --hot --mode development",
-    "start-prod": "webpack-dev-server --hot --mode production"
+    "start-prod": "webpack-dev-server --hot --mode production",
+    "start-prod-local": "USE_LOCALHOST_API=true webpack-dev-server --hot --mode production"
   },
   "dependencies": {
     "@babel/core": "^7.2.2",

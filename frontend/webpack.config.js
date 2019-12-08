@@ -82,7 +82,7 @@ module.exports = (env, argv) => {
         shouldLoadGoogleAnalytics: false, //isProduction,
       }),
       new webpack.DefinePlugin({
-        'process.env.API_URL': isProduction ? "'https://api.filbert.xyz'" : "'http://localhost:3001'",
+        'process.env.API_URL': isProduction && !process.env.USE_LOCALHOST_API ? "'https://api.filbert.xyz'" : "'http://localhost:3001'",
         'process.env.isProduction': isProduction,
       })
     ],

@@ -13,7 +13,8 @@
     "docker-run": "docker run -p 3001:3001 filbert-api:`git log -1 --pretty=format:%h`"
   },
   "devDependencies": {
-    "nodemon": "^1.18.11"
+    "nodemon": "^1.18.11",
+    "prettier": "^1.19.1"
   },
   "dependencies": {
     "bcrypt": "^3.0.6",

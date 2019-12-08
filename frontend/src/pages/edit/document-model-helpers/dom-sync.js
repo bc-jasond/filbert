@@ -48,12 +48,15 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   let selectedNodeMap = documentModel.getNode(selectedNodeId);
   const beforeContentMap = selectedNodeMap.get('content') || '';
   const updatedContentMap = `${beforeContentMap.slice(0, caretPositionStart - emoji.length)}${emoji}${beforeContentMap.slice(caretPositionStart - emoji.length)}`;
+  // since this is called after the content has been updated, subtract the length of the emoji from the start because the adjustSelectionOffsetsAndCleanup function expects to be processing PRE-update
+  const preUpdateStart = caretPositionStart - emoji.length;
   
-  console.debug('From DOM SYNC diff - this should be an emoji: ', emoji, ' caret start: ', caretPositionStart, ' diffLen: ', emoji.length, 'length: ', updatedContentMap.length);
+  console.debug('From DOM SYNC diff - this should be an emoji: ', emoji, ' caret start: ', preUpdateStart, ' diffLen: ', emoji.length, 'length: ', updatedContentMap.length);
   selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
   // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-  selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, beforeContentMap, caretPositionStart, emoji.length);
+  selectedNodeMap = adjustSelectionOffsetsAndCleanup(selectedNodeMap, beforeContentMap, preUpdateStart, emoji.length);
   documentModel.update(selectedNodeMap);
   
+  // return original caretPositionStart for correct setCaret() positioning
   return [selectedNodeId, caretPositionStart];
 }
