@@ -96,9 +96,7 @@ describe('utils', () => {
     };
     expect(getCharFromEvent(mockEventWithALetter)).toBe('W');
     const mockEventWithEmoji = {
-      nativeEvent: {
-        data: '👉'
-      }
+      data: '👉',
     };
     expect(getCharFromEvent(mockEventWithEmoji)).toBe('👉');
   });
