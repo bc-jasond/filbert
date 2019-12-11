@@ -6,15 +6,20 @@ import {
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
   NODE_TYPE_QUOTE,
-  NODE_TYPE_SPACER
+  NODE_TYPE_SPACER,
+  KEYCODE_LEFT_ARROW,
+  KEYCODE_RIGHT_ARROW,
+  KEYCODE_SHIFT_OR_COMMAND_LEFT,
+  KEYCODE_SHIFT_RIGHT,
+  KEYCODE_ESC,
+  KEYCODE_ENTER,
+  KEYCODE_SPACE
 } from '../../../common/constants';
 
 import styled, { css } from 'styled-components';
 import { grey } from '../../../common/css';
-import {
-  Input,
-  NavButtonMixin
-} from '../../../common/components/shared-styled-components';
+import { NavButtonMixin } from '../../../common/components/shared-styled-components';
+import { removeAllRanges, setCaret } from '../../../common/dom';
 
 const InsertSectionMenu = styled.div`
   position: absolute;
@@ -86,64 +91,149 @@ const InsertSectionItem = styled.span`
   ${NavButtonMixin};
 `;
 
-const fileInputRef = React.createRef();
+export default class InsertSectionMenuComponent extends React.Component {
+  constructor(props) {
+    super(props);
 
-export default ({
-  shouldShowInsertMenu,
-  insertMenuTopOffset,
-  insertMenuLeftOffset,
-  toggleInsertMenu,
-  insertMenuIsOpen,
-  insertSection
-}) => (
-  <InsertSectionMenu
-    name="insert-section-menu"
-    isOpen={insertMenuIsOpen}
-    shouldShowInsertMenu={shouldShowInsertMenu}
-    topOffset={insertMenuTopOffset}
-    leftOffset={insertMenuLeftOffset}
-  >
-    <InsertSectionMenuButton
-      onClick={toggleInsertMenu}
-      isOpen={insertMenuIsOpen}
-    />
-    <InsertSectionMenuItemsContainer
-      autocomplete="off"
-      autocorrect="off"
-      autocapitalize="off"
-      spellcheck="false"
-      isOpen={insertMenuIsOpen}
-    >
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_H1)}>
-        H1
-      </InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_H2)}>
-        H2
-      </InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_PRE)}>
-        code
-      </InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_LI)}>
-        list
-      </InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_SPACER)}>
-        spacer
-      </InsertSectionItem>
-      <InsertSectionItem onClick={() => fileInputRef.current.click()}>
+    this.state = {
+      currentIdx: -1
+    };
+    this.insertSectionCb = this.props.insertSection;
+  }
+
+  fileInputRef = React.createRef();
+  didHitShift = false;
+  sectionTypes = [
+    [NODE_TYPE_H1, 'H1', () => this.insertSectionCb(NODE_TYPE_H1)],
+    [NODE_TYPE_H2, 'H2', () => this.insertSectionCb(NODE_TYPE_H2)],
+    [NODE_TYPE_PRE, 'code', () => this.insertSectionCb(NODE_TYPE_PRE)],
+    [NODE_TYPE_LI, 'list', () => this.insertSectionCb(NODE_TYPE_LI)],
+    [NODE_TYPE_SPACER, 'spacer', () => this.insertSectionCb(NODE_TYPE_SPACER)],
+    [
+      NODE_TYPE_IMAGE,
+      <React.Fragment>
         photo
         <HiddenFileInput
           name="hidden-image-upload-file-input"
           type="file"
           onChange={e => {
-            insertSection(NODE_TYPE_IMAGE, e.target.files);
+            this.insertSectionCb(NODE_TYPE_IMAGE, e.target.files);
           }}
           accept="image/*"
-          ref={fileInputRef}
+          ref={this.fileInputRef}
         />
-      </InsertSectionItem>
-      <InsertSectionItem onClick={() => insertSection(NODE_TYPE_QUOTE)}>
-        quote
-      </InsertSectionItem>
-    </InsertSectionMenuItemsContainer>
-  </InsertSectionMenu>
-);
+      </React.Fragment>,
+      () => this.fileInputRef.current.click()
+    ],
+    [NODE_TYPE_QUOTE, 'quote', () => this.insertSectionCb(NODE_TYPE_QUOTE)]
+  ];
+
+  focusInsertNode = () => {
+    const { insertNodeId } = this.props;
+    setCaret(insertNodeId);
+  };
+
+  handleKeyDown = evt => {
+    const { currentIdx } = this.state;
+
+    switch (evt.keyCode) {
+      case KEYCODE_SHIFT_OR_COMMAND_LEFT: //fall-through
+      case KEYCODE_SHIFT_RIGHT: {
+        if (this.didHitShift) {
+          // user double-tapped shift
+          this.setState({ currentIdx: 0 });
+          this.didHitShift = false;
+          // clear the caret, it's just dangling around some random place like a piece of spinach in your teeth
+          removeAllRanges();
+          return;
+        }
+        this.didHitShift = true;
+        setTimeout(() => (this.didHitShift = false), 500);
+        return;
+      }
+      case KEYCODE_LEFT_ARROW: {
+        this.setState({ currentIdx: Math.max(0, currentIdx - 1) });
+        break;
+      }
+      case KEYCODE_RIGHT_ARROW: {
+        this.setState({ currentIdx: Math.min(6, currentIdx + 1) });
+        break;
+      }
+      case KEYCODE_ESC: {
+        this.setState({ currentIdx: -1 });
+        this.focusInsertNode();
+        return;
+      }
+      case KEYCODE_SPACE: //fall-through
+      case KEYCODE_ENTER: {
+        if (currentIdx > -1) {
+          const [_, __, cb] = this.sectionTypes[currentIdx];
+          cb();
+          // don't let contenteditable take over!
+          evt.preventDefault();
+          evt.stopPropagation();
+        }
+        return;
+      }
+      default: {
+      }
+    }
+  };
+
+  toggleMenu = () => {
+    const { insertNodeId } = this.props;
+    const { currentIdx } = this.state;
+    const shouldOpen = currentIdx === -1;
+    this.setState({ currentIdx: shouldOpen ? 0 : -1 }, () => {
+      if (shouldOpen) {
+        removeAllRanges();
+      } else {
+        setCaret(insertNodeId);
+      }
+    });
+  };
+
+  componentDidUpdate(prevProps) {
+    const { windowEvent } = this.props;
+    if (windowEvent && windowEvent !== prevProps.windowEvent) {
+      this.handleKeyDown(windowEvent);
+    }
+  }
+
+  render() {
+    const { insertMenuTopOffset, insertMenuLeftOffset } = this.props;
+    const { currentIdx } = this.state;
+
+    return (
+      <InsertSectionMenu
+        name="insert-section-menu"
+        isOpen={currentIdx > -1}
+        topOffset={insertMenuTopOffset}
+        leftOffset={insertMenuLeftOffset}
+        onKeyDown={this.handleKeyDown}
+      >
+        <InsertSectionMenuButton
+          onClick={this.toggleMenu}
+          isOpen={currentIdx > -1}
+        />
+        <InsertSectionMenuItemsContainer
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          isOpen={currentIdx > -1}
+        >
+          {this.sectionTypes.map(([type, children, callback], idx) => (
+            <InsertSectionItem
+              key={type}
+              isOpen={currentIdx === idx}
+              onClick={callback}
+            >
+              {children}
+            </InsertSectionItem>
+          ))}
+        </InsertSectionMenuItemsContainer>
+      </InsertSectionMenu>
+    );
+  }
+}

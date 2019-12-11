@@ -34,9 +34,7 @@ import {
   getHighlightedSelectionOffsets,
   isControlKey,
   removeAllRanges,
-  getNodeById,
-  getFirstAncestorWithId,
-  getNodeId
+  getNodeById
 } from '../../../common/dom';
 
 import {
@@ -56,7 +54,9 @@ import {
   KEYCODE_UP_ARROW,
   KEYCODE_DOWN_ARROW,
   KEYCODE_LEFT_ARROW,
-  KEYCODE_RIGHT_ARROW
+  KEYCODE_RIGHT_ARROW,
+  KEYCODE_SHIFT_OR_COMMAND_LEFT,
+  KEYCODE_SHIFT_RIGHT
 } from '../../../common/constants';
 import { lineHeight } from '../../../common/css';
 
@@ -94,8 +94,7 @@ export default class EditPost extends React.Component {
       nodesById: Map(),
       shouldShow404: false,
       shouldRedirect: false,
-      shouldShowInsertMenu: false,
-      insertMenuIsOpen: false,
+      insertMenuNode: Map(),
       insertMenuTopOffset: 0,
       insertMenuLeftOffset: 0,
       editSectionNode: Map(),
@@ -136,7 +135,7 @@ export default class EditPost extends React.Component {
 
       this.setState({
         shouldRedirect: false,
-        shouldShowInsertMenu: false
+        insertMenuNode: Map()
       });
       if (this.props.match.params.id === NEW_POST_URL_ID) {
         return this.newPost();
@@ -328,8 +327,7 @@ export default class EditPost extends React.Component {
       // roll with state changes TODO: handle errors - roll back?
       const newState = {
         nodesById: this.documentModel.nodesById,
-        shouldShowInsertMenu: false,
-        insertMenuIsOpen: false
+        insertMenuNode: Map()
       };
       if (focusNodeId && this.documentModel.isMetaType(focusNodeId)) {
         removeAllRanges();
@@ -586,13 +584,22 @@ export default class EditPost extends React.Component {
   };
 
   handleKeyDown = async evt => {
+    const { insertMenuNode } = this.state;
+    // bail conditions
+    // insert menu button is displayed - pass this event up to the menu to handle?
+    if (insertMenuNode.get('id')) {
+      this.setState({ insertMenuDomEvent: evt });
+      return;
+    }
     if (
       // ignore control or modifier keys
       // unless related to a supported destructive operation like: "cut" or "paste"
       (evt.metaKey || isControlKey(evt.keyCode)) &&
       // allowed (whitelisted) keys
       ![
+        // to open / close section edit menu
         KEYCODE_ENTER,
+        // to close section edit menu
         KEYCODE_ESC,
         KEYCODE_UP_ARROW,
         KEYCODE_LEFT_ARROW,
@@ -607,6 +614,7 @@ export default class EditPost extends React.Component {
       return;
     }
     console.debug('KEYDOWN');
+    // to coordinate with other events - input might fire before the setTimeout callback here
     this.willBeHandledByKeydown = true;
     let selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
     //
@@ -633,7 +641,7 @@ export default class EditPost extends React.Component {
       // yep, refresh caret after possible setState() in handleArrows
       selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
       await this.handleEditSectionMenu(evt);
-      await this.manageInsertMenu(selectionOffsets);
+      await this.manageInsertMenu(evt, selectionOffsets);
       this.manageFormatSelectionMenu(evt, selectionOffsets);
       this.willBeHandledByKeydown = false;
       console.debug('KEYDOWN deferred', evt);
@@ -676,7 +684,7 @@ export default class EditPost extends React.Component {
       }
       selectionOffsets = [[0, 0, editSectionNode.get('id')]];
     }
-    this.manageInsertMenu(selectionOffsets);
+    this.manageInsertMenu(evt, selectionOffsets);
     this.manageFormatSelectionMenu(evt, selectionOffsets);
     // close edit section menus by default, this.sectionEdit() callback will fire after this to override
     this.sectionEditClose();
@@ -753,7 +761,8 @@ export default class EditPost extends React.Component {
     this.commitUpdates(focusNodeId, caretOffset);
   };
 
-  manageInsertMenu = async selectionOffsetsArg => {
+  // TODO: this function references the DOM and state.  So, it needs to pass-through values because it always executes - separate the DOM and state checks?
+  manageInsertMenu = async (evt, selectionOffsetsArg) => {
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
     const [
@@ -762,12 +771,10 @@ export default class EditPost extends React.Component {
     if (!selectedNodeId) {
       return;
     }
+
     console.debug('MANAGE INSERT');
-    // save current nodeId because the selection will disappear when the insert menu is shown
-    this.insertMenuSelectedNodeId = selectedNodeId;
-    const selectedNodeMap = this.documentModel.getNode(
-      this.insertMenuSelectedNodeId
-    );
+
+    const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
     const selectedNode = getNodeById(selectedNodeId);
 
     if (
@@ -779,7 +786,8 @@ export default class EditPost extends React.Component {
       return new Promise(resolve => {
         this.setState(
           {
-            shouldShowInsertMenu: true,
+            // save current node because the selection will disappear when the insert menu is shown
+            insertMenuNode: selectedNodeMap,
             insertMenuTopOffset: selectedNode.offsetTop,
             insertMenuLeftOffset: selectedNode.offsetLeft
           },
@@ -789,19 +797,7 @@ export default class EditPost extends React.Component {
     }
 
     return new Promise(resolve => {
-      this.setState(
-        { shouldShowInsertMenu: false, insertMenuIsOpen: false },
-        resolve
-      );
-    });
-  };
-
-  toggleInsertMenu = () => {
-    const { insertMenuIsOpen } = this.state;
-    this.setState({ insertMenuIsOpen: !insertMenuIsOpen }, () => {
-      if (insertMenuIsOpen) {
-        setCaret(this.insertMenuSelectedNodeId);
-      }
+      this.setState({ insertMenuNode: Map() }, resolve);
     });
   };
 
@@ -819,6 +815,7 @@ export default class EditPost extends React.Component {
    * INSERT SECTIONS
    */
   insertSection = async (sectionType, [firstFile] = []) => {
+    const { insertMenuNode } = this.state;
     let meta = Map();
     if (sectionType === NODE_TYPE_IMAGE) {
       const { imageId, width, height } = await this.uploadFile(firstFile);
@@ -829,10 +826,7 @@ export default class EditPost extends React.Component {
       });
     }
     const newSectionId = this.documentModel.update(
-      this.documentModel
-        .getNode(this.insertMenuSelectedNodeId)
-        .set('type', sectionType)
-        .set('meta', meta)
+      insertMenuNode.set('type', sectionType).set('meta', meta)
     );
     let focusNodeId = newSectionId;
     // TODO: put a P after any MetaType - maybe only if it's the last node in the document
@@ -860,8 +854,7 @@ export default class EditPost extends React.Component {
     const newState = {
       // hide all other menus here because this callback fires last
       // insert menu
-      shouldShowInsertMenu: false,
-      insertMenuIsOpen: false,
+      insertMenuNode: Map(),
       // format selection menu
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
@@ -1106,8 +1099,8 @@ export default class EditPost extends React.Component {
       nodesById,
       shouldShow404,
       shouldRedirect,
-      shouldShowInsertMenu,
-      insertMenuIsOpen,
+      insertMenuDomEvent,
+      insertMenuNode,
       insertMenuTopOffset,
       insertMenuLeftOffset,
       editSectionNode,
@@ -1179,12 +1172,12 @@ export default class EditPost extends React.Component {
             forwardRef={this.getInputForwardedRef}
           />
         )}
-        {shouldShowInsertMenu && (
+        {insertMenuNode.get('id') && (
           <InsertSectionMenu
+            windowEvent={insertMenuDomEvent}
+            insertNodeId={insertMenuNode.get('id')}
             insertMenuTopOffset={insertMenuTopOffset}
             insertMenuLeftOffset={insertMenuLeftOffset}
-            toggleInsertMenu={this.toggleInsertMenu}
-            insertMenuIsOpen={insertMenuIsOpen}
             insertSection={this.insertSection}
           />
         )}
