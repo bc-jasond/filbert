@@ -27,6 +27,17 @@ export const Selection = Record({
   [SELECTION_LINK_URL]: ''
 });
 
+const selectionTypesInOrder = [
+  SELECTION_ACTION_BOLD,
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_CODE,
+  SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_MINI,
+  SELECTION_ACTION_STRIKETHROUGH,
+  SELECTION_ACTION_LINK,
+  SELECTION_LINK_URL
+];
+
 export function formatSelections(s) {
   if (!List.isList(s)) {
     return '';
@@ -49,16 +60,7 @@ function setSelections(nodeModel, value) {
 }
 
 function selectionsHaveDifferentFormats(left, right) {
-  return [
-    SELECTION_ACTION_BOLD,
-    SELECTION_ACTION_ITALIC,
-    SELECTION_ACTION_CODE,
-    SELECTION_ACTION_SITEINFO,
-    SELECTION_ACTION_MINI,
-    SELECTION_ACTION_STRIKETHROUGH,
-    SELECTION_ACTION_LINK,
-    SELECTION_LINK_URL
-  ].reduce((acc, key) => acc || left.get(key) !== right.get(key), false);
+  return selectionTypesInOrder.reduce((acc, key) => acc || left.get(key) !== right.get(key), false);
 }
 
 /**
@@ -314,15 +316,12 @@ export function getSelection(nodeModel, start, end) {
   if (selections.size === 0) {
     return newSelection;
   }
-
-  newSelection = newSelection
+  
+  newSelection = selectionTypesInOrder
+    // don't set link meta data
+    .filter(t => t !== SELECTION_LINK_URL)
     // set all to true for && mask against all overlapping selections
-    .set(SELECTION_ACTION_BOLD, true)
-    .set(SELECTION_ACTION_ITALIC, true)
-    .set(SELECTION_ACTION_CODE, true)
-    .set(SELECTION_ACTION_SITEINFO, true)
-    .set(SELECTION_ACTION_MINI, true)
-    .set(SELECTION_ACTION_STRIKETHROUGH, true);
+    .reduce((selection, type) => selection.set(type, true), newSelection);
 
   // applyFormatsOfOverlappingSelections
   // applies "intersection" of formats from all overlapping Selections
@@ -526,15 +525,7 @@ export function getContentForSelection(node, selection) {
 }
 
 export function getSelectionKey(s) {
-  return `${s.get(SELECTION_START)}-${s.get(SELECTION_END)}-${[
-    SELECTION_ACTION_BOLD,
-    SELECTION_ACTION_ITALIC,
-    SELECTION_ACTION_CODE,
-    SELECTION_ACTION_SITEINFO,
-    SELECTION_ACTION_MINI,
-    SELECTION_ACTION_STRIKETHROUGH,
-    SELECTION_ACTION_LINK
-  ]
+  return `${s.get(SELECTION_START)}-${s.get(SELECTION_END)}-${selectionTypesInOrder
     .map(fmt => (s.get(fmt) ? 1 : 0))
     .join('-')}`;
 }
