@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map } from 'immutable';
+import { get, Map } from 'immutable';
 import {
   NODE_TYPE_P,
   NODE_TYPE_H1,
@@ -25,13 +25,17 @@ import Li from './li';
 import { cleanText } from '../utils';
 import DocumentModel from '../../pages/edit/document-model';
 
+function getChildIds(children) {
+  return children.reduce((acc, c) => `${acc}${c.key}`, '');
+}
+
 export default class Document extends React.PureComponent {
   constructor(props) {
     super(props);
   }
 
   current;
-
+  
   getNextPTags() {
     if (this.current.get('type') !== NODE_TYPE_P) {
       return;
@@ -53,7 +57,7 @@ export default class Document extends React.PureComponent {
       children.push(<Li key={this.current.get('id')} node={this.current} />);
       this.next();
     }
-    return <Ol>{children}</Ol>;
+    return <Ol key={getChildIds(children)}>{children}</Ol>;
   }
 
   getContentSectionTags() {
@@ -70,16 +74,16 @@ export default class Document extends React.PureComponent {
         children.push(li);
       }
     } while (p || li);
-    return <ContentSection>{children}</ContentSection>;
+    return <ContentSection key={getChildIds(children)}>{children}</ContentSection>;
   }
 
   getNextPreTags() {
     const children = [];
     while (this.current.get('type') === NODE_TYPE_PRE) {
-      children.push(<Pre node={this.current} />);
+      children.push(<Pre key={this.current.get('id')} node={this.current} />);
       this.next();
     }
-    return <CodeSection>{children}</CodeSection>;
+    return <CodeSection key={getChildIds(children)}>{children}</CodeSection>;
   }
 
   next = () => {
@@ -103,6 +107,7 @@ export default class Document extends React.PureComponent {
       } else if (currentType === NODE_TYPE_H1) {
         children.push(
           <H1
+            key={this.current.get('id')}
             node={this.current}
             shouldShowPlaceholder={
               nodesById.size === 1 &&
@@ -111,10 +116,11 @@ export default class Document extends React.PureComponent {
           />
         );
       } else if (currentType === NODE_TYPE_H2) {
-        children.push(<H2 node={this.current} />);
+        children.push(<H2 key={this.current.get('id')} node={this.current} />);
       } else if (currentType === NODE_TYPE_SPACER) {
         children.push(
           <Spacer
+            key={this.current.get('id')}
             node={this.current}
             isEditing={currentEditNode.get('id') === this.current.get('id')}
             setEditNodeId={setEditNodeId}
@@ -123,6 +129,7 @@ export default class Document extends React.PureComponent {
       } else if (currentType === NODE_TYPE_IMAGE) {
         children.push(
           <Image
+            key={this.current.get('id')}
             node={this.current}
             isEditing={currentEditNode.get('id') === this.current.get('id')}
             setEditNodeId={setEditNodeId}
@@ -131,6 +138,7 @@ export default class Document extends React.PureComponent {
       } else if (currentType === NODE_TYPE_QUOTE) {
         children.push(
           <Quote
+            key={this.current.get('id')}
             node={this.current}
             isEditing={currentEditNode.get('id') === this.current.get('id')}
             setEditNodeId={setEditNodeId}
@@ -139,7 +147,7 @@ export default class Document extends React.PureComponent {
       }
       // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
       else if (currentType === NODE_TYPE_POSTLINK) {
-        children.push(<PostLink node={this.current} />);
+        children.push(<PostLink key={this.current.get('id')} node={this.current} />);
       } else {
         console.error('Error: Unknown type! ', this.current.get('type'));
       }
