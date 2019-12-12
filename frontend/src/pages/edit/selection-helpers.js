@@ -60,7 +60,10 @@ function setSelections(nodeModel, value) {
 }
 
 function selectionsHaveDifferentFormats(left, right) {
-  return selectionTypesInOrder.reduce((acc, key) => acc || left.get(key) !== right.get(key), false);
+  return selectionTypesInOrder.reduce(
+    (acc, key) => acc || left.get(key) !== right.get(key),
+    false
+  );
 }
 
 /**
@@ -316,7 +319,7 @@ export function getSelection(nodeModel, start, end) {
   if (selections.size === 0) {
     return newSelection;
   }
-  
+
   newSelection = selectionTypesInOrder
     // don't set link meta data
     .filter(t => t !== SELECTION_LINK_URL)
@@ -525,7 +528,7 @@ export function getContentForSelection(node, selection) {
 }
 
 export function getSelectionKey(s) {
-  return `${s.get(SELECTION_START)}-${s.get(SELECTION_END)}-${selectionTypesInOrder
-    .map(fmt => (s.get(fmt) ? 1 : 0))
-    .join('-')}`;
+  return `${s.get(SELECTION_START)}-${s.get(
+    SELECTION_END
+  )}-${selectionTypesInOrder.map(fmt => (s.get(fmt) ? 1 : 0)).join('-')}`;
 }

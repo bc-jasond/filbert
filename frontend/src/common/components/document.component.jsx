@@ -35,7 +35,7 @@ export default class Document extends React.PureComponent {
   }
 
   current;
-  
+
   getNextPTags() {
     if (this.current.get('type') !== NODE_TYPE_P) {
       return;
@@ -74,7 +74,9 @@ export default class Document extends React.PureComponent {
         children.push(li);
       }
     } while (p || li);
-    return <ContentSection key={getChildIds(children)}>{children}</ContentSection>;
+    return (
+      <ContentSection key={getChildIds(children)}>{children}</ContentSection>
+    );
   }
 
   getNextPreTags() {
@@ -147,7 +149,9 @@ export default class Document extends React.PureComponent {
       }
       // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
       else if (currentType === NODE_TYPE_POSTLINK) {
-        children.push(<PostLink key={this.current.get('id')} node={this.current} />);
+        children.push(
+          <PostLink key={this.current.get('id')} node={this.current} />
+        );
       } else {
         console.error('Error: Unknown type! ', this.current.get('type'));
       }
