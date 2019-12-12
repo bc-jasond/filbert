@@ -5,6 +5,7 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_CODE,
   SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_MINI,
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
@@ -31,6 +32,7 @@ import IconStrikethroughSvg from '../../../../assets/icons/strikethrough.svg';
 import IconLinkSvg from '../../../../assets/icons/link.svg';
 import IconH1Svg from '../../../../assets/icons/h1.svg';
 import IconH2Svg from '../../../../assets/icons/h2.svg';
+import IconMiniSvg from '../../../../assets/icons/mini.svg';
 
 const IconBold = styled(IconBoldSvg)`
   ${SvgIconMixin};
@@ -54,6 +56,9 @@ const IconH1 = styled(IconH1Svg)`
   ${SvgIconMixin};
 `;
 const IconH2 = styled(IconH2Svg)`
+  ${SvgIconMixin};
+`;
+const IconMini = styled(IconMiniSvg)`
   ${SvgIconMixin};
 `;
 
@@ -100,6 +105,9 @@ export default ({
     </IconButton>
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_SITEINFO)}>
       <IconSiteinfo selected={selectionModel.get(SELECTION_ACTION_SITEINFO)} />
+    </IconButton>
+    <IconButton onClick={() => selectionAction(SELECTION_ACTION_MINI)}>
+      <IconMini selected={selectionModel.get(SELECTION_ACTION_MINI)} />
     </IconButton>
     <IconButton onClick={() => selectionAction(SELECTION_ACTION_STRIKETHROUGH)}>
       <IconStrikethrough

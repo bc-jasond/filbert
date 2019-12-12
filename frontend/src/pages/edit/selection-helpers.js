@@ -9,7 +9,8 @@ import {
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL,
   SELECTION_START,
-  SELECTION_END
+  SELECTION_END,
+  SELECTION_ACTION_MINI
 } from '../../common/constants';
 import { cleanTextOrZeroLengthPlaceholder } from '../../common/utils';
 
@@ -19,8 +20,9 @@ export const Selection = Record({
   [SELECTION_ACTION_BOLD]: false,
   [SELECTION_ACTION_ITALIC]: false,
   [SELECTION_ACTION_CODE]: false,
-  [SELECTION_ACTION_STRIKETHROUGH]: false,
   [SELECTION_ACTION_SITEINFO]: false,
+  [SELECTION_ACTION_MINI]: false,
+  [SELECTION_ACTION_STRIKETHROUGH]: false,
   [SELECTION_ACTION_LINK]: false,
   [SELECTION_LINK_URL]: ''
 });
@@ -51,8 +53,9 @@ function selectionsHaveDifferentFormats(left, right) {
     SELECTION_ACTION_BOLD,
     SELECTION_ACTION_ITALIC,
     SELECTION_ACTION_CODE,
-    SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_SITEINFO,
+    SELECTION_ACTION_MINI,
+    SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_LINK,
     SELECTION_LINK_URL
   ].reduce((acc, key) => acc || left.get(key) !== right.get(key), false);
@@ -317,8 +320,9 @@ export function getSelection(nodeModel, start, end) {
     .set(SELECTION_ACTION_BOLD, true)
     .set(SELECTION_ACTION_ITALIC, true)
     .set(SELECTION_ACTION_CODE, true)
-    .set(SELECTION_ACTION_STRIKETHROUGH, true)
-    .set(SELECTION_ACTION_SITEINFO, true);
+    .set(SELECTION_ACTION_SITEINFO, true)
+    .set(SELECTION_ACTION_MINI, true)
+    .set(SELECTION_ACTION_STRIKETHROUGH, true);
 
   // applyFormatsOfOverlappingSelections
   // applies "intersection" of formats from all overlapping Selections
@@ -527,6 +531,7 @@ export function getSelectionKey(s) {
     SELECTION_ACTION_ITALIC,
     SELECTION_ACTION_CODE,
     SELECTION_ACTION_SITEINFO,
+    SELECTION_ACTION_MINI,
     SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_LINK
   ]

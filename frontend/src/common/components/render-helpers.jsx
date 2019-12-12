@@ -6,7 +6,8 @@ import {
   Code,
   ItalicText,
   SiteInfo,
-  StrikeText
+  StrikeText,
+  MiniText
 } from './shared-styled-components';
 import {
   SELECTION_ACTION_BOLD,
@@ -14,7 +15,8 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_STRIKETHROUGH
+  SELECTION_ACTION_STRIKETHROUGH,
+  SELECTION_ACTION_MINI
 } from '../constants';
 import {
   getContentForSelection,
@@ -34,6 +36,9 @@ export function getFormattedSelections(node) {
       }
       if (selection.get(SELECTION_ACTION_SITEINFO)) {
         selectionJsx = <SiteInfo key={key}>{selectionJsx}</SiteInfo>;
+      }
+      if (selection.get(SELECTION_ACTION_MINI)) {
+        selectionJsx = <MiniText key={key}>{selectionJsx}</MiniText>;
       }
       if (selection.get(SELECTION_ACTION_ITALIC)) {
         selectionJsx = <ItalicText key={key}>{selectionJsx}</ItalicText>;
