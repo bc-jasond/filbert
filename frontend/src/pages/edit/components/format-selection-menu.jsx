@@ -63,8 +63,9 @@ const IconMini = styled(IconMiniSvg)`
 `;
 
 export const FormatSelectionMenu = styled(LilSassyMenu)`
-  top: ${p => p.top - (p.shouldShowUrl ? 30 : 0)}px;
-  left: ${p => p.left - 165}px; // 165 is half the width of the menu
+  // 44 is the height of menu, 10 is the height of arrow point
+  top: ${p => p.top - 44 - 15 - (p.shouldShowUrl ? 30 : 0)}px;
+  left: ${p => p.left - 183}px; // 183 is half the width of the menu
 `;
 export const LinkInput = styled(DarkInput)`
   display: block;

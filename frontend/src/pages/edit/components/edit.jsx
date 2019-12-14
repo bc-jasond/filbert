@@ -34,7 +34,7 @@ import {
   getHighlightedSelectionOffsets,
   isControlKey,
   removeAllRanges,
-  getNodeById
+  getNodeById, caretIsOnEdgeOfParagraphText
 } from '../../../common/dom';
 
 import {
@@ -369,7 +369,8 @@ export default class EditPost extends React.Component {
     });
   };
 
-  // NOTE: this needs to be attached to `document`
+  // Intercept arrow keys when moving into or out of MetaType nodes
+  // no-op otherwise to allow native browser behaviour inside contenteditable text
   handleArrows = async (evt, selectionOffsets) => {
     if (
       evt.defaultPrevented ||
@@ -382,12 +383,29 @@ export default class EditPost extends React.Component {
     ) {
       return;
     }
-    console.debug('ARROW');
-    const [[_, __, currentNodeId]] = selectionOffsets;
+    console.debug('ARROW', caretIsOnEdgeOfParagraphText());
+    const [[startNodeCaretStart, startNodeCaretEnd, currentNodeId]] = selectionOffsets;
+    // collapse range if there's highlighted selection and the user hits an arrow
+    if (startNodeCaretStart !== startNodeCaretEnd &&
+      // ignore shift key because user could be in the middle of adjusting a selection
+      !evt.shiftKey) {
+      if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
+        // up or left - collapse to start
+        getRange().collapse(true)
+      } else {
+        // down or right - collapse to end
+        getRange().collapse(false)
+      }
+      evt.stopPropagation();
+      evt.preventDefault();
+      return;
+    }
+    
     const { editSectionNode } = this.state;
     // if there's no currently selected MetaType node
     if (!editSectionNode.get('id')) {
       // see if we've entered one
+      if (evt.keyCode === KEYCODE_UP_ARROW) {}
       if (this.documentModel.isMetaType(currentNodeId)) {
         removeAllRanges();
         await this.sectionEdit(currentNodeId);
@@ -539,7 +557,7 @@ export default class EditPost extends React.Component {
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
     await this.closeAllEditContentMenus();
-    this.commitUpdates(focusNodeId, caretOffset);
+    return this.commitUpdates(focusNodeId, caretOffset);
   };
 
   handleSyncFromDom(evt, selectionOffsets) {
@@ -586,7 +604,7 @@ export default class EditPost extends React.Component {
   handleKeyDown = async evt => {
     const { insertMenuNode } = this.state;
     // bail conditions
-    // insert menu button is displayed - pass this event up to the menu to handle?
+    // insert menu button is displayed - pass this event up to the menu to handle
     if (insertMenuNode.get('id')) {
       this.setState({ insertMenuDomEvent: evt });
       return;
@@ -609,48 +627,41 @@ export default class EditPost extends React.Component {
       // allow "cut"
       !(evt.metaKey && evt.keyCode === KEYCODE_X) &&
       // allow "paste"
-      !(evt.metaKey && evt.keyCode === KEYCODE_V)
+      !(evt.metaKey && evt.keyCode === KEYCODE_V) &&
+      // allow holding down shift
+      !(evt.shiftKey)
     ) {
       return;
     }
-    console.debug('KEYDOWN');
-    // to coordinate with other events - input might fire before the setTimeout callback here
-    this.willBeHandledByKeydown = true;
+    console.debug('KEYDOWN')
     let selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-    //
-    // BEFORE setTimeout - put all DOM mutation handlers here
-    //
+  
+    await this.handleArrows(evt, selectionOffsets);
+    // yep, refresh caret after possible setState() in handleArrows
+    selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
+    await this.handleEditSectionMenu(evt);
+    await this.manageInsertMenu(evt, selectionOffsets);
+    await this.manageFormatSelectionMenu(evt, selectionOffsets);
     // TODO this.handleDel(evt); // currently, no support for the 'Del' key
     await this.handleBackspace(evt, selectionOffsets);
     await this.handleEnter(evt, selectionOffsets);
     await this.handlePaste(evt, selectionOffsets);
     await this.handleCut(evt, selectionOffsets);
-    this.handleSyncToDom(evt, selectionOffsets);
-    // waiting for "keyup" is too slow...
-    // use good ol setTimeout(fn, 0) to the rescue https://stackoverflow.com/a/40203430/1991322
-    setTimeout(async () => {
-      //
-      // AFTER setTimeout - put all "keyUp" handlers here, basically anything detecting where the caret landed
-      //
-      // the caret position will have changed, reset it
-      selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-      //console.debug('KeyDown: ', evt)
-      // await here because we rely on handleBackspace calling setState and resolving on the callback
-      //  this is to unset nodes that are checked by setCaret() in commitUpdates()
-      await this.handleArrows(evt, selectionOffsets);
-      // yep, refresh caret after possible setState() in handleArrows
-      selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-      await this.handleEditSectionMenu(evt);
-      await this.manageInsertMenu(evt, selectionOffsets);
-      this.manageFormatSelectionMenu(evt, selectionOffsets);
-      this.willBeHandledByKeydown = false;
-      console.debug('KEYDOWN deferred', evt);
-    }, 0);
+    await this.handleSyncToDom(evt, selectionOffsets);
+    if (evt.defaultPrevented) {
+      this.didHandleWithKeydown = true;
+    }
   };
+  
+  handleKeyUp = async () => {}
 
   handleInput = async evt => {
     // any control keys being held down?
-    if (evt.metaKey || this.willBeHandledByKeydown) {
+    if (evt.metaKey
+      // cross-event coordination
+      || this.didCut
+      || this.didPaste
+      || this.didHandleWithKeydown) {
       return;
     }
     const { editSectionNode } = this.state;
@@ -670,6 +681,7 @@ export default class EditPost extends React.Component {
     // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
     this.didPaste = false;
     this.didCut = false;
+    this.didHandleWithKeydown = false;
   };
 
   handleMouseUp = evt => {
@@ -995,7 +1007,7 @@ export default class EditPost extends React.Component {
   };
 
   // TODO: bug - selection highlighting disappears on user input on format selection menu
-  manageFormatSelectionMenu(evt, selectionOffsets) {
+  manageFormatSelectionMenu = async (evt, selectionOffsets) => {
     const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
     const [[startOffset, endOffset, selectedNodeId], end] = selectionOffsets;
     if (
@@ -1006,12 +1018,17 @@ export default class EditPost extends React.Component {
       // hit esc
       isEscKey
     ) {
-      this.setState({
-        formatSelectionNode: Map(),
-        formatSelectionModel: Selection(),
-        formatSelectionMenuTopOffset: 0,
-        formatSelectionMenuLeftOffset: 0
-      });
+      const { formatSelectionNode } = this.state;
+      if (formatSelectionNode.get('id')) {
+        return new Promise(resolve => {
+          this.setState({
+          formatSelectionNode: Map(),
+          formatSelectionModel: Selection(),
+          formatSelectionMenuTopOffset: 0,
+          formatSelectionMenuLeftOffset: 0
+        }, resolve);
+        })
+      }
       return;
     }
 
@@ -1023,6 +1040,13 @@ export default class EditPost extends React.Component {
       );
       return;
     }
+    
+    // allow user to hold shift and use arrow keys to adjust selection range
+    if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
+    }
+    
     const range = getRange();
     console.info(
       'SELECTION: ',
@@ -1033,40 +1057,19 @@ export default class EditPost extends React.Component {
       range.getBoundingClientRect()
     );
     const rect = range.getBoundingClientRect();
-    const selectedNode = getNodeById(selectedNodeId);
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
-    // Top Offset (from top of document) - needs a heuristic, or I'm missing an API!  do this with rems?
-    // start with the top offset of the paragraph
-    const paragraphTop = selectedNode.offsetTop;
-    // get a percentage of where the start of the selection is relative to the length of the content
-    const percentageOfText = startOffset / selectedNode.textContent.length;
-    // take that percentage from height of the paragraph
-    const percentageOffset = selectedNode.offsetHeight * percentageOfText;
-    // get closest clean division of the height by line height of the selection (this sort of works)
-    let offsetByLineHeight = 0;
-    let fueraDeControlCounter = 1000;
-    while (true) {
-      if (fueraDeControlCounter === 0) {
-        console.warn('manageFormatSelectionMenu is ¡Fuera de Control!');
-        break;
-      }
-      fueraDeControlCounter -= 1;
-      if (offsetByLineHeight + lineHeight > percentageOffset) {
-        break;
-      }
-      offsetByLineHeight += lineHeight;
-    }
-    //const
-    this.setState({
+    
+    return new Promise(resolve => this.setState({
       formatSelectionNode: selectedNodeModel,
       formatSelectionModel: getSelection(
         selectedNodeModel,
         startOffset,
         endOffset
       ),
-      formatSelectionMenuTopOffset: paragraphTop + offsetByLineHeight,
+      formatSelectionMenuTopOffset: rect.top,
       formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2
-    });
+    }, resolve)
+    )
   }
 
   handleSelectionAction = async action => {

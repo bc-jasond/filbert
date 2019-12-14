@@ -102,31 +102,12 @@ export function getRange() {
   return sel.getRangeAt(0);
 }
 
-function getParagraphContentOffset(formattingNode, paragraph) {
-  if (formattingNode === paragraph) {
-    return 0;
-  }
-  while (formattingNode.parentElement !== paragraph) {
-    // find the first immediate child of the paragraph - we could be nested inside several formatting tags at this point
-    // i.e. for <em><strong><strike>content here</strike></strong></em> - we want the <em> node
-    formattingNode = formattingNode.parentElement;
-  }
-  // find the index of the immediate child
-  const rangeIdx = Array.prototype.indexOf.call(
-    paragraph.childNodes,
-    formattingNode
-  );
-  let offset = 0;
-  for (let i = 0; i < rangeIdx; i++) {
-    // for each child of the paragraph that precedes our current range - add the length of it's content to the offset
-    offset += paragraph.childNodes[i].textContent.length;
-  }
-  return offset;
-}
-
 /**
- * Once formatting is applied to a paragraph, subsequent selections could yield a child formatting element <em>, <strong>, etc. as the Range commonAncestorContainer
- * But, we need to express selections in terms of an offset within the parent content (AKA first ancestor with a 'name' attribute)
+ * Once formatting is applied to a paragraph, subsequent selections
+ * could yield a child formatting element <em>, <strong>, etc. as the
+ * Range commonAncestorContainer But, we need to express selections in
+ * terms of an offset within the parent (AKA first ancestor with a 'name'
+ * attribute) content
  *
  * @return [
  *  [start, end, nodeId], // starting node & offset
@@ -199,6 +180,35 @@ export function replaceHighlightedSelection(
 ) {}
 
 /**
+ * given a child node, find the offset in the parent paragraph of the beginning of the child node's textContent
+ * NOTE: remember to add the current range offset to this number to get correct offset of all paragraph content
+ * @param formattingNode
+ * @param paragraph
+ * @returns {number}
+ */
+function getParagraphContentOffset(formattingNode, paragraph) {
+  if (formattingNode === paragraph) {
+    return 0;
+  }
+  while (formattingNode.parentElement !== paragraph) {
+    // find the first immediate child of the paragraph - we could be nested inside several formatting tags at this point
+    // i.e. for <em><strong><strike>content here</strike></strong></em> - we want the <em> node
+    formattingNode = formattingNode.parentElement;
+  }
+  // find the index of the immediate child
+  const rangeIdx = Array.prototype.indexOf.call(
+    paragraph.childNodes,
+    formattingNode
+  );
+  let offset = 0;
+  for (let i = 0; i < rangeIdx; i++) {
+    // for each child of the paragraph that precedes our current range - add the length of it's content to the offset
+    offset += paragraph.childNodes[i].textContent.length;
+  }
+  return offset;
+}
+
+/**
  * given an offset in a parent 'paragraph', return a child text node and child offset
  */
 export function getChildTextNodeAndOffsetFromParentOffset(
@@ -245,8 +255,37 @@ export function getFirstAncestorWithId(domNode) {
   return current;
 }
 
-export function getNodeType(node) {
-  return node && node.dataset ? node.dataset.type : null;
+// this is used to determine whether the caret will leave the current node
+// if the user presses the up or down arrow
+//
+// return array of boolean - caret is at [top, right, bottom, left] of paragraph textContent
+export function caretIsOnEdgeOfParagraphText() {
+  const range = getRange();
+  if (!range || !range.collapsed) {
+    return false;
+  }
+  const currentParagraph = getFirstAncestorWithId(range.commonAncestorContainer);
+  if (!currentParagraph) {
+    console.warn("caretIsOnEdgeOfParagraphText can't find node!", range);
+    return false;
+  }
+  const currentChildCaretOffset = range.startOffset;
+  const currentChildParagraphContentOffset = getParagraphContentOffset(range.startContainer, currentParagraph)
+  
+  function compareRangeAndParagraphTopOrBottom(key) {
+    const caretRect = range.getBoundingClientRect();
+    const paragraphRect = currentParagraph.getBoundingClientRect();
+    // if there's less than a caret height left when comparing the range rect to the paragraph rect,
+    // we're on the top or bottom line of the paragraph text
+    // TODO: this will probably break if adding margin or padding to the paragraph or any formatting <span>s
+    return (Math.abs(paragraphRect[key] - caretRect[key])) < caretRect.height;
+  }
+  return [
+    compareRangeAndParagraphTopOrBottom('top'),
+    currentChildCaretOffset + currentChildParagraphContentOffset === currentParagraph.textContent.length,
+    compareRangeAndParagraphTopOrBottom('bottom'),
+    currentChildCaretOffset + currentChildParagraphContentOffset === 0,
+  ];
 }
 
 export function getNodeId(node) {
