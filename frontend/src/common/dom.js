@@ -262,14 +262,14 @@ export function getFirstAncestorWithId(domNode) {
 export function caretIsOnEdgeOfParagraphText() {
   const range = getRange();
   if (!range || !range.collapsed) {
-    return false;
+    return [];
   }
   const currentParagraph = getFirstAncestorWithId(
     range.commonAncestorContainer
   );
   if (!currentParagraph) {
     console.warn("caretIsOnEdgeOfParagraphText can't find node!", range);
-    return false;
+    return [];
   }
   const currentChildCaretOffset = range.startOffset;
   const currentChildParagraphContentOffset = getParagraphContentOffset(

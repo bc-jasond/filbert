@@ -37,14 +37,14 @@ export function handleEnterTextType(
 ) {
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
-  let leftNodeType = documentModel.getNode(leftNodeId).get('type');
+  let newNodeType = documentModel.getNode(leftNodeId).get('type');
   let didConvertLeftNodeToP = false;
   // user hits enter on empty list or code item, and it's the last of type, always convert to P
   // to break out of a list or code section
   if (
     cleanText(contentLeft).length === 0 &&
     cleanText(contentRight).length === 0 &&
-    [NODE_TYPE_PRE, NODE_TYPE_LI].includes(leftNodeType) &&
+    [NODE_TYPE_PRE, NODE_TYPE_LI].includes(newNodeType) &&
     documentModel.isLastOfType(leftNodeId)
   ) {
     // convert empty sections to a P on enter
@@ -55,7 +55,7 @@ export function handleEnterTextType(
   // for all other node types: if user hits enter at beginning of line (always true for MetaType),
   // insert an empty P before
   if (
-    ![NODE_TYPE_PRE, NODE_TYPE_LI].includes(leftNodeType) &&
+    ![NODE_TYPE_P, NODE_TYPE_PRE, NODE_TYPE_LI].includes(newNodeType) &&
     cleanText(contentLeft).length === 0
   ) {
     didConvertLeftNodeToP = true;
@@ -66,14 +66,14 @@ export function handleEnterTextType(
   // for all other node types: if user hits enter at end of line,
   // convert new line to P
   if (
-    ![NODE_TYPE_PRE, NODE_TYPE_LI].includes(leftNodeType) &&
+    ![NODE_TYPE_PRE, NODE_TYPE_LI].includes(newNodeType) &&
     cleanText(contentRight).length === 0
   ) {
-    leftNodeType = NODE_TYPE_P;
+    newNodeType = NODE_TYPE_P;
   }
 
   const rightNodeId = documentModel.insert(
-    leftNodeType,
+    newNodeType,
     leftNodeId,
     contentRight
   );

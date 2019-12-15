@@ -334,7 +334,7 @@ export default class EditPost extends React.Component {
         removeAllRanges();
         newState.editSectionNode = this.documentModel.getNode(focusNodeId);
       }
-      this.setState(newState, async () => {
+      this.setState(newState, () => {
         // if we're on /edit/new, we don't save until user hits "enter"
         if (this.props.match.params.id !== NEW_POST_URL_ID) {
           this.saveContentBatchDebounce();
@@ -343,7 +343,6 @@ export default class EditPost extends React.Component {
         if (!this.anyEditContentMenuIsOpen()) {
           setCaret(focusNodeId, offset, shouldFocusLastChild);
         }
-        await this.manageInsertMenu();
         resolve();
       });
     });
@@ -370,11 +369,40 @@ export default class EditPost extends React.Component {
     });
   };
 
+  // return the prev or next node if the caret is at the "edge" of a paragraph
+  // and the user hits the corresponding arrow key
+  getNeighborOnArrowNavigation = (evt, selectionOffsets) => {
+    const [[_, __, currentNodeId]] = selectionOffsets;
+    const currentNode = this.documentModel.getNode(currentNodeId);
+    let neighborNode = Map();
+    const [
+      isAtTop,
+      isAtEnd,
+      isAtBottom,
+      isAtStart
+    ] = caretIsOnEdgeOfParagraphText();
+    if (
+      (evt.keyCode === KEYCODE_UP_ARROW && isAtTop) ||
+      (evt.keyCode === KEYCODE_LEFT_ARROW &&
+        // NOTE: if the content is empty, there will be a ZERO_LENGTH char and user would
+        // have to hit left twice without this code
+        (isAtStart || currentNode.get('content', '').length === 0))
+    ) {
+      neighborNode = this.documentModel.getPrevNode(currentNodeId);
+    } else if (
+      (evt.keyCode === KEYCODE_DOWN_ARROW && isAtBottom) ||
+      (evt.keyCode === KEYCODE_RIGHT_ARROW &&
+        (isAtEnd || currentNode.get('content', '').length === 0))
+    ) {
+      neighborNode = this.documentModel.getNextNode(currentNodeId);
+    }
+    return neighborNode;
+  };
+
   // Intercept arrow keys when moving into or out of MetaType nodes
   // no-op otherwise to allow native browser behaviour inside contenteditable text
   handleArrows = async (evt, selectionOffsets) => {
     if (
-      evt.defaultPrevented ||
       ![
         KEYCODE_UP_ARROW,
         KEYCODE_DOWN_ARROW,
@@ -384,10 +412,9 @@ export default class EditPost extends React.Component {
     ) {
       return;
     }
-    console.debug('ARROW', caretIsOnEdgeOfParagraphText());
-    const [
-      [startNodeCaretStart, startNodeCaretEnd, currentNodeId]
-    ] = selectionOffsets;
+    console.debug('ARROW');
+    const [[startNodeCaretStart, startNodeCaretEnd, _]] = selectionOffsets;
+
     // collapse range if there's highlighted selection and the user hits an arrow
     if (
       startNodeCaretStart !== startNodeCaretEnd &&
@@ -401,8 +428,6 @@ export default class EditPost extends React.Component {
         // down or right - collapse to end
         getRange().collapse(false);
       }
-      evt.stopPropagation();
-      evt.preventDefault();
       return;
     }
 
@@ -410,17 +435,28 @@ export default class EditPost extends React.Component {
     // if there's no currently selected MetaType node
     if (!editSectionNode.get('id')) {
       // see if we've entered one
-      if (evt.keyCode === KEYCODE_UP_ARROW) {
+      const neighborNode = this.getNeighborOnArrowNavigation(
+        evt,
+        selectionOffsets
+      );
+      if (!neighborNode.get('id')) {
+        // we won't be leaving the current node, let contenteditable handle the caret
+        return;
       }
-      if (this.documentModel.isMetaType(currentNodeId)) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      if (this.documentModel.isMetaType(neighborNode.get('id'))) {
         removeAllRanges();
-        await this.sectionEdit(currentNodeId);
-        evt.stopPropagation();
-        evt.preventDefault();
+        await this.sectionEdit(neighborNode.get('id'));
+      } else {
+        setCaret(
+          neighborNode.get('id'),
+          [KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode) ? -1 : 0
+        );
       }
       return;
     }
-    // we're coming from a selected MetaType node
+    // we're currently inside a selected MetaType node
     evt.stopPropagation();
     evt.preventDefault();
     if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
@@ -431,15 +467,11 @@ export default class EditPost extends React.Component {
         return;
       }
       if (this.documentModel.isMetaType(prevNode.get('id'))) {
-        await this.sectionEdit(prevNode.get('id'));
-        return;
+        return this.sectionEdit(prevNode.get('id'));
       }
-      return new Promise(resolve => {
-        this.setState({ editSectionNode: Map() }, () => {
-          setCaret(prevNode.get('id'), -1);
-          resolve();
-        });
-      });
+      await this.closeAllEditContentMenus();
+      setCaret(prevNode.get('id'), -1);
+      return;
     }
     // down or right arrows
     const nextNode = this.documentModel.getNextNode(editSectionNode.get('id'));
@@ -447,15 +479,10 @@ export default class EditPost extends React.Component {
       return;
     }
     if (this.documentModel.isMetaType(nextNode.get('id'))) {
-      await this.sectionEdit(nextNode.get('id'));
-      return;
+      return this.sectionEdit(nextNode.get('id'));
     }
-    return new Promise(resolve => {
-      this.setState({ editSectionNode: Map() }, () => {
-        setCaret(nextNode.get('id'), 0);
-        resolve();
-      });
-    });
+    await this.closeAllEditContentMenus();
+    setCaret(nextNode.get('id'), 0);
   };
 
   handleBackspace = async (evt, selectionOffsets) => {
@@ -469,6 +496,9 @@ export default class EditPost extends React.Component {
       return;
     }
 
+    evt.stopPropagation();
+    evt.preventDefault();
+
     const [focusNodeId, caretOffset, shouldFocusLastNode] = doDelete(
       this.documentModel,
       selectionOffsets
@@ -477,13 +507,10 @@ export default class EditPost extends React.Component {
       return;
     }
 
-    evt.stopPropagation();
-    evt.preventDefault();
-
     // clear the selected format node when deleting the highlighted selection
     // NOTE: must wait for state have been set or setCaret will check stale values
     await this.closeAllEditContentMenus();
-    await this.commitUpdates(focusNodeId, caretOffset, shouldFocusLastNode);
+    return this.commitUpdates(focusNodeId, caretOffset, shouldFocusLastNode);
   };
 
   /**
@@ -497,8 +524,7 @@ export default class EditPost extends React.Component {
       return;
     }
     // ignore if there's a selected MetaType node's menu is open
-    const { shouldShowEditSectionMenu } = this.state;
-    if (shouldShowEditSectionMenu) {
+    if (this.state.shouldShowEditSectionMenu) {
       return;
     }
 
@@ -515,7 +541,7 @@ export default class EditPost extends React.Component {
     if (this.props.match.params.id === NEW_POST_URL_ID) {
       return this.createNewPost();
     }
-    this.commitUpdates(focusNodeId, 0);
+    return this.commitUpdates(focusNodeId, 0);
   };
 
   /**
@@ -610,8 +636,15 @@ export default class EditPost extends React.Component {
   handleKeyDown = async evt => {
     const { insertMenuNode } = this.state;
     // bail conditions
-    // insert menu button is displayed - pass this event up to the menu to handle
-    if (insertMenuNode.get('id')) {
+    // insert menu button is displayed
+    if (
+      insertMenuNode.get('id') &&
+      // no range means the menu is closed
+      (!getRange() ||
+        // allow shift through so user can double tap it to open the menu
+        evt.shiftKey)
+    ) {
+      // pass this event up to the menu to handle
       this.setState({ insertMenuDomEvent: evt });
       return;
     }
@@ -639,21 +672,20 @@ export default class EditPost extends React.Component {
     ) {
       return;
     }
-    console.debug('KEYDOWN');
+    console.debug('KEYDOWN', evt, this.state);
     let selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-
-    await this.handleArrows(evt, selectionOffsets);
-    // yep, refresh caret after possible setState() in handleArrows
-    selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-    await this.handleEditSectionMenu(evt);
-    await this.manageInsertMenu(evt, selectionOffsets);
-    await this.manageFormatSelectionMenu(evt, selectionOffsets);
     // TODO this.handleDel(evt); // currently, no support for the 'Del' key
     await this.handleBackspace(evt, selectionOffsets);
     await this.handleEnter(evt, selectionOffsets);
     await this.handlePaste(evt, selectionOffsets);
     await this.handleCut(evt, selectionOffsets);
     await this.handleSyncToDom(evt, selectionOffsets);
+    await this.handleArrows(evt, selectionOffsets);
+    // refresh caret after possible setState() mutations above
+    selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
+    await this.handleEditSectionMenu(evt);
+    await this.manageInsertMenu(evt, selectionOffsets);
+    await this.manageFormatSelectionMenu(evt, selectionOffsets);
     if (evt.defaultPrevented) {
       this.didHandleWithKeydown = true;
     }
@@ -692,7 +724,7 @@ export default class EditPost extends React.Component {
     this.didHandleWithKeydown = false;
   };
 
-  handleMouseUp = evt => {
+  handleMouseUp = async evt => {
     //console.debug('MouseUp: ', evt)
     let selectionOffsets = getHighlightedSelectionOffsets();
     const [start] = selectionOffsets;
@@ -704,10 +736,10 @@ export default class EditPost extends React.Component {
       }
       selectionOffsets = [[0, 0, editSectionNode.get('id')]];
     }
-    this.manageInsertMenu(evt, selectionOffsets);
-    this.manageFormatSelectionMenu(evt, selectionOffsets);
-    // close edit section menus by default, this.sectionEdit() callback will fire after this to override
-    this.sectionEditClose();
+    // close everything by default, this.sectionEdit() callback will fire after this to override
+    await this.closeAllEditContentMenus();
+    await this.manageInsertMenu(evt, selectionOffsets);
+    return this.manageFormatSelectionMenu(evt, selectionOffsets);
   };
 
   handleCut = async (evt, selectionOffsetsArg) => {
@@ -740,7 +772,7 @@ export default class EditPost extends React.Component {
 
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    this.commitUpdates(startNodeId, startNodeCaretStart);
+    return this.commitUpdates(startNodeId, startNodeCaretStart);
   };
 
   handlePaste = async (evt, selectionOffsetsArg) => {
@@ -778,7 +810,7 @@ export default class EditPost extends React.Component {
     }
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    this.commitUpdates(focusNodeId, caretOffset);
+    return this.commitUpdates(focusNodeId, caretOffset);
   };
 
   // TODO: this function references the DOM and state.  So, it needs to pass-through values because it always executes - separate the DOM and state checks?
@@ -794,8 +826,8 @@ export default class EditPost extends React.Component {
 
     console.debug('MANAGE INSERT');
 
-    const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-    const selectedNode = getNodeById(selectedNodeId);
+    let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
+    let selectedNode = getNodeById(selectedNodeId);
 
     if (
       selectedNode &&
@@ -892,12 +924,6 @@ export default class EditPost extends React.Component {
         }
         resolve();
       });
-    });
-  };
-  sectionEditClose = () => {
-    this.setState({
-      editSectionNode: Map(),
-      shouldShowEditSectionMenu: false
     });
   };
 

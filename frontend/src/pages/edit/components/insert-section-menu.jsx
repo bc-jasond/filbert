@@ -134,6 +134,10 @@ export default class InsertSectionMenuComponent extends React.Component {
   };
 
   handleKeyDown = evt => {
+    // don't let contenteditable take over!
+    evt.preventDefault();
+    evt.stopPropagation();
+
     const { currentIdx } = this.state;
 
     switch (evt.keyCode) {
@@ -169,9 +173,6 @@ export default class InsertSectionMenuComponent extends React.Component {
         if (currentIdx > -1) {
           const [_, __, cb] = this.sectionTypes[currentIdx];
           cb();
-          // don't let contenteditable take over!
-          evt.preventDefault();
-          evt.stopPropagation();
         }
         return;
       }
