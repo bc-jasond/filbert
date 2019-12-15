@@ -34,7 +34,8 @@ import {
   getHighlightedSelectionOffsets,
   isControlKey,
   removeAllRanges,
-  getNodeById, caretIsOnEdgeOfParagraphText
+  getNodeById,
+  caretIsOnEdgeOfParagraphText
 } from '../../../common/dom';
 
 import {
@@ -384,28 +385,33 @@ export default class EditPost extends React.Component {
       return;
     }
     console.debug('ARROW', caretIsOnEdgeOfParagraphText());
-    const [[startNodeCaretStart, startNodeCaretEnd, currentNodeId]] = selectionOffsets;
+    const [
+      [startNodeCaretStart, startNodeCaretEnd, currentNodeId]
+    ] = selectionOffsets;
     // collapse range if there's highlighted selection and the user hits an arrow
-    if (startNodeCaretStart !== startNodeCaretEnd &&
+    if (
+      startNodeCaretStart !== startNodeCaretEnd &&
       // ignore shift key because user could be in the middle of adjusting a selection
-      !evt.shiftKey) {
+      !evt.shiftKey
+    ) {
       if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
         // up or left - collapse to start
-        getRange().collapse(true)
+        getRange().collapse(true);
       } else {
         // down or right - collapse to end
-        getRange().collapse(false)
+        getRange().collapse(false);
       }
       evt.stopPropagation();
       evt.preventDefault();
       return;
     }
-    
+
     const { editSectionNode } = this.state;
     // if there's no currently selected MetaType node
     if (!editSectionNode.get('id')) {
       // see if we've entered one
-      if (evt.keyCode === KEYCODE_UP_ARROW) {}
+      if (evt.keyCode === KEYCODE_UP_ARROW) {
+      }
       if (this.documentModel.isMetaType(currentNodeId)) {
         removeAllRanges();
         await this.sectionEdit(currentNodeId);
@@ -629,13 +635,13 @@ export default class EditPost extends React.Component {
       // allow "paste"
       !(evt.metaKey && evt.keyCode === KEYCODE_V) &&
       // allow holding down shift
-      !(evt.shiftKey)
+      !evt.shiftKey
     ) {
       return;
     }
-    console.debug('KEYDOWN')
+    console.debug('KEYDOWN');
     let selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-  
+
     await this.handleArrows(evt, selectionOffsets);
     // yep, refresh caret after possible setState() in handleArrows
     selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
@@ -652,16 +658,18 @@ export default class EditPost extends React.Component {
       this.didHandleWithKeydown = true;
     }
   };
-  
-  handleKeyUp = async () => {}
+
+  handleKeyUp = async () => {};
 
   handleInput = async evt => {
     // any control keys being held down?
-    if (evt.metaKey
+    if (
+      evt.metaKey ||
       // cross-event coordination
-      || this.didCut
-      || this.didPaste
-      || this.didHandleWithKeydown) {
+      this.didCut ||
+      this.didPaste ||
+      this.didHandleWithKeydown
+    ) {
       return;
     }
     const { editSectionNode } = this.state;
@@ -1021,13 +1029,16 @@ export default class EditPost extends React.Component {
       const { formatSelectionNode } = this.state;
       if (formatSelectionNode.get('id')) {
         return new Promise(resolve => {
-          this.setState({
-          formatSelectionNode: Map(),
-          formatSelectionModel: Selection(),
-          formatSelectionMenuTopOffset: 0,
-          formatSelectionMenuLeftOffset: 0
-        }, resolve);
-        })
+          this.setState(
+            {
+              formatSelectionNode: Map(),
+              formatSelectionModel: Selection(),
+              formatSelectionMenuTopOffset: 0,
+              formatSelectionMenuLeftOffset: 0
+            },
+            resolve
+          );
+        });
       }
       return;
     }
@@ -1040,13 +1051,13 @@ export default class EditPost extends React.Component {
       );
       return;
     }
-    
+
     // allow user to hold shift and use arrow keys to adjust selection range
     if (!evt.shiftKey) {
       evt.stopPropagation();
       evt.preventDefault();
     }
-    
+
     const range = getRange();
     console.info(
       'SELECTION: ',
@@ -1058,19 +1069,23 @@ export default class EditPost extends React.Component {
     );
     const rect = range.getBoundingClientRect();
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
-    
-    return new Promise(resolve => this.setState({
-      formatSelectionNode: selectedNodeModel,
-      formatSelectionModel: getSelection(
-        selectedNodeModel,
-        startOffset,
-        endOffset
-      ),
-      formatSelectionMenuTopOffset: rect.top,
-      formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2
-    }, resolve)
-    )
-  }
+
+    return new Promise(resolve =>
+      this.setState(
+        {
+          formatSelectionNode: selectedNodeModel,
+          formatSelectionModel: getSelection(
+            selectedNodeModel,
+            startOffset,
+            endOffset
+          ),
+          formatSelectionMenuTopOffset: rect.top,
+          formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2
+        },
+        resolve
+      )
+    );
+  };
 
   handleSelectionAction = async action => {
     const { formatSelectionModel, formatSelectionNode } = this.state;

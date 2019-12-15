@@ -264,27 +264,33 @@ export function caretIsOnEdgeOfParagraphText() {
   if (!range || !range.collapsed) {
     return false;
   }
-  const currentParagraph = getFirstAncestorWithId(range.commonAncestorContainer);
+  const currentParagraph = getFirstAncestorWithId(
+    range.commonAncestorContainer
+  );
   if (!currentParagraph) {
     console.warn("caretIsOnEdgeOfParagraphText can't find node!", range);
     return false;
   }
   const currentChildCaretOffset = range.startOffset;
-  const currentChildParagraphContentOffset = getParagraphContentOffset(range.startContainer, currentParagraph)
-  
+  const currentChildParagraphContentOffset = getParagraphContentOffset(
+    range.startContainer,
+    currentParagraph
+  );
+
   function compareRangeAndParagraphTopOrBottom(key) {
     const caretRect = range.getBoundingClientRect();
     const paragraphRect = currentParagraph.getBoundingClientRect();
     // if there's less than a caret height left when comparing the range rect to the paragraph rect,
     // we're on the top or bottom line of the paragraph text
     // TODO: this will probably break if adding margin or padding to the paragraph or any formatting <span>s
-    return (Math.abs(paragraphRect[key] - caretRect[key])) < caretRect.height;
+    return Math.abs(paragraphRect[key] - caretRect[key]) < caretRect.height;
   }
   return [
     compareRangeAndParagraphTopOrBottom('top'),
-    currentChildCaretOffset + currentChildParagraphContentOffset === currentParagraph.textContent.length,
+    currentChildCaretOffset + currentChildParagraphContentOffset ===
+      currentParagraph.textContent.length,
     compareRangeAndParagraphTopOrBottom('bottom'),
-    currentChildCaretOffset + currentChildParagraphContentOffset === 0,
+    currentChildCaretOffset + currentChildParagraphContentOffset === 0
   ];
 }
 
