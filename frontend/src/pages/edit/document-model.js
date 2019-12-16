@@ -2,17 +2,17 @@ import Immutable, { isKeyed, Map } from 'immutable';
 
 import {
   NEW_POST_URL_ID,
-  NODE_TYPE_P,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
+  NODE_TYPE_LI,
+  NODE_TYPE_P,
   NODE_TYPE_POSTLINK,
+  NODE_TYPE_PRE,
   NODE_TYPE_QUOTE,
   NODE_TYPE_SPACER,
-  NODE_TYPE_LI,
-  NODE_TYPE_PRE,
-  SELECTION_START,
-  SELECTION_END
+  SELECTION_END,
+  SELECTION_START
 } from '../../common/constants';
 import { cleanText, getMapWithId } from '../../common/utils';
 import { concatSelections, Selection } from './selection-helpers';
@@ -27,7 +27,9 @@ export function reviver(key, value) {
 
 export default class DocumentModel {
   post;
+
   updateManager;
+
   nodesById = Map();
 
   static getFirstNode(nodesById) {
@@ -97,9 +99,11 @@ export default class DocumentModel {
       .filter(n => n.get('next_sibling_id') === nodeId)
       .first(Map());
   }
+
   getNextNode(nodeId) {
     return this.getNode(this.getNode(nodeId).get('next_sibling_id'));
   }
+
   getNodesBetween(leftNodeId, rightNodeId) {
     const leftNode = this.getNode(leftNodeId);
     const rightNode = this.getNode(rightNodeId);
@@ -180,13 +184,13 @@ export default class DocumentModel {
     meta = Map(),
     shouldInsertAfter = true
   ) {
-    let neighbor = this.getNode(neighborNodeId);
+    const neighbor = this.getNode(neighborNodeId);
     if (!neighbor.get('id')) {
       throw new Error(
         `DocumentModel.insert() - bad neighbor id! ${neighborNodeId}`
       );
     }
-    let newNode = this.getMapWithId({
+    const newNode = this.getMapWithId({
       type,
       content: cleanText(content),
       meta

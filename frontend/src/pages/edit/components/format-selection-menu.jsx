@@ -1,27 +1,27 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import {
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
   SELECTION_ACTION_BOLD,
-  SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_CODE,
-  SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_MINI,
-  SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_ACTION_LINK,
-  SELECTION_LINK_URL,
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2,
-  NODE_TYPE_H1,
-  NODE_TYPE_H2
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_LINK,
+  SELECTION_ACTION_MINI,
+  SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_STRIKETHROUGH,
+  SELECTION_LINK_URL
 } from '../../../common/constants';
 import {
-  SvgIconMixin,
-  LilSassyMenu,
-  IconButton,
-  DarkInput,
+  Arrow,
   ButtonSeparator,
+  DarkInput,
+  IconButton,
+  LilSassyMenu,
   PointClip,
-  Arrow
+  SvgIconMixin
 } from '../../../common/components/shared-styled-components';
 
 import IconBoldSvg from '../../../../assets/icons/bold.svg';

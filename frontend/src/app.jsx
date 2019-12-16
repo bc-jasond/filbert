@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom';
+import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
 
 // GLOBAL CSS HERE
 import CssReset from './reset.css';
@@ -15,7 +15,7 @@ import SignIn from './pages/signin';
 import EditPost from './pages/edit/components/edit';
 
 export default () => (
-  <React.Fragment>
+  <>
     <BrowserRouter>
       <Switch>
         <Redirect push exact from="/" to="/posts" />
@@ -23,9 +23,9 @@ export default () => (
         <Route exact path="/signin" component={SignIn} />
         <Route exact path="/posts" component={ListAllPosts} />
         <Route exact path="/drafts" component={ListAllDrafts} />
-        {/*NOTE: this :canonical is a string like 'some-url-87ba'*/}
+        {/* NOTE: this :canonical is a string like 'some-url-87ba' */}
         <Route path="/posts/:canonical" component={ViewPost} />
-        {/*NOTE: this :id is an int like 34*/}
+        {/* NOTE: this :id is an int like 34 */}
         <Route path="/edit/:id" component={EditPost} />
         <Route component={Page404} />
       </Switch>
@@ -33,5 +33,5 @@ export default () => (
     <CssReset />
     <CssBase />
     <CssPace />
-  </React.Fragment>
+  </>
 );

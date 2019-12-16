@@ -1,7 +1,7 @@
 import { fromJS, List } from 'immutable';
 import React from 'react';
 
-import { apiGet, apiPost, apiDelete, apiPatch } from '../common/fetch';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../common/fetch';
 import { getSession, getUserName, signout } from '../common/session';
 import { formatPostDate } from '../common/utils';
 
@@ -12,20 +12,20 @@ import {
   HeaderContentContainer,
   HeaderLinksContainer,
   HeaderSpacer,
-  LogoLinkStyled,
   LinkStyledSignIn,
+  LogoLinkStyled,
   NewPost,
   SignedInUser
 } from '../common/components/layout-styled-components';
 import {
-  StyledH2,
-  PostRow,
   PostAbstractRow,
-  StyledHeadingA,
-  StyledA,
-  PostMetaRow,
+  PostAction,
   PostMetaContentFirst,
-  PostAction
+  PostMetaRow,
+  PostRow,
+  StyledA,
+  StyledH2,
+  StyledHeadingA
 } from '../common/components/list-all-styled-components';
 import PublishPostForm from '../common/components/edit-publish-post-form';
 
@@ -143,13 +143,13 @@ export default class AllPosts extends React.Component {
     } = this.state;
 
     return (
-      <React.Fragment>
+      <>
         <Header>
           <HeaderContentContainer>
             <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession() ? (
-                <React.Fragment>
+                <>
                   <NewPost to="/edit/new">new</NewPost>
                   <SignedInUser
                     onClick={() => {
@@ -162,7 +162,7 @@ export default class AllPosts extends React.Component {
                   >
                     {getUserName()}
                   </SignedInUser>
-                </React.Fragment>
+                </>
               ) : (
                 <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
               )}
@@ -172,7 +172,7 @@ export default class AllPosts extends React.Component {
         <HeaderSpacer />
         <Article>
           {drafts.size > 0 && (
-            <React.Fragment>
+            <>
               {shouldShowPublishPostMenu && (
                 <PublishPostForm
                   post={shouldShowPublishPostMenu}
@@ -210,11 +210,11 @@ export default class AllPosts extends React.Component {
                   </PostMetaRow>
                 </PostRow>
               ))}
-            </React.Fragment>
+            </>
           )}
         </Article>
         <Footer />
-      </React.Fragment>
+      </>
     );
   }
 }

@@ -5,18 +5,18 @@ import {
   BoldText,
   Code,
   ItalicText,
+  MiniText,
   SiteInfo,
-  StrikeText,
-  MiniText
+  StrikeText
 } from './shared-styled-components';
 import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
+  SELECTION_ACTION_MINI,
   SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_ACTION_MINI
+  SELECTION_ACTION_STRIKETHROUGH
 } from '../constants';
 import {
   getContentForSelection,

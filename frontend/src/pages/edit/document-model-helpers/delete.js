@@ -83,7 +83,7 @@ export function doDelete(documentModel, selectionOffsets) {
     deleteOrUpdateNode(endDiffLength, endNodeId, 0, endNodeCaretEnd);
   }
 
-  let startNodeMap = documentModel.getNode(startNodeId);
+  const startNodeMap = documentModel.getNode(startNodeId);
   const startNodeContent = startNodeMap.get('content');
 
   const startDiffLength = startNodeCaretEnd - startNodeCaretStart;

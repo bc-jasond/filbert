@@ -1,22 +1,22 @@
 import React from 'react';
+import styled, { css } from 'styled-components';
 import {
-  NODE_TYPE_LI,
-  NODE_TYPE_PRE,
-  NODE_TYPE_H1,
-  NODE_TYPE_H2,
-  NODE_TYPE_IMAGE,
-  NODE_TYPE_QUOTE,
-  NODE_TYPE_SPACER,
+  KEYCODE_ENTER,
+  KEYCODE_ESC,
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
   KEYCODE_SHIFT_OR_COMMAND_LEFT,
   KEYCODE_SHIFT_RIGHT,
-  KEYCODE_ESC,
-  KEYCODE_ENTER,
-  KEYCODE_SPACE
+  KEYCODE_SPACE,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_IMAGE,
+  NODE_TYPE_LI,
+  NODE_TYPE_PRE,
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_SPACER
 } from '../../../common/constants';
 
-import styled, { css } from 'styled-components';
 import { grey } from '../../../common/css';
 import { NavButtonMixin } from '../../../common/components/shared-styled-components';
 import { removeAllRanges, setCaret } from '../../../common/dom';
@@ -102,7 +102,9 @@ export default class InsertSectionMenuComponent extends React.Component {
   }
 
   fileInputRef = React.createRef();
+
   didHitShift = false;
+
   sectionTypes = [
     [NODE_TYPE_H1, 'H1', () => this.insertSectionCb(NODE_TYPE_H1)],
     [NODE_TYPE_H2, 'H2', () => this.insertSectionCb(NODE_TYPE_H2)],
@@ -111,7 +113,7 @@ export default class InsertSectionMenuComponent extends React.Component {
     [NODE_TYPE_SPACER, 'spacer', () => this.insertSectionCb(NODE_TYPE_SPACER)],
     [
       NODE_TYPE_IMAGE,
-      <React.Fragment>
+      <>
         photo
         <HiddenFileInput
           name="hidden-image-upload-file-input"
@@ -122,7 +124,7 @@ export default class InsertSectionMenuComponent extends React.Component {
           accept="image/*"
           ref={this.fileInputRef}
         />
-      </React.Fragment>,
+      </>,
       () => this.fileInputRef.current.click()
     ],
     [NODE_TYPE_QUOTE, 'quote', () => this.insertSectionCb(NODE_TYPE_QUOTE)]
@@ -141,7 +143,7 @@ export default class InsertSectionMenuComponent extends React.Component {
     const { currentIdx } = this.state;
 
     switch (evt.keyCode) {
-      case KEYCODE_SHIFT_OR_COMMAND_LEFT: //fall-through
+      case KEYCODE_SHIFT_OR_COMMAND_LEFT: // fall-through
       case KEYCODE_SHIFT_RIGHT: {
         if (this.didHitShift) {
           // user double-tapped shift
@@ -168,13 +170,12 @@ export default class InsertSectionMenuComponent extends React.Component {
         this.focusInsertNode();
         return;
       }
-      case KEYCODE_SPACE: //fall-through
+      case KEYCODE_SPACE: // fall-through
       case KEYCODE_ENTER: {
         if (currentIdx > -1) {
           const [_, __, cb] = this.sectionTypes[currentIdx];
           cb();
         }
-        return;
       }
       default: {
       }

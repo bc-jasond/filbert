@@ -64,11 +64,11 @@ module.exports = (env, argv) => {
           {
             from: /\.woff$/,
             to: context =>
-              '/fonts/' + context.parsedUrl.pathname.split('/').pop()
+              `/fonts/${context.parsedUrl.pathname.split('/').pop()}`
           },
           {
             from: /\.js$/,
-            to: context => '/' + context.parsedUrl.pathname.split('/').pop()
+            to: context => `/${context.parsedUrl.pathname.split('/').pop()}`
           }
         ]
       },
@@ -77,7 +77,7 @@ module.exports = (env, argv) => {
     plugins: [
       new HtmlWebpackPlugin({
         template: 'src/index.html',
-        shouldLoadGoogleAnalytics: false //isProduction,
+        shouldLoadGoogleAnalytics: false // isProduction,
       }),
       new webpack.DefinePlugin({
         'process.env.API_URL':

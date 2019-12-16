@@ -17,8 +17,8 @@ import {
   HeaderContentContainer,
   HeaderLinksContainer,
   HeaderSpacer,
-  LogoLinkStyled,
   ListDrafts,
+  LogoLinkStyled,
   NewPost,
   PublishPost,
   SignedInUser
@@ -28,36 +28,36 @@ import Footer from '../../footer';
 import { getUserName, signout } from '../../../common/session';
 import { confirmPromise, getCanonicalFromTitle } from '../../../common/utils';
 import {
-  getRange,
+  caretIsOnEdgeOfParagraphText,
   getFirstHeadingContent,
-  setCaret,
   getHighlightedSelectionOffsets,
+  getNodeById,
+  getRange,
   isControlKey,
   removeAllRanges,
-  getNodeById,
-  caretIsOnEdgeOfParagraphText
+  setCaret
 } from '../../../common/dom';
 
 import {
-  NODE_TYPE_QUOTE,
-  NODE_TYPE_IMAGE,
-  KEYCODE_ENTER,
   KEYCODE_BACKSPACE,
-  KEYCODE_ESC,
-  NEW_POST_URL_ID,
-  NODE_TYPE_P,
-  SELECTION_ACTION_LINK,
-  SELECTION_LINK_URL,
-  POST_ACTION_REDIRECT_TIMEOUT,
-  KEYCODE_X,
-  KEYCODE_V,
-  NODE_TYPE_SPACER,
-  KEYCODE_UP_ARROW,
   KEYCODE_DOWN_ARROW,
+  KEYCODE_ENTER,
+  KEYCODE_ESC,
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
   KEYCODE_SHIFT_OR_COMMAND_LEFT,
-  KEYCODE_SHIFT_RIGHT
+  KEYCODE_SHIFT_RIGHT,
+  KEYCODE_UP_ARROW,
+  KEYCODE_V,
+  KEYCODE_X,
+  NEW_POST_URL_ID,
+  NODE_TYPE_IMAGE,
+  NODE_TYPE_P,
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_SPACER,
+  POST_ACTION_REDIRECT_TIMEOUT,
+  SELECTION_ACTION_LINK,
+  SELECTION_LINK_URL
 } from '../../../common/constants';
 import { lineHeight } from '../../../common/css';
 
@@ -70,7 +70,7 @@ import { selectionFormatAction } from '../document-model-helpers/selection-forma
 import { doSplit } from '../document-model-helpers/split';
 import UpdateManager from '../update-manager';
 
-import { Selection, getSelection, upsertSelection } from '../selection-helpers';
+import { getSelection, Selection, upsertSelection } from '../selection-helpers';
 
 import InsertSectionMenu from './insert-section-menu';
 import EditImageForm from './edit-image-form';
@@ -148,8 +148,11 @@ export default class EditPost extends React.Component {
   }
 
   documentModel = new DocumentModel();
+
   updateManager = new UpdateManager();
+
   commitTimeoutId;
+
   inputRef;
 
   saveContentBatch = async () => {
@@ -224,6 +227,7 @@ export default class EditPost extends React.Component {
       this.setState({ nodesById: Map(), shouldShow404: true });
     }
   };
+
   updatePost = (fieldName, value) => {
     const { post } = this.state;
     this.setState({
@@ -232,6 +236,7 @@ export default class EditPost extends React.Component {
       shouldShowPostSuccess: null
     });
   };
+
   savePost = async () => {
     try {
       const { post } = this.state;
@@ -256,6 +261,7 @@ export default class EditPost extends React.Component {
       this.setState({ shouldShowPostError: true });
     }
   };
+
   publishPost = async () => {
     const { post } = this.state;
 
@@ -282,6 +288,7 @@ export default class EditPost extends React.Component {
       this.setState({ shouldShowPostError: true });
     }
   };
+
   deletePost = async () => {
     const { post } = this.state;
     try {
@@ -299,6 +306,7 @@ export default class EditPost extends React.Component {
       console.error('Delete post error:', err);
     }
   };
+
   togglePostMenu = () => {
     const { shouldShowPublishPostMenu: oldVal } = this.state;
     this.setState({ shouldShowPublishPostMenu: !oldVal });
@@ -725,7 +733,7 @@ export default class EditPost extends React.Component {
   };
 
   handleMouseUp = async evt => {
-    //console.debug('MouseUp: ', evt)
+    // console.debug('MouseUp: ', evt)
     let selectionOffsets = getHighlightedSelectionOffsets();
     const [start] = selectionOffsets;
     if (start.length === 0) {
@@ -826,8 +834,8 @@ export default class EditPost extends React.Component {
 
     console.debug('MANAGE INSERT');
 
-    let selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-    let selectedNode = getNodeById(selectedNodeId);
+    const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
+    const selectedNode = getNodeById(selectedNodeId);
 
     if (
       selectedNode &&
@@ -986,7 +994,7 @@ export default class EditPost extends React.Component {
     );
     const updatedRotationDegrees =
       currentRotationDegrees === 270 ? 0 : currentRotationDegrees + 90;
-    let updatedImageSectionNode = editSectionNode.setIn(
+    const updatedImageSectionNode = editSectionNode.setIn(
       ['meta', 'rotationDegrees'],
       updatedRotationDegrees
     );
@@ -1163,7 +1171,7 @@ export default class EditPost extends React.Component {
     if (shouldRedirect) return <Redirect to={shouldRedirect} />;
 
     return (
-      <React.Fragment>
+      <>
         <main onMouseUp={this.handleMouseUp}>
           <Header>
             <HeaderContentContainer>
@@ -1191,8 +1199,8 @@ export default class EditPost extends React.Component {
             {nodesById.size > 0 && (
               <div
                 id="filbert-edit-container"
-                contentEditable={true}
-                suppressContentEditableWarning={true}
+                contentEditable
+                suppressContentEditableWarning
               >
                 <Document
                   nodesById={nodesById}
@@ -1256,7 +1264,7 @@ export default class EditPost extends React.Component {
             forwardRef={this.getLinkUrlForwardedRef}
           />
         )}
-      </React.Fragment>
+      </>
     );
   }
 }

@@ -5,18 +5,18 @@ import { Link, Redirect } from 'react-router-dom';
 import { signin } from '../common/session';
 
 import {
-  H3,
   A,
-  InputContainer,
-  Input,
-  Label,
-  SuccessMessage,
-  ErrorMessage,
-  MessageContainer,
   Button,
   ButtonSpan,
   CancelButton,
-  H1Styled
+  ErrorMessage,
+  H1Styled,
+  H3,
+  Input,
+  InputContainer,
+  Label,
+  MessageContainer,
+  SuccessMessage
 } from '../common/components/shared-styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
 
@@ -67,6 +67,7 @@ export default class SignIn extends React.Component {
   updateUsername = event => {
     this.setState({ username: event.target.value, error: null });
   };
+
   updatePassword = event => {
     this.setState({ password: event.target.value, error: null });
   };

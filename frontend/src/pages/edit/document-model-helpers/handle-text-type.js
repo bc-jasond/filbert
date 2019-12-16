@@ -11,8 +11,8 @@ import {
 } from '../selection-helpers';
 
 export function handleBackspaceTextType(documentModel, selectedNodeId) {
-  let prevNode = documentModel.getPrevNode(selectedNodeId);
-  let prevNodeId = prevNode.get('id');
+  const prevNode = documentModel.getPrevNode(selectedNodeId);
+  const prevNodeId = prevNode.get('id');
   // if at beginning of first node, nothing to do
   if (!prevNodeId) {
     return [selectedNodeId];

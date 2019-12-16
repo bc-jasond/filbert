@@ -12,23 +12,23 @@ import {
   HeaderContentContainer,
   HeaderLinksContainer,
   HeaderSpacer,
-  LogoLinkStyled,
   LinkStyledSignIn,
   ListDrafts,
+  LogoLinkStyled,
   NewPost,
   SignedInUser
 } from '../common/components/layout-styled-components';
 import {
-  StyledH2,
-  PostRow,
-  PostAbstractRow,
-  StyledHeadingA,
-  StyledA,
-  PostMetaRow,
-  PostMetaContentFirst,
-  PostAction,
   AuthorExpand,
-  PostActionA
+  PostAbstractRow,
+  PostAction,
+  PostActionA,
+  PostMetaContentFirst,
+  PostMetaRow,
+  PostRow,
+  StyledA,
+  StyledH2,
+  StyledHeadingA
 } from '../common/components/list-all-styled-components';
 
 export default class AllPosts extends React.Component {
@@ -70,13 +70,13 @@ export default class AllPosts extends React.Component {
     const { posts } = this.state;
 
     return (
-      <React.Fragment>
+      <>
         <Header>
           <HeaderContentContainer>
             <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession() ? (
-                <React.Fragment>
+                <>
                   <NewPost to="/edit/new">new</NewPost>
                   <ListDrafts to="/drafts">drafts</ListDrafts>
                   <SignedInUser
@@ -90,7 +90,7 @@ export default class AllPosts extends React.Component {
                   >
                     {getUserName()}
                   </SignedInUser>
-                </React.Fragment>
+                </>
               ) : (
                 <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
               )}
@@ -100,7 +100,7 @@ export default class AllPosts extends React.Component {
         <HeaderSpacer />
         <Article>
           {posts.size > 0 && (
-            <React.Fragment>
+            <>
               <PostRow>
                 <StyledH2>Recent Articles</StyledH2>
               </PostRow>
@@ -119,28 +119,28 @@ export default class AllPosts extends React.Component {
                       {post.get('published')}
                     </PostMetaContentFirst>
                     {post.get('canEdit') && (
-                      <React.Fragment>
+                      <>
                         <PostActionA href={`/edit/${post.get('id')}`}>
                           edit
                         </PostActionA>
-                      </React.Fragment>
+                      </>
                     )}
                     {post.get('canDelete') && (
-                      <React.Fragment>
+                      <>
                         <PostAction onClick={() => this.deletePost(post)}>
                           delete
                         </PostAction>
-                      </React.Fragment>
+                      </>
                     )}
                     <AuthorExpand>{post.get('username')}</AuthorExpand>
                   </PostMetaRow>
                 </PostRow>
               ))}
-            </React.Fragment>
+            </>
           )}
         </Article>
         <Footer />
-      </React.Fragment>
+      </>
     );
   }
 }

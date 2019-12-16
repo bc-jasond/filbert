@@ -1,18 +1,18 @@
 import React from 'react';
 import { get, Map } from 'immutable';
 import {
-  NODE_TYPE_P,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
-  NODE_TYPE_QUOTE,
-  NODE_TYPE_SPACER,
-  NODE_TYPE_POSTLINK,
   NODE_TYPE_LI,
+  NODE_TYPE_P,
+  NODE_TYPE_POSTLINK,
   NODE_TYPE_PRE,
-  NODE_TYPE_ROOT
+  NODE_TYPE_QUOTE,
+  NODE_TYPE_ROOT,
+  NODE_TYPE_SPACER
 } from '../constants';
-import { ContentSection, CodeSection, Ol } from './shared-styled-components';
+import { CodeSection, ContentSection, Ol } from './shared-styled-components';
 import PostLink from './postlink';
 import Quote from './quote';
 import Image from './image';

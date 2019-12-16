@@ -47,7 +47,7 @@ module.exports = (env, argv) => {
     plugins: [
       new HtmlWebpackPlugin({
         template: 'src/index.html',
-        shouldLoadGoogleAnalytics: false //isProduction,
+        shouldLoadGoogleAnalytics: false // isProduction,
       }),
       new webpack.DefinePlugin({
         'process.env.API_URL': "'https://api.filbert.xyz'",

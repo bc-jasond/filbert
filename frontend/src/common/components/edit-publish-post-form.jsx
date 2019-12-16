@@ -4,14 +4,14 @@ import {
   Button,
   ButtonSpan,
   CancelButton,
+  ErrorMessage,
+  H1Styled,
   Input,
-  TextArea,
   InputContainer,
   Label,
-  ErrorMessage,
-  SuccessMessage,
   MessageContainer,
-  H1Styled
+  SuccessMessage,
+  TextArea
 } from './shared-styled-components';
 
 import { formatPostDate } from '../utils';
@@ -71,7 +71,7 @@ export default ({
           const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
           return (
             <InputContainer key={idx}>
-              <Label htmlFor={fieldName} error={false /*TODO*/}>
+              <Label htmlFor={fieldName} error={false /* TODO */}>
                 {fieldName}
               </Label>
               <StyledComponent
@@ -82,7 +82,7 @@ export default ({
                 onChange={e => {
                   updatePost(fieldName, e.target.value);
                 }}
-                error={false /*TODO*/}
+                error={false /* TODO */}
                 ref={idx === 0 ? forwardRef : () => {}}
               />
             </InputContainer>

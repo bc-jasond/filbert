@@ -1,25 +1,18 @@
 import {
-  NODE_TYPE_H1,
-  NODE_TYPE_P,
-  NODE_TYPE_LI,
+  DOM_ELEMENT_NODE_TYPE_ID,
   DOM_TEXT_NODE_TYPE_ID,
-  KEYCODE_TAB,
-  KEYCODE_SHIFT_RIGHT,
-  KEYCODE_SHIFT_OR_COMMAND_LEFT,
-  KEYCODE_COMMAND_RIGHT,
-  KEYCODE_CTRL,
   KEYCODE_ALT,
   KEYCODE_CAPS_LOCK,
-  KEYCODE_ESC,
-  KEYCODE_PAGE_UP,
-  KEYCODE_PAGE_DOWN,
-  KEYCODE_END,
-  KEYCODE_HOME,
-  KEYCODE_LEFT_ARROW,
-  KEYCODE_UP_ARROW,
-  KEYCODE_RIGHT_ARROW,
+  KEYCODE_COMMAND_RIGHT,
+  KEYCODE_CTRL,
   KEYCODE_DOWN_ARROW,
+  KEYCODE_END,
+  KEYCODE_ENTER,
+  KEYCODE_ESC,
   KEYCODE_F1,
+  KEYCODE_F10,
+  KEYCODE_F11,
+  KEYCODE_F12,
   KEYCODE_F2,
   KEYCODE_F3,
   KEYCODE_F4,
@@ -28,12 +21,19 @@ import {
   KEYCODE_F7,
   KEYCODE_F8,
   KEYCODE_F9,
-  KEYCODE_F10,
-  KEYCODE_F11,
-  KEYCODE_F12,
+  KEYCODE_HOME,
+  KEYCODE_LEFT_ARROW,
+  KEYCODE_PAGE_DOWN,
+  KEYCODE_PAGE_UP,
   KEYCODE_PRINT_SCREEN,
-  DOM_ELEMENT_NODE_TYPE_ID,
-  KEYCODE_ENTER
+  KEYCODE_RIGHT_ARROW,
+  KEYCODE_SHIFT_OR_COMMAND_LEFT,
+  KEYCODE_SHIFT_RIGHT,
+  KEYCODE_TAB,
+  KEYCODE_UP_ARROW,
+  NODE_TYPE_H1,
+  NODE_TYPE_LI,
+  NODE_TYPE_P
 } from './constants';
 import { cleanText } from './utils';
 
@@ -163,8 +163,8 @@ export function getHighlightedSelectionOffsets() {
   }
 
   console.debug('getHighlightedSelectionOffsets MULTIPLE NODES');
-  //const selectedTextStart = startNode.textContent.slice(start[0]);
-  //const selectedTextEnd = endNode.textContent.slice(0, end[1]);
+  // const selectedTextStart = startNode.textContent.slice(start[0]);
+  // const selectedTextEnd = endNode.textContent.slice(0, end[1]);
   return [start, end];
 }
 

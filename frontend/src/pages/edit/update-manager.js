@@ -1,9 +1,10 @@
 import Immutable, { Map } from 'immutable';
 
-import { NODE_ACTION_UPDATE, NODE_ACTION_DELETE } from '../../common/constants';
+import { NODE_ACTION_DELETE, NODE_ACTION_UPDATE } from '../../common/constants';
 
 export default class UpdateManager {
   post;
+
   nodeUpdates;
 
   init(post) {

@@ -3,7 +3,7 @@ import { Redirect } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
 import { apiGet } from '../common/fetch';
 import { getSession, getUserName, signout } from '../common/session';
-import { reviver } from '../pages/edit/document-model';
+import { reviver } from './edit/document-model';
 
 import Footer from './footer';
 import {
@@ -13,9 +13,9 @@ import {
   HeaderContentContainer,
   HeaderLinksContainer,
   HeaderSpacer,
-  LogoLinkStyled,
   LinkStyledSignIn,
   ListDrafts,
+  LogoLinkStyled,
   NewPost,
   SignedInUser
 } from '../common/components/layout-styled-components';
@@ -59,13 +59,13 @@ export default class ViewPost extends React.Component {
     if (shouldRedirectToHome) return <Redirect to="/" />;
 
     return (
-      <React.Fragment>
+      <>
         <Header>
           <HeaderContentContainer>
             <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession() ? (
-                <React.Fragment>
+                <>
                   {post.get('canEdit') && (
                     <EditPost to={`/edit/${post.get('id')}`}>edit</EditPost>
                   )}
@@ -82,7 +82,7 @@ export default class ViewPost extends React.Component {
                   >
                     {getUserName()}
                   </SignedInUser>
-                </React.Fragment>
+                </>
               ) : (
                 <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
               )}
@@ -94,7 +94,7 @@ export default class ViewPost extends React.Component {
           {nodesById.size > 0 && <Document nodesById={nodesById} />}
         </Article>
         <Footer />
-      </React.Fragment>
+      </>
     );
   }
 }

@@ -2,10 +2,10 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {
-  LilSassyMenu,
-  PointClip,
   Arrow,
-  DarkInput
+  DarkInput,
+  LilSassyMenu,
+  PointClip
 } from '../../../common/components/shared-styled-components';
 
 const EditQuoteMenu = styled(LilSassyMenu)`
@@ -39,7 +39,7 @@ const ContextInput = styled(DarkInput)`
 `;
 
 export default ({ offsetTop, nodeModel, updateMeta, forwardRef }) => (
-  <EditQuoteMenu data-is-menu={true} top={offsetTop}>
+  <EditQuoteMenu data-is-menu top={offsetTop}>
     <Row>
       <QuoteInput
         ref={forwardRef}

@@ -2,15 +2,15 @@ import { List, Record } from 'immutable';
 
 import {
   SELECTION_ACTION_BOLD,
-  SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_CODE,
-  SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
-  SELECTION_LINK_URL,
-  SELECTION_START,
+  SELECTION_ACTION_MINI,
+  SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_END,
-  SELECTION_ACTION_MINI
+  SELECTION_LINK_URL,
+  SELECTION_START
 } from '../../common/constants';
 import { cleanTextOrZeroLengthPlaceholder } from '../../common/utils';
 
@@ -201,7 +201,7 @@ export function adjustSelectionOffsetsAndCleanup(
 
   for (let i = 0; i < selections.size; i++) {
     let current = selections.get(i);
-    //const currentJS = current.toJS();
+    // const currentJS = current.toJS();
     if (doesRemoveCharacters) {
       // selection completely enveloped by diff - skip
       if (
@@ -445,7 +445,7 @@ export function splitSelectionsAtCaretOffset(
   const selections = getSelections(leftNodeModel);
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
-    //const currentJS = current.toJS();
+    // const currentJS = current.toJS();
     if (current.get(SELECTION_END) <= caretOffset) {
       left = left.push(current);
       continue;
@@ -475,7 +475,7 @@ export function splitSelectionsAtCaretOffset(
 
 export function concatSelections(leftModel, rightModel) {
   const left = getSelections(leftModel);
-  let right = getSelections(rightModel);
+  const right = getSelections(rightModel);
   let newSelections = left.slice();
   let leftOffset = left.last(Selection()).get(SELECTION_END);
   if (leftOffset === -1) {

@@ -87,7 +87,7 @@ export function getCanonicalFromTitle(title) {
     // keep only alpha numeric chars
     .replace(/[^0-9a-z-]/g, '');
   // append a hash
-  canonical += '-' + s4();
+  canonical += `-${s4()}`;
   // dedupe hyphens
   return canonical.replace(/-+/g, '-');
 }

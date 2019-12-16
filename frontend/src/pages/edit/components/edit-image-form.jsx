@@ -2,13 +2,13 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {
-  SvgIconMixin,
-  LilSassyMenu,
-  IconButton,
-  DarkInput,
+  Arrow,
   ButtonSeparator,
+  DarkInput,
+  IconButton,
+  LilSassyMenu,
   PointClip,
-  Arrow
+  SvgIconMixin
 } from '../../../common/components/shared-styled-components';
 import IconImageSvg from '../../../../assets/icons/image.svg';
 import IconRotateSvg from '../../../../assets/icons/rotate.svg';
@@ -46,7 +46,7 @@ export default ({
   imageRotate,
   forwardRef
 }) => (
-  <EditImageMenu data-is-menu={true} top={offsetTop}>
+  <EditImageMenu data-is-menu top={offsetTop}>
     <IconButton onClick={() => fileInputRef.current.click()}>
       <IconImage />
     </IconButton>
