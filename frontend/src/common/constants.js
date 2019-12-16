@@ -78,7 +78,8 @@ export const SELECTION_END = 'end';
 export const POST_ACTION_REDIRECT_TIMEOUT = 1000;
 
 // ENV
-export const { API_URL } = process.env;
+/* eslint-disable-next-line prefer-destructuring */
+export const API_URL = process.env.API_URL;
 
 // AUTH
 export const AUTH_TOKEN_KEY = 'filbert-token';

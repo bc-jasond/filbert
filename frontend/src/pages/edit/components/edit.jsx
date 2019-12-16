@@ -744,6 +744,7 @@ export default class EditPost extends React.Component {
       }
       selectionOffsets = [[0, 0, editSectionNode.get('id')]];
     }
+    evt.persist(); // because of awaits below
     // close everything by default, this.sectionEdit() callback will fire after this to override
     await this.closeAllEditContentMenus();
     await this.manageInsertMenu(evt, selectionOffsets);
