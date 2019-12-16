@@ -142,6 +142,7 @@ export default class InsertSectionMenuComponent extends React.Component {
 
     const { currentIdx } = this.state;
 
+    /* eslint-disable-next-line default-case */
     switch (evt.keyCode) {
       case KEYCODE_SHIFT_OR_COMMAND_LEFT: // fall-through
       case KEYCODE_SHIFT_RIGHT: {
@@ -154,7 +155,9 @@ export default class InsertSectionMenuComponent extends React.Component {
           return;
         }
         this.didHitShift = true;
-        setTimeout(() => (this.didHitShift = false), 500);
+        setTimeout(() => {
+          this.didHitShift = false;
+        }, 500);
         return;
       }
       case KEYCODE_LEFT_ARROW: {
@@ -176,8 +179,6 @@ export default class InsertSectionMenuComponent extends React.Component {
           const [_, __, cb] = this.sectionTypes[currentIdx];
           cb();
         }
-      }
-      default: {
       }
     }
   };

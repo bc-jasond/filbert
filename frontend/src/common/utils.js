@@ -8,7 +8,11 @@ import {
 
 export function confirmPromise(msg) {
   return new Promise((resolve, reject) => {
-    confirm(msg) ? resolve() : reject();
+    if (confirm(msg)) {
+      resolve();
+      return;
+    }
+    reject();
   });
 }
 

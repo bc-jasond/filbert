@@ -70,7 +70,7 @@ export default ({
         ({ fieldName, StyledComponent, disabled }, idx) => {
           const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
           return (
-            <InputContainer key={idx}>
+            <InputContainer key={fieldName}>
               <Label htmlFor={fieldName} error={false /* TODO */}>
                 {fieldName}
               </Label>

@@ -48,7 +48,7 @@ export default class ViewPost extends React.Component {
       });
     } catch (err) {
       console.error(err);
-      this.setState({ pageContent: null, shouldShow404: true });
+      this.setState({ shouldShow404: true });
     }
   }
 

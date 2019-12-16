@@ -133,7 +133,7 @@ export default class EditPost extends React.Component {
         return;
       }
       console.debug('EDIT - didUpdate');
-
+      /* eslint-disable-next-line react/no-did-update-set-state */
       this.setState({
         shouldRedirect: false,
         insertMenuNode: Map()
@@ -1173,7 +1173,7 @@ export default class EditPost extends React.Component {
 
     return (
       <>
-        <main onMouseUp={this.handleMouseUp}>
+        <div role="presentation" onMouseUp={this.handleMouseUp}>
           <Header>
             <HeaderContentContainer>
               <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
@@ -1212,7 +1212,7 @@ export default class EditPost extends React.Component {
             )}
           </ArticleStyled>
           <Footer />
-        </main>
+        </div>
         {shouldShowPublishPostMenu && (
           <PublishPostForm
             post={post}

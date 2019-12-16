@@ -8,10 +8,6 @@ export async function signin(username, password) {
   return { token, session };
 }
 
-export function getAuthToken() {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
-}
-
 export async function signout() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(SESSION_KEY);
