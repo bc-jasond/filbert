@@ -60,7 +60,8 @@ export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
   } else {
     const queue = [...containerNode.childNodes];
     while (queue.length) {
-      if (infiniteLoopCount++ > 1000) {
+      infiniteLoopCount += 1;
+      if (infiniteLoopCount > 1000) {
         throw new Error('setCaret is Fuera de Control!!!');
       }
       // find first (queue), find last - (stack) yay!

@@ -19,6 +19,9 @@
     },
     "rules": {
         "no-else-return": 2,
+        "no-plusplus": ["error", {
+            "allowForLoopAfterthoughts": true
+        }],
         "prefer-destructuring": ["error", {
             "VariableDeclarator": {
                 "array": false,
