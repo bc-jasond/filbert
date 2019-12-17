@@ -465,6 +465,12 @@ export default class EditPost extends React.Component {
       return;
     }
     // we're currently inside a selected MetaType node
+    // only leave edit section menu if user hit's up / down arrow
+    // user can still use tab to move vertically between inputs
+    const { shouldShowEditSectionMenu } = this.state;
+    if (shouldShowEditSectionMenu && ![KEYCODE_UP_ARROW, KEYCODE_DOWN_ARROW].includes(evt.keyCode)) {
+      return;
+    }
     evt.stopPropagation();
     evt.preventDefault();
     if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
@@ -650,7 +656,7 @@ export default class EditPost extends React.Component {
       // no range means the menu is closed
       (!getRange() ||
         // allow shift through so user can double tap it to open the menu
-        evt.shiftKey)
+        [KEYCODE_SHIFT_RIGHT, KEYCODE_SHIFT_OR_COMMAND_LEFT].includes(evt.keyCode))
     ) {
       // pass this event up to the menu to handle
       this.setState({ insertMenuDomEvent: evt });
@@ -1114,7 +1120,9 @@ export default class EditPost extends React.Component {
             startOffset,
             endOffset
           ),
-          formatSelectionMenuTopOffset: rect.top,
+          // NOTE: need to add current vertical scroll position of the window to the
+          // rect position to get offset relative to the document
+          formatSelectionMenuTopOffset: rect.top + window.scrollY,
           formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2
         },
         resolve
