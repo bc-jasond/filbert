@@ -110,15 +110,20 @@ export function getRange() {
  * terms of an offset within the parent (AKA first ancestor with a 'name'
  * attribute) content
  *
- * @return [
- *  [start, end, nodeId], // starting node & offset
- *  [nodeId...],          // *optional ending node & offset, if user has highlighted across > 1 nodes
- * ]
+ * @return {
+ *  startNodeCaretStart, int
+ *  startNodeCaretEnd, int
+ *  startNodeId, string
+ *  //end node meta: if user has highlighted across > 1 nodes
+ *  endNodeCaretStart, int
+ *  endNodeCaretEnd, int
+ *  endNodeId, string
+ * }
  */
 export function getHighlightedSelectionOffsets() {
   const range = getRange();
   if (!range) {
-    return [[]];
+    return {};
   }
   const startNode = getFirstAncestorWithId(range.startContainer);
   const endNode = getFirstAncestorWithId(range.endContainer);
@@ -127,46 +132,52 @@ export function getHighlightedSelectionOffsets() {
   const rangeEndOffset = range.endOffset;
 
   if (startNode === null || endNode === null) {
-    return [[]];
+    return {};
   }
 
   const startNodeOffset = getParagraphContentOffset(
     range.startContainer,
     startNode
   );
-  let startOffset = rangeStartOffset + startNodeOffset;
+  let startNodeCaretStart = rangeStartOffset + startNodeOffset;
   // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
   if (rangeStartOffset === 1 && cleanText(startNode.textContent).length === 0) {
-    startOffset = 0;
+    startNodeCaretStart = 0;
   }
   // in consumer code range.collapsed can be checked by start[0] === start[1]
-  const start = [
-    startOffset,
-    range.collapsed ? startOffset : cleanText(startNode.textContent).length,
-    getNodeId(startNode)
-  ];
+  const start = {
+    startNodeCaretStart,
+    startNodeCaretEnd: range.collapsed
+      ? startNodeCaretStart
+      : cleanText(startNode.textContent).length,
+    startNodeId: getNodeId(startNode)
+  };
   if (range.collapsed) {
-    return [start];
+    return start;
   }
 
   const endNodeOffset = getParagraphContentOffset(range.endContainer, endNode);
-  let endOffset = rangeEndOffset + endNodeOffset;
+  let endNodeCaretEnd = rangeEndOffset + endNodeOffset;
   // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
   if (rangeEndOffset === 1 && cleanText(endNode.textContent).length === 0) {
-    endOffset = 0;
+    endNodeCaretEnd = 0;
   }
-  const end = [0, endOffset, getNodeId(endNode)];
+  const end = {
+    endNodeCaretStart: 0,
+    endNodeCaretEnd: endNodeCaretEnd,
+    endNodeId: getNodeId(endNode)
+  };
 
   if (startNode === endNode) {
-    start[1] = endOffset;
+    start.startNodeCaretEnd = endNodeCaretEnd;
     console.debug('getHighlightedSelectionOffsets SINGLE NODE');
-    return [start];
+    return start;
   }
 
   console.debug('getHighlightedSelectionOffsets MULTIPLE NODES');
   // const selectedTextStart = startNode.textContent.slice(start[0]);
   // const selectedTextEnd = endNode.textContent.slice(0, end[1]);
-  return [start, end];
+  return { ...start, ...end };
 }
 
 /**

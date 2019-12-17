@@ -107,7 +107,7 @@ export default class EditPost extends React.Component {
       shouldShowPostSuccess: null
     };
   }
-  
+
   async componentDidMount() {
     console.debug('EDIT - didMount');
     try {
@@ -381,8 +381,8 @@ export default class EditPost extends React.Component {
   // return the prev or next node if the caret is at the "edge" of a paragraph
   // and the user hits the corresponding arrow key
   getNeighborOnArrowNavigation = (evt, selectionOffsets) => {
-    const [[_, __, currentNodeId]] = selectionOffsets;
-    const currentNode = this.documentModel.getNode(currentNodeId);
+    const { startNodeId } = selectionOffsets;
+    const currentNode = this.documentModel.getNode(startNodeId);
     let neighborNode = Map();
     const [
       isAtTop,
@@ -397,13 +397,13 @@ export default class EditPost extends React.Component {
         // have to hit left twice without this code
         (isAtStart || currentNode.get('content', '').length === 0))
     ) {
-      neighborNode = this.documentModel.getPrevNode(currentNodeId);
+      neighborNode = this.documentModel.getPrevNode(startNodeId);
     } else if (
       (evt.keyCode === KEYCODE_DOWN_ARROW && isAtBottom) ||
       (evt.keyCode === KEYCODE_RIGHT_ARROW &&
         (isAtEnd || currentNode.get('content', '').length === 0))
     ) {
-      neighborNode = this.documentModel.getNextNode(currentNodeId);
+      neighborNode = this.documentModel.getNextNode(startNodeId);
     }
     return neighborNode;
   };
@@ -422,7 +422,7 @@ export default class EditPost extends React.Component {
       return;
     }
     console.debug('ARROW');
-    const [[startNodeCaretStart, startNodeCaretEnd, _]] = selectionOffsets;
+    const { startNodeCaretStart, startNodeCaretEnd } = selectionOffsets;
 
     // collapse range if there's highlighted selection and the user hits an arrow
     if (
@@ -469,7 +469,10 @@ export default class EditPost extends React.Component {
     // only leave edit section menu if user hit's up / down arrow
     // user can still use tab to move vertically between inputs
     const { shouldShowEditSectionMenu } = this.state;
-    if (shouldShowEditSectionMenu && ![KEYCODE_UP_ARROW, KEYCODE_DOWN_ARROW].includes(evt.keyCode)) {
+    if (
+      shouldShowEditSectionMenu &&
+      ![KEYCODE_UP_ARROW, KEYCODE_DOWN_ARROW].includes(evt.keyCode)
+    ) {
       return;
     }
     evt.stopPropagation();
@@ -589,7 +592,7 @@ export default class EditPost extends React.Component {
       return;
     }
 
-    const [[startNodeCaretStart, startNodeCaretEnd, _]] = selectionOffsets;
+    const { startNodeCaretStart, startNodeCaretEnd } = selectionOffsets;
     // select-and-type ?? delete selection first
     if (startNodeCaretStart !== startNodeCaretEnd) {
       doDelete(this.documentModel, selectionOffsets);
@@ -634,19 +637,23 @@ export default class EditPost extends React.Component {
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
     await this.commitUpdates(focusNodeId, caretOffset);
-  }
+  };
 
   // MAIN "ON" EVENT CALLBACKS
   getSelectionOffsetsOrEditSectionNode = () => {
     let selectionOffsets = getHighlightedSelectionOffsets();
-    const [start] = selectionOffsets;
-    if (start.length === 0) {
+    const { startNodeId } = selectionOffsets;
+    if (!startNodeId) {
       const { editSectionNode } = this.state;
       // if there's a MetaNode selected, override DOM selection
       if (!editSectionNode.get('id')) {
-        return [[]];
+        return {};
       }
-      selectionOffsets = [[0, 0, editSectionNode.get('id')]];
+      selectionOffsets = {
+        startNodeCaretStart: 0,
+        startNodeCaretEnd: 0,
+        startNodeId: editSectionNode.get('id')
+      };
     }
     return selectionOffsets;
   };
@@ -660,7 +667,9 @@ export default class EditPost extends React.Component {
       // no range means the menu is closed
       (!getRange() ||
         // allow shift through so user can double tap it to open the menu
-        [KEYCODE_SHIFT_RIGHT, KEYCODE_SHIFT_OR_COMMAND_LEFT].includes(evt.keyCode))
+        [KEYCODE_SHIFT_RIGHT, KEYCODE_SHIFT_OR_COMMAND_LEFT].includes(
+          evt.keyCode
+        ))
     ) {
       // pass this event up to the menu to handle
       this.setState({ insertMenuDomEvent: evt });
@@ -728,9 +737,9 @@ export default class EditPost extends React.Component {
       return;
     }
     const selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-    const [start] = selectionOffsets;
+    const { startNodeId } = selectionOffsets;
     // if the caret isn't on a node with an id, bail
-    if (start.length === 0) {
+    if (!startNodeId) {
       return;
     }
     console.debug('INPUT');
@@ -744,16 +753,7 @@ export default class EditPost extends React.Component {
 
   handleMouseUp = async evt => {
     // console.debug('MouseUp: ', evt)
-    let selectionOffsets = getHighlightedSelectionOffsets();
-    const [start] = selectionOffsets;
-    if (start.length === 0) {
-      const { editSectionNode } = this.state;
-      // if there's a MetaNode selected, override DOM selection
-      if (!editSectionNode.get('id')) {
-        return;
-      }
-      selectionOffsets = [[0, 0, editSectionNode.get('id')]];
-    }
+    let selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
     evt.persist(); // because of awaits below
     // close everything by default, this.sectionEdit() callback will fire after this to override
     await this.closeAllEditContentMenus();
@@ -769,9 +769,11 @@ export default class EditPost extends React.Component {
     this.didCut = true;
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
-    const [
-      [startNodeCaretStart, startNodeCaretEnd, startNodeId]
-    ] = selectionOffsets;
+    const {
+      startNodeCaretStart,
+      startNodeCaretEnd,
+      startNodeId
+    } = selectionOffsets;
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "paste" with clipboard data...
     if (evt.type !== 'cut') {
@@ -806,7 +808,7 @@ export default class EditPost extends React.Component {
 
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
-    const [[startNodeCaretStart, startNodeCaretEnd, _]] = selectionOffsets;
+    const { startNodeCaretStart, startNodeCaretEnd } = selectionOffsets;
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "paste" with clipboard data...
     if (evt.type !== 'paste') {
@@ -836,21 +838,23 @@ export default class EditPost extends React.Component {
   manageInsertMenu = async (evt, selectionOffsetsArg) => {
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
-    const [
-      [caretPositionStart, caretPositionEnd, selectedNodeId]
-    ] = selectionOffsets;
-    if (!selectedNodeId) {
+    const {
+      startNodeCaretStart,
+      startNodeCaretEnd,
+      startNodeId
+    } = selectionOffsets;
+    if (!startNodeId) {
       return;
     }
 
     console.debug('MANAGE INSERT');
 
-    const selectedNodeMap = this.documentModel.getNode(selectedNodeId);
-    const selectedNode = getNodeById(selectedNodeId);
+    const selectedNodeMap = this.documentModel.getNode(startNodeId);
+    const selectedNode = getNodeById(startNodeId);
 
     if (
       selectedNode &&
-      caretPositionStart === caretPositionEnd &&
+      startNodeCaretStart === startNodeCaretEnd &&
       selectedNodeMap.get('type') === NODE_TYPE_P &&
       selectedNodeMap.get('content', '').length === 0
     ) {
@@ -1063,12 +1067,17 @@ export default class EditPost extends React.Component {
   // TODO: bug - selection highlighting disappears on user input on format selection menu
   manageFormatSelectionMenu = async (evt, selectionOffsets) => {
     const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
-    const [[startOffset, endOffset, selectedNodeId], end] = selectionOffsets;
+    const {
+      startNodeCaretStart,
+      startNodeCaretEnd,
+      startNodeId,
+      endNodeId
+    } = selectionOffsets;
     if (
       // no node
-      !selectedNodeId ||
+      !startNodeId ||
       // collapsed caret
-      startOffset === endOffset ||
+      startNodeCaretStart === startNodeCaretEnd ||
       // hit esc
       isEscKey
     ) {
@@ -1089,7 +1098,7 @@ export default class EditPost extends React.Component {
       return;
     }
 
-    if (end) {
+    if (endNodeId) {
       // TODO: support highlight across multiple nodes
       console.info(
         '// TODO: format selection across nodes: ',
@@ -1107,14 +1116,14 @@ export default class EditPost extends React.Component {
     const range = getRange();
     console.info(
       'SELECTION: ',
-      startOffset,
-      endOffset,
-      end,
+      startNodeCaretStart,
+      startNodeCaretEnd,
+      endNodeId,
       range,
       range.getBoundingClientRect()
     );
     const rect = range.getBoundingClientRect();
-    const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
+    const selectedNodeModel = this.documentModel.getNode(startNodeId);
 
     await new Promise(resolve =>
       this.setState(
@@ -1122,8 +1131,8 @@ export default class EditPost extends React.Component {
           formatSelectionNode: selectedNodeModel,
           formatSelectionModel: getSelection(
             selectedNodeModel,
-            startOffset,
-            endOffset
+            startNodeCaretStart,
+            startNodeCaretEnd
           ),
           // NOTE: need to add current vertical scroll position of the window to the
           // rect position to get offset relative to the document

@@ -7,25 +7,25 @@ import { handleEnterTextType } from './handle-text-type';
  * @returns focusNodeId|undefined string i.e. "4eb7"
  */
 export function doSplit(documentModel, selectionOffsets) {
-  const [[caretPosition, _, selectedNodeId]] = selectionOffsets;
-  if (selectedNodeId === 'null' || !selectedNodeId) {
-    console.warn('doSplit() bad selection, no id ', selectedNodeId);
+  const { startNodeCaretStart, startNodeId } = selectionOffsets;
+  if (startNodeId === 'null' || !startNodeId) {
+    console.warn('doSplit() bad selection, no id ', startNodeId);
     return null;
   }
-  if (documentModel.isMetaType(selectedNodeId)) {
+  if (documentModel.isMetaType(startNodeId)) {
     console.debug('doSplit() MetaType');
-    return handleEnterMetaType(documentModel, selectedNodeId);
+    return handleEnterMetaType(documentModel, startNodeId);
   }
 
-  console.debug('doSplit()', selectedNodeId, caretPosition);
+  console.debug('doSplit()', startNodeId, startNodeCaretStart);
   // split selectedNodeContent at caret
   const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(
-    documentModel.getNode(selectedNodeId).get('content')
+    documentModel.getNode(startNodeId).get('content')
   );
   return handleEnterTextType(
     documentModel,
-    selectedNodeId,
-    caretPosition,
+    startNodeId,
+    startNodeCaretStart,
     selectedNodeContent
   );
 }

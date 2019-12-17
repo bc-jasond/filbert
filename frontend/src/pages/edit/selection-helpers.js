@@ -391,9 +391,9 @@ export function upsertSelection(nodeModel, newSelection) {
     ) {
       newSelections = newSelections.push(newSelection);
       didPushNewSelection = true;
-    } else
+    }
     // current selection doesn't overlap - push it
-    if (
+    else if (
       current.get(SELECTION_END) <= newSelection.get(SELECTION_START) ||
       current.get(SELECTION_START) >= newSelection.get(SELECTION_END)
     ) {

@@ -2,16 +2,16 @@
 import { handlePasteTextType } from './handle-text-type';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
-  const [[caretPositionStart, _, selectedNodeId]] = selectionOffsets;
+  const { startNodeCaretStart, startNodeId } = selectionOffsets;
 
-  if (!selectedNodeId) {
+  if (!startNodeId) {
     return [];
   }
 
   // split selectedNodeContent at caret
   const clipboardText = clipboardData.getData('text/plain');
 
-  if (!documentModel.isTextType(selectedNodeId)) {
+  if (!documentModel.isTextType(startNodeId)) {
     console.warn(
       'doPaste() - trying to paste into a MetaType node is not supported',
       selectionOffsets,
@@ -21,8 +21,8 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   }
   return handlePasteTextType(
     documentModel,
-    selectedNodeId,
-    caretPositionStart,
+    startNodeId,
+    startNodeCaretStart,
     clipboardText
   );
 }

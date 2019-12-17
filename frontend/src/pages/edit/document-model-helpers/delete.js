@@ -29,10 +29,14 @@ export function doDelete(documentModel, selectionOffsets) {
     );
     documentModel.update(node);
   }
-  const [
-    [startNodeCaretStart, startNodeCaretEnd, startNodeId],
-    end
-  ] = selectionOffsets;
+  const {
+    startNodeCaretStart,
+    startNodeCaretEnd,
+    startNodeId,
+    endNodeCaretStart,
+    endNodeCaretEnd,
+    endNodeId
+  } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('doDelete() bad selection, no id ', startNodeId);
     return [];
@@ -55,8 +59,7 @@ export function doDelete(documentModel, selectionOffsets) {
    */
 
   // if there are completely highlighted nodes in the middle of the selection - just delete them
-  if (end) {
-    const [_, __, endNodeId] = end;
+  if (endNodeId) {
     const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
     console.info('doDelete() - middle nodes', middle);
     middle.forEach(nodeId => {
@@ -73,10 +76,9 @@ export function doDelete(documentModel, selectionOffsets) {
   // default the selectedNode to "startNode" - it can change to endNode below
   let selectedNodeId = startNodeId;
   let doesMergeParagraphs = false;
-  if (end) {
+  if (endNodeId) {
     // since we're spanning more than one node, we might merge (if we don't delete the "end" node)
     doesMergeParagraphs = true;
-    const [endNodeCaretStart, endNodeCaretEnd, endNodeId] = end;
     const endDiffLength = endNodeCaretEnd - endNodeCaretStart;
     // Set this to update focusNode
     selectedNodeId = endNodeId;
