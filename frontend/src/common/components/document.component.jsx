@@ -95,13 +95,14 @@ export default class Document extends React.PureComponent {
     const children = [];
     this.current = DocumentModel.getFirstNode(nodesById);
     while (this.current.get('id')) {
+      let shouldCallNext = true;
       const currentType = this.current.get('type');
       if (currentType === NODE_TYPE_P || currentType === NODE_TYPE_LI) {
         children.push(this.getContentSectionTags());
-        continue; // next() already in correct position
+        shouldCallNext = false; // next() already in correct position
       } else if (currentType === NODE_TYPE_PRE) {
         children.push(this.getNextPreTags());
-        continue; // next() already in correct position
+        shouldCallNext = false; // next() already in correct position
       } else if (currentType === NODE_TYPE_H1) {
         children.push(
           <H1
@@ -151,7 +152,9 @@ export default class Document extends React.PureComponent {
       } else {
         console.error('Error: Unknown type! ', this.current.get('type'));
       }
-      this.next();
+      if (shouldCallNext) {
+        this.next();
+      }
     }
     return <div data-type={NODE_TYPE_ROOT}>{children}</div>;
   }

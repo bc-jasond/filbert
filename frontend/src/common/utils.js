@@ -49,10 +49,6 @@ export function cleanText(text = '') {
   for (let i = 0; i < text.length; i++) {
     const currentChar = text.charAt(i);
     const current = text.charCodeAt(i);
-    // remove all zero length char placeholders
-    if (currentChar === ZERO_LENGTH_CHAR) {
-      continue;
-    }
     // don't allow:
     // 1) a space at the beginning
     // 2) a space at the end
@@ -64,10 +60,10 @@ export function cleanText(text = '') {
       const nbsp = String.fromCharCode(KEYCODE_SPACE_NBSP);
       final += nbsp;
       last = nbsp;
-      continue;
+    } else if (currentChar !== ZERO_LENGTH_CHAR) {
+      final += currentChar;
+      last = current;
     }
-    final += currentChar;
-    last = current;
   }
   return final;
 }

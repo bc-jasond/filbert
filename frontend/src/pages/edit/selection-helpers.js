@@ -197,8 +197,8 @@ export function adjustSelectionOffsetsAndCleanup(
     return nodeModel.deleteIn(['meta', 'selections']);
   }
   let newSelections = List();
-  // TODO: might need to account for the 'placeholder' character here...
-
+  // TODO: refactor to remove continue statements?
+  /* eslint-disable no-continue */
   for (let i = 0; i < selections.size; i++) {
     let current = selections.get(i);
     // const currentJS = current.toJS();
@@ -275,6 +275,7 @@ export function adjustSelectionOffsetsAndCleanup(
       newSelections = newSelections.push(current);
     }
   }
+  /* eslint-enable no-continue */
 
   let newModel = nodeModel;
   if (!selections.equals(newSelections)) {
@@ -390,37 +391,36 @@ export function upsertSelection(nodeModel, newSelection) {
     ) {
       newSelections = newSelections.push(newSelection);
       didPushNewSelection = true;
-      continue;
-    }
+    } else
     // current selection doesn't overlap - push it
     if (
       current.get(SELECTION_END) <= newSelection.get(SELECTION_START) ||
       current.get(SELECTION_START) >= newSelection.get(SELECTION_END)
     ) {
       newSelections = newSelections.push(current);
-      continue;
+    } else {
+      // current selection overlaps to the left
+      if (current.get(SELECTION_START) < newSelection.get(SELECTION_START)) {
+        newSelections = newSelections.push(
+          current.set(SELECTION_END, newSelection.get(SELECTION_START))
+        );
+      }
+      // push new selection
+      if (!didPushNewSelection) {
+        newSelections = newSelections.push(newSelection);
+        didPushNewSelection = true;
+      }
+      // current selection overlaps to the right
+      if (current.get(SELECTION_END) > newSelection.get(SELECTION_END)) {
+        newSelections = newSelections.push(
+          current.set(SELECTION_START, newSelection.get(SELECTION_END))
+        );
+      }
+      // current selection falls completely within newSelection - skip since it's styles have already been merged with `applyFormatsOfOverlappingSelections` (noop)
+      // if (current.get(SELECTION_START) >= newSelection.get(SELECTION_START) && current.get(SELECTION_END) <= newSelection.get(SELECTION_END)) {
+      //   continue;
+      // }
     }
-    // current selection overlaps to the left
-    if (current.get(SELECTION_START) < newSelection.get(SELECTION_START)) {
-      newSelections = newSelections.push(
-        current.set(SELECTION_END, newSelection.get(SELECTION_START))
-      );
-    }
-    // push new selection
-    if (!didPushNewSelection) {
-      newSelections = newSelections.push(newSelection);
-      didPushNewSelection = true;
-    }
-    // current selection overlaps to the right
-    if (current.get(SELECTION_END) > newSelection.get(SELECTION_END)) {
-      newSelections = newSelections.push(
-        current.set(SELECTION_START, newSelection.get(SELECTION_END))
-      );
-    }
-    // current selection falls completely within newSelection - skip since it's styles have already been merged with `applyFormatsOfOverlappingSelections` (noop)
-    // if (current.get(SELECTION_START) >= newSelection.get(SELECTION_START) && current.get(SELECTION_END) <= newSelection.get(SELECTION_END)) {
-    //   continue;
-    // }
   }
 
   nodeModel = setSelections(nodeModel, newSelections);
@@ -448,23 +448,21 @@ export function splitSelectionsAtCaretOffset(
     // const currentJS = current.toJS();
     if (current.get(SELECTION_END) <= caretOffset) {
       left = left.push(current);
-      continue;
-    }
-    if (current.get(SELECTION_START) >= caretOffset) {
+    } else if (current.get(SELECTION_START) >= caretOffset) {
       right = right.push(
         current
           .set(SELECTION_START, current.get(SELECTION_START) - caretOffset)
           .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
       );
-      continue;
+    } else {
+      // caretOffset must be in the middle of a selection, split
+      left = left.push(current.set(SELECTION_END, caretOffset));
+      right = right.push(
+        current
+          .set(SELECTION_START, 0)
+          .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
+      );
     }
-    // caretOffset must be in the middle of a selection, split
-    left = left.push(current.set(SELECTION_END, caretOffset));
-    right = right.push(
-      current
-        .set(SELECTION_START, 0)
-        .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
-    );
   }
   leftNodeModel = setSelections(leftNodeModel, left);
   leftNodeModel = adjustSelectionOffsetsAndCleanup(leftNodeModel);
