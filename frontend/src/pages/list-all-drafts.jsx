@@ -48,10 +48,10 @@ export default class AllPosts extends React.Component {
   loadDrafts = async () => {
     const drafts = await apiGet('/draft');
     const postsFormatted = fromJS(
-      drafts.map(draft => {
-        draft.updated = formatPostDate(draft.updated);
-        return draft;
-      })
+      drafts.map(draft => ({
+        ...draft,
+        updated: formatPostDate(draft.updated)
+      }))
     );
     this.setState({ drafts: postsFormatted });
   };

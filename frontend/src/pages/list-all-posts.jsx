@@ -47,11 +47,11 @@ export default class AllPosts extends React.Component {
   loadPosts = async () => {
     const posts = await apiGet('/post');
     const postsFormatted = fromJS(
-      posts.map(post => {
-        post.published = formatPostDate(post.published);
-        post.updated = formatPostDate(post.updated);
-        return post;
-      })
+      posts.map(post => ({
+        ...post,
+        published: formatPostDate(post.published),
+        updated: formatPostDate(post.updated)
+      }))
     );
     this.setState({ posts: postsFormatted });
   };

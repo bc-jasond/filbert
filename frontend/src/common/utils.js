@@ -33,8 +33,8 @@ export function s4() {
 }
 
 export function getMapWithId(obj) {
-  obj.id = obj.id || s4();
-  return Map(obj);
+  const { id } = obj;
+  return Map({ ...obj, id: id || s4() });
 }
 
 export function cleanTextOrZeroLengthPlaceholder(text) {

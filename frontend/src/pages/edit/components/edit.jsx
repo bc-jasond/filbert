@@ -753,7 +753,7 @@ export default class EditPost extends React.Component {
 
   handleMouseUp = async evt => {
     // console.debug('MouseUp: ', evt)
-    let selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
+    const selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
     evt.persist(); // because of awaits below
     // close everything by default, this.sectionEdit() callback will fire after this to override
     await this.closeAllEditContentMenus();

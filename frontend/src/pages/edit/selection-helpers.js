@@ -375,9 +375,10 @@ export function getSelection(nodeModel, start, end) {
  * 2) merge overlapping selections - adjust start or end positions of overlapping selections,
  * guarantee no overlaps at rest
  */
-export function upsertSelection(nodeModel, newSelection) {
+export function upsertSelection(nodeModelArg, newSelection) {
   let didPushNewSelection = false;
   let newSelections = List();
+  let nodeModel = nodeModelArg;
   const selections = getSelections(nodeModel);
   if (selections.size === 0) {
     newSelections = newSelections.push(newSelection);
@@ -436,12 +437,14 @@ export function upsertSelection(nodeModel, newSelection) {
  * @returns {List<any>[]}
  */
 export function splitSelectionsAtCaretOffset(
-  leftNodeModel,
-  rightNodeModel,
+  leftNodeModelArg,
+  rightNodeModelArg,
   caretOffset
 ) {
   let left = List();
   let right = List();
+  let leftNodeModel = leftNodeModelArg;
+  let rightNodeModel = rightNodeModelArg;
   const selections = getSelections(leftNodeModel);
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
@@ -471,7 +474,9 @@ export function splitSelectionsAtCaretOffset(
   return [leftNodeModel, rightNodeModel];
 }
 
-export function concatSelections(leftModel, rightModel) {
+export function concatSelections(leftModelArg, rightModelArg) {
+  let leftModel = leftModelArg;
+  let rightModel = rightModelArg;
   const left = getSelections(leftModel);
   const right = getSelections(rightModel);
   let newSelections = left.slice();

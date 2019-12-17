@@ -39,7 +39,8 @@ import { cleanText } from './utils';
 
 let infiniteLoopCount = 0;
 
-export function setCaret(nodeId, offset = -1, shouldFindLastNode = false) {
+export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
+  let offset = offsetArg;
   const [containerNode] = document.getElementsByName(nodeId);
   if (!containerNode) {
     console.warn('setCaret containerNode NOT FOUND ', nodeId);
@@ -164,7 +165,7 @@ export function getHighlightedSelectionOffsets() {
   }
   const end = {
     endNodeCaretStart: 0,
-    endNodeCaretEnd: endNodeCaretEnd,
+    endNodeCaretEnd,
     endNodeId: getNodeId(endNode)
   };
 
@@ -198,7 +199,8 @@ export function replaceHighlightedSelection(
  * @param paragraph
  * @returns {number}
  */
-function getParagraphContentOffset(formattingNode, paragraph) {
+function getParagraphContentOffset(formattingNodeArg, paragraph) {
+  let formattingNode = formattingNodeArg;
   if (formattingNode === paragraph) {
     return 0;
   }

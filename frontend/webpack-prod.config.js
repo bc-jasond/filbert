@@ -2,7 +2,7 @@ const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-module.exports = (/*env, argv*/) => {
+module.exports = (/* env, argv */) => {
   const entry = ['@babel/polyfill'];
   entry.push('./src/index-prod.jsx');
 
@@ -59,7 +59,7 @@ module.exports = (/*env, argv*/) => {
       splitChunks: {
         cacheGroups: {
           vendor: {
-            test: /[\\\/]node_modules[\\\/]/,
+            test: /node_modules/,
             name: 'vendors',
             chunks: 'all'
           }
