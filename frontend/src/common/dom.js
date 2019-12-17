@@ -97,7 +97,7 @@ export function removeAllRanges() {
 export function getRange() {
   const sel = window.getSelection();
   if (sel.rangeCount < 1) {
-    return;
+    return null;
   }
   return sel.getRangeAt(0);
 }
@@ -240,7 +240,7 @@ export function getChildTextNodeAndOffsetFromParentOffset(
 }
 
 export function getFirstAncestorWithId(domNode) {
-  if (!domNode) return;
+  if (!domNode) return null;
   if (
     domNode.nodeType === DOM_ELEMENT_NODE_TYPE_ID &&
     domNode.getAttribute('name')

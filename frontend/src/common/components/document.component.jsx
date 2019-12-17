@@ -34,7 +34,7 @@ export default class Document extends React.PureComponent {
 
   getNextPTags() {
     if (this.current.get('type') !== NODE_TYPE_P) {
-      return;
+      return null;
     }
     const children = [];
     while (this.current.get('type') === NODE_TYPE_P) {
@@ -46,7 +46,7 @@ export default class Document extends React.PureComponent {
 
   getNextLiTags() {
     if (this.current.get('type') !== NODE_TYPE_LI) {
-      return;
+      return null;
     }
     const children = [];
     while (this.current.get('type') === NODE_TYPE_LI) {

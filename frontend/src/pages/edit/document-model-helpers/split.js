@@ -9,7 +9,7 @@ export function doSplit(documentModel, selectionOffsets) {
   const [[caretPosition, _, selectedNodeId]] = selectionOffsets;
   if (selectedNodeId === 'null' || !selectedNodeId) {
     console.warn('doSplit() bad selection, no id ', selectedNodeId);
-    return;
+    return null;
   }
   if (documentModel.isMetaType(selectedNodeId)) {
     console.debug('doSplit() MetaType');

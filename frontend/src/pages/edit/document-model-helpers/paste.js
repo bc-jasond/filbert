@@ -16,7 +16,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
       selectionOffsets,
       clipboardData
     );
-    return;
+    return [];
   }
   return handlePasteTextType(
     documentModel,

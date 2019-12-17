@@ -57,7 +57,7 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   // NOTE: following for emojis keyboard insert only...
   const emoji = evt.data;
   if (!emoji) {
-    return;
+    return [];
   }
 
   let selectedNodeMap = documentModel.getNode(selectedNodeId);

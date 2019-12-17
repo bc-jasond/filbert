@@ -59,7 +59,6 @@ import {
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL
 } from '../../../common/constants';
-import { lineHeight } from '../../../common/css';
 
 import Document from '../../../common/components/document.component';
 import { doDelete } from '../document-model-helpers/delete';
@@ -108,7 +107,7 @@ export default class EditPost extends React.Component {
       shouldShowPostSuccess: null
     };
   }
-
+  
   async componentDidMount() {
     console.debug('EDIT - didMount');
     try {
@@ -119,7 +118,8 @@ export default class EditPost extends React.Component {
       window.addEventListener('paste', this.handlePaste);
       window.addEventListener('cut', this.handleCut);
       if (this.props.match.params.id === NEW_POST_URL_ID) {
-        return this.newPost();
+        this.newPost();
+        return;
       }
       await this.loadPost();
     } catch (err) {
@@ -139,7 +139,8 @@ export default class EditPost extends React.Component {
         insertMenuNode: Map()
       });
       if (this.props.match.params.id === NEW_POST_URL_ID) {
-        return this.newPost();
+        this.newPost();
+        return;
       }
       await this.loadPost();
     } catch (err) {
@@ -369,7 +370,7 @@ export default class EditPost extends React.Component {
       return;
     }
     console.debug('EDIT SECTION MENU');
-    return new Promise(resolve => {
+    await new Promise(resolve => {
       this.setState(
         { shouldShowEditSectionMenu: !shouldShowEditSectionMenu },
         resolve
@@ -456,12 +457,12 @@ export default class EditPost extends React.Component {
       if (this.documentModel.isMetaType(neighborNode.get('id'))) {
         removeAllRanges();
         await this.sectionEdit(neighborNode.get('id'));
-      } else {
-        setCaret(
-          neighborNode.get('id'),
-          [KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode) ? -1 : 0
-        );
+        return;
       }
+      setCaret(
+        neighborNode.get('id'),
+        [KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode) ? -1 : 0
+      );
       return;
     }
     // we're currently inside a selected MetaType node
@@ -481,7 +482,8 @@ export default class EditPost extends React.Component {
         return;
       }
       if (this.documentModel.isMetaType(prevNode.get('id'))) {
-        return this.sectionEdit(prevNode.get('id'));
+        await this.sectionEdit(prevNode.get('id'));
+        return;
       }
       await this.closeAllEditContentMenus();
       setCaret(prevNode.get('id'), -1);
@@ -493,7 +495,8 @@ export default class EditPost extends React.Component {
       return;
     }
     if (this.documentModel.isMetaType(nextNode.get('id'))) {
-      return this.sectionEdit(nextNode.get('id'));
+      await this.sectionEdit(nextNode.get('id'));
+      return;
     }
     await this.closeAllEditContentMenus();
     setCaret(nextNode.get('id'), 0);
@@ -524,7 +527,7 @@ export default class EditPost extends React.Component {
     // clear the selected format node when deleting the highlighted selection
     // NOTE: must wait for state have been set or setCaret will check stale values
     await this.closeAllEditContentMenus();
-    return this.commitUpdates(focusNodeId, caretOffset, shouldFocusLastNode);
+    await this.commitUpdates(focusNodeId, caretOffset, shouldFocusLastNode);
   };
 
   /**
@@ -553,9 +556,10 @@ export default class EditPost extends React.Component {
     await this.closeAllEditContentMenus();
 
     if (this.props.match.params.id === NEW_POST_URL_ID) {
-      return this.createNewPost();
+      await this.createNewPost();
+      return;
     }
-    return this.commitUpdates(focusNodeId, 0);
+    await this.commitUpdates(focusNodeId, 0);
   };
 
   /**
@@ -603,10 +607,10 @@ export default class EditPost extends React.Component {
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
     await this.closeAllEditContentMenus();
-    return this.commitUpdates(focusNodeId, caretOffset);
+    await this.commitUpdates(focusNodeId, caretOffset);
   };
 
-  handleSyncFromDom(evt, selectionOffsets) {
+  handleSyncFromDom = async (evt, selectionOffsets) => {
     if (
       // this is the only way to get an emoji keyboard insert without using a custom MutationObserver
       evt.type !== 'input' ||
@@ -629,7 +633,7 @@ export default class EditPost extends React.Component {
 
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
-    this.commitUpdates(focusNodeId, caretOffset);
+    await this.commitUpdates(focusNodeId, caretOffset);
   }
 
   // MAIN "ON" EVENT CALLBACKS
@@ -754,7 +758,7 @@ export default class EditPost extends React.Component {
     // close everything by default, this.sectionEdit() callback will fire after this to override
     await this.closeAllEditContentMenus();
     await this.manageInsertMenu(evt, selectionOffsets);
-    return this.manageFormatSelectionMenu(evt, selectionOffsets);
+    await this.manageFormatSelectionMenu(evt, selectionOffsets);
   };
 
   handleCut = async (evt, selectionOffsetsArg) => {
@@ -787,7 +791,7 @@ export default class EditPost extends React.Component {
 
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    return this.commitUpdates(startNodeId, startNodeCaretStart);
+    await this.commitUpdates(startNodeId, startNodeCaretStart);
   };
 
   handlePaste = async (evt, selectionOffsetsArg) => {
@@ -825,7 +829,7 @@ export default class EditPost extends React.Component {
     }
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    return this.commitUpdates(focusNodeId, caretOffset);
+    await this.commitUpdates(focusNodeId, caretOffset);
   };
 
   // TODO: this function references the DOM and state.  So, it needs to pass-through values because it always executes - separate the DOM and state checks?
@@ -850,7 +854,7 @@ export default class EditPost extends React.Component {
       selectedNodeMap.get('type') === NODE_TYPE_P &&
       selectedNodeMap.get('content', '').length === 0
     ) {
-      return new Promise(resolve => {
+      await new Promise(resolve => {
         this.setState(
           {
             // save current node because the selection will disappear when the insert menu is shown
@@ -861,9 +865,10 @@ export default class EditPost extends React.Component {
           resolve
         );
       });
+      return;
     }
 
-    return new Promise(resolve => {
+    await new Promise(resolve => {
       this.setState({ insertMenuNode: Map() }, resolve);
     });
   };
@@ -931,7 +936,7 @@ export default class EditPost extends React.Component {
       editSectionMetaFormTopOffset: sectionDomNode.offsetTop
     };
 
-    return new Promise(resolve => {
+    await new Promise(resolve => {
       this.setState(newState, () => {
         if (this.inputRef) {
           // allow animations to finish or scroll goes wacko
@@ -1069,7 +1074,7 @@ export default class EditPost extends React.Component {
     ) {
       const { formatSelectionNode } = this.state;
       if (formatSelectionNode.get('id')) {
-        return new Promise(resolve => {
+        await new Promise(resolve => {
           this.setState(
             {
               formatSelectionNode: Map(),
@@ -1111,7 +1116,7 @@ export default class EditPost extends React.Component {
     const rect = range.getBoundingClientRect();
     const selectedNodeModel = this.documentModel.getNode(selectedNodeId);
 
-    return new Promise(resolve =>
+    await new Promise(resolve =>
       this.setState(
         {
           formatSelectionNode: selectedNodeModel,

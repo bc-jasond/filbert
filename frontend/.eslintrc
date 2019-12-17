@@ -37,7 +37,7 @@
             "ignoreMemberSort": false,
             "memberSyntaxSortOrder": ["none", "all", "single", "multiple"]
         }],
-        // "sort-keys": 2,
+        "sort-keys": 2,
         "sort-vars": 2
     },
     "env": {
