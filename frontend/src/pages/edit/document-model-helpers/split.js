@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
 import { handleEnterMetaType } from './handle-meta-type';
 import { handleEnterTextType } from './handle-text-type';

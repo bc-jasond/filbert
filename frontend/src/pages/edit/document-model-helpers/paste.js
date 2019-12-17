@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import { handlePasteTextType } from './handle-text-type';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {

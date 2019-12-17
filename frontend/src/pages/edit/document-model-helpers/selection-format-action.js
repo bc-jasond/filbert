@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import { Map } from 'immutable';
 import {
   NODE_TYPE_H1,

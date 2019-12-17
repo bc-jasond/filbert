@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import { NODE_TYPE_IMAGE } from '../../../common/constants';
 import { apiDelete } from '../../../common/fetch';
 import { deleteContentRange, imageUrlIsId } from '../../../common/utils';

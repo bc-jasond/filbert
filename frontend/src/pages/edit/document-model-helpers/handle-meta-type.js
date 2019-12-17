@@ -1,3 +1,4 @@
+/* eslint-disable import/prefer-default-export */
 import { NODE_TYPE_P } from '../../../common/constants';
 
 export function handleEnterMetaType(documentModel, leftNodeId) {
