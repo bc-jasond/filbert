@@ -39,7 +39,7 @@ export default class ViewPost extends React.Component {
   async componentDidMount() {
     try {
       const { post, contentNodes } = await apiGet(
-        `/post/${this.props.match.params.canonical}`
+        `/post/${this.props?.match?.params?.canonical}`
       );
       this.setState({
         post: fromJS(post),

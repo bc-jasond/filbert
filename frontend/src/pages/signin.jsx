@@ -114,7 +114,7 @@ export default class SignIn extends React.Component {
             <Input
               name="username"
               type="text"
-              value={this.state.username}
+              value={this.state?.username}
               onChange={this.updateUsername}
               error={error}
               ref={usernameRef}
@@ -127,7 +127,7 @@ export default class SignIn extends React.Component {
             <Input
               name="password"
               type="password"
-              value={this.state.password}
+              value={this.state?.password}
               onChange={this.updatePassword}
               error={error}
             />

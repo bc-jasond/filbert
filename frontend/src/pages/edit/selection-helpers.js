@@ -476,7 +476,7 @@ export function splitSelectionsAtCaretOffset(
 
 export function concatSelections(leftModelArg, rightModelArg) {
   let leftModel = leftModelArg;
-  let rightModel = rightModelArg;
+  const rightModel = rightModelArg;
   const left = getSelections(leftModel);
   const right = getSelections(rightModel);
   let newSelections = left.slice();

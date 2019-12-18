@@ -92,43 +92,75 @@ const InsertSectionItem = styled.span`
 `;
 
 export default class InsertSectionMenuComponent extends React.Component {
+  fileInputRef = React.createRef();
+
+  didHitShift = false;
+  
+  sectionTypes = [
+    {
+      type: NODE_TYPE_H1,
+      children: 'H1',
+      callback: () => this.props?.insertSection?.(NODE_TYPE_H1)
+    },
+    {
+      type: NODE_TYPE_H2,
+      children: 'H2',
+      callback: () => this.props?.insertSection?.(NODE_TYPE_H2)
+    },
+    {
+      type: NODE_TYPE_PRE,
+      children: 'code',
+      callback: () => this.props?.insertSection?.(NODE_TYPE_PRE)
+    },
+    {
+      type: NODE_TYPE_LI,
+      children: 'list',
+      callback: () => this.props?.insertSection?.(NODE_TYPE_LI)
+    },
+    {
+      type: NODE_TYPE_SPACER,
+      children: 'spacer',
+      callback: () => this.props?.insertSection?.(NODE_TYPE_SPACER)
+    },
+    {
+      type: NODE_TYPE_IMAGE,
+      children: (
+        <>
+          photo
+          <HiddenFileInput
+            name="hidden-image-upload-file-input"
+            type="file"
+            onChange={e => {
+              this.props?.insertSection?.(NODE_TYPE_IMAGE, e.target.files);
+            }}
+            accept="image/*"
+            ref={this.fileInputRef}
+          />
+        </>
+      ),
+      callback: () => this.fileInputRef.current.click()
+    },
+    {
+      type: NODE_TYPE_QUOTE,
+      children: 'quote',
+      callback: () => this.props?.insertSection?.(NODE_TYPE_QUOTE)
+    }
+  ];
+
   constructor(props) {
     super(props);
 
     this.state = {
       currentIdx: -1
     };
-    this.insertSectionCb = this.props.insertSection;
   }
 
-  fileInputRef = React.createRef();
-
-  didHitShift = false;
-
-  sectionTypes = [
-    [NODE_TYPE_H1, 'H1', () => this.insertSectionCb(NODE_TYPE_H1)],
-    [NODE_TYPE_H2, 'H2', () => this.insertSectionCb(NODE_TYPE_H2)],
-    [NODE_TYPE_PRE, 'code', () => this.insertSectionCb(NODE_TYPE_PRE)],
-    [NODE_TYPE_LI, 'list', () => this.insertSectionCb(NODE_TYPE_LI)],
-    [NODE_TYPE_SPACER, 'spacer', () => this.insertSectionCb(NODE_TYPE_SPACER)],
-    [
-      NODE_TYPE_IMAGE,
-      <>
-        photo
-        <HiddenFileInput
-          name="hidden-image-upload-file-input"
-          type="file"
-          onChange={e => {
-            this.insertSectionCb(NODE_TYPE_IMAGE, e.target.files);
-          }}
-          accept="image/*"
-          ref={this.fileInputRef}
-        />
-      </>,
-      () => this.fileInputRef.current.click()
-    ],
-    [NODE_TYPE_QUOTE, 'quote', () => this.insertSectionCb(NODE_TYPE_QUOTE)]
-  ];
+  componentDidUpdate(prevProps) {
+    const { windowEvent } = this.props;
+    if (windowEvent && windowEvent !== prevProps.windowEvent) {
+      this.handleKeyDown(windowEvent);
+    }
+  }
 
   focusInsertNode = () => {
     const { insertNodeId } = this.props;
@@ -176,8 +208,7 @@ export default class InsertSectionMenuComponent extends React.Component {
       case KEYCODE_SPACE: // fall-through
       case KEYCODE_ENTER: {
         if (currentIdx > -1) {
-          const [_, __, cb] = this.sectionTypes[currentIdx];
-          cb();
+          this.sectionTypes[currentIdx]?.callback?.();
         }
       }
     }
@@ -195,13 +226,6 @@ export default class InsertSectionMenuComponent extends React.Component {
       }
     });
   };
-
-  componentDidUpdate(prevProps) {
-    const { windowEvent } = this.props;
-    if (windowEvent && windowEvent !== prevProps.windowEvent) {
-      this.handleKeyDown(windowEvent);
-    }
-  }
 
   render() {
     const { insertMenuTopOffset, insertMenuLeftOffset } = this.props;
@@ -226,7 +250,7 @@ export default class InsertSectionMenuComponent extends React.Component {
           spellcheck="false"
           isOpen={currentIdx > -1}
         >
-          {this.sectionTypes.map(([type, children, callback], idx) => (
+          {this.sectionTypes.map(({ type, children, callback }, idx) => (
             <InsertSectionItem
               key={type}
               isOpen={currentIdx === idx}

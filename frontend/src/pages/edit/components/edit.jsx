@@ -86,6 +86,14 @@ const ArticleStyled = styled(Article)`
 `;
 
 export default class EditPost extends React.Component {
+  documentModel = new DocumentModel();
+
+  updateManager = new UpdateManager();
+
+  commitTimeoutId;
+
+  inputRef;
+
   constructor(props) {
     super(props);
 
@@ -117,7 +125,8 @@ export default class EditPost extends React.Component {
       window.addEventListener('input', this.handleInput);
       window.addEventListener('paste', this.handlePaste);
       window.addEventListener('cut', this.handleCut);
-      if (this.props.match.params.id === NEW_POST_URL_ID) {
+      const { match: { params: { id }}} = this.props
+      if (id === NEW_POST_URL_ID) {
         this.newPost();
         return;
       }
@@ -129,7 +138,10 @@ export default class EditPost extends React.Component {
 
   async componentDidUpdate(prevProps) {
     try {
-      if (this.props.match.params.id === prevProps.match.params.id) {
+      const params = this.props?.match?.params;
+      const id = params?.id;
+      const prevId = prevProps?.match?.params?.id;
+      if (id === prevId) {
         return;
       }
       console.debug('EDIT - didUpdate');
@@ -138,7 +150,7 @@ export default class EditPost extends React.Component {
         shouldRedirect: false,
         insertMenuNode: Map()
       });
-      if (this.props.match.params.id === NEW_POST_URL_ID) {
+      if (id === NEW_POST_URL_ID) {
         this.newPost();
         return;
       }
@@ -147,14 +159,6 @@ export default class EditPost extends React.Component {
       console.error('EDIT - load post error:', err);
     }
   }
-
-  documentModel = new DocumentModel();
-
-  updateManager = new UpdateManager();
-
-  commitTimeoutId;
-
-  inputRef;
 
   saveContentBatch = async () => {
     try {
@@ -169,13 +173,13 @@ export default class EditPost extends React.Component {
     }
   };
 
-  saveContentBatchDebounce() {
+  saveContentBatchDebounce = () => {
     console.debug('Batch Debounce');
     clearTimeout(this.commitTimeoutId);
     this.commitTimeoutId = setTimeout(this.saveContentBatch, 750);
-  }
+  };
 
-  newPost() {
+  newPost = () => {
     console.debug('New PostNew PostNew PostNew PostNew PostNew Post');
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
     this.updateManager.init(postPlaceholder);
@@ -185,7 +189,7 @@ export default class EditPost extends React.Component {
     );
     this.setState({ post: Map() });
     this.commitUpdates(focusNodeId);
-  }
+  };
 
   createNewPost = async () => {
     const title = getFirstHeadingContent();
@@ -203,7 +207,7 @@ export default class EditPost extends React.Component {
   loadPost = async () => {
     try {
       const { post, contentNodes } = await apiGet(
-        `/edit/${this.props.match.params.id}`
+        `/edit/${this.props?.match?.params?.id}`
       );
       this.updateManager.init(post);
       const lastNodeId = this.documentModel.init(
@@ -333,7 +337,7 @@ export default class EditPost extends React.Component {
 
   commitUpdates = (focusNodeId, offset = -1, shouldFocusLastChild) => {
     // TODO: optimistically save updated nodes - look ma, no errors!
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve /* , reject */) => {
       // roll with state changes TODO: handle errors - roll back?
       const newState = {
         nodesById: this.documentModel.nodesById,
@@ -345,7 +349,7 @@ export default class EditPost extends React.Component {
       }
       this.setState(newState, () => {
         // if we're on /edit/new, we don't save until user hits "enter"
-        if (this.props.match.params.id !== NEW_POST_URL_ID) {
+        if (this.props?.match?.params?.id !== NEW_POST_URL_ID) {
           this.saveContentBatchDebounce();
         }
         // if a menu isn't open, re-place the caret
@@ -511,7 +515,7 @@ export default class EditPost extends React.Component {
     if (
       evt.keyCode !== KEYCODE_BACKSPACE ||
       // don't delete the section while editing its fields :) !
-      this.state.shouldShowEditSectionMenu
+      this.state?.shouldShowEditSectionMenu
     ) {
       return;
     }
@@ -544,7 +548,7 @@ export default class EditPost extends React.Component {
       return;
     }
     // ignore if there's a selected MetaType node's menu is open
-    if (this.state.shouldShowEditSectionMenu) {
+    if (this.state?.shouldShowEditSectionMenu) {
       return;
     }
 
@@ -558,7 +562,7 @@ export default class EditPost extends React.Component {
 
     await this.closeAllEditContentMenus();
 
-    if (this.props.match.params.id === NEW_POST_URL_ID) {
+    if (this.props?.match?.params?.id === NEW_POST_URL_ID) {
       await this.createNewPost();
       return;
     }
@@ -877,16 +881,6 @@ export default class EditPost extends React.Component {
     });
   };
 
-  async uploadFile(file) {
-    const { post } = this.state;
-    // TODO: allow multiple files
-    const formData = new FormData();
-    formData.append('postId', post.get('id'));
-    formData.append('userId', post.get('user_id'));
-    formData.append('fileData', file);
-    return uploadImage(formData);
-  }
-
   /**
    * INSERT SECTIONS
    */
@@ -1167,6 +1161,16 @@ export default class EditPost extends React.Component {
       }
     );
   };
+
+  async uploadFile(file) {
+    const { post } = this.state;
+    // TODO: allow multiple files
+    const formData = new FormData();
+    formData.append('postId', post.get('id'));
+    formData.append('userId', post.get('user_id'));
+    formData.append('fileData', file);
+    return uploadImage(formData);
+  }
 
   render() {
     const {

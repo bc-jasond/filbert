@@ -1,5 +1,5 @@
 import React from 'react';
-import { get, Map } from 'immutable';
+import { Map } from 'immutable';
 import {
   NODE_TYPE_H1,
   NODE_TYPE_H2,
@@ -86,7 +86,7 @@ export default class Document extends React.PureComponent {
 
   next = () => {
     this.current =
-      this.props.nodesById.get(this.current.get('next_sibling_id')) || Map();
+      this.props?.nodesById?.get?.(this.current.get('next_sibling_id')) || Map();
   };
 
   render() {

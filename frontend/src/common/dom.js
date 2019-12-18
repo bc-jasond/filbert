@@ -39,6 +39,65 @@ import { cleanText } from './utils';
 
 let infiniteLoopCount = 0;
 
+export function removeAllRanges() {
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  return sel;
+}
+
+export function getRange() {
+  const sel = window.getSelection();
+  if (sel.rangeCount < 1) {
+    return null;
+  }
+  return sel.getRangeAt(0);
+}
+
+export function getNodeId(node) {
+  return node && node.getAttribute ? node.getAttribute('name') : null;
+}
+
+export function getNodeById(nodeId) {
+  const [first] = document.getElementsByName(nodeId);
+  return first;
+}
+
+export function getFirstHeadingContent() {
+  const [h1] = document.querySelectorAll(`[data-type='${NODE_TYPE_H1}']`);
+  return h1 ? h1.textContent : '';
+}
+
+/**
+ * given an offset in a parent 'paragraph', return a child text node and child offset
+ */
+export function getChildTextNodeAndOffsetFromParentOffset(
+  parent,
+  parentOffset
+) {
+  let childOffset =
+    parentOffset === -1 ? parent.textContent.length : parentOffset;
+  const textNodesOnlyFlattened = [];
+  const queue = [...parent.childNodes];
+  while (queue.length) {
+    const currentNode = queue.shift();
+    if (currentNode.nodeType === DOM_TEXT_NODE_TYPE_ID) {
+      textNodesOnlyFlattened.push(currentNode);
+    }
+    queue.unshift(...currentNode.childNodes);
+  }
+  let childNode;
+  // assume 'parent' is a 'paragraph' with an id
+  for (let i = 0; i < textNodesOnlyFlattened.length; i++) {
+    childNode = textNodesOnlyFlattened[i];
+    // assume max depth level one for text nodes AKA no tags within tags here for formatting
+    if (childNode.textContent.length >= childOffset) {
+      break;
+    }
+    childOffset -= childNode.textContent.length;
+  }
+  return [childNode, childOffset];
+}
+
 export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
   let offset = offsetArg;
   const [containerNode] = document.getElementsByName(nodeId);
@@ -90,18 +149,50 @@ export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
   }
 }
 
-export function removeAllRanges() {
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  return sel;
+/**
+ * given a child node, find the offset in the parent paragraph of the beginning of the child node's textContent
+ * NOTE: remember to add the current range offset to this number to get correct offset of all paragraph content
+ * @param formattingNode
+ * @param paragraph
+ * @returns {number}
+ */
+function getParagraphContentOffset(formattingNodeArg, paragraph) {
+  let formattingNode = formattingNodeArg;
+  if (formattingNode === paragraph) {
+    return 0;
+  }
+  while (formattingNode.parentElement !== paragraph) {
+    // find the first immediate child of the paragraph - we could be nested inside several formatting tags at this point
+    // i.e. for <em><strong><strike>content here</strike></strong></em> - we want the <em> node
+    formattingNode = formattingNode.parentElement;
+  }
+  // find the index of the immediate child
+  const rangeIdx = Array.prototype.indexOf.call(
+    paragraph.childNodes,
+    formattingNode
+  );
+  let offset = 0;
+  for (let i = 0; i < rangeIdx; i++) {
+    // for each child of the paragraph that precedes our current range - add the length of it's content to the offset
+    offset += paragraph.childNodes[i].textContent.length;
+  }
+  return offset;
 }
 
-export function getRange() {
-  const sel = window.getSelection();
-  if (sel.rangeCount < 1) {
-    return null;
+export function getFirstAncestorWithId(domNode) {
+  if (!domNode) return null;
+  if (
+    domNode.nodeType === DOM_ELEMENT_NODE_TYPE_ID &&
+    domNode.getAttribute('name')
+  )
+    return domNode;
+  // walk ancestors until one has a truthy 'name' attribute
+  // 'name' === id in the db
+  let current = domNode.parentElement;
+  while (current && !current.getAttribute('name')) {
+    current = current.parentElement;
   }
-  return sel.getRangeAt(0);
+  return current;
 }
 
 /**
@@ -184,90 +275,13 @@ export function getHighlightedSelectionOffsets() {
 /**
  * TODO: When React re-renders after setState() to apply formatting changes, the highlight is lost.
  *  Use this to replace it.
- */
+ 
 export function replaceHighlightedSelection(
   startNode,
   startOffset,
   endNode,
   endOffset
-) {}
-
-/**
- * given a child node, find the offset in the parent paragraph of the beginning of the child node's textContent
- * NOTE: remember to add the current range offset to this number to get correct offset of all paragraph content
- * @param formattingNode
- * @param paragraph
- * @returns {number}
- */
-function getParagraphContentOffset(formattingNodeArg, paragraph) {
-  let formattingNode = formattingNodeArg;
-  if (formattingNode === paragraph) {
-    return 0;
-  }
-  while (formattingNode.parentElement !== paragraph) {
-    // find the first immediate child of the paragraph - we could be nested inside several formatting tags at this point
-    // i.e. for <em><strong><strike>content here</strike></strong></em> - we want the <em> node
-    formattingNode = formattingNode.parentElement;
-  }
-  // find the index of the immediate child
-  const rangeIdx = Array.prototype.indexOf.call(
-    paragraph.childNodes,
-    formattingNode
-  );
-  let offset = 0;
-  for (let i = 0; i < rangeIdx; i++) {
-    // for each child of the paragraph that precedes our current range - add the length of it's content to the offset
-    offset += paragraph.childNodes[i].textContent.length;
-  }
-  return offset;
-}
-
-/**
- * given an offset in a parent 'paragraph', return a child text node and child offset
- */
-export function getChildTextNodeAndOffsetFromParentOffset(
-  parent,
-  parentOffset
-) {
-  let childOffset =
-    parentOffset === -1 ? parent.textContent.length : parentOffset;
-  const textNodesOnlyFlattened = [];
-  const queue = [...parent.childNodes];
-  while (queue.length) {
-    const currentNode = queue.shift();
-    if (currentNode.nodeType === DOM_TEXT_NODE_TYPE_ID) {
-      textNodesOnlyFlattened.push(currentNode);
-    }
-    queue.unshift(...currentNode.childNodes);
-  }
-  let childNode;
-  // assume 'parent' is a 'paragraph' with an id
-  for (let i = 0; i < textNodesOnlyFlattened.length; i++) {
-    childNode = textNodesOnlyFlattened[i];
-    // assume max depth level one for text nodes AKA no tags within tags here for formatting
-    if (childNode.textContent.length >= childOffset) {
-      break;
-    }
-    childOffset -= childNode.textContent.length;
-  }
-  return [childNode, childOffset];
-}
-
-export function getFirstAncestorWithId(domNode) {
-  if (!domNode) return null;
-  if (
-    domNode.nodeType === DOM_ELEMENT_NODE_TYPE_ID &&
-    domNode.getAttribute('name')
-  )
-    return domNode;
-  // walk ancestors until one has a truthy 'name' attribute
-  // 'name' === id in the db
-  let current = domNode.parentElement;
-  while (current && !current.getAttribute('name')) {
-    current = current.parentElement;
-  }
-  return current;
-}
+) {} */
 
 // this is used to determine whether the caret will leave the current node
 // if the user presses the up or down arrow
@@ -306,20 +320,6 @@ export function caretIsOnEdgeOfParagraphText() {
     compareRangeAndParagraphTopOrBottom('bottom'),
     currentChildCaretOffset + currentChildParagraphContentOffset === 0
   ];
-}
-
-export function getNodeId(node) {
-  return node && node.getAttribute ? node.getAttribute('name') : null;
-}
-
-export function getNodeById(nodeId) {
-  const [first] = document.getElementsByName(nodeId);
-  return first;
-}
-
-export function getFirstHeadingContent() {
-  const [h1] = document.querySelectorAll(`[data-type='${NODE_TYPE_H1}']`);
-  return h1 ? h1.textContent : '';
 }
 
 export function isControlKey(code) {

@@ -104,7 +104,7 @@ export async function apiDelete(url) {
     Pace.start();
     const config = getBaseConfig();
     config.method = 'DELETE';
-    const response = await fetch(`${API_URL}${url}`, config);
+    await fetch(`${API_URL}${url}`, config);
     Pace.stop();
     return true;
   } catch (err) {

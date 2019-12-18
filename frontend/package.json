@@ -18,7 +18,8 @@
     "start-prod-local": "USE_LOCALHOST_API=true webpack-dev-server --hot --mode production",
     "pretty": "prettier --parser=babel --single-quote --write \"**/*.{js,jsx}\"",
     "pretty-ci": "prettier --parser=babel --single-quote --check -l \"**/*.{js,jsx}\"",
-    "lint": "eslint --fix \"**/*.{js,jsx}\""
+    "lint": "eslint --fix \"**/*.{js,jsx}\"",
+    "nibble": "eslint-nibble \"**/*.{js,jsx}\""
   },
   "sideEffects": false,
   "dependencies": {
@@ -46,16 +47,19 @@
     "webpack-cli": "^3.1.2"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-optional-chaining": "^7.7.5",
     "babel-eslint": "^10.0.3",
     "eslint": "^6.7.2",
     "eslint-config-airbnb": "^18.0.1",
     "eslint-config-prettier": "^6.7.0",
+    "eslint-nibble": "^5.1.0",
     "eslint-plugin-babel": "^5.3.0",
     "eslint-plugin-import": "^2.19.1",
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-prettier": "^3.1.2",
     "eslint-plugin-react": "^7.17.0",
     "eslint-plugin-react-hooks": "^1.7.0",
+    "prop-types": "^15.7.2",
     "react-hot-loader": "^4.12.18",
     "webpack-dev-server": "^3.1.14"
   }

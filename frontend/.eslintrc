@@ -17,11 +17,19 @@
             "impliedStrict": true
         }
     },
+    "plugins": [
+        "babel"
+    ],
     "rules": {
+        "no-alert": 0, // TODO
+        "no-console": 0, // TODO
         "no-else-return": 2,
         "no-plusplus": ["error", {
             "allowForLoopAfterthoughts": true
         }],
+        "no-restricted-globals": 0, // TODO: turn on once there's a modal
+        "no-unused-expressions": 0,
+        "babel/no-unused-expressions": 2,
         "prefer-destructuring": ["error", {
             "VariableDeclarator": {
                 "array": false,
@@ -40,7 +48,6 @@
             "ignoreMemberSort": false,
             "memberSyntaxSortOrder": ["none", "all", "single", "multiple"]
         }],
-        "sort-keys": 2,
         "sort-vars": 2
     },
     "env": {

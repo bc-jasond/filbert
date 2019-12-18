@@ -3,7 +3,6 @@ import { NODE_TYPE_QUOTE } from '../constants';
 import {
   A,
   ContentSection,
-  Img,
   ItalicText,
   MiniText,
   QuoteP

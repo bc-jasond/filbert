@@ -37,11 +37,6 @@ export function getMapWithId(obj) {
   return Map({ ...obj, id: id || s4() });
 }
 
-export function cleanTextOrZeroLengthPlaceholder(text) {
-  const cleaned = cleanText(text);
-  return cleaned.length > 0 ? cleaned : ZERO_LENGTH_CHAR;
-}
-
 export function cleanText(text = '') {
   // ensure no more than 1 space in a row
   let final = '';
@@ -66,6 +61,11 @@ export function cleanText(text = '') {
     }
   }
   return final;
+}
+
+export function cleanTextOrZeroLengthPlaceholder(text) {
+  const cleaned = cleanText(text);
+  return cleaned.length > 0 ? cleaned : ZERO_LENGTH_CHAR;
 }
 
 export function getCharFromEvent(evt) {
