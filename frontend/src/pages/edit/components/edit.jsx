@@ -125,7 +125,11 @@ export default class EditPost extends React.Component {
       window.addEventListener('input', this.handleInput);
       window.addEventListener('paste', this.handlePaste);
       window.addEventListener('cut', this.handleCut);
-      const { match: { params: { id }}} = this.props
+      const {
+        match: {
+          params: { id }
+        }
+      } = this.props;
       if (id === NEW_POST_URL_ID) {
         this.newPost();
         return;
@@ -1202,7 +1206,12 @@ export default class EditPost extends React.Component {
         <div role="presentation" onMouseUp={this.handleMouseUp}>
           <Header>
             <HeaderContentContainer>
-              <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
+              <LogoLinkStyled to="/">
+                <span role="img" aria-label="hand writing with a pen">
+                  ✍️
+                </span>{' '}
+                filbert
+              </LogoLinkStyled>
               <HeaderLinksContainer>
                 <PublishPost onClick={this.togglePostMenu}>publish</PublishPost>
                 <DeletePost onClick={this.deletePost}>delete</DeletePost>

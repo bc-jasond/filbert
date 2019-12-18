@@ -24,7 +24,7 @@ import Page404 from './404';
 
 import Document from '../common/components/document.component';
 
-export default class ViewPost extends React.Component {
+export default class ViewPost extends React.PureComponent {
   constructor(props) {
     super(props);
 
@@ -37,6 +37,20 @@ export default class ViewPost extends React.Component {
   }
 
   async componentDidMount() {
+    await this.loadPost();
+  }
+
+  async componentDidUpdate(prevProps) {
+    const params = this.props?.match?.params;
+    const id = params?.canonical;
+    const prevId = prevProps?.match?.params?.canonical;
+    if (id === prevId) {
+      return;
+    }
+    await this.loadPost();
+  }
+
+  async loadPost() {
     try {
       const { post, contentNodes } = await apiGet(
         `/post/${this.props?.match?.params?.canonical}`
@@ -62,7 +76,12 @@ export default class ViewPost extends React.Component {
       <>
         <Header>
           <HeaderContentContainer>
-            <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
+            <LogoLinkStyled to="/">
+              <span role="img" aria-label="hand writing with a pen">
+                ✍️
+              </span>{' '}
+              filbert
+            </LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession() ? (
                 <>

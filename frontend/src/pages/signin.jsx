@@ -101,7 +101,12 @@ export default class SignIn extends React.Component {
     return (
       <Container>
         <SignInForm onSubmit={this.doLogin}>
-          <StyledLinkStyled to="/">✍️ filbert</StyledLinkStyled>
+          <StyledLinkStyled to="/">
+            <span role="img" aria-label="hand writing with a pen">
+              ✍️
+            </span>{' '}
+            filbert
+          </StyledLinkStyled>
           <H1Styled>Sign In</H1Styled>
           <H3>
             Want an account?{' '}
@@ -133,7 +138,14 @@ export default class SignIn extends React.Component {
             />
           </InputContainer>
           <MessageContainer>
-            {error && <ErrorMessage>Try again. 👮</ErrorMessage>}
+            {error && (
+              <ErrorMessage>
+                Try again.{' '}
+                <span role="img" aria-label="male police officer">
+                  👮
+                </span>
+              </ErrorMessage>
+            )}
             {success && <SuccessMessage>{success}</SuccessMessage>}
           </MessageContainer>
           <Button type="submit">

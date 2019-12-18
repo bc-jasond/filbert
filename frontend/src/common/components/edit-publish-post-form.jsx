@@ -90,8 +90,22 @@ export default ({
         }
       )}
       <MessageContainer>
-        {errorMessage && <ErrorMessage>Error 🤷‍</ErrorMessage>}
-        {successMessage && <SuccessMessage>Saved 👍</SuccessMessage>}
+        {errorMessage && (
+          <ErrorMessage>
+            Error{' '}
+            <span role="img" aria-label="woman shrugging">
+              🤷 ‍
+            </span>
+          </ErrorMessage>
+        )}
+        {successMessage && (
+          <SuccessMessage>
+            Saved{' '}
+            <span role="img" aria-label="thumbs up">
+              👍
+            </span>
+          </SuccessMessage>
+        )}
       </MessageContainer>
       <Button onClick={savePost}>
         <ButtonSpan>Save</ButtonSpan>

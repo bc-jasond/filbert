@@ -86,12 +86,13 @@ export default class Document extends React.PureComponent {
 
   next = () => {
     this.current =
-      this.props?.nodesById?.get?.(this.current.get('next_sibling_id')) || Map();
+      this.props?.nodesById?.get?.(this.current.get('next_sibling_id')) ||
+      Map();
   };
 
   render() {
     console.debug('Document RENDER', this);
-    const { nodesById, currentEditNode, setEditNodeId } = this.props;
+    const { nodesById, currentEditNode = Map(), setEditNodeId } = this.props;
     const children = [];
     this.current = DocumentModel.getFirstNode(nodesById);
     while (this.current.get('id')) {

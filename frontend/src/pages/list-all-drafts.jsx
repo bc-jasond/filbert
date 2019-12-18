@@ -146,7 +146,12 @@ export default class AllPosts extends React.Component {
       <>
         <Header>
           <HeaderContentContainer>
-            <LogoLinkStyled to="/">✍️ filbert</LogoLinkStyled>
+            <LogoLinkStyled to="/">
+              <span role="img" aria-label="hand writing with a pen">
+                ✍️
+              </span>{' '}
+              filbert
+            </LogoLinkStyled>
             <HeaderLinksContainer>
               {getSession() ? (
                 <>

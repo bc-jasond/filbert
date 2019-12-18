@@ -28,11 +28,18 @@ export default class PostLink extends React.PureComponent {
         </ContentSection>
         {to && (
           <H2Styled>
-            Next Post 👉 <LinkStyled to={to}>{node.get('content')}</LinkStyled>
+            Next Post{' '}
+            <span role="img" aria-label="finger pointing right">
+              👉
+            </span>{' '}
+            <LinkStyled to={to}>{node.get('content')}</LinkStyled>
           </H2Styled>
         )}
         <H2Styled>
-          👈 <LinkStyled to="/posts">Back to all Posts</LinkStyled>
+          <span role="img" aria-label="finger pointing left">
+            👈
+          </span>{' '}
+          <LinkStyled to="/posts">Back to all Posts</LinkStyled>
         </H2Styled>
       </Centered>
     );

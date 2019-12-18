@@ -95,7 +95,7 @@ export default class InsertSectionMenuComponent extends React.Component {
   fileInputRef = React.createRef();
 
   didHitShift = false;
-  
+
   sectionTypes = [
     {
       type: NODE_TYPE_H1,

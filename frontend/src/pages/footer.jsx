@@ -11,7 +11,10 @@ import {
 
 export default () => (
   <Footer>
-    🚚 1/4/2019
+    <span role="img" aria-label="truck">
+      🚚
+    </span>{' '}
+    1/4/2019
     <SocialLinksContainer>
       <A href="https://github.com/bc-jasond/filbert">
         <GitHubStyled />
