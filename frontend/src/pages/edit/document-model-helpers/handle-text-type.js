@@ -120,7 +120,7 @@ export function handlePasteTextType(
     clipboardText
   );
   const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
-  const diffLength = clipboardText.length;
+  const { length: diffLength } = clipboardText;
   selectedNode = selectedNode.set('content', updatedContent);
   selectedNode = adjustSelectionOffsetsAndCleanup(
     selectedNode,
@@ -129,5 +129,5 @@ export function handlePasteTextType(
     diffLength
   );
   documentModel.update(selectedNode);
-  return [selectedNodeId, contentLeft.length + clipboardText.length];
+  return [selectedNodeId, contentLeft.length + diffLength];
 }

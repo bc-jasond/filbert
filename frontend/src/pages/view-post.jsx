@@ -67,7 +67,9 @@ export default class ViewPost extends React.PureComponent {
   }
 
   render() {
-    const { post, nodesById, shouldShow404, shouldRedirectToHome } = this.state;
+    const {
+      state: { post, nodesById, shouldShow404, shouldRedirectToHome }
+    } = this;
 
     if (shouldShow404) return <Page404 />;
     if (shouldRedirectToHome) return <Redirect to="/" />;

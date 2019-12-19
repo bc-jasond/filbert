@@ -75,7 +75,7 @@ function fillEnds(nodeModel) {
   if (selections.size === 0) {
     return nodeModel;
   }
-  const contentLength = nodeModel.get('content', '').length;
+  const { length: contentLength } = nodeModel.get('content', '');
   let newSelections = selections;
   let minStart = contentLength;
   let maxEnd = 0;

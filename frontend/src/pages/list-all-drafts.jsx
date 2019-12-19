@@ -68,7 +68,9 @@ export default class AllPosts extends React.Component {
   };
 
   publishDraft = async () => {
-    const { shouldShowPublishPostMenu: draft } = this.state;
+    const {
+      state: { shouldShowPublishPostMenu: draft }
+    } = this;
     if (confirm(`Publish draft ${draft.get('title')}? This makes it public.`)) {
       try {
         await apiPost(`/publish/${draft.get('id')}`);
@@ -92,7 +94,9 @@ export default class AllPosts extends React.Component {
   };
 
   updatePost = (fieldName, value) => {
-    const { shouldShowPublishPostMenu: draft } = this.state;
+    const {
+      state: { shouldShowPublishPostMenu: draft }
+    } = this;
     this.setState({
       shouldShowPublishPostMenu: draft.set(fieldName, value),
       shouldShowPostError: null,
@@ -102,7 +106,9 @@ export default class AllPosts extends React.Component {
 
   savePost = async () => {
     try {
-      const { shouldShowPublishPostMenu: draft } = this.state;
+      const {
+        state: { shouldShowPublishPostMenu: draft }
+      } = this;
       await apiPatch(`/post/${draft.get('id')}`, {
         title: draft.get('title'),
         canonical: draft.get('canonical'),
@@ -136,11 +142,13 @@ export default class AllPosts extends React.Component {
 
   render() {
     const {
-      drafts,
-      shouldShowPublishPostMenu,
-      shouldShowPostError,
-      shouldShowPostSuccess
-    } = this.state;
+      state: {
+        drafts,
+        shouldShowPublishPostMenu,
+        shouldShowPostError,
+        shouldShowPostSuccess
+      }
+    } = this;
 
     return (
       <>

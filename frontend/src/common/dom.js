@@ -88,6 +88,8 @@ export function getChildTextNodeAndOffsetFromParentOffset(
   let childNode;
   // assume 'parent' is a 'paragraph' with an id
   for (let i = 0; i < textNodesOnlyFlattened.length; i++) {
+    // TODO
+    /* eslint-disable-next-line prefer-destructuring */
     childNode = textNodesOnlyFlattened[i];
     // assume max depth level one for text nodes AKA no tags within tags here for formatting
     if (childNode.textContent.length >= childOffset) {
@@ -140,6 +142,7 @@ export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
     // set caret to end of text content
     let caretOffset = offset;
     if (offset === -1 || offset > textNode.textContent.length) {
+      /* eslint-disable-next-line prefer-destructuring */
       caretOffset = textNode.textContent.length;
     }
     range.setStart(textNode, caretOffset);
@@ -164,6 +167,7 @@ function getParagraphContentOffset(formattingNodeArg, paragraph) {
   while (formattingNode.parentElement !== paragraph) {
     // find the first immediate child of the paragraph - we could be nested inside several formatting tags at this point
     // i.e. for <em><strong><strike>content here</strike></strong></em> - we want the <em> node
+    /* eslint-disable-next-line prefer-destructuring */
     formattingNode = formattingNode.parentElement;
   }
   // find the index of the immediate child
@@ -188,8 +192,9 @@ export function getFirstAncestorWithId(domNode) {
     return domNode;
   // walk ancestors until one has a truthy 'name' attribute
   // 'name' === id in the db
-  let current = domNode.parentElement;
+  let { parentElement: current } = domNode;
   while (current && !current.getAttribute('name')) {
+    /* eslint-disable-next-line prefer-destructuring */
     current = current.parentElement;
   }
   return current;
@@ -220,8 +225,8 @@ export function getHighlightedSelectionOffsets() {
   const startNode = getFirstAncestorWithId(range.startContainer);
   const endNode = getFirstAncestorWithId(range.endContainer);
   // const commonAncestor = range.commonAncestorContainer;
-  const rangeStartOffset = range.startOffset;
-  const rangeEndOffset = range.endOffset;
+  const { startOffset: rangeStartOffset } = range;
+  const { endOffset: rangeEndOffset } = range;
 
   if (startNode === null || endNode === null) {
     return {};
@@ -299,7 +304,7 @@ export function caretIsOnEdgeOfParagraphText() {
     console.warn("caretIsOnEdgeOfParagraphText can't find node!", range);
     return [];
   }
-  const currentChildCaretOffset = range.startOffset;
+  const { startOffset: currentChildCaretOffset } = range;
   const currentChildParagraphContentOffset = getParagraphContentOffset(
     range.startContainer,
     currentParagraph

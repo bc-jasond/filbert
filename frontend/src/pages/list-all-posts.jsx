@@ -67,7 +67,9 @@ export default class AllPosts extends React.Component {
   };
 
   render() {
-    const { posts } = this.state;
+    const {
+      state: { posts }
+    } = this;
 
     return (
       <>

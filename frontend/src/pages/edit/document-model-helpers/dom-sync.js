@@ -55,7 +55,7 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   console.info('From DOM SYNC', startNodeId, 'offset', startNodeCaretStart);
 
   // NOTE: following for emojis keyboard insert only...
-  const emoji = evt.data;
+  const { data: emoji } = evt;
   if (!emoji) {
     return [];
   }

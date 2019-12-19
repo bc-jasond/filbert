@@ -5,7 +5,9 @@ import { SpacerSection } from './shared-styled-components';
 export default class Spacer extends React.PureComponent {
   render() {
     console.debug('Spacer RENDER', this);
-    const { node, isEditing, setEditNodeId } = this.props;
+    const {
+      props: { node, isEditing, setEditNodeId }
+    } = this;
     const id = node.get('id');
     return (
       <SpacerSection

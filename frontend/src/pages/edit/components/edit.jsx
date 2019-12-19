@@ -126,10 +126,12 @@ export default class EditPost extends React.Component {
       window.addEventListener('paste', this.handlePaste);
       window.addEventListener('cut', this.handleCut);
       const {
-        match: {
-          params: { id }
+        props: {
+          match: {
+            params: { id }
+          }
         }
-      } = this.props;
+      } = this;
       if (id === NEW_POST_URL_ID) {
         this.newPost();
         return;
@@ -238,7 +240,9 @@ export default class EditPost extends React.Component {
   };
 
   updatePost = (fieldName, value) => {
-    const { post } = this.state;
+    const {
+      state: { post }
+    } = this;
     this.setState({
       post: post.set(fieldName, value),
       shouldShowPostError: null,
@@ -248,7 +252,9 @@ export default class EditPost extends React.Component {
 
   savePost = async () => {
     try {
-      const { post } = this.state;
+      const {
+        state: { post }
+      } = this;
       await apiPatch(`/post/${post.get('id')}`, {
         title: post.get('title'),
         canonical: post.get('canonical'),
@@ -272,7 +278,9 @@ export default class EditPost extends React.Component {
   };
 
   publishPost = async () => {
-    const { post } = this.state;
+    const {
+      state: { post }
+    } = this;
 
     try {
       await confirmPromise('Publish this post?  This makes it public.');
@@ -299,7 +307,9 @@ export default class EditPost extends React.Component {
   };
 
   deletePost = async () => {
-    const { post } = this.state;
+    const {
+      state: { post }
+    } = this;
     try {
       if (post.get('published')) {
         await confirmPromise(`Delete post ${post.get('title')}?`);
@@ -317,12 +327,16 @@ export default class EditPost extends React.Component {
   };
 
   togglePostMenu = () => {
-    const { shouldShowPublishPostMenu: oldVal } = this.state;
+    const {
+      state: { shouldShowPublishPostMenu: oldVal }
+    } = this;
     this.setState({ shouldShowPublishPostMenu: !oldVal });
   };
 
   anyEditContentMenuIsOpen = () => {
-    const { formatSelectionNode, editSectionNode } = this.state;
+    const {
+      state: { formatSelectionNode, editSectionNode }
+    } = this;
     return formatSelectionNode.get('id') || editSectionNode.get('id');
   };
 
@@ -369,7 +383,9 @@ export default class EditPost extends React.Component {
     if (![KEYCODE_ENTER, KEYCODE_ESC].includes(evt.keyCode)) {
       return;
     }
-    const { editSectionNode, shouldShowEditSectionMenu } = this.state;
+    const {
+      state: { editSectionNode, shouldShowEditSectionMenu }
+    } = this;
     // if there's no currently selected MetaType node or it's a spacer (no menu for spacer) we're done.
     if (
       !editSectionNode.get('id') ||
@@ -448,7 +464,9 @@ export default class EditPost extends React.Component {
       return;
     }
 
-    const { editSectionNode } = this.state;
+    const {
+      state: { editSectionNode }
+    } = this;
     // if there's no currently selected MetaType node
     if (!editSectionNode.get('id')) {
       // see if we've entered one
@@ -476,7 +494,9 @@ export default class EditPost extends React.Component {
     // we're currently inside a selected MetaType node
     // only leave edit section menu if user hit's up / down arrow
     // user can still use tab to move vertically between inputs
-    const { shouldShowEditSectionMenu } = this.state;
+    const {
+      state: { shouldShowEditSectionMenu }
+    } = this;
     if (
       shouldShowEditSectionMenu &&
       ![KEYCODE_UP_ARROW, KEYCODE_DOWN_ARROW].includes(evt.keyCode)
@@ -595,7 +615,9 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
 
-    const { editSectionNode } = this.state;
+    const {
+      state: { editSectionNode }
+    } = this;
     if (editSectionNode.get('id')) {
       return;
     }
@@ -652,7 +674,9 @@ export default class EditPost extends React.Component {
     let selectionOffsets = getHighlightedSelectionOffsets();
     const { startNodeId } = selectionOffsets;
     if (!startNodeId) {
-      const { editSectionNode } = this.state;
+      const {
+        state: { editSectionNode }
+      } = this;
       // if there's a MetaNode selected, override DOM selection
       if (!editSectionNode.get('id')) {
         return {};
@@ -667,7 +691,9 @@ export default class EditPost extends React.Component {
   };
 
   handleKeyDown = async evt => {
-    const { insertMenuNode } = this.state;
+    const {
+      state: { insertMenuNode }
+    } = this;
     // bail conditions
     // insert menu button is displayed
     if (
@@ -739,7 +765,9 @@ export default class EditPost extends React.Component {
     ) {
       return;
     }
-    const { editSectionNode } = this.state;
+    const {
+      state: { editSectionNode }
+    } = this;
     // if there's a MetaNode selected, bail
     if (editSectionNode.get('id')) {
       return;
@@ -889,7 +917,9 @@ export default class EditPost extends React.Component {
    * INSERT SECTIONS
    */
   insertSection = async (sectionType, [firstFile] = []) => {
-    const { insertMenuNode } = this.state;
+    const {
+      state: { insertMenuNode }
+    } = this;
     let meta = Map();
     if (sectionType === NODE_TYPE_IMAGE) {
       const { imageId, width, height } = await this.uploadFile(firstFile);
@@ -958,14 +988,18 @@ export default class EditPost extends React.Component {
   getLinkUrlForwardedRef = ref => {
     if (!ref) return;
     this.inputRef = ref;
-    const { formatSelectionModel } = this.state;
+    const {
+      state: { formatSelectionModel }
+    } = this;
     if (formatSelectionModel.get(SELECTION_ACTION_LINK)) {
       ref.focus();
     }
   };
 
   replaceImageFile = async ([firstFile]) => {
-    const { editSectionNode } = this.state;
+    const {
+      state: { editSectionNode }
+    } = this;
     const { imageId, width, height } = await this.uploadFile(firstFile);
     const updatedImageSectionNode = editSectionNode
       .deleteIn(['meta', 'rotationDegrees'])
@@ -984,7 +1018,9 @@ export default class EditPost extends React.Component {
   };
 
   updateImageCaption = value => {
-    const { editSectionNode } = this.state;
+    const {
+      state: { editSectionNode }
+    } = this;
     const updatedImageSectionNode = editSectionNode.setIn(
       ['meta', 'caption'],
       value
@@ -1001,7 +1037,9 @@ export default class EditPost extends React.Component {
   };
 
   imageRotate = () => {
-    const { editSectionNode } = this.state;
+    const {
+      state: { editSectionNode }
+    } = this;
     const currentRotationDegrees = editSectionNode.getIn(
       ['meta', 'rotationDegrees'],
       0
@@ -1024,7 +1062,9 @@ export default class EditPost extends React.Component {
   };
 
   updateEditSectionNodeMeta = (metaKey, value) => {
-    const { editSectionNode } = this.state;
+    const {
+      state: { editSectionNode }
+    } = this;
     const updatedQuoteSectionNode = editSectionNode.setIn(
       ['meta', metaKey],
       value
@@ -1041,7 +1081,9 @@ export default class EditPost extends React.Component {
   };
 
   updateLinkUrl = value => {
-    const { formatSelectionNode, formatSelectionModel } = this.state;
+    const {
+      state: { formatSelectionNode, formatSelectionModel }
+    } = this;
     const updatedSelectionModel = formatSelectionModel.set(
       SELECTION_LINK_URL,
       value
@@ -1079,7 +1121,9 @@ export default class EditPost extends React.Component {
       // hit esc
       isEscKey
     ) {
-      const { formatSelectionNode } = this.state;
+      const {
+        state: { formatSelectionNode }
+      } = this;
       if (formatSelectionNode.get('id')) {
         await new Promise(resolve => {
           this.setState(
@@ -1143,7 +1187,9 @@ export default class EditPost extends React.Component {
   };
 
   handleSelectionAction = async action => {
-    const { formatSelectionModel, formatSelectionNode } = this.state;
+    const {
+      state: { formatSelectionModel, formatSelectionNode }
+    } = this;
 
     const [focusNodeId, updatedNode, updatedSelection] = selectionFormatAction(
       this.documentModel,
@@ -1167,7 +1213,9 @@ export default class EditPost extends React.Component {
   };
 
   async uploadFile(file) {
-    const { post } = this.state;
+    const {
+      state: { post }
+    } = this;
     // TODO: allow multiple files
     const formData = new FormData();
     formData.append('postId', post.get('id'));
@@ -1178,25 +1226,27 @@ export default class EditPost extends React.Component {
 
   render() {
     const {
-      post,
-      nodesById,
-      shouldShow404,
-      shouldRedirect,
-      insertMenuDomEvent,
-      insertMenuNode,
-      insertMenuTopOffset,
-      insertMenuLeftOffset,
-      editSectionNode,
-      shouldShowEditSectionMenu,
-      editSectionMetaFormTopOffset,
-      formatSelectionNode,
-      formatSelectionMenuTopOffset,
-      formatSelectionMenuLeftOffset,
-      formatSelectionModel,
-      shouldShowPublishPostMenu,
-      shouldShowPostError,
-      shouldShowPostSuccess
-    } = this.state;
+      state: {
+        post,
+        nodesById,
+        shouldShow404,
+        shouldRedirect,
+        insertMenuDomEvent,
+        insertMenuNode,
+        insertMenuTopOffset,
+        insertMenuLeftOffset,
+        editSectionNode,
+        shouldShowEditSectionMenu,
+        editSectionMetaFormTopOffset,
+        formatSelectionNode,
+        formatSelectionMenuTopOffset,
+        formatSelectionMenuLeftOffset,
+        formatSelectionModel,
+        shouldShowPublishPostMenu,
+        shouldShowPostError,
+        shouldShowPostSuccess
+      }
+    } = this;
 
     if (shouldShow404) return <Page404 />;
     if (shouldRedirect) return <Redirect to={shouldRedirect} />;

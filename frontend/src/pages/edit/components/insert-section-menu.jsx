@@ -156,14 +156,18 @@ export default class InsertSectionMenuComponent extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { windowEvent } = this.props;
+    const {
+      props: { windowEvent }
+    } = this;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
       this.handleKeyDown(windowEvent);
     }
   }
 
   focusInsertNode = () => {
-    const { insertNodeId } = this.props;
+    const {
+      props: { insertNodeId }
+    } = this;
     setCaret(insertNodeId);
   };
 
@@ -172,7 +176,9 @@ export default class InsertSectionMenuComponent extends React.Component {
     evt.preventDefault();
     evt.stopPropagation();
 
-    const { currentIdx } = this.state;
+    const {
+      state: { currentIdx }
+    } = this;
 
     /* eslint-disable-next-line default-case */
     switch (evt.keyCode) {
@@ -215,8 +221,10 @@ export default class InsertSectionMenuComponent extends React.Component {
   };
 
   toggleMenu = () => {
-    const { insertNodeId } = this.props;
-    const { currentIdx } = this.state;
+    const {
+      props: { insertNodeId },
+      state: { currentIdx }
+    } = this;
     const shouldOpen = currentIdx === -1;
     this.setState({ currentIdx: shouldOpen ? 0 : -1 }, () => {
       if (shouldOpen) {
@@ -228,8 +236,10 @@ export default class InsertSectionMenuComponent extends React.Component {
   };
 
   render() {
-    const { insertMenuTopOffset, insertMenuLeftOffset } = this.props;
-    const { currentIdx } = this.state;
+    const {
+      props: { insertMenuTopOffset, insertMenuLeftOffset },
+      state: { currentIdx }
+    } = this;
 
     return (
       <InsertSectionMenu

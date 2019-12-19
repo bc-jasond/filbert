@@ -14,7 +14,9 @@ import {
 export default class Image extends React.PureComponent {
   render() {
     console.debug('Image RENDER', this);
-    const { node, isEditing, setEditNodeId } = this.props;
+    const {
+      props: { node, isEditing, setEditNodeId }
+    } = this;
     const id = node.get('id');
     const meta = node.get('meta', Map());
     const w = meta.get('width');

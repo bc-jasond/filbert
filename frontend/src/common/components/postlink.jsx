@@ -11,7 +11,9 @@ import {
 export default class PostLink extends React.PureComponent {
   render() {
     console.debug('PostLink RENDER', this);
-    const { node } = this.props;
+    const {
+      props: { node }
+    } = this;
     const to = node.getIn(['meta', 'to']);
     const Centered = styled.div`
       text-align: center;

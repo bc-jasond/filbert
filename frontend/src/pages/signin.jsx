@@ -75,7 +75,9 @@ export default class SignIn extends React.Component {
   doLogin = async event => {
     event.preventDefault();
     try {
-      const { username, password } = this.state;
+      const {
+        state: { username, password }
+      } = this;
       await signin(username, password);
       this.setState({
         error: null,
@@ -94,7 +96,9 @@ export default class SignIn extends React.Component {
   };
 
   render() {
-    const { error, success, shouldRedirect } = this.state;
+    const {
+      state: { error, success, shouldRedirect }
+    } = this;
     if (shouldRedirect) {
       return <Redirect push to="/" />;
     }

@@ -6,7 +6,9 @@ import { H1Styled } from './shared-styled-components';
 export default class H1 extends React.PureComponent {
   render() {
     console.debug('H1 RENDER', this);
-    const { node, shouldShowPlaceholder } = this.props;
+    const {
+      props: { node, shouldShowPlaceholder }
+    } = this;
     return (
       <H1Styled
         data-type={NODE_TYPE_H1}

@@ -11,7 +11,9 @@ import {
 export default class Quote extends React.PureComponent {
   render() {
     console.debug('Quote RENDER', this);
-    const { node, isEditing, setEditNodeId } = this.props;
+    const {
+      props: { node, isEditing, setEditNodeId }
+    } = this;
     const id = node.get('id');
     const quote = node.getIn(['meta', 'quote'], '');
     const url = node.getIn(['meta', 'url'], '');
