@@ -42,6 +42,7 @@
         }, {
             "enforceForRenamedProperties": true
         }],
+        "react/prop-types": 0, // TODO: types are annoying but, I guess they're awesome when they save yo ass
         "sort-imports": ["error", {
             "ignoreCase": true,
             "ignoreDeclarationSort": true,

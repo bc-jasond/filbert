@@ -119,12 +119,7 @@ export default class EditPost extends React.Component {
   async componentDidMount() {
     console.debug('EDIT - didMount');
     try {
-      // TODO: unregister these
-      window.addEventListener('resize', this.manageInsertMenu);
-      window.addEventListener('keydown', this.handleKeyDown);
-      window.addEventListener('input', this.handleInput);
-      window.addEventListener('paste', this.handlePaste);
-      window.addEventListener('cut', this.handleCut);
+      this.registerWindowEventHandlers();
       const {
         props: {
           match: {
@@ -164,6 +159,30 @@ export default class EditPost extends React.Component {
     } catch (err) {
       console.error('EDIT - load post error:', err);
     }
+  }
+
+  async componentWillUnmount() {
+    this.unregisterWindowEventHandlers();
+  }
+
+  registerWindowEventHandlers = () => {
+    window.addEventListener('resize', this.manageInsertMenu, { capture: true });
+    window.addEventListener('keydown', this.handleKeyDown, { capture: true });
+    window.addEventListener('input', this.handleInput, { capture: true });
+    window.addEventListener('paste', this.handlePaste, { capture: true });
+    window.addEventListener('cut', this.handleCut, { capture: true });
+  }
+
+  unregisterWindowEventHandlers = () => {
+    window.removeEventListener('resize', this.manageInsertMenu, {
+      capture: true
+    });
+    window.removeEventListener('keydown', this.handleKeyDown, {
+      capture: true
+    });
+    window.removeEventListener('input', this.handleInput, { capture: true });
+    window.removeEventListener('paste', this.handlePaste, { capture: true });
+    window.removeEventListener('cut', this.handleCut, { capture: true });
   }
 
   saveContentBatch = async () => {
@@ -330,6 +349,13 @@ export default class EditPost extends React.Component {
     const {
       state: { shouldShowPublishPostMenu: oldVal }
     } = this;
+    if (oldVal) {
+      // hiding menu - reregister
+      this.registerWindowEventHandlers();
+    } else {
+      // showing menu, unregister to not interfere
+      this.unregisterWindowEventHandlers();
+    }
     this.setState({ shouldShowPublishPostMenu: !oldVal });
   };
 
