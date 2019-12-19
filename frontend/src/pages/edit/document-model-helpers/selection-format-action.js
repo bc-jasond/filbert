@@ -28,11 +28,19 @@ export function selectionFormatAction(documentModel, node, selection, action) {
   }
   if (newSectionType) {
     documentModel.update(node.set('type', newSectionType));
-    return [node.get('id'), Map(), Selection()];
+    return {
+      focusNodeId: node.get('id'),
+      updatedNode: Map(),
+      updatedSelection: Selection()
+    };
   }
 
   if (!documentModel.canHaveSelections(node.get('id'))) {
-    return [node.get('id'), Map(), Selection()];
+    return {
+      focusNodeId: node.get('id'),
+      updatedNode: Map(),
+      updatedSelection: Selection()
+    };
   }
 
   let updatedSelectionModel = selection.set(action, !previousActionValue);
@@ -62,5 +70,5 @@ export function selectionFormatAction(documentModel, node, selection, action) {
   }
   const updatedNode = upsertSelection(node, updatedSelectionModel);
   documentModel.update(updatedNode);
-  return [undefined, updatedNode, updatedSelectionModel];
+  return { updatedNode, updatedSelection: updatedSelectionModel };
 }

@@ -5,7 +5,7 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
   const { startNodeCaretStart, startNodeId } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('To DOM SYNC - bad selection, no id ', startNodeId);
-    return [];
+    return {};
   }
   console.info('To DOM SYNC', startNodeId, 'offset', startNodeCaretStart);
 
@@ -43,21 +43,24 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
   );
   documentModel.update(selectedNodeMap);
 
-  return [startNodeId, startNodeCaretStart + newChar.length];
+  return {
+    focusNodeId: startNodeId,
+    caretOffset: startNodeCaretStart + newChar.length
+  };
 }
 
 export function syncFromDom(documentModel, selectionOffsets, evt) {
   const { startNodeCaretStart, startNodeId } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('From DOM SYNC - bad selection, no id ', startNodeId);
-    return [];
+    return {};
   }
   console.info('From DOM SYNC', startNodeId, 'offset', startNodeCaretStart);
 
   // NOTE: following for emojis keyboard insert only...
   const { data: emoji } = evt;
   if (!emoji) {
-    return [];
+    return {};
   }
 
   let selectedNodeMap = documentModel.getNode(startNodeId);
@@ -90,5 +93,5 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   documentModel.update(selectedNodeMap);
 
   // return original startNodeCaretStart for correct setCaret() positioning
-  return [startNodeId, startNodeCaretStart];
+  return { focusNodeId: startNodeId, caretOffset: startNodeCaretStart };
 }

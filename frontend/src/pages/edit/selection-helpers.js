@@ -443,9 +443,9 @@ export function splitSelectionsAtCaretOffset(
 ) {
   let left = List();
   let right = List();
-  let leftNodeModel = leftNodeModelArg;
-  let rightNodeModel = rightNodeModelArg;
-  const selections = getSelections(leftNodeModel);
+  let leftNode = leftNodeModelArg;
+  let rightNode = rightNodeModelArg;
+  const selections = getSelections(leftNode);
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
     // const currentJS = current.toJS();
@@ -467,11 +467,11 @@ export function splitSelectionsAtCaretOffset(
       );
     }
   }
-  leftNodeModel = setSelections(leftNodeModel, left);
-  leftNodeModel = adjustSelectionOffsetsAndCleanup(leftNodeModel);
-  rightNodeModel = setSelections(rightNodeModel, right);
-  rightNodeModel = adjustSelectionOffsetsAndCleanup(rightNodeModel);
-  return [leftNodeModel, rightNodeModel];
+  leftNode = setSelections(leftNode, left);
+  leftNode = adjustSelectionOffsetsAndCleanup(leftNode);
+  rightNode = setSelections(rightNode, right);
+  rightNode = adjustSelectionOffsetsAndCleanup(rightNode);
+  return { leftNode, rightNode };
 }
 
 export function concatSelections(leftModelArg, rightModelArg) {

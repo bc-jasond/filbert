@@ -1715,12 +1715,12 @@ describe('splitSelectionsAtCaretOffset', () => {
   test('split in middle of selection', () => {
     const leftModel = nodeModelWithSelections.set('content', '');
     const rightModel = nodeModelWithSelections.set('content', '');
-    const [testLeft, testRight] = splitSelectionsAtCaretOffset(
+    const { leftNode, rightNode } = splitSelectionsAtCaretOffset(
       leftModel,
       rightModel,
       17
     );
-    expect(testLeft).toMatchInlineSnapshot(`
+    expect(leftNode).toMatchInlineSnapshot(`
       Immutable.Map {
         "type": "p",
         "parent_id": "39fb",
@@ -1794,7 +1794,7 @@ describe('splitSelectionsAtCaretOffset', () => {
         "post_id": 166,
       }
     `);
-    expect(testRight).toMatchInlineSnapshot(`
+    expect(rightNode).toMatchInlineSnapshot(`
       Immutable.Map {
         "type": "p",
         "parent_id": "39fb",
@@ -1895,12 +1895,12 @@ describe('splitSelectionsAtCaretOffset', () => {
       },
       reviver
     );
-    const [left, right] = splitSelectionsAtCaretOffset(
+    const { leftNode, rightNode } = splitSelectionsAtCaretOffset(
       testModelLeft,
       testModelRight,
       19
     );
-    expect(left).toMatchInlineSnapshot(`
+    expect(leftNode).toMatchInlineSnapshot(`
       Immutable.Map {
         "post_id": 166,
         "id": "21ba",
@@ -1950,7 +1950,7 @@ describe('splitSelectionsAtCaretOffset', () => {
         },
       }
     `);
-    expect(right).toMatchInlineSnapshot(`
+    expect(rightNode).toMatchInlineSnapshot(`
       Immutable.Map {
         "post_id": 166,
         "id": "21bc",

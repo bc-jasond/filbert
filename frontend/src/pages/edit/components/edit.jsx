@@ -547,7 +547,7 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
 
-    const [focusNodeId, caretOffset, shouldFocusLastNode] = doDelete(
+    const { focusNodeId, caretOffset, shouldFocusLastNode } = doDelete(
       this.documentModel,
       selectionOffsets
     );
@@ -628,7 +628,7 @@ export default class EditPost extends React.Component {
       doDelete(this.documentModel, selectionOffsets);
     }
 
-    const [focusNodeId, caretOffset] = syncToDom(
+    const { focusNodeId, caretOffset } = syncToDom(
       this.documentModel,
       selectionOffsets,
       evt
@@ -655,7 +655,7 @@ export default class EditPost extends React.Component {
       return;
     }
 
-    const [focusNodeId, caretOffset] = syncFromDom(
+    const { focusNodeId, caretOffset } = syncFromDom(
       this.documentModel,
       selectionOffsets,
       evt
@@ -857,7 +857,7 @@ export default class EditPost extends React.Component {
     evt.stopPropagation();
     evt.preventDefault();
 
-    const [focusNodeId, caretOffset] = doPaste(
+    const { focusNodeId, caretOffset } = doPaste(
       this.documentModel,
       selectionOffsets,
       evt.clipboardData
@@ -1191,7 +1191,11 @@ export default class EditPost extends React.Component {
       state: { formatSelectionModel, formatSelectionNode }
     } = this;
 
-    const [focusNodeId, updatedNode, updatedSelection] = selectionFormatAction(
+    const {
+      focusNodeId,
+      updatedNode,
+      updatedSelection
+    } = selectionFormatAction(
       this.documentModel,
       formatSelectionNode,
       formatSelectionModel,

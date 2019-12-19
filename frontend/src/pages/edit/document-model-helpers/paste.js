@@ -5,7 +5,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   const { startNodeCaretStart, startNodeId } = selectionOffsets;
 
   if (!startNodeId) {
-    return [];
+    return {};
   }
 
   // split selectedNodeContent at caret
@@ -17,7 +17,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
       selectionOffsets,
       clipboardData
     );
-    return [];
+    return {};
   }
   return handlePasteTextType(
     documentModel,

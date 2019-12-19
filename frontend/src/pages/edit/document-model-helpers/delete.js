@@ -6,7 +6,6 @@ import { handleBackspaceTextType } from './handle-text-type';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
 /**
- * @returns {Array[] | Array[focusNodeId, caretOffset, shouldFocusLastChild]}
  */
 export function doDelete(documentModel, selectionOffsets) {
   function deleteOrUpdateNode(diffLength, nodeId, startIdx, endIdx) {
@@ -39,7 +38,7 @@ export function doDelete(documentModel, selectionOffsets) {
   } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('doDelete() bad selection, no id ', startNodeId);
-    return [];
+    return {};
   }
 
   console.info('doDelete()', selectionOffsets);
@@ -108,10 +107,11 @@ export function doDelete(documentModel, selectionOffsets) {
     // NOTE: reaching this code means we don't need to merge any nodes.  If the user deleted all text in the current node
     //  we'll place the caret where the selection ended and the user can hit backspace again to merge sections
     if (!doesMergeParagraphs) {
-      return [
-        selectedNodeId,
-        startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart
-      ];
+      return {
+        focusNodeId: selectedNodeId,
+        caretOffset:
+          startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart
+      };
     }
   }
 
@@ -144,10 +144,10 @@ export function doDelete(documentModel, selectionOffsets) {
       }
     }
   } else {
-    [focusNodeId, caretOffset] = handleBackspaceTextType(
+    ({ focusNodeId, caretOffset } = handleBackspaceTextType(
       documentModel,
       selectedNodeId
-    );
+    ));
   }
-  return [focusNodeId, caretOffset, true];
+  return { focusNodeId, caretOffset, shouldFocusLastChild: true };
 }

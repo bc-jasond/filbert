@@ -15,18 +15,21 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
   const prevNodeId = prevNode.get('id');
   // if at beginning of first node, nothing to do
   if (!prevNodeId) {
-    return [selectedNodeId];
+    return { focusNodeId: selectedNodeId };
   }
   if (!documentModel.isTextType(prevNodeId)) {
     // delete an empty TextType node
     if (documentModel.getNode(selectedNodeId).get('content').length === 0) {
       documentModel.delete(selectedNodeId);
     }
-    return [prevNodeId];
+    return { focusNodeId: prevNodeId };
   }
   // optionally handles Selections
   documentModel.mergeParagraphs(prevNodeId, selectedNodeId);
-  return [prevNodeId, prevNode.get('content').length];
+  return {
+    focusNodeId: prevNodeId,
+    caretOffset: prevNode.get('content').length
+  };
 }
 
 export function handleEnterTextType(
@@ -81,11 +84,11 @@ export function handleEnterTextType(
   let rightNode = documentModel.getNode(rightNodeId);
   // if the original selected node can have Selections - move them to the right node if needed
   if (documentModel.canHaveSelections(leftNodeId)) {
-    [leftNode, rightNode] = splitSelectionsAtCaretOffset(
+    ({ leftNode, rightNode } = splitSelectionsAtCaretOffset(
       leftNode,
       rightNode,
       caretPosition
-    );
+    ));
   }
   console.info(
     'ENTER "TextType" content left: ',
@@ -129,5 +132,8 @@ export function handlePasteTextType(
     diffLength
   );
   documentModel.update(selectedNode);
-  return [selectedNodeId, contentLeft.length + diffLength];
+  return {
+    focusNodeId: selectedNodeId,
+    caretOffset: contentLeft.length + diffLength
+  };
 }
