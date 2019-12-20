@@ -100,6 +100,63 @@ export function getChildTextNodeAndOffsetFromParentOffset(
   return [childNode, childOffset];
 }
 
+export function getFirstAncestorWithId(domNode) {
+  if (!domNode) return null;
+  if (
+    domNode.nodeType === DOM_ELEMENT_NODE_TYPE_ID &&
+    domNode.getAttribute('name')
+  )
+    return domNode;
+  // walk ancestors until one has a truthy 'name' attribute
+  // 'name' === id in the db
+  let { parentElement: current } = domNode;
+  while (current && !current.getAttribute('name')) {
+    /* eslint-disable-next-line prefer-destructuring */
+    current = current.parentElement;
+  }
+  return current;
+}
+
+export function scrollToCaretIfOutOfView(nodeId) {
+  let rect;
+  let node;
+  if (!nodeId) {
+    const range = getRange();
+    if (!range.collapsed) {
+      return;
+    }
+    node = getFirstAncestorWithId(range.commonAncestorContainer);
+    rect = range.getBoundingClientRect();
+  } else {
+    node = getNodeById(nodeId);
+    rect = node.getBoundingClientRect();
+  }
+
+  const middleOfViewport = window.innerHeight / 2;
+
+  if (
+    // out of view UP
+    rect.top < 0 ||
+    // out of view DOWN
+    rect.top > window.innerHeight ||
+    // close to top edge
+    rect.top < 200 ||
+    // close to bottom edge
+    window.innerHeight - rect.top < 200
+  ) {
+    let totalOffset = 0;
+    while (node?.offsetTop > 0) {
+      totalOffset += node.offsetTop;
+      /* eslint-disable-next-line prefer-destructuring */
+      node = node.offsetParent;
+    }
+    window.scrollTo({
+      top: totalOffset - middleOfViewport,
+      behavior: 'smooth'
+    });
+  }
+}
+
 export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
   let offset = offsetArg;
   const [containerNode] = document.getElementsByName(nodeId);
@@ -147,6 +204,8 @@ export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
     }
     range.setStart(textNode, caretOffset);
     sel.addRange(range);
+    // scroll caret into view
+    scrollToCaretIfOutOfView();
   } else {
     console.warn(`setCaret - couldn't find a text node inside of `, nodeId);
   }
@@ -181,23 +240,6 @@ function getParagraphContentOffset(formattingNodeArg, paragraph) {
     offset += paragraph.childNodes[i].textContent.length;
   }
   return offset;
-}
-
-export function getFirstAncestorWithId(domNode) {
-  if (!domNode) return null;
-  if (
-    domNode.nodeType === DOM_ELEMENT_NODE_TYPE_ID &&
-    domNode.getAttribute('name')
-  )
-    return domNode;
-  // walk ancestors until one has a truthy 'name' attribute
-  // 'name' === id in the db
-  let { parentElement: current } = domNode;
-  while (current && !current.getAttribute('name')) {
-    /* eslint-disable-next-line prefer-destructuring */
-    current = current.parentElement;
-  }
-  return current;
 }
 
 /**

@@ -171,7 +171,7 @@ export default class EditPost extends React.Component {
     window.addEventListener('input', this.handleInput, { capture: true });
     window.addEventListener('paste', this.handlePaste, { capture: true });
     window.addEventListener('cut', this.handleCut, { capture: true });
-  }
+  };
 
   unregisterWindowEventHandlers = () => {
     window.removeEventListener('resize', this.manageInsertMenu, {
@@ -183,7 +183,7 @@ export default class EditPost extends React.Component {
     window.removeEventListener('input', this.handleInput, { capture: true });
     window.removeEventListener('paste', this.handlePaste, { capture: true });
     window.removeEventListener('cut', this.handleCut, { capture: true });
-  }
+  };
 
   saveContentBatch = async () => {
     try {
