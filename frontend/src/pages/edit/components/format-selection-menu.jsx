@@ -237,7 +237,10 @@ export default class FormatSelectionMenuComponent extends React.Component {
         return;
       }
       case KEYCODE_ENTER: {
-        if (selectionModel.get(SELECTION_ACTION_LINK)) {
+        if (
+          selectionModel.get(SELECTION_ACTION_LINK) &&
+          selectionModel.get(SELECTION_LINK_URL, '').length
+        ) {
           this.setState({ currentIdx: -1, isMenuOpen: false }, () => {
             this.props?.closeMenu?.();
           });
@@ -245,6 +248,10 @@ export default class FormatSelectionMenuComponent extends React.Component {
         }
         if (currentIdx > -1) {
           this.setState({ currentIdx: -1, isMenuOpen: false }, () => {
+            if (selectionModel.get(this.sectionTypes[currentIdx]?.type)) {
+              // this value is currently selected, don't unselect it. just close the menu
+              return;
+            }
             this.props?.selectionAction?.(
               this.sectionTypes[currentIdx]?.type,
               true

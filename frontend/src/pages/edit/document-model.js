@@ -64,7 +64,7 @@ export default class DocumentModel {
     this.updateManager = updateManager;
     if (jsonData) {
       this.nodesById = Immutable.fromJS(jsonData, reviver);
-      return DocumentModel.getLastNode(this.nodesById).get('id');
+      return DocumentModel.getFirstNode(this.nodesById).get('id');
     }
     return this.clearNodesAndSetTitlePlaceholder();
   }

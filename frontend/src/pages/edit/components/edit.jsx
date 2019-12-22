@@ -95,6 +95,8 @@ export default class EditPost extends React.Component {
 
   inputRef;
 
+  selectionOffsets = {};
+
   constructor(props) {
     super(props);
 
@@ -238,7 +240,7 @@ export default class EditPost extends React.Component {
         `/edit/${this.props?.match?.params?.id}`
       );
       this.updateManager.init(post);
-      const lastNodeId = this.documentModel.init(
+      const firstNodeId = this.documentModel.init(
         post,
         this.updateManager,
         contentNodes
@@ -250,9 +252,8 @@ export default class EditPost extends React.Component {
           shouldShow404: false
         },
         async () => {
-          setCaret(lastNodeId, -1, true);
+          setCaret(firstNodeId, 0);
           await this.manageInsertMenu();
-          window.scrollTo(0, 0);
         }
       );
     } catch (err) {
@@ -490,6 +491,8 @@ export default class EditPost extends React.Component {
         // down or right - collapse to end
         getRange().collapse(false);
       }
+      evt.stopPropagation();
+      evt.preventDefault();
       return;
     }
 
@@ -752,6 +755,13 @@ export default class EditPost extends React.Component {
     ) {
       // pass this event up to the menu to handle
       this.setState({ windowEventToForward: evt });
+      return;
+    }
+    if (
+      // ignore shift and option - don't override hard-refresh!
+      evt.metaKey &&
+      evt.shiftKey
+    ) {
       return;
     }
     if (
