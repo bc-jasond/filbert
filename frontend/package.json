@@ -9,6 +9,7 @@
   "private": null,
   "scripts": {
     "clean": "rm -rf dist/*",
+    "preflight": "yarn pretty-ci && yarn lint && yarn test",
     "test": "jest --collectCoverage=false",
     "test-watch": "jest --bail --notify --watchAll",
     "test-coverage": "jest --coverage",
@@ -17,7 +18,7 @@
     "start-prod": "webpack-dev-server --config webpack-prod.config.js -p --mode production",
     "start-prod-local": "USE_LOCALHOST_API=true webpack-dev-server --hot --mode production",
     "pretty": "prettier --parser=babel --single-quote --write \"**/*.{js,jsx}\"",
-    "pretty-ci": "prettier --parser=babel --single-quote --check -l \"**/*.{js,jsx}\"",
+    "pretty-ci": "prettier --parser=babel --single-quote --check \"**/*.{js,jsx}\"",
     "lint": "eslint --fix \"**/*.{js,jsx}\"",
     "nibble": "eslint-nibble \"**/*.{js,jsx}\""
   },

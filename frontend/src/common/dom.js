@@ -97,7 +97,7 @@ export function getChildTextNodeAndOffsetFromParentOffset(
     }
     childOffset -= childNode.textContent.length;
   }
-  return [childNode, childOffset];
+  return { childNode, childOffset };
 }
 
 export function getFirstAncestorWithId(domNode) {
@@ -157,6 +157,31 @@ export function scrollToCaretIfOutOfView(nodeId) {
   }
 }
 
+// TODO: support multi-node
+//  takes a nodeId and a start and end position relative to the node content and sets a new DOM range
+export function replaceRange(
+  startNodeId,
+  startNodeCaretStart,
+  startNodeCaretEnd
+) {
+  const selection = window.getSelection();
+  const replacementRange = document.createRange();
+  const node = getNodeById(startNodeId);
+  const {
+    childNode: startNode,
+    childOffset: startOffset
+  } = getChildTextNodeAndOffsetFromParentOffset(node, startNodeCaretStart);
+  replacementRange.setStart(startNode, startOffset);
+  const {
+    childNode: endNode,
+    childOffset: endOffset
+  } = getChildTextNodeAndOffsetFromParentOffset(node, startNodeCaretEnd);
+  replacementRange.setEnd(endNode, endOffset);
+  selection.removeAllRanges();
+  selection.addRange(replacementRange);
+  return replacementRange;
+}
+
 export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
   let offset = offsetArg;
   const [containerNode] = document.getElementsByName(nodeId);
@@ -172,10 +197,10 @@ export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
   infiniteLoopCount = 0;
   let textNode;
   if ([NODE_TYPE_P, NODE_TYPE_LI].includes(containerNode.dataset.type)) {
-    [textNode, offset] = getChildTextNodeAndOffsetFromParentOffset(
-      containerNode,
-      offset
-    );
+    ({
+      childNode: textNode,
+      childOffset: offset
+    } = getChildTextNodeAndOffsetFromParentOffset(containerNode, offset));
   } else {
     const queue = [...containerNode.childNodes];
     while (queue.length) {

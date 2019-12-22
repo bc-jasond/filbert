@@ -35,6 +35,7 @@ import {
   getRange,
   isControlKey,
   removeAllRanges,
+  replaceRange,
   setCaret
 } from '../../../common/dom';
 
@@ -168,6 +169,7 @@ export default class EditPost extends React.Component {
   registerWindowEventHandlers = () => {
     window.addEventListener('resize', this.manageInsertMenu, { capture: true });
     window.addEventListener('keydown', this.handleKeyDown, { capture: true });
+    window.addEventListener('keyup', this.handleKeyUp, { capture: true });
     window.addEventListener('input', this.handleInput, { capture: true });
     window.addEventListener('paste', this.handlePaste, { capture: true });
     window.addEventListener('cut', this.handleCut, { capture: true });
@@ -180,6 +182,7 @@ export default class EditPost extends React.Component {
     window.removeEventListener('keydown', this.handleKeyDown, {
       capture: true
     });
+    window.removeEventListener('keyup', this.handleKeyUp, { capture: true });
     window.removeEventListener('input', this.handleInput, { capture: true });
     window.removeEventListener('paste', this.handlePaste, { capture: true });
     window.removeEventListener('cut', this.handleCut, { capture: true });
@@ -718,10 +721,11 @@ export default class EditPost extends React.Component {
 
   handleKeyDown = async evt => {
     const {
-      state: { insertMenuNode }
+      state: { insertMenuNode, formatSelectionNode, formatSelectionModel }
     } = this;
-    // bail conditions
-    // insert menu button is displayed
+    // BAIL conditions
+    //
+    // insert menu button is displayed (on empty P)
     if (
       insertMenuNode.get('id') &&
       // no range means the menu is closed
@@ -732,7 +736,22 @@ export default class EditPost extends React.Component {
         ))
     ) {
       // pass this event up to the menu to handle
-      this.setState({ insertMenuDomEvent: evt });
+      this.setState({ windowEventToForward: evt });
+      return;
+    }
+    // format selection menu is open
+    if (
+      formatSelectionNode.get('id') &&
+      (formatSelectionModel.get(SELECTION_ACTION_LINK) ||
+        // don't capture holding down shift so user can resize the selection
+        !evt.shiftKey ||
+        // but DO allow a double tap on shift to open the menu
+        [KEYCODE_SHIFT_RIGHT, KEYCODE_SHIFT_OR_COMMAND_LEFT].includes(
+          evt.keyCode
+        ))
+    ) {
+      // pass this event up to the menu to handle
+      this.setState({ windowEventToForward: evt });
       return;
     }
     if (
@@ -778,7 +797,14 @@ export default class EditPost extends React.Component {
     }
   };
 
-  handleKeyUp = async () => {};
+  handleKeyUp = async evt => {
+    if (!(evt.shiftKey && isControlKey(evt.keyCode))) {
+      return;
+    }
+    console.debug('KEYUP');
+    const selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
+    await this.manageFormatSelectionMenu(evt, selectionOffsets);
+  };
 
   handleInput = async evt => {
     // any control keys being held down?
@@ -1011,17 +1037,6 @@ export default class EditPost extends React.Component {
     ref.focus();
   };
 
-  getLinkUrlForwardedRef = ref => {
-    if (!ref) return;
-    this.inputRef = ref;
-    const {
-      state: { formatSelectionModel }
-    } = this;
-    if (formatSelectionModel.get(SELECTION_ACTION_LINK)) {
-      ref.focus();
-    }
-  };
-
   replaceImageFile = async ([firstFile]) => {
     const {
       state: { editSectionNode }
@@ -1106,6 +1121,27 @@ export default class EditPost extends React.Component {
     );
   };
 
+  closeFormatSelectionMenu = async () => {
+    const {
+      state: { formatSelectionNode },
+      selectionOffsets: { startNodeId, startNodeCaretStart, startNodeCaretEnd }
+    } = this;
+    if (formatSelectionNode.get('id')) {
+      await new Promise(resolve => {
+        this.setState(
+          {
+            formatSelectionNode: Map(),
+            formatSelectionModel: Selection(),
+            formatSelectionMenuTopOffset: 0,
+            formatSelectionMenuLeftOffset: 0
+          },
+          resolve
+        );
+      });
+      replaceRange(startNodeId, startNodeCaretStart, startNodeCaretEnd);
+    }
+  };
+
   updateLinkUrl = value => {
     const {
       state: { formatSelectionNode, formatSelectionModel }
@@ -1132,7 +1168,6 @@ export default class EditPost extends React.Component {
 
   // TODO: bug - selection highlighting disappears on user input on format selection menu
   manageFormatSelectionMenu = async (evt, selectionOffsets) => {
-    const isEscKey = evt && evt.keyCode === KEYCODE_ESC;
     const {
       startNodeCaretStart,
       startNodeCaretEnd,
@@ -1143,26 +1178,9 @@ export default class EditPost extends React.Component {
       // no node
       !startNodeId ||
       // collapsed caret
-      startNodeCaretStart === startNodeCaretEnd ||
-      // hit esc
-      isEscKey
+      startNodeCaretStart === startNodeCaretEnd
     ) {
-      const {
-        state: { formatSelectionNode }
-      } = this;
-      if (formatSelectionNode.get('id')) {
-        await new Promise(resolve => {
-          this.setState(
-            {
-              formatSelectionNode: Map(),
-              formatSelectionModel: Selection(),
-              formatSelectionMenuTopOffset: 0,
-              formatSelectionMenuLeftOffset: 0
-            },
-            resolve
-          );
-        });
-      }
+      await this.closeFormatSelectionMenu();
       return;
     }
 
@@ -1192,7 +1210,9 @@ export default class EditPost extends React.Component {
     );
     const rect = range.getBoundingClientRect();
     const selectedNodeModel = this.documentModel.getNode(startNodeId);
-
+    // save range offsets because if the selection is marked as a "link" the url input will be focused
+    // and the range will be lost
+    this.selectionOffsets = selectionOffsets;
     await new Promise(resolve =>
       this.setState(
         {
@@ -1203,7 +1223,7 @@ export default class EditPost extends React.Component {
             startNodeCaretEnd
           ),
           // NOTE: need to add current vertical scroll position of the window to the
-          // rect position to get offset relative to the document
+          // rect position to get offset relative to the whole document
           formatSelectionMenuTopOffset: rect.top + window.scrollY,
           formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2
         },
@@ -1212,11 +1232,11 @@ export default class EditPost extends React.Component {
     );
   };
 
-  handleSelectionAction = async action => {
+  handleSelectionAction = async (action, shouldCloseMenu = false) => {
     const {
-      state: { formatSelectionModel, formatSelectionNode }
+      state: { formatSelectionModel, formatSelectionNode },
+      selectionOffsets: { startNodeCaretStart, startNodeCaretEnd, startNodeId }
     } = this;
-
     const {
       focusNodeId,
       updatedNode,
@@ -1228,16 +1248,39 @@ export default class EditPost extends React.Component {
       action
     );
     await this.commitUpdates(focusNodeId);
+    if (shouldCloseMenu) {
+      await this.closeFormatSelectionMenu();
+      replaceRange(startNodeId, startNodeCaretStart, startNodeCaretEnd);
+      return;
+    }
     this.setState(
       {
         formatSelectionNode: updatedNode,
         formatSelectionModel: updatedSelection
       },
-      () => {
-        // TODO: selection highlight will be lost after rendering - create new range and add to window.selection
+      async () => {
         if (updatedSelection.get(SELECTION_ACTION_LINK) && this.inputRef) {
           this.inputRef.focus();
         }
+        // this replaces the selection after calling setState
+        const replacementRange = replaceRange(
+          startNodeId,
+          startNodeCaretStart,
+          startNodeCaretEnd
+        );
+        // reposition menu since formatting changes move the selection around on the screen
+        const rect = replacementRange.getBoundingClientRect();
+        await new Promise(resolve =>
+          this.setState(
+            {
+              // NOTE: need to add current vertical scroll position of the window to the
+              // rect position to get offset relative to the whole document
+              formatSelectionMenuTopOffset: rect.top + window.scrollY,
+              formatSelectionMenuLeftOffset: (rect.left + rect.right) / 2
+            },
+            resolve
+          )
+        );
       }
     );
   };
@@ -1261,7 +1304,7 @@ export default class EditPost extends React.Component {
         nodesById,
         shouldShow404,
         shouldRedirect,
-        insertMenuDomEvent,
+        windowEventToForward,
         insertMenuNode,
         insertMenuTopOffset,
         insertMenuLeftOffset,
@@ -1342,7 +1385,7 @@ export default class EditPost extends React.Component {
         )}
         {insertMenuNode.get('id') && (
           <InsertSectionMenu
-            windowEvent={insertMenuDomEvent}
+            windowEvent={windowEventToForward}
             insertNodeId={insertMenuNode.get('id')}
             insertMenuTopOffset={insertMenuTopOffset}
             insertMenuLeftOffset={insertMenuLeftOffset}
@@ -1371,13 +1414,14 @@ export default class EditPost extends React.Component {
           )}
         {formatSelectionNode.get('id') && (
           <FormatSelectionMenu
+            windowEvent={windowEventToForward}
             offsetTop={formatSelectionMenuTopOffset}
             offsetLeft={formatSelectionMenuLeftOffset}
             nodeModel={formatSelectionNode}
             selectionModel={formatSelectionModel}
             selectionAction={this.handleSelectionAction}
             updateLinkUrl={this.updateLinkUrl}
-            forwardRef={this.getLinkUrlForwardedRef}
+            closeMenu={this.closeFormatSelectionMenu}
           />
         )}
       </>

@@ -73,7 +73,7 @@ const HiddenFileInput = styled.input`
 `;
 const InsertSectionMenuItemsContainer = styled.div`
   position: absolute;
-  z-index: 13; // same as lil black menu
+  z-index: 13; // same as lil menu
   top: 16px;
   min-height: 24px;
   left: 48px;
@@ -151,7 +151,8 @@ export default class InsertSectionMenuComponent extends React.Component {
     super(props);
 
     this.state = {
-      currentIdx: -1
+      currentIdx: -1,
+      menuIsOpen: false
     };
   }
 
@@ -186,7 +187,7 @@ export default class InsertSectionMenuComponent extends React.Component {
       case KEYCODE_SHIFT_RIGHT: {
         if (this.didHitShift) {
           // user double-tapped shift
-          this.setState({ currentIdx: 0 });
+          this.setState({ menuIsOpen: true });
           this.didHitShift = false;
           // clear the caret, it's just dangling around some random place like a piece of spinach in your teeth
           removeAllRanges();
@@ -207,14 +208,16 @@ export default class InsertSectionMenuComponent extends React.Component {
         break;
       }
       case KEYCODE_ESC: {
-        this.setState({ currentIdx: -1 });
+        this.setState({ currentIdx: -1, menuIsOpen: false });
         this.focusInsertNode();
         return;
       }
       case KEYCODE_SPACE: // fall-through
       case KEYCODE_ENTER: {
         if (currentIdx > -1) {
-          this.sectionTypes[currentIdx]?.callback?.();
+          this.setState({ currentIdx: -1, menuIsOpen: false }, () => {
+            this.sectionTypes[currentIdx]?.callback?.();
+          });
         }
       }
     }
@@ -223,14 +226,16 @@ export default class InsertSectionMenuComponent extends React.Component {
   toggleMenu = () => {
     const {
       props: { insertNodeId },
-      state: { currentIdx }
+      state: { menuIsOpen: menuWasOpen }
     } = this;
-    const shouldOpen = currentIdx === -1;
-    this.setState({ currentIdx: shouldOpen ? 0 : -1 }, () => {
-      if (shouldOpen) {
-        removeAllRanges();
-      } else {
+
+    this.setState({ menuIsOpen: !menuWasOpen }, () => {
+      if (menuWasOpen) {
+        // will be closed, replace caret
         setCaret(insertNodeId);
+      } else {
+        // will be open, hide caret
+        removeAllRanges();
       }
     });
   };
@@ -238,33 +243,35 @@ export default class InsertSectionMenuComponent extends React.Component {
   render() {
     const {
       props: { insertMenuTopOffset, insertMenuLeftOffset },
-      state: { currentIdx }
+      state: { currentIdx, menuIsOpen }
     } = this;
 
     return (
       <InsertSectionMenu
         name="insert-section-menu"
-        isOpen={currentIdx > -1}
+        isOpen={menuIsOpen}
         topOffset={insertMenuTopOffset}
         leftOffset={insertMenuLeftOffset}
         onKeyDown={this.handleKeyDown}
       >
         <InsertSectionMenuButton
           onClick={this.toggleMenu}
-          isOpen={currentIdx > -1}
+          isOpen={menuIsOpen}
         />
         <InsertSectionMenuItemsContainer
           autocomplete="off"
           autocorrect="off"
           autocapitalize="off"
           spellcheck="false"
-          isOpen={currentIdx > -1}
+          isOpen={menuIsOpen}
         >
           {this.sectionTypes.map(({ type, children, callback }, idx) => (
             <InsertSectionItem
               key={type}
               isOpen={currentIdx === idx}
               onClick={callback}
+              onMouseOver={() => this.setState({ currentIdx: -1 })}
+              onFocus={() => {}}
             >
               {children}
             </InsertSectionItem>

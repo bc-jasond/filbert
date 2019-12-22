@@ -1,8 +1,32 @@
 import * as React from 'react';
 import styled from 'styled-components';
+
+import IconBoldSvg from '../../../../assets/icons/bold.svg';
+import IconCodeSvg from '../../../../assets/icons/code.svg';
+import IconH1Svg from '../../../../assets/icons/h1.svg';
+import IconH2Svg from '../../../../assets/icons/h2.svg';
+import IconInfoSvg from '../../../../assets/icons/info.svg';
+import IconItalicSvg from '../../../../assets/icons/italic.svg';
+import IconLinkSvg from '../../../../assets/icons/link.svg';
+import IconMiniSvg from '../../../../assets/icons/mini.svg';
+import IconStrikethroughSvg from '../../../../assets/icons/strikethrough.svg';
 import {
-  NODE_TYPE_H1,
-  NODE_TYPE_H2,
+  Arrow,
+  ButtonSeparator,
+  DarkInput,
+  IconButton,
+  LilSassyMenu,
+  PointClip,
+  SvgIconMixin
+} from '../../../common/components/shared-styled-components';
+import {
+  KEYCODE_ENTER,
+  KEYCODE_ESC,
+  KEYCODE_LEFT_ARROW,
+  KEYCODE_RIGHT_ARROW,
+  KEYCODE_SHIFT_OR_COMMAND_LEFT,
+  KEYCODE_SHIFT_RIGHT,
+  KEYCODE_SPACE,
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,
   SELECTION_ACTION_H1,
@@ -14,25 +38,6 @@ import {
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_LINK_URL
 } from '../../../common/constants';
-import {
-  Arrow,
-  ButtonSeparator,
-  DarkInput,
-  IconButton,
-  LilSassyMenu,
-  PointClip,
-  SvgIconMixin
-} from '../../../common/components/shared-styled-components';
-
-import IconBoldSvg from '../../../../assets/icons/bold.svg';
-import IconItalicSvg from '../../../../assets/icons/italic.svg';
-import IconCodeSvg from '../../../../assets/icons/code.svg';
-import IconInfoSvg from '../../../../assets/icons/info.svg';
-import IconStrikethroughSvg from '../../../../assets/icons/strikethrough.svg';
-import IconLinkSvg from '../../../../assets/icons/link.svg';
-import IconH1Svg from '../../../../assets/icons/h1.svg';
-import IconH2Svg from '../../../../assets/icons/h2.svg';
-import IconMiniSvg from '../../../../assets/icons/mini.svg';
 
 const IconBold = styled(IconBoldSvg)`
   ${SvgIconMixin};
@@ -64,6 +69,7 @@ const IconMini = styled(IconMiniSvg)`
 
 const FormatSelectionMenu = styled(LilSassyMenu)`
   // 44 is the height of menu, 10 is the height of arrow point
+  display: ${p => (p.isOpen ? 'block' : 'none')};
   top: ${p => p.top - 44 - 15 - (p.shouldShowUrl ? 30 : 0)}px;
   left: ${p => p.left - 183}px; // 183 is half the width of the menu
 `;
@@ -73,7 +79,7 @@ const LinkInput = styled(DarkInput)`
   padding: 0;
   transition: 0.05s height;
   ${p =>
-    p.selected &&
+    p.checked &&
     `
     padding: 12px;
     padding-top: 0;
@@ -81,59 +87,208 @@ const LinkInput = styled(DarkInput)`
   `}
 `;
 
-export default ({
-  offsetTop,
-  offsetLeft,
-  nodeModel,
-  selectionModel,
-  selectionAction,
-  updateLinkUrl,
-  forwardRef
+const FormatSelectionMenuItem = ({
+  onClick,
+  Styled,
+  selected,
+  checked,
+  shouldAddSpacer
 }) => (
-  <FormatSelectionMenu
-    shouldShowUrl={selectionModel.get(SELECTION_ACTION_LINK)}
-    top={offsetTop}
-    left={offsetLeft}
-  >
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_BOLD)}>
-      <IconBold selected={selectionModel.get(SELECTION_ACTION_BOLD)} />
+  <>
+    {shouldAddSpacer && <ButtonSeparator />}
+    <IconButton onClick={onClick}>
+      <Styled selected={selected} checked={checked} />
     </IconButton>
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_ITALIC)}>
-      <IconItalic selected={selectionModel.get(SELECTION_ACTION_ITALIC)} />
-    </IconButton>
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_CODE)}>
-      <IconCode selected={selectionModel.get(SELECTION_ACTION_CODE)} />
-    </IconButton>
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_SITEINFO)}>
-      <IconSiteinfo selected={selectionModel.get(SELECTION_ACTION_SITEINFO)} />
-    </IconButton>
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_MINI)}>
-      <IconMini selected={selectionModel.get(SELECTION_ACTION_MINI)} />
-    </IconButton>
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_STRIKETHROUGH)}>
-      <IconStrikethrough
-        selected={selectionModel.get(SELECTION_ACTION_STRIKETHROUGH)}
-      />
-    </IconButton>
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_LINK)}>
-      <IconLink selected={selectionModel.get(SELECTION_ACTION_LINK)} />
-    </IconButton>
-    <ButtonSeparator />
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_H1)}>
-      <IconH1 selected={nodeModel.get('type') === NODE_TYPE_H1} />
-    </IconButton>
-    <IconButton onClick={() => selectionAction(SELECTION_ACTION_H2)}>
-      <IconH2 selected={nodeModel.get('type') === NODE_TYPE_H2} />
-    </IconButton>
-    <LinkInput
-      ref={forwardRef}
-      placeholder="Enter URL here..."
-      selected={selectionModel.get(SELECTION_ACTION_LINK)}
-      onChange={e => updateLinkUrl(e.target.value)}
-      value={selectionModel.get(SELECTION_LINK_URL)}
-    />
-    <PointClip>
-      <Arrow />
-    </PointClip>
-  </FormatSelectionMenu>
+  </>
 );
+
+export default class FormatSelectionMenuComponent extends React.Component {
+  didHitShift = false;
+
+  ref = React.createRef();
+
+  sectionTypes = [
+    {
+      type: SELECTION_ACTION_BOLD,
+      Styled: IconBold,
+      shouldAddSpacer: false
+    },
+    {
+      type: SELECTION_ACTION_ITALIC,
+      Styled: IconItalic,
+      shouldAddSpacer: false
+    },
+    {
+      type: SELECTION_ACTION_CODE,
+      Styled: IconCode,
+      shouldAddSpacer: false
+    },
+    {
+      type: SELECTION_ACTION_SITEINFO,
+      Styled: IconSiteinfo,
+      shouldAddSpacer: false
+    },
+    {
+      type: SELECTION_ACTION_MINI,
+      Styled: IconMini,
+      shouldAddSpacer: false
+    },
+    {
+      type: SELECTION_ACTION_STRIKETHROUGH,
+      Styled: IconStrikethrough,
+      shouldAddSpacer: false
+    },
+    {
+      type: SELECTION_ACTION_LINK,
+      Styled: IconLink,
+      shouldAddSpacer: false
+    },
+    {
+      type: SELECTION_ACTION_H1,
+      Styled: IconH1,
+      shouldAddSpacer: true
+    },
+    {
+      type: SELECTION_ACTION_H2,
+      Styled: IconH2,
+      shouldAddSpacer: false
+    }
+  ];
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      currentIdx: -1,
+      isMenuOpen: true
+    };
+  }
+
+  componentDidUpdate(prevProps) {
+    const {
+      props: { selectionModel, windowEvent }
+    } = this;
+    if (windowEvent && windowEvent !== prevProps.windowEvent) {
+      this.handleKeyDown(windowEvent);
+    }
+    if (selectionModel.get(SELECTION_ACTION_LINK) && this.ref) {
+      this.ref.current.focus();
+    }
+  }
+
+  handleKeyDown = evt => {
+    const {
+      props: { selectionModel },
+      state: { currentIdx }
+    } = this;
+
+    // if 'link' is selected we need to let keystrokes pass through to the URL input... messy business
+    // only allow 'enter' and 'esc' through to close the menu
+    if (
+      selectionModel.get(SELECTION_ACTION_LINK) &&
+      ![KEYCODE_ENTER, KEYCODE_ESC].includes(evt.keyCode)
+    ) {
+      return;
+    }
+    // don't let contenteditable take over!
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    /* eslint-disable-next-line default-case */
+    switch (evt.keyCode) {
+      case KEYCODE_SHIFT_OR_COMMAND_LEFT: // fall-through
+      case KEYCODE_SHIFT_RIGHT: {
+        if (this.didHitShift) {
+          // user double-tapped shift
+          this.setState({ isMenuOpen: true });
+          this.didHitShift = false;
+          return;
+        }
+        this.didHitShift = true;
+        setTimeout(() => {
+          this.didHitShift = false;
+        }, 500);
+        return;
+      }
+      case KEYCODE_LEFT_ARROW: {
+        this.setState({ currentIdx: Math.max(0, currentIdx - 1) });
+        break;
+      }
+      case KEYCODE_RIGHT_ARROW: {
+        this.setState({ currentIdx: Math.min(8, currentIdx + 1) });
+        break;
+      }
+      case KEYCODE_ESC: {
+        // if "link" is selected, user is "stranded" in the url input.  Override 'esc' here to provide
+        // a keyboard only escape hatch
+        if (selectionModel.get(SELECTION_ACTION_LINK)) {
+          this.props?.selectionAction?.(SELECTION_ACTION_LINK);
+          return;
+        }
+        this.setState({ currentIdx: -1, isMenuOpen: false }, () => {
+          this.props?.closeMenu?.();
+        });
+        return;
+      }
+      case KEYCODE_SPACE: {
+        if (currentIdx > -1) {
+          this.props?.selectionAction?.(this.sectionTypes[currentIdx]?.type);
+        }
+        return;
+      }
+      case KEYCODE_ENTER: {
+        if (selectionModel.get(SELECTION_ACTION_LINK)) {
+          this.setState({ currentIdx: -1, isMenuOpen: false }, () => {
+            this.props?.closeMenu?.();
+          });
+          return;
+        }
+        if (currentIdx > -1) {
+          this.setState({ currentIdx: -1, isMenuOpen: false }, () => {
+            this.props?.selectionAction?.(
+              this.sectionTypes[currentIdx]?.type,
+              true
+            );
+          });
+        }
+      }
+    }
+  };
+
+  render() {
+    const {
+      props: { offsetTop, offsetLeft, selectionModel, updateLinkUrl },
+      state: { currentIdx, isMenuOpen }
+    } = this;
+
+    return (
+      <FormatSelectionMenu
+        shouldShowUrl={selectionModel.get(SELECTION_ACTION_LINK)}
+        top={offsetTop}
+        left={offsetLeft}
+        isOpen={isMenuOpen}
+      >
+        {this.sectionTypes.map(({ type, Styled, shouldAddSpacer }, idx) => (
+          <FormatSelectionMenuItem
+            key={type}
+            onClick={() => this.props?.selectionAction?.(type)}
+            Styled={Styled}
+            selected={currentIdx === idx}
+            checked={selectionModel.get(type) || undefined}
+            shouldAddSpacer={shouldAddSpacer}
+          />
+        ))}
+        <LinkInput
+          ref={this.ref}
+          placeholder="Enter URL here..."
+          checked={selectionModel.get(SELECTION_ACTION_LINK)}
+          onChange={e => updateLinkUrl(e.target.value)}
+          value={selectionModel.get(SELECTION_LINK_URL)}
+        />
+        <PointClip>
+          <Arrow />
+        </PointClip>
+      </FormatSelectionMenu>
+    );
+  }
+}

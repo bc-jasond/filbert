@@ -420,6 +420,11 @@ export const SvgIconMixin = css`
   ${p =>
     p.selected &&
     `
+    fill: ${blue};
+  `}
+  ${p =>
+    p.checked &&
+    `
     fill: ${darkBlue};
   `}
 `;
