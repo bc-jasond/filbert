@@ -428,3 +428,16 @@ export function isControlKey(code) {
     KEYCODE_PRINT_SCREEN
   ].includes(code);
 }
+
+export function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const tag = document.createElement('script');
+    // tag.async = true;
+    // tag.defer = true;
+    tag.onload = resolve;
+    tag.onerror = reject;
+    tag.src = src;
+    const body = document.getElementsByTagName('body')[0];
+    body.appendChild(tag);
+  });
+}

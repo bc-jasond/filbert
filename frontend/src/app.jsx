@@ -12,6 +12,7 @@ import ListAllPosts from './pages/list-all-posts';
 import ListAllDrafts from './pages/list-all-drafts';
 import ViewPost from './pages/view-post';
 import SignIn from './pages/signin';
+import SignInAdmin from './pages/signin-admin';
 import EditPost from './pages/edit/components/edit';
 
 export default () => (
@@ -21,6 +22,7 @@ export default () => (
         <Redirect push exact from="/" to="/posts" />
         <Redirect push exact from="/about" to="/posts/about" />
         <Route exact path="/signin" component={SignIn} />
+        <Route exact path="/signin-admin" component={SignInAdmin} />
         <Route exact path="/posts" component={ListAllPosts} />
         <Route exact path="/drafts" component={ListAllDrafts} />
         {/* NOTE: this :canonical is a string like 'some-url-87ba' */}

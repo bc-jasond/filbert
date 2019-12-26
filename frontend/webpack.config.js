@@ -84,7 +84,9 @@ module.exports = (env, argv) => {
           isProduction && !process.env.USE_LOCALHOST_API
             ? "'https://api.filbert.xyz'"
             : "'http://localhost:3001'",
-        'process.env.isProduction': isProduction
+        'process.env.isProduction': isProduction,
+        'process.env.GOOGLE_API_FILBERT_CLIENT_ID':
+          '"608178004837-u7gj17jvrsuokmkilkaf9qph79p0eojq.apps.googleusercontent.com"'
       })
     ],
     optimization: {

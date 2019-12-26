@@ -66,9 +66,8 @@ export const H2Styled = styled.h2`
 `;
 export const H3 = styled.h3`
   text-overflow: ellipsis;
-  max-height: 56px;
+  //max-height: 56px;
   margin-bottom: 8px;
-  overflow: hidden;
   letter-spacing: -0.47px;
   font-size: 25.2px;
   line-height: 28px;
@@ -306,7 +305,6 @@ export const TextArea = styled.textarea`
     `}
 `;
 export const Label = styled.label`
-  text-transform: capitalize;
   margin-bottom: 4px;
   font-family: ${sansSerif};
   ${p =>
@@ -327,14 +325,17 @@ export const MessageContainer = styled.div`
   min-height: 36px;
   text-align: center;
   font-family: ${monospaced};
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 export const Button = styled.button`
   display: block;
   border-radius: 26px;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
   width: 100%;
   margin-bottom: 16px;
   background: ${blue};
-  border: 0;
   padding: 14px 18px;
   font-size: 18px;
   cursor: pointer;

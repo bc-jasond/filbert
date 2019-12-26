@@ -51,7 +51,9 @@ module.exports = (/* env, argv */) => {
       }),
       new webpack.DefinePlugin({
         'process.env.API_URL': "'https://api.filbert.xyz'",
-        'process.env.isProduction': true
+        'process.env.isProduction': true,
+        'process.env.GOOGLE_API_FILBERT_CLIENT_ID':
+          '"608178004837-u7gj17jvrsuokmkilkaf9qph79p0eojq.apps.googleusercontent.com"'
       })
     ],
     optimization: {

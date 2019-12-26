@@ -6,7 +6,8 @@
         "prettier/react"
     ],
     "globals": {
-        "Pace": "readonly"
+        "Pace": "readonly",
+        "gapi": "readonly"
     },
     "parser": "babel-eslint",
     "parserOptions": {
@@ -21,6 +22,14 @@
         "babel"
     ],
     "rules": {
+        "import/no-unused-modules": [0, { // TODO: doesn't work with \*test*\ being ignored, turn on to check but don't commit until fixed
+            "missingExports": true,
+            "unusedExports": true,
+            "ignoreExports": [
+                "*.config.js",
+                "**/index*"
+            ]
+        }],
         "no-alert": 0, // TODO
         "no-console": 0, // TODO
         "no-else-return": 2,
