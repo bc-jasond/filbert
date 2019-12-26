@@ -1,16 +1,16 @@
-const knex = require('knex');
+const knex = require("knex");
 
 let knexConnection;
 
 export async function getKnex() {
   if (!knexConnection) {
     knexConnection = knex({
-      client: 'mysql2',
+      client: "mysql2",
       connection: {
-        host: process.env.NODE_ENV === 'production' ? 'db' : 'localhost', // docker-compose.yml service name
-        user: 'root',
+        host: process.env.NODE_ENV === "production" ? "db" : "localhost", // docker-compose.yml service name
+        user: "root",
         password: process.env.MYSQL_ROOT_PASSWORD,
-        database: 'filbert'
+        database: "filbert"
       },
       asyncStackTraces: true,
       debug: true
@@ -27,23 +27,23 @@ export function getMysqlDatetime(date = null) {
   // dirty! https://stackoverflow.com/a/15103764/1991322
   return (
     dateInstance.getFullYear() +
-    '-' +
-    ('0' + (dateInstance.getMonth() + 1)).slice(-2) +
-    '-' +
-    ('0' + dateInstance.getDate()).slice(-2) +
-    ' ' +
-    ('0' + dateInstance.getHours()).slice(-2) +
-    ':' +
-    ('0' + dateInstance.getMinutes()).slice(-2) +
-    ':' +
-    ('0' + dateInstance.getSeconds()).slice(-2)
+    "-" +
+    ("0" + (dateInstance.getMonth() + 1)).slice(-2) +
+    "-" +
+    ("0" + dateInstance.getDate()).slice(-2) +
+    " " +
+    ("0" + dateInstance.getHours()).slice(-2) +
+    ":" +
+    ("0" + dateInstance.getMinutes()).slice(-2) +
+    ":" +
+    ("0" + dateInstance.getSeconds()).slice(-2)
   );
 }
 
 export async function getNodes(knex, postId) {
-  const nodesArray = await knex('content_node')
-    .where('post_id', postId)
-    .orderBy(['parent_id', 'position']);
+  const nodesArray = await knex("content_node")
+    .where("post_id", postId)
+    .orderBy(["parent_id", "position"]);
 
   // group nodes by parent_id, sorted by position
   return nodesArray.reduce((acc, node) => {
@@ -56,7 +56,7 @@ export async function getNodes(knex, postId) {
 }
 
 export async function getNodesFlat(knex, postId) {
-  const nodesArray = await knex('content_node').where('post_id', postId);
+  const nodesArray = await knex("content_node").where("post_id", postId);
 
   // flat map of nodeId => node
   return nodesArray.reduce((acc, node) => {
@@ -88,7 +88,7 @@ export async function bulkContentNodeUpsert(records) {
   const knexInstance = await getKnex();
   const query = `
     INSERT INTO content_node (post_id, id, next_sibling_id, type, content, meta) VALUES
-    ${records.map(() => '(?)').join(',')}
+    ${records.map(() => "(?)").join(",")}
     ON DUPLICATE KEY UPDATE
     next_sibling_id = VALUES(next_sibling_id),
     type = VALUES(type),
@@ -104,7 +104,7 @@ export async function bulkContentNodeUpsert(records) {
       nodeId,
       node.next_sibling_id || null,
       node.type,
-      node.content || '',
+      node.content || "",
       JSON.stringify(node.meta || {})
     ]);
   });
@@ -118,8 +118,8 @@ export async function bulkContentNodeDelete(records) {
   const postId = records[0][1].post_id;
   const recordIds = records.map(r => r[0]);
   const knexInstance = await getKnex();
-  return knexInstance('content_node')
-    .whereIn('id', recordIds)
-    .andWhere('post_id', postId)
+  return knexInstance("content_node")
+    .whereIn("id", recordIds)
+    .andWhere("post_id", postId)
     .del();
 }

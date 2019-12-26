@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 
 export async function checkPassword(password, hash) {
   return bcrypt.compare(password, hash);
