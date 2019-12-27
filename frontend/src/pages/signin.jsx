@@ -122,8 +122,6 @@ export default class SignIn extends React.Component {
       googleUser: {},
       shouldShowUsernameInput: false
     };
-    const queryParams = new URLSearchParams(window.location.search);
-    this.nextUrl = queryParams.get('next'); // returns null if empty
   }
 
   async componentDidMount() {
@@ -140,12 +138,6 @@ export default class SignIn extends React.Component {
         const user = this.GoogleAuth.currentUser.get();
         this.setGoogleUser(user);
       }
-      this.GoogleAuth.attachClickHandler(
-        'google-sign-in-button',
-        {},
-        this.doLoginGoogle,
-        error => this.setState({ error, success: null })
-      );
     };
     await loadScript(
       'https://apis.google.com/js/platform.js?onload=initThaGoog'
@@ -173,27 +165,41 @@ export default class SignIn extends React.Component {
     );
   };
 
-  doLoginGoogle = async user => {
-    const {
-      state: { googleUser, username }
-    } = this;
-    const currentUser = googleUser.idToken
-      ? googleUser
-      : await this.setGoogleUser(user);
-    const { signupIsIncomplete } = await signinGoogle(currentUser, username);
-    if (signupIsIncomplete) {
-      this.setState(
-        { shouldShowUsernameInput: true, error: null, success: null },
-        () => {
-          usernameRef.current.focus();
-        }
-      );
-      return;
+  doLoginGoogle = async evt => {
+    try {
+      const {
+        state: { googleUser, username }
+      } = this;
+      let currentUser;
+      // evt is a 'submit' event, we don't want the page to reload
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      if (!googleUser?.idToken) {
+        // open google window to let the user select a user to login as, or to grant access
+        const user = await this.GoogleAuth.signIn();
+        currentUser = await this.setGoogleUser(user);
+      } else {
+        // user was already logged in and set in this.state
+        currentUser = googleUser;
+      }
+      const { signupIsIncomplete } = await signinGoogle(currentUser, username);
+      if (signupIsIncomplete) {
+        this.setState(
+          { shouldShowUsernameInput: true, error: null, success: null },
+          () => {
+            usernameRef.current.focus();
+          }
+        );
+        return;
+      }
+      this.setState({ success: 'All set 👍', error: null });
+      setTimeout(() => {
+        this.setState({ shouldRedirect: true });
+      }, 500);
+    } catch (error) {
+      this.setState({ success: null, error });
     }
-    this.setState({ success: 'All set 👍', error: null });
-    setTimeout(() => {
-      this.setState({ shouldRedirect: true });
-    }, 500);
   };
 
   doLogout = async () => {
@@ -205,11 +211,32 @@ export default class SignIn extends React.Component {
 
   updateUsername = event => {
     const {
-      target: { value: newUsername }
+      target: { value }
     } = event;
+    const {
+      state: { username }
+    } = this;
+    const newUsername = value.replace(/[^0-9a-z]/g, '');
+    if (newUsername === username) {
+      return;
+    }
     this.setState({ username: newUsername, error: null }, () => {
       if (this.checkUsernameTimeout) {
         clearTimeout(this.checkUsernameTimeout);
+      }
+      if (newUsername.length < 5) {
+        this.setState({
+          error: `${newUsername} is too short.  Pick a username between 5 and 42 characters...`,
+          success: null
+        });
+        return;
+      }
+      if (newUsername.length > 42) {
+        this.setState({
+          error: `${newUsername} is too long.  Pick a username between 5 and 42 characters...`,
+          success: null
+        });
+        return;
       }
       this.checkUsernameTimeout = setTimeout(async () => {
         const usernameIsAvailable = await apiGet(
@@ -236,15 +263,16 @@ export default class SignIn extends React.Component {
         shouldShowUsernameInput,
         username,
         googleUser: { name, givenName, imageUrl, email }
-      },
-      nextUrl
+      }
     } = this;
     if (shouldRedirect) {
-      return <Redirect push to={nextUrl || '/'} />;
+      const queryParams = new URLSearchParams(window.location.search);
+      const nextUrl = queryParams.get('next') || '/'; // returns null if empty
+      return <Redirect push to={nextUrl} />;
     }
     return (
       <Container>
-        <SignInForm onSubmit={this.doLogin}>
+        <SignInForm onSubmit={this.doLoginGoogle}>
           <StyledLinkStyled to="/">
             <span role="img" aria-label="hand writing with a pen">
               ✍️
@@ -261,7 +289,7 @@ export default class SignIn extends React.Component {
               </GoogleInfoSpan>
             </GoogleInfo>
           )}
-          {shouldShowUsernameInput ? (
+          {shouldShowUsernameInput && (
             <>
               <H3Styled>
                 Welcome!
@@ -272,7 +300,8 @@ export default class SignIn extends React.Component {
               </H3Styled>
               <InputContainer>
                 <Label htmlFor="username" error={error}>
-                  filbert username
+                  filbert username (lowercase letters a-z and numbers 0-9 only,
+                  length 5 to 42 characters)
                 </Label>
                 <Input
                   name="username"
@@ -282,69 +311,47 @@ export default class SignIn extends React.Component {
                   error={error}
                   ref={usernameRef}
                   autoComplete="off"
+                  minLength="5"
+                  maxLength="42"
                 />
               </InputContainer>
-              <MessageContainer>
-                {error && (
-                  <ErrorMessage>
-                    Try again. {JSON.stringify(error)}
-                    <span role="img" aria-label="male police officer">
-                      {' '}
-                      👮
-                    </span>
-                  </ErrorMessage>
-                )}
-                {success && <SuccessMessage>{success}</SuccessMessage>}
-              </MessageContainer>
-              <GoogleSigninButton
-                disabled={error}
-                type="button"
-                onClick={this.doLoginGoogle}
-              >
-                <GoogleIcon />
-                <GoogleSigninButtonSpan>
-                  Continue as {username}
-                </GoogleSigninButtonSpan>
-              </GoogleSigninButton>
-              <LinkStyled2 to="/">
-                <CancelButton>
-                  <ButtonSpan>Cancel</ButtonSpan>
-                </CancelButton>
-              </LinkStyled2>
             </>
+          )}
+          <MessageContainer>
+            {error && (
+              <ErrorMessage>
+                Try again. {JSON.stringify(error)}
+                <span role="img" aria-label="male police officer">
+                  👮
+                </span>
+              </ErrorMessage>
+            )}
+            {success && <SuccessMessage>{success}</SuccessMessage>}
+          </MessageContainer>
+          <GoogleSigninButton
+            id="google-sign-in-button"
+            disabled={error}
+            type="submit"
+          >
+            <GoogleIcon />
+            <GoogleSigninButtonSpan>
+              {givenName || shouldShowUsernameInput
+                ? `Continue as ${
+                    shouldShowUsernameInput ? username : givenName
+                  }`
+                : 'Sign in to filbert with Google'}
+            </GoogleSigninButtonSpan>
+          </GoogleSigninButton>
+          {!shouldShowUsernameInput ? (
+            <CancelButton type="button" onClick={this.doLogout}>
+              <ButtonSpan>Logout</ButtonSpan>
+            </CancelButton>
           ) : (
-            <>
-              <MessageContainer>
-                {error && (
-                  <ErrorMessage>
-                    Try again. {JSON.stringify(error)}
-                    <span role="img" aria-label="male police officer">
-                      👮
-                    </span>
-                  </ErrorMessage>
-                )}
-                {success && <SuccessMessage>{success}</SuccessMessage>}
-              </MessageContainer>
-              <GoogleSigninButton id="google-sign-in-button" type="button">
-                <GoogleIcon />
-                <GoogleSigninButtonSpan>
-                  {givenName
-                    ? `Continue as ${givenName}`
-                    : 'Sign in to filbert with Google'}
-                </GoogleSigninButtonSpan>
-              </GoogleSigninButton>
-              {name ? (
-                <CancelButton type="button" onClick={this.doLogout}>
-                  <ButtonSpan>Logout</ButtonSpan>
-                </CancelButton>
-              ) : (
-                <LinkStyled2 to="/">
-                  <CancelButton>
-                    <ButtonSpan>Cancel</ButtonSpan>
-                  </CancelButton>
-                </LinkStyled2>
-              )}
-            </>
+            <LinkStyled2 to="/">
+              <CancelButton>
+                <ButtonSpan>Cancel</ButtonSpan>
+              </CancelButton>
+            </LinkStyled2>
           )}
         </SignInForm>
       </Container>

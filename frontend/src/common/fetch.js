@@ -3,7 +3,7 @@ import { API_URL, AUTH_TOKEN_KEY } from './constants';
 async function handleResponse(res) {
   const response = await res.json();
   const shouldRedirect =
-    res?.status === 401 && response?.error.includes('expired');
+    res?.status === 401 && response?.error?.includes('expired');
   if (shouldRedirect) {
     window.location.href = `signin?next=${window.location.pathname}`;
   }

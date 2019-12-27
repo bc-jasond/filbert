@@ -59,6 +59,8 @@ async function main() {
           );
           const decryptedToken = JSON.parse(decrypt(authorization));
           const nowInSeconds = Math.floor(Date.now() / 1000);
+          // auto-fail to test redirect to ?next=/some-previous-page flow
+          //    decryptedToken.exp = nowInSeconds;
           if (decryptedToken.exp - nowInSeconds <= 5 * 60 /* 5 minutes */) {
             // token expired if within 5 minutes of the 'exp' time
             res.status(401).send({ error: "expired token" });
@@ -114,12 +116,14 @@ async function main() {
 
     app.post("/signin-google", async (req, res) => {
       try {
-        const { googleUser, filbertUsername } = req.body;
+        const {
+          body: { googleUser: { idToken } = {}, filbertUsername } = {}
+        } = req;
         const client = new OAuth2Client(
           process.env.GOOGLE_API_FILBERT_CLIENT_ID
         );
         const ticket = await client.verifyIdToken({
-          idToken: googleUser.idToken,
+          idToken,
           audience: process.env.GOOGLE_API_FILBERT_CLIENT_ID
         });
         // LoginTicket api/node_modules/google-auth-library/build/src/auth/loginticket.d.ts
@@ -133,7 +137,6 @@ async function main() {
         } = ticket.getPayload();
 
         let [user] = await knex("user").where("email", email);
-
         if (user) {
           sendSession(res, { ...user, exp });
           return;
@@ -142,6 +145,29 @@ async function main() {
         if (!user && !filbertUsername) {
           // this is a signup, prompt for a username
           res.send({ signupIsIncomplete: true });
+          return;
+        }
+
+        if (
+          filbertUsername.length < 5 ||
+          filbertUsername.length > 42 ||
+          RegExp(/[^0-9a-z]/g).test(filbertUsername)
+        ) {
+          res
+            .status(400)
+            .send({
+              error: `Invalid Username: ${filbertUsername}\nPick a username with at least 5 to 42 characters in length with only lowercase letters and numbers.  No spaces, special characters or emojis or anything of that nature.`
+            });
+          return;
+        }
+
+        [user] = await knex("user").where("username", filbertUsername);
+        if (user) {
+          res
+            .status(400)
+            .send({
+              error: `Invalid Username: ${filbertUsername}\nIt's already taken!`
+            });
           return;
         }
 
@@ -177,7 +203,7 @@ async function main() {
         res.send(false);
         return;
       }
-      if (username.length < 4 || username.length > 42) {
+      if (username.length < 5 || username.length > 42) {
         res.send(false);
         return;
       }
