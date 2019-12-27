@@ -6,13 +6,17 @@ CREATE TABLE `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `email` varchar(150) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `password` char(60) COLLATE utf8mb4_unicode_520_ci NOT NULL,
+  `password` char(60) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `deleted` datetime DEFAULT NULL,
+  `given_name` varchar(200) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `family_name` varchar(200) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `picture_url` varchar(500) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `iss` varchar(200) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username_UNIQUE` (`username`) USING BTREE,
   UNIQUE KEY `email_UNIQUE` (`email`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 CREATE TABLE `content_node` (
   `post_id` int(11) NOT NULL,
   `id` char(4) COLLATE utf8mb4_unicode_520_ci NOT NULL,
