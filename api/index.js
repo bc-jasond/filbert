@@ -103,8 +103,8 @@ async function main() {
           res.status(401).send({ error: "Invalid credentials" });
           return;
         }
-        
-        const exp = (Date.now() / 1000) + (60 * 60 * 24);  // 24 hours
+
+        const exp = Date.now() / 1000 + 60 * 60 * 24; // 24 hours
         sendSession(res, { ...user, exp });
       } catch (err) {
         console.error("Signin Error: ", err);
@@ -553,22 +553,28 @@ async function main() {
 }
 
 function validateSaneEnvironment() {
-  const { env: {
-MYSQL_ROOT_PASSWORD,
-ENCRYPTION_KEY,
-GOOGLE_API_FILBERT_CLIENT_ID
-  } } = process;
+  const {
+    env: { MYSQL_ROOT_PASSWORD, ENCRYPTION_KEY, GOOGLE_API_FILBERT_CLIENT_ID }
+  } = process;
   const errorMessagePieces = [];
   if (!MYSQL_ROOT_PASSWORD) {
-    errorMessagePieces.push('process.env.MYSQL_ROOT_PASSWORD is missing!');
+    errorMessagePieces.push("process.env.MYSQL_ROOT_PASSWORD is missing!");
   }
-  if (!ENCRYPTION_KEY || typeof ENCRYPTION_KEY !== 'string' || ENCRYPTION_KEY.length !== 32) {
-    errorMessagePieces.push('process.env.ENCRYPTION_KEY is missing! (expected: a string of 32 characters)');
+  if (
+    !ENCRYPTION_KEY ||
+    typeof ENCRYPTION_KEY !== "string" ||
+    ENCRYPTION_KEY.length !== 32
+  ) {
+    errorMessagePieces.push(
+      "process.env.ENCRYPTION_KEY is missing! (expected: a string of 32 characters)"
+    );
   }
   if (!GOOGLE_API_FILBERT_CLIENT_ID) {
-    errorMessagePieces.push('process.env.GOOGLE_API_FILBERT_CLIENT_ID is missing!');
+    errorMessagePieces.push(
+      "process.env.GOOGLE_API_FILBERT_CLIENT_ID is missing!"
+    );
   }
-  return errorMessagePieces.length ? errorMessagePieces.join('\n') : '';
+  return errorMessagePieces.length ? errorMessagePieces.join("\n") : "";
 }
 
 const environmentErrorMessage = validateSaneEnvironment();
@@ -580,9 +586,10 @@ const welcomeMessage = `
  |_| |_|_|_.__/ \\___|_|   \\__|\n\n`;
 console.info(chalk.cyan(welcomeMessage));
 if (environmentErrorMessage.length) {
-  console.error(chalk.red(`❌ filbert API cannot start!\n\n${environmentErrorMessage}`))
+  console.error(
+    chalk.red(`❌ filbert API cannot start!\n\n${environmentErrorMessage}`)
+  );
   process.exitCode = 1;
 } else {
   main();
 }
-
