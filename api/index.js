@@ -4,7 +4,7 @@ require = require("esm")(module /*, options*/);
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const figlet = require("figlet");
+//const figlet = require("figlet");
 const storage = multer.memoryStorage();
 const upload = multer({
   storage, // TODO: store in memory as Buffer - bad idea?
@@ -17,6 +17,7 @@ const upload = multer({
 const sharp = require("sharp");
 // const util = require('util');  for util.inspect()
 const { OAuth2Client } = require("google-auth-library");
+const chalk = require("chalk");
 
 const {
   getKnex,
@@ -30,11 +31,6 @@ const { encrypt, decrypt, getChecksum } = require("./cipher");
 
 async function main() {
   try {
-    console.info(
-      figlet.textSync("filbert", {
-        //font: 'Doh',
-      })
-    );
     const knex = await getKnex();
 
     const app = express();
@@ -107,8 +103,9 @@ async function main() {
           res.status(401).send({ error: "Invalid credentials" });
           return;
         }
-
-        sendSession(res, user);
+        
+        const exp = (Date.now() / 1000) + (60 * 60 * 24);  // 24 hours
+        sendSession(res, { ...user, exp });
       } catch (err) {
         console.error("Signin Error: ", err);
         res.status(401).send({});
@@ -549,10 +546,43 @@ async function main() {
     });
 
     app.listen(3001);
-    console.info("Filbert API Started 👍");
+    console.info(chalk.green("Filbert API Started 👍"));
   } catch (err) {
     console.error("main() error: ", err);
   }
 }
 
-main();
+function validateSaneEnvironment() {
+  const { env: {
+MYSQL_ROOT_PASSWORD,
+ENCRYPTION_KEY,
+GOOGLE_API_FILBERT_CLIENT_ID
+  } } = process;
+  const errorMessagePieces = [];
+  if (!MYSQL_ROOT_PASSWORD) {
+    errorMessagePieces.push('process.env.MYSQL_ROOT_PASSWORD is missing!');
+  }
+  if (!ENCRYPTION_KEY || typeof ENCRYPTION_KEY !== 'string' || ENCRYPTION_KEY.length !== 32) {
+    errorMessagePieces.push('process.env.ENCRYPTION_KEY is missing! (expected: a string of 32 characters)');
+  }
+  if (!GOOGLE_API_FILBERT_CLIENT_ID) {
+    errorMessagePieces.push('process.env.GOOGLE_API_FILBERT_CLIENT_ID is missing!');
+  }
+  return errorMessagePieces.length ? errorMessagePieces.join('\n') : '';
+}
+
+const environmentErrorMessage = validateSaneEnvironment();
+const welcomeMessage = `
+   __ _ _ _               _
+  / _(_) | |__   ___ _ __| |_
+ | |_| | | '_ \\ / _ \\ '__| __|
+ |  _| | | |_) |  __/ |  | |_
+ |_| |_|_|_.__/ \\___|_|   \\__|\n\n`;
+console.info(chalk.cyan(welcomeMessage));
+if (environmentErrorMessage.length) {
+  console.error(chalk.red(`❌ filbert API cannot start!\n\n${environmentErrorMessage}`))
+  process.exitCode = 1;
+} else {
+  main();
+}
+
