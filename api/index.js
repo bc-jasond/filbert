@@ -4,7 +4,7 @@ require = require("esm")(module /*, options*/);
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const figlet = require("figlet");
+//const figlet = require("figlet");
 const storage = multer.memoryStorage();
 const upload = multer({
   storage, // TODO: store in memory as Buffer - bad idea?
@@ -16,6 +16,8 @@ const upload = multer({
 });
 const sharp = require("sharp");
 // const util = require('util');  for util.inspect()
+const { OAuth2Client } = require("google-auth-library");
+const chalk = require("chalk");
 
 const {
   getKnex,
@@ -29,11 +31,6 @@ const { encrypt, decrypt, getChecksum } = require("./cipher");
 
 async function main() {
   try {
-    console.info(
-      figlet.textSync("filbert", {
-        //font: 'Doh',
-      })
-    );
     const knex = await getKnex();
 
     const app = express();
@@ -42,6 +39,9 @@ async function main() {
 
     /**
      * parse Authorization header, add logged in user to req object
+     *
+     * TODO: implement refresh_token hybrid frontend/server-side flow
+     *  https://developers.google.com/identity/sign-in/web/server-side-flow
      */
     app.use(async (req, res, next) => {
       try {
@@ -57,9 +57,14 @@ async function main() {
             authorization,
             typeof authorization
           );
-          // TODO: add expiry time lol
-          // TODO: add refresh token & flow
-          req.loggedInUser = JSON.parse(decrypt(authorization));
+          const decryptedToken = JSON.parse(decrypt(authorization));
+          const nowInSeconds = Math.floor(Date.now() / 1000);
+          if (decryptedToken.exp - nowInSeconds <= 5 * 60 /* 5 minutes */) {
+            // token expired if within 5 minutes of the 'exp' time
+            res.status(401).send({ error: "expired token" });
+            return;
+          }
+          req.loggedInUser = decryptedToken;
         }
         next();
       } catch (err) {
@@ -67,6 +72,20 @@ async function main() {
         next();
       }
     });
+
+    function sendSession(res, user) {
+      res.send({
+        token: encrypt(JSON.stringify(user)),
+        session: {
+          username: user.username,
+          userId: user.id,
+          givenName: user.given_name,
+          familyName: user.family_name,
+          pictureUrl: user.picture_url,
+          iss: user.iss
+        }
+      });
+    }
 
     app.post("/signin", async (req, res) => {
       try {
@@ -85,17 +104,87 @@ async function main() {
           return;
         }
 
-        res.send({
-          token: encrypt(JSON.stringify(user)),
-          session: {
-            username: user.username,
-            userId: user.id
-          }
-        });
+        const exp = Date.now() / 1000 + 60 * 60 * 24; // 24 hours
+        sendSession(res, { ...user, exp });
       } catch (err) {
         console.error("Signin Error: ", err);
         res.status(401).send({});
       }
+    });
+
+    app.post("/signin-google", async (req, res) => {
+      try {
+        const { googleUser, filbertUsername } = req.body;
+        const client = new OAuth2Client(
+          process.env.GOOGLE_API_FILBERT_CLIENT_ID
+        );
+        const ticket = await client.verifyIdToken({
+          idToken: googleUser.idToken,
+          audience: process.env.GOOGLE_API_FILBERT_CLIENT_ID
+        });
+        // LoginTicket api/node_modules/google-auth-library/build/src/auth/loginticket.d.ts
+        const {
+          email,
+          given_name,
+          family_name,
+          picture,
+          iss,
+          exp
+        } = ticket.getPayload();
+
+        let [user] = await knex("user").where("email", email);
+
+        if (user) {
+          sendSession(res, { ...user, exp });
+          return;
+        }
+
+        if (!user && !filbertUsername) {
+          // this is a signup, prompt for a username
+          res.send({ signupIsIncomplete: true });
+          return;
+        }
+
+        // we're back and user entered username, try to create a new user record and signin
+        const [userId] = await knex
+          .insert({
+            email,
+            username: filbertUsername,
+            given_name,
+            family_name,
+            picture_url: picture,
+            iss
+          })
+          .into("user");
+
+        [user] = await knex("user").where("id", userId);
+
+        sendSession(res, { ...user, exp });
+      } catch (err) {
+        console.error("Signin Error: ", err);
+        res.status(401).send({});
+      }
+    });
+
+    /**
+     * username is taken?
+     */
+    app.get("/username-is-available/:username", async (req, res) => {
+      const {
+        params: { username }
+      } = req;
+      if (!username) {
+        res.send(false);
+        return;
+      }
+      if (username.length < 4 || username.length > 42) {
+        res.send(false);
+        return;
+      }
+      const [user] = await knex("user")
+        .select("id")
+        .where("username", username);
+      res.send(!user);
     });
 
     app.get("/post", async (req, res) => {
@@ -457,10 +546,50 @@ async function main() {
     });
 
     app.listen(3001);
-    console.info("Filbert API Started 👍");
+    console.info(chalk.green("Filbert API Started 👍"));
   } catch (err) {
     console.error("main() error: ", err);
   }
 }
 
-main();
+function validateSaneEnvironment() {
+  const {
+    env: { MYSQL_ROOT_PASSWORD, ENCRYPTION_KEY, GOOGLE_API_FILBERT_CLIENT_ID }
+  } = process;
+  const errorMessagePieces = [];
+  if (!MYSQL_ROOT_PASSWORD) {
+    errorMessagePieces.push("process.env.MYSQL_ROOT_PASSWORD is missing!");
+  }
+  if (
+    !ENCRYPTION_KEY ||
+    typeof ENCRYPTION_KEY !== "string" ||
+    ENCRYPTION_KEY.length !== 32
+  ) {
+    errorMessagePieces.push(
+      "process.env.ENCRYPTION_KEY is missing! (expected: a string of 32 characters)"
+    );
+  }
+  if (!GOOGLE_API_FILBERT_CLIENT_ID) {
+    errorMessagePieces.push(
+      "process.env.GOOGLE_API_FILBERT_CLIENT_ID is missing!"
+    );
+  }
+  return errorMessagePieces.length ? errorMessagePieces.join("\n") : "";
+}
+
+const environmentErrorMessage = validateSaneEnvironment();
+const welcomeMessage = `
+   __ _ _ _               _
+  / _(_) | |__   ___ _ __| |_
+ | |_| | | '_ \\ / _ \\ '__| __|
+ |  _| | | |_) |  __/ |  | |_
+ |_| |_|_|_.__/ \\___|_|   \\__|\n\n`;
+console.info(chalk.cyan(welcomeMessage));
+if (environmentErrorMessage.length) {
+  console.error(
+    chalk.red(`❌ filbert API cannot start!\n\n${environmentErrorMessage}`)
+  );
+  process.exitCode = 1;
+} else {
+  main();
+}

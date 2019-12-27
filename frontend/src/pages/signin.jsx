@@ -1,11 +1,10 @@
 import * as React from 'react';
-import styled from 'styled-components';
 import { Link, Redirect } from 'react-router-dom';
-
-import { signin } from '../common/session';
+import styled from 'styled-components';
+import GoogleIconSvg from '../../assets/icons/google-logo.svg';
+import { LogoLinkStyled } from '../common/components/layout-styled-components';
 
 import {
-  A,
   Button,
   ButtonSpan,
   CancelButton,
@@ -18,7 +17,11 @@ import {
   MessageContainer,
   SuccessMessage
 } from '../common/components/shared-styled-components';
-import { LogoLinkStyled } from '../common/components/layout-styled-components';
+import { darkGrey } from '../common/css';
+import { loadScript } from '../common/dom';
+import { apiGet } from '../common/fetch';
+
+import { signinGoogle, signout } from '../common/session';
 
 const Container = styled.div`
   display: flex;
@@ -26,7 +29,7 @@ const Container = styled.div`
   align-items: center;
 `;
 const SignInForm = styled.form`
-  width: 33vw;
+  width: 40vw;
   max-width: 450px;
   min-width: 320px;
   padding: 40px;
@@ -39,68 +42,205 @@ const StyledLinkStyled = styled(LogoLinkStyled)`
   position: static;
   padding-bottom: 24px;
 `;
+const H1StyledStyled = styled(H1Styled)`
+  margin-bottom: 8px;
+`;
+const H3Styled = styled(H3)`
+  margin-bottom: 24px;
+`;
 const LinkStyled2 = styled(Link)`
   text-decoration: none;
 `;
-const StyledA = styled(A)``;
+const Smaller = styled.span`
+  display: block;
+  font-family: inherit;
+  font-size: smaller;
+`;
+const GoogleSigninButton = styled(Button)`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: white;
+  padding: 0 16px;
+  height: 52px;
+  &:hover {
+    background: white;
+  }
+`;
+const GoogleSigninButtonSpan = styled(ButtonSpan)`
+  color: ${darkGrey};
+  flex-grow: 2;
+  text-align: center;
+`;
+const GoogleInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+  margin-bottom: 16px;
+  font-size: 18px;
+  &:hover {
+    background: white;
+  }
+`;
+const GoogleIcon = styled(GoogleIconSvg)`
+  position: absolute;
+  flex-shrink: 0;
+  height: 24px;
+  width: 24px;
+`;
+const GoogleInfoSpan = styled(ButtonSpan)`
+  display: block;
+  color: ${darkGrey};
+  overflow: hidden;
+  white-space: pre-wrap;
+  text-overflow: ellipsis;
+  padding: 4px;
+`;
+const GoogleProfileImg = styled.img`
+  flex-shrink: 0;
+  border-radius: 50%;
+  margin: 8px;
+  position: relative;
+  height: 72px;
+  width: 72px;
+  z-index: 0;
+`;
 
 const usernameRef = React.createRef();
 
 export default class SignIn extends React.Component {
+  GoogleAuth;
+
   constructor(props) {
     super(props);
     this.state = {
-      username: '',
-      password: '',
       error: null,
       success: null,
-      shouldRedirect: false
+      shouldRedirect: false,
+      username: '',
+      googleUser: {},
+      shouldShowUsernameInput: false
     };
+    const queryParams = new URLSearchParams(window.location.search);
+    this.nextUrl = queryParams.get('next'); // returns null if empty
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     if (usernameRef && usernameRef.current) {
       usernameRef.current.focus();
     }
+    window.initThaGoog = async () => {
+      await new Promise(resolve => gapi.load('auth2', resolve));
+      await gapi.auth2.init({
+        client_id: process.env.GOOGLE_API_FILBERT_CLIENT_ID
+      });
+      this.GoogleAuth = gapi.auth2.getAuthInstance();
+      if (this.GoogleAuth.isSignedIn.get()) {
+        const user = this.GoogleAuth.currentUser.get();
+        this.setGoogleUser(user);
+      }
+      this.GoogleAuth.attachClickHandler(
+        'google-sign-in-button',
+        {},
+        this.doLoginGoogle,
+        error => this.setState({ error, success: null })
+      );
+    };
+    await loadScript(
+      'https://apis.google.com/js/platform.js?onload=initThaGoog'
+    );
   }
 
-  updateUsername = event => {
-    this.setState({ username: event.target.value, error: null });
-  };
+  componentWillUnmount() {
+    delete window.initThaGoog;
+  }
 
-  updatePassword = event => {
-    this.setState({ password: event.target.value, error: null });
-  };
-
-  doLogin = async event => {
-    event.preventDefault();
-    try {
-      const {
-        state: { username, password }
-      } = this;
-      await signin(username, password);
-      this.setState({
-        error: null,
-        success: 'All set 👍'
-      });
-      setTimeout(() => {
-        this.setState({ shouldRedirect: true });
-      }, 500);
-    } catch (error) {
-      console.error('Login Error: ', error);
-      this.setState({
-        error,
-        success: null
-      });
+  setGoogleUser = async user => {
+    if (!user.getBasicProfile) {
+      return Promise.resolve();
     }
+    const profile = user.getBasicProfile();
+    const googleUser = {
+      name: profile.getName(),
+      givenName: profile.getGivenName(),
+      imageUrl: profile.getImageUrl(),
+      email: profile.getEmail(),
+      idToken: user.getAuthResponse().id_token
+    };
+    return new Promise(resolve =>
+      this.setState({ googleUser }, () => resolve(googleUser))
+    );
+  };
+
+  doLoginGoogle = async user => {
+    const {
+      state: { googleUser, username }
+    } = this;
+    const currentUser = googleUser.idToken
+      ? googleUser
+      : await this.setGoogleUser(user);
+    const { signupIsIncomplete } = await signinGoogle(currentUser, username);
+    if (signupIsIncomplete) {
+      this.setState(
+        { shouldShowUsernameInput: true, error: null, success: null },
+        () => {
+          usernameRef.current.focus();
+        }
+      );
+      return;
+    }
+    this.setState({ success: 'All set 👍', error: null });
+    setTimeout(() => {
+      this.setState({ shouldRedirect: true });
+    }, 500);
+  };
+
+  doLogout = async () => {
+    this.setState({ error: null, success: null });
+    await this.GoogleAuth.signOut();
+    signout();
+    this.setState({ googleUser: {} });
+  };
+
+  updateUsername = event => {
+    const {
+      target: { value: newUsername }
+    } = event;
+    this.setState({ username: newUsername, error: null }, () => {
+      if (this.checkUsernameTimeout) {
+        clearTimeout(this.checkUsernameTimeout);
+      }
+      this.checkUsernameTimeout = setTimeout(async () => {
+        const usernameIsAvailable = await apiGet(
+          `/username-is-available/${newUsername}`
+        );
+        if (usernameIsAvailable) {
+          this.setState({
+            success: `"${newUsername}" is available 👍`,
+            error: null
+          });
+          return;
+        }
+        this.setState({ error: `${newUsername} is taken`, success: null });
+      }, 750);
+    });
   };
 
   render() {
     const {
-      state: { error, success, shouldRedirect }
+      state: {
+        error,
+        success,
+        shouldRedirect,
+        shouldShowUsernameInput,
+        username,
+        googleUser: { name, givenName, imageUrl, email }
+      },
+      nextUrl
     } = this;
     if (shouldRedirect) {
-      return <Redirect push to="/" />;
+      return <Redirect push to={nextUrl || '/'} />;
     }
     return (
       <Container>
@@ -111,55 +251,101 @@ export default class SignIn extends React.Component {
             </span>{' '}
             filbert
           </StyledLinkStyled>
-          <H1Styled>Sign In</H1Styled>
-          <H3>
-            Want an account?{' '}
-            <StyledA onClick={() => alert('Coming soon!')}>Click here</StyledA>
-          </H3>
-          <InputContainer>
-            <Label htmlFor="username" error={error}>
-              Username
-            </Label>
-            <Input
-              name="username"
-              type="text"
-              value={this.state?.username}
-              onChange={this.updateUsername}
-              error={error}
-              ref={usernameRef}
-            />
-          </InputContainer>
-          <InputContainer>
-            <Label htmlFor="password" error={error}>
-              Password
-            </Label>
-            <Input
-              name="password"
-              type="password"
-              value={this.state?.password}
-              onChange={this.updatePassword}
-              error={error}
-            />
-          </InputContainer>
-          <MessageContainer>
-            {error && (
-              <ErrorMessage>
-                Try again.{' '}
-                <span role="img" aria-label="male police officer">
-                  👮
-                </span>
-              </ErrorMessage>
-            )}
-            {success && <SuccessMessage>{success}</SuccessMessage>}
-          </MessageContainer>
-          <Button type="submit">
-            <ButtonSpan>Sign In</ButtonSpan>
-          </Button>
-          <LinkStyled2 to="/">
-            <CancelButton>
-              <ButtonSpan>Cancel</ButtonSpan>
-            </CancelButton>
-          </LinkStyled2>
+          <H1StyledStyled>Sign In</H1StyledStyled>
+          {imageUrl && name && email && (
+            <GoogleInfo>
+              <GoogleProfileImg src={imageUrl} />
+              <GoogleInfoSpan>{name}</GoogleInfoSpan>
+              <GoogleInfoSpan>
+                <Smaller>{email}</Smaller>
+              </GoogleInfoSpan>
+            </GoogleInfo>
+          )}
+          {shouldShowUsernameInput ? (
+            <>
+              <H3Styled>
+                Welcome!
+                <Smaller>
+                  Just one more step before we continue. Choose a filbert
+                  username.
+                </Smaller>
+              </H3Styled>
+              <InputContainer>
+                <Label htmlFor="username" error={error}>
+                  filbert username
+                </Label>
+                <Input
+                  name="username"
+                  type="text"
+                  value={username}
+                  onChange={this.updateUsername}
+                  error={error}
+                  ref={usernameRef}
+                  autoComplete="off"
+                />
+              </InputContainer>
+              <MessageContainer>
+                {error && (
+                  <ErrorMessage>
+                    Try again. {JSON.stringify(error)}
+                    <span role="img" aria-label="male police officer">
+                      {' '}
+                      👮
+                    </span>
+                  </ErrorMessage>
+                )}
+                {success && <SuccessMessage>{success}</SuccessMessage>}
+              </MessageContainer>
+              <GoogleSigninButton
+                disabled={error}
+                type="button"
+                onClick={this.doLoginGoogle}
+              >
+                <GoogleIcon />
+                <GoogleSigninButtonSpan>
+                  Continue as {username}
+                </GoogleSigninButtonSpan>
+              </GoogleSigninButton>
+              <LinkStyled2 to="/">
+                <CancelButton>
+                  <ButtonSpan>Cancel</ButtonSpan>
+                </CancelButton>
+              </LinkStyled2>
+            </>
+          ) : (
+            <>
+              <MessageContainer>
+                {error && (
+                  <ErrorMessage>
+                    Try again. {JSON.stringify(error)}
+                    <span role="img" aria-label="male police officer">
+                      👮
+                    </span>
+                  </ErrorMessage>
+                )}
+                {success && <SuccessMessage>{success}</SuccessMessage>}
+              </MessageContainer>
+              <GoogleSigninButton id="google-sign-in-button" type="button">
+                <GoogleIcon />
+                <GoogleSigninButtonSpan>
+                  {givenName
+                    ? `Continue as ${givenName}`
+                    : 'Sign in to filbert with Google'}
+                </GoogleSigninButtonSpan>
+              </GoogleSigninButton>
+              {name ? (
+                <CancelButton type="button" onClick={this.doLogout}>
+                  <ButtonSpan>Logout</ButtonSpan>
+                </CancelButton>
+              ) : (
+                <LinkStyled2 to="/">
+                  <CancelButton>
+                    <ButtonSpan>Cancel</ButtonSpan>
+                  </CancelButton>
+                </LinkStyled2>
+              )}
+            </>
+          )}
         </SignInForm>
       </Container>
     );

@@ -7,12 +7,12 @@
   "author": "Jason Dubaniewicz <jason@dubaniewi.cz>",
   "license": "MIT",
   "scripts": {
-    "watch": ". ../dev.env && nodemon ./index.js localhost 3001",
+    "watch": ". dev.env && nodemon ./index.js localhost 3001",
     "start": "node ./index.js",
     "docker-build": "docker build --tag=filbert-api:`git log -1 --pretty=format:%h` .",
     "docker-run": "docker run -p 3001:3001 filbert-api:`git log -1 --pretty=format:%h`",
-    "pretty": "prettier --parser=babel --single-quote --write \"**/*.js\"",
-    "pretty-ci": "prettier --parser=babel --single-quote --check -l \"**/*.js\""
+    "pretty": "prettier --parser=babel --write \"**/*.js\"",
+    "pretty-ci": "prettier --parser=babel --check -l \"**/*.js\""
   },
   "devDependencies": {
     "nodemon": "^1.18.11",
@@ -20,10 +20,12 @@
   },
   "dependencies": {
     "bcrypt": "^3.0.6",
+    "chalk": "^3.0.0",
     "cors": "^2.8.5",
     "esm": "^3.2.25",
     "express": "^4.16.4",
     "figlet": "^1.2.4",
+    "google-auth-library": "^5.7.0",
     "immutable": "^4.0.0-rc.12",
     "knex": "^0.19.5",
     "multer": "^1.4.2",
