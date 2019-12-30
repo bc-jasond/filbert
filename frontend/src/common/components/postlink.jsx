@@ -41,7 +41,7 @@ export default class PostLink extends React.PureComponent {
           <span role="img" aria-label="finger pointing left">
             👈
           </span>{' '}
-          <LinkStyled to="/posts">Back to all Posts</LinkStyled>
+          <LinkStyled to="/discover">Back to all Posts</LinkStyled>
         </H2Styled>
       </Centered>
     );

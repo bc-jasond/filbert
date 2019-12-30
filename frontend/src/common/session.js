@@ -38,6 +38,5 @@ export function getSession() {
 }
 
 export function getUserName() {
-  const session = getSession();
-  return session ? session.username : null;
+  return getSession()?.username;
 }

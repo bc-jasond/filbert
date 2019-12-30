@@ -10,11 +10,12 @@ import {
   CancelButton,
   ErrorMessage,
   H1Styled,
-  H3,
+  H3Styled,
   Input,
   InputContainer,
   Label,
   MessageContainer,
+  ProfileImg,
   SuccessMessage
 } from '../common/components/shared-styled-components';
 import { darkGrey } from '../common/css';
@@ -45,7 +46,7 @@ const StyledLinkStyled = styled(LogoLinkStyled)`
 const H1StyledStyled = styled(H1Styled)`
   margin-bottom: 8px;
 `;
-const H3Styled = styled(H3)`
+const H3StyledStyled = styled(H3Styled)`
   margin-bottom: 24px;
 `;
 const LinkStyled2 = styled(Link)`
@@ -96,15 +97,6 @@ const GoogleInfoSpan = styled(ButtonSpan)`
   white-space: pre-wrap;
   text-overflow: ellipsis;
   padding: 4px;
-`;
-const GoogleProfileImg = styled.img`
-  flex-shrink: 0;
-  border-radius: 50%;
-  margin: 8px;
-  position: relative;
-  height: 72px;
-  width: 72px;
-  z-index: 0;
 `;
 
 const usernameRef = React.createRef();
@@ -239,17 +231,17 @@ export default class SignIn extends React.Component {
         return;
       }
       this.checkUsernameTimeout = setTimeout(async () => {
-        const usernameIsAvailable = await apiGet(
-          `/username-is-available/${newUsername}`
-        );
-        if (usernameIsAvailable) {
-          this.setState({
-            success: `"${newUsername}" is available 👍`,
-            error: null
-          });
-          return;
+        try {
+          const user = await apiGet(`/user/${newUsername}`);
+          if (!user?.id) {
+            this.setState({
+              success: `"${newUsername}" is available 👍`,
+              error: null
+            });
+          }
+        } catch (err) {
+          this.setState({ error: `${newUsername} is taken`, success: null });
         }
-        this.setState({ error: `${newUsername} is taken`, success: null });
       }, 750);
     });
   };
@@ -282,7 +274,7 @@ export default class SignIn extends React.Component {
           <H1StyledStyled>Sign In</H1StyledStyled>
           {imageUrl && name && email && (
             <GoogleInfo>
-              <GoogleProfileImg src={imageUrl} />
+              <ProfileImg src={imageUrl} />
               <GoogleInfoSpan>{name}</GoogleInfoSpan>
               <GoogleInfoSpan>
                 <Smaller>{email}</Smaller>
@@ -291,13 +283,13 @@ export default class SignIn extends React.Component {
           )}
           {shouldShowUsernameInput && (
             <>
-              <H3Styled>
+              <H3StyledStyled>
                 Welcome!
                 <Smaller>
                   Just one more step before we continue. Choose a filbert
                   username.
                 </Smaller>
-              </H3Styled>
+              </H3StyledStyled>
               <InputContainer>
                 <Label htmlFor="username" error={error}>
                   filbert username (lowercase letters a-z and numbers 0-9 only,

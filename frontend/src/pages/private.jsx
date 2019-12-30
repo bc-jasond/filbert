@@ -2,7 +2,7 @@ import { fromJS, List } from 'immutable';
 import React from 'react';
 
 import { apiDelete, apiGet, apiPatch, apiPost } from '../common/fetch';
-import { getSession, getUserName, signout } from '../common/session';
+import { getSession, getUserName } from '../common/session';
 import { formatPostDate } from '../common/utils';
 
 import Footer from './footer';
@@ -13,6 +13,7 @@ import {
   HeaderLinksContainer,
   HeaderSpacer,
   LinkStyledSignIn,
+  ListDrafts,
   LogoLinkStyled,
   NewPost,
   SignedInUser
@@ -164,17 +165,8 @@ export default class AllPosts extends React.Component {
               {getSession() ? (
                 <>
                   <NewPost to="/edit/new">new</NewPost>
-                  <SignedInUser
-                    onClick={() => {
-                      if (confirm('Logout?')) {
-                        signout();
-                        // TODO: do something with state/props here?
-                        window.location.reload();
-                      }
-                    }}
-                  >
-                    {getUserName()}
-                  </SignedInUser>
+                  <ListDrafts to="/discover">discover</ListDrafts>
+                  <SignedInUser to="/me">{getUserName()}</SignedInUser>
                 </>
               ) : (
                 <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>

@@ -22,7 +22,7 @@ export default () => (
       <A href="https://www.linkedin.com/in/jasondubaniewicz/">
         <LinkedInStyled />
       </A>
-      <LogoLinkStyled to="/about">
+      <LogoLinkStyled to="/help">
         <InfoStyled />
       </LogoLinkStyled>
     </SocialLinksContainer>

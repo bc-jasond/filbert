@@ -84,6 +84,7 @@ async function main() {
           givenName: user.given_name,
           familyName: user.family_name,
           pictureUrl: user.picture_url,
+          created: user.created,
           iss: user.iss
         }
       });
@@ -153,21 +154,17 @@ async function main() {
           filbertUsername.length > 42 ||
           RegExp(/[^0-9a-z]/g).test(filbertUsername)
         ) {
-          res
-            .status(400)
-            .send({
-              error: `Invalid Username: ${filbertUsername}\nPick a username with at least 5 to 42 characters in length with only lowercase letters and numbers.  No spaces, special characters or emojis or anything of that nature.`
-            });
+          res.status(400).send({
+            error: `Invalid Username: ${filbertUsername}\nPick a username with at least 5 to 42 characters in length with only lowercase letters and numbers.  No spaces, special characters or emojis or anything of that nature.`
+          });
           return;
         }
 
         [user] = await knex("user").where("username", filbertUsername);
         if (user) {
-          res
-            .status(400)
-            .send({
-              error: `Invalid Username: ${filbertUsername}\nIt's already taken!`
-            });
+          res.status(400).send({
+            error: `Invalid Username: ${filbertUsername}\nIt's already taken!`
+          });
           return;
         }
 
@@ -195,22 +192,32 @@ async function main() {
     /**
      * username is taken?
      */
-    app.get("/username-is-available/:username", async (req, res) => {
+    app.get("/user/:username", async (req, res) => {
       const {
         params: { username }
       } = req;
       if (!username) {
-        res.send(false);
+        res.status(404).send({});
         return;
       }
       if (username.length < 5 || username.length > 42) {
-        res.send(false);
+        res.status(404).send({});
         return;
       }
       const [user] = await knex("user")
-        .select("id")
+        .column(
+          { userId: "id" },
+          "username",
+          "email",
+          { givenName: "given_name" },
+          { familyName: "family_name" },
+          { pictureUrl: "picture_url" },
+          "created",
+          "iss"
+        )
+        .select()
         .where("username", username);
-      res.send(!user);
+      res.send(user);
     });
 
     app.get("/post", async (req, res) => {

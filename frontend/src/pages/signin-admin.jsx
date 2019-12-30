@@ -9,7 +9,7 @@ import {
   CancelButton,
   ErrorMessage,
   H1Styled,
-  H3,
+  H3Styled,
   Input,
   InputContainer,
   Label,
@@ -110,9 +110,9 @@ export default class SignInAdmin extends React.Component {
             filbert
           </StyledLinkStyled>
           <H1Styled>Admin Sign In</H1Styled>
-          <H3>
+          <H3Styled>
             Looking for User Sign In? <Link to="/signin">Click here</Link>
-          </H3>
+          </H3Styled>
           <InputContainer>
             <Label htmlFor="username" error={error}>
               Username
