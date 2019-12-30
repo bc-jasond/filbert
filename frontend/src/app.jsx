@@ -29,7 +29,7 @@ export default () => (
         <Redirect push exact from="/me" to={`/@${getSession()?.username}`} />
 
         <Route exact path="/signin" component={SignIn} />
-        {/*NOTE: signin admin doesn't have a link in, you have to know the url*/}
+        {/* NOTE: signin admin doesn't have a link in, you have to know the url */}
         <Route exact path="/signin-admin" component={SignInAdmin} />
         <Route exact path="/discover" component={Discover} />
         <Route exact path="/private" component={Private} />

@@ -2,7 +2,7 @@ import React from 'react';
 import { Redirect } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
 import { apiGet } from '../common/fetch';
-import { getSession, getUserName, signout } from '../common/session';
+import { getSession, getUserName } from '../common/session';
 import { reviver } from './edit/document-model';
 
 import Footer from './footer';

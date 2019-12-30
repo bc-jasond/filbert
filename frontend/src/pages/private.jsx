@@ -2,7 +2,7 @@ import { fromJS, List } from 'immutable';
 import React from 'react';
 
 import { apiDelete, apiGet, apiPatch, apiPost } from '../common/fetch';
-import { getSession, getUserName, signout } from '../common/session';
+import { getSession, getUserName } from '../common/session';
 import { formatPostDate } from '../common/utils';
 
 import Footer from './footer';

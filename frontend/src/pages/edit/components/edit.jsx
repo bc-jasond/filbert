@@ -25,7 +25,7 @@ import {
 } from '../../../common/components/layout-styled-components';
 import Footer from '../../footer';
 
-import { getUserName, signout } from '../../../common/session';
+import { getUserName } from '../../../common/session';
 import { confirmPromise, getCanonicalFromTitle } from '../../../common/utils';
 import {
   caretIsOnEdgeOfParagraphText,
