@@ -68,13 +68,16 @@ export default class SignInAdmin extends React.Component {
       const {
         state: { username, password }
       } = this;
-      await signin(username, password);
+      const { session } = await signin(username, password);
       this.setState({
         error: null,
         success: 'All set 👍'
       });
       setTimeout(() => {
-        this.setState({ shouldRedirect: true });
+        this.setState({ shouldRedirect: true }, () => {
+          // set session on App state on the way out...
+          this.props?.setSession?.(session);
+        });
       }, 500);
     } catch (error) {
       console.error('Login Error: ', error);

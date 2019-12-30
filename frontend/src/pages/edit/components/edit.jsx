@@ -10,22 +10,10 @@ import {
   apiPost,
   uploadImage
 } from '../../../common/fetch';
-import {
-  Article,
-  DeletePost,
-  Header,
-  HeaderContentContainer,
-  HeaderLinksContainer,
-  HeaderSpacer,
-  ListDrafts,
-  LogoLinkStyled,
-  NewPost,
-  PublishPost,
-  SignedInUser
-} from '../../../common/components/layout-styled-components';
+import { Article } from '../../../common/components/layout-styled-components';
+import Header from '../../header';
 import Footer from '../../footer';
 
-import { getUserName } from '../../../common/session';
 import { confirmPromise, getCanonicalFromTitle } from '../../../common/utils';
 import {
   caretIsOnEdgeOfParagraphText,
@@ -57,6 +45,7 @@ import {
   NODE_TYPE_P,
   NODE_TYPE_QUOTE,
   NODE_TYPE_SPACER,
+  PAGE_NAME_EDIT,
   POST_ACTION_REDIRECT_TIMEOUT,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL
@@ -126,9 +115,7 @@ export default class EditPost extends React.Component {
       this.registerWindowEventHandlers();
       const {
         props: {
-          match: {
-            params: { id }
-          }
+          params: { id }
         }
       } = this;
       if (id === NEW_POST_URL_ID) {
@@ -143,9 +130,9 @@ export default class EditPost extends React.Component {
 
   async componentDidUpdate(prevProps) {
     try {
-      const params = this.props?.match?.params;
+      const params = this.props?.params;
       const id = params?.id;
-      const prevId = prevProps?.match?.params?.id;
+      const prevId = prevProps?.params?.id;
       if (id === prevId) {
         return;
       }
@@ -238,7 +225,7 @@ export default class EditPost extends React.Component {
   loadPost = async () => {
     try {
       const { post, contentNodes } = await apiGet(
-        `/edit/${this.props?.match?.params?.id}`
+        `/edit/${this.props?.params?.id}`
       );
       this.updateManager.init(post);
       const firstNodeId = this.documentModel.init(
@@ -398,7 +385,7 @@ export default class EditPost extends React.Component {
       }
       this.setState(newState, () => {
         // if we're on /edit/new, we don't save until user hits "enter"
-        if (this.props?.match?.params?.id !== NEW_POST_URL_ID) {
+        if (this.props?.params?.id !== NEW_POST_URL_ID) {
           this.saveContentBatchDebounce();
         }
         // if a menu isn't open, re-place the caret
@@ -619,7 +606,7 @@ export default class EditPost extends React.Component {
 
     await this.closeAllEditContentMenus();
 
-    if (this.props?.match?.params?.id === NEW_POST_URL_ID) {
+    if (this.props?.params?.id === NEW_POST_URL_ID) {
       await this.createNewPost();
       return;
     }
@@ -1328,7 +1315,8 @@ export default class EditPost extends React.Component {
         shouldShowPublishPostMenu,
         shouldShowPostError,
         shouldShowPostSuccess
-      }
+      },
+      props: { session, setSession }
     } = this;
 
     if (shouldShow404) return <Page404 />;
@@ -1337,25 +1325,14 @@ export default class EditPost extends React.Component {
     return (
       <>
         <div role="presentation" onMouseUp={this.handleMouseUp}>
-          <Header>
-            <HeaderContentContainer>
-              <LogoLinkStyled to="/">
-                <span role="img" aria-label="hand writing with a pen">
-                  ✍️
-                </span>{' '}
-                filbert
-              </LogoLinkStyled>
-              <HeaderLinksContainer>
-                <PublishPost onClick={this.togglePostMenu}>publish</PublishPost>
-                <DeletePost onClick={this.deletePost}>delete</DeletePost>
-                <NewPost to="/edit/new">new</NewPost>
-                <ListDrafts to="/discover">discover</ListDrafts>
-                <ListDrafts to="/private">private</ListDrafts>
-                <SignedInUser to="/me">{getUserName()}</SignedInUser>
-              </HeaderLinksContainer>
-            </HeaderContentContainer>
-          </Header>
-          <HeaderSpacer id="header-spacer" />
+          <Header
+            session={session}
+            setSession={setSession}
+            pageName={PAGE_NAME_EDIT}
+            post={post}
+            togglePostMenu={this.togglePostMenu}
+            deletePost={this.deletePost}
+          />
           <ArticleStyled>
             {nodesById.size > 0 && (
               <div

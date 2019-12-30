@@ -1,6 +1,9 @@
 // for document container
 export const NODE_TYPE_ROOT = 'root';
 
+export const PAGE_NAME_VIEW = 'view';
+export const PAGE_NAME_EDIT = 'edit';
+
 // sections that can have text content
 export const NODE_TYPE_H1 = 'h1';
 export const NODE_TYPE_H2 = 'h2';

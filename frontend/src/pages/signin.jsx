@@ -167,6 +167,8 @@ export default class SignIn extends React.Component {
       evt.stopPropagation();
       evt.preventDefault();
 
+      this.setState({ success: null, error: null });
+
       if (!googleUser?.idToken) {
         // open google window to let the user select a user to login as, or to grant access
         const user = await this.GoogleAuth.signIn();
@@ -175,7 +177,10 @@ export default class SignIn extends React.Component {
         // user was already logged in and set in this.state
         currentUser = googleUser;
       }
-      const { signupIsIncomplete } = await signinGoogle(currentUser, username);
+      const { signupIsIncomplete, session } = await signinGoogle(
+        currentUser,
+        username
+      );
       if (signupIsIncomplete) {
         this.setState(
           { shouldShowUsernameInput: true, error: null, success: null },
@@ -187,10 +192,13 @@ export default class SignIn extends React.Component {
       }
       this.setState({ success: 'All set 👍', error: null });
       setTimeout(() => {
-        this.setState({ shouldRedirect: true });
+        this.setState({ shouldRedirect: true }, () => {
+          // set session on App state on the way out...
+          this.props?.setSession?.(session);
+        });
       }, 500);
     } catch (error) {
-      this.setState({ success: null, error });
+      this.setState({ success: null, error: error?.error });
     }
   };
 
@@ -218,29 +226,27 @@ export default class SignIn extends React.Component {
       }
       if (newUsername.length < 5) {
         this.setState({
-          error: `${newUsername} is too short.  Pick a username between 5 and 42 characters...`,
+          error: `${newUsername} is too short.  Pick a username between 5 and 42 characters.`,
           success: null
         });
         return;
       }
       if (newUsername.length > 42) {
         this.setState({
-          error: `${newUsername} is too long.  Pick a username between 5 and 42 characters...`,
+          error: `${newUsername} is too long.  Pick a username between 5 and 42 characters.`,
           success: null
         });
         return;
       }
       this.checkUsernameTimeout = setTimeout(async () => {
         try {
-          const user = await apiGet(`/user/${newUsername}`);
-          if (!user?.id) {
-            this.setState({
-              success: `"${newUsername}" is available 👍`,
-              error: null
-            });
-          }
-        } catch (err) {
+          await apiGet(`/user/${newUsername}`);
           this.setState({ error: `${newUsername} is taken`, success: null });
+        } catch (err) {
+          this.setState({
+            success: `"${newUsername}" is available 👍`,
+            error: null
+          });
         }
       }, 750);
     });
@@ -312,7 +318,7 @@ export default class SignIn extends React.Component {
           <MessageContainer>
             {error && (
               <ErrorMessage>
-                Try again. {JSON.stringify(error)}
+                Try again. {error}{' '}
                 <span role="img" aria-label="male police officer">
                   👮
                 </span>
@@ -320,11 +326,7 @@ export default class SignIn extends React.Component {
             )}
             {success && <SuccessMessage>{success}</SuccessMessage>}
           </MessageContainer>
-          <GoogleSigninButton
-            id="google-sign-in-button"
-            disabled={error}
-            type="submit"
-          >
+          <GoogleSigninButton id="google-sign-in-button" type="submit">
             <GoogleIcon />
             <GoogleSigninButtonSpan>
               {givenName || shouldShowUsernameInput
@@ -334,7 +336,7 @@ export default class SignIn extends React.Component {
                 : 'Sign in to filbert with Google'}
             </GoogleSigninButtonSpan>
           </GoogleSigninButton>
-          {!shouldShowUsernameInput ? (
+          {!shouldShowUsernameInput && givenName ? (
             <CancelButton type="button" onClick={this.doLogout}>
               <ButtonSpan>Logout</ButtonSpan>
             </CancelButton>

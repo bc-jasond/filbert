@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   A,
-  Footer,
+  FooterStyled,
   GitHubStyled,
   InfoStyled,
   LinkedInStyled,
@@ -10,7 +10,7 @@ import {
 } from '../common/components/layout-styled-components';
 
 export default () => (
-  <Footer>
+  <FooterStyled>
     <span role="img" aria-label="truck">
       🚚
     </span>{' '}
@@ -26,5 +26,5 @@ export default () => (
         <InfoStyled />
       </LogoLinkStyled>
     </SocialLinksContainer>
-  </Footer>
+  </FooterStyled>
 );
