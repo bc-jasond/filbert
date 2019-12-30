@@ -31,7 +31,7 @@ import {
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
 
-export default class AllPosts extends React.Component {
+export default class Discover extends React.Component {
   constructor(props) {
     super(props);
 
@@ -85,18 +85,8 @@ export default class AllPosts extends React.Component {
               {getSession() ? (
                 <>
                   <NewPost to="/edit/new">new</NewPost>
-                  <ListDrafts to="/drafts">drafts</ListDrafts>
-                  <SignedInUser
-                    onClick={() => {
-                      if (confirm('Logout?')) {
-                        signout();
-                        // TODO: do something with state/props here
-                        window.location.reload();
-                      }
-                    }}
-                  >
-                    {getUserName()}
-                  </SignedInUser>
+                  <ListDrafts to="/private">private</ListDrafts>
+                  <SignedInUser to="/me">{getUserName()}</SignedInUser>
                 </>
               ) : (
                 <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
@@ -113,11 +103,11 @@ export default class AllPosts extends React.Component {
               </PostRow>
               {posts.map(post => (
                 <PostRow key={`${post.get('id')}${post.get('canonical')}`}>
-                  <StyledHeadingA href={`/posts/${post.get('canonical')}`}>
+                  <StyledHeadingA href={`/p/${post.get('canonical')}`}>
                     {post.get('title')}
                   </StyledHeadingA>
                   <PostAbstractRow>
-                    <StyledA href={`/posts/${post.get('canonical')}`}>
+                    <StyledA href={`/p/${post.get('canonical')}`}>
                       {post.get('abstract')}
                     </StyledA>
                   </PostAbstractRow>

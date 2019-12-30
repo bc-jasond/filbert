@@ -64,7 +64,8 @@ export const H2Styled = styled.h2`
   line-height: 1.22;
   letter-spacing: -0.012em;
 `;
-export const H3 = styled.h3`
+export const H3Styled = styled.h3`
+  ${sectionWidthMixin}
   text-overflow: ellipsis;
   //max-height: 56px;
   margin-bottom: 8px;
@@ -447,7 +448,7 @@ export const IconButton = styled.button`
   outline: 0;
 `;
 export const DarkInput = styled.input`
-  flex: 1;
+  //flex: 1;
   background: rgba(0, 0, 0, 0);
   color: #fff;
   border: none;
@@ -477,4 +478,13 @@ export const Arrow = styled.span`
   height: 20px;
   background-color: #262625;
   transform: rotate(45deg) scale(0.5);
+`;
+export const ProfileImg = styled.img`
+  flex-shrink: 0;
+  border-radius: 50%;
+  margin: 8px;
+  position: relative;
+  height: 72px;
+  width: 72px;
+  z-index: 0;
 `;

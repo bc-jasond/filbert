@@ -75,7 +75,9 @@ const FormatSelectionMenu = styled(LilSassyMenu)`
 `;
 const LinkInput = styled(DarkInput)`
   display: block;
+  box-sizing: border-box;
   height: 0;
+  width: 100%;
   padding: 0;
   transition: 0.05s height;
   ${p =>

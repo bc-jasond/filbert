@@ -91,21 +91,15 @@ export default class ViewPost extends React.PureComponent {
                     <EditPost to={`/edit/${post.get('id')}`}>edit</EditPost>
                   )}
                   <NewPost to="/edit/new">new</NewPost>
-                  <ListDrafts to="/drafts">drafts</ListDrafts>
-                  <SignedInUser
-                    onClick={() => {
-                      if (confirm('Logout?')) {
-                        signout();
-                        // TODO: do something with state/props here?
-                        window.location.reload();
-                      }
-                    }}
-                  >
-                    {getUserName()}
-                  </SignedInUser>
+                  <ListDrafts to="/discover">discover</ListDrafts>
+                  <ListDrafts to="/private">private</ListDrafts>
+                  <SignedInUser to="/me">{getUserName()}</SignedInUser>
                 </>
               ) : (
-                <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
+                <>
+                  <ListDrafts to="/discover">discover</ListDrafts>
+                  <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
+                </>
               )}
             </HeaderLinksContainer>
           </HeaderContentContainer>

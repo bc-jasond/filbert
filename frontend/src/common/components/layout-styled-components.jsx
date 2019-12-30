@@ -63,7 +63,10 @@ export const NewPost = styled(LinkStyled)`
 export const ListDrafts = styled(LinkStyled)`
   ${NavButtonMixin};
 `;
-export const SignedInUser = styled.div`
+export const Logout = styled.div`
+  ${NavButtonMixin};
+`;
+export const SignedInUser = styled(LinkStyled)`
   ${NavButtonMixin};
 `;
 export const LinkStyledSignIn = styled(LinkStyled)`

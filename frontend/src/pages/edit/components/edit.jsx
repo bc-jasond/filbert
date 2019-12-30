@@ -48,6 +48,7 @@ import {
   KEYCODE_RIGHT_ARROW,
   KEYCODE_SHIFT_OR_COMMAND_LEFT,
   KEYCODE_SHIFT_RIGHT,
+  KEYCODE_SPACE,
   KEYCODE_UP_ARROW,
   KEYCODE_V,
   KEYCODE_X,
@@ -318,7 +319,7 @@ export default class EditPost extends React.Component {
           setTimeout(
             () =>
               this.setState({
-                shouldRedirect: `/posts/${post.get('canonical')}`
+                shouldRedirect: `/p/${post.get('canonical')}`
               }),
             POST_ACTION_REDIRECT_TIMEOUT
           );
@@ -343,7 +344,7 @@ export default class EditPost extends React.Component {
       }
       await confirmPromise(`Delete draft ${post.get('title')}?`);
       await apiDelete(`/draft/${post.get('id')}`);
-      this.setState({ shouldRedirect: '/drafts' });
+      this.setState({ shouldRedirect: '/private' });
     } catch (err) {
       console.error('Delete post error:', err);
     }
@@ -675,32 +676,6 @@ export default class EditPost extends React.Component {
     await this.commitUpdates(focusNodeId, caretOffset);
   };
 
-  handleSyncFromDom = async (evt, selectionOffsets) => {
-    if (
-      // this is the only way to get an emoji keyboard insert without using a custom MutationObserver
-      evt.type !== 'input' ||
-      // don't sync the "v" from a paste operation
-      this.didPaste ||
-      // don't sync the "x" from a cut operation
-      this.didCut
-    ) {
-      return;
-    }
-
-    const { focusNodeId, caretOffset } = syncFromDom(
-      this.documentModel,
-      selectionOffsets,
-      evt
-    );
-    if (!focusNodeId) {
-      return;
-    }
-
-    // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
-    //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
-    await this.commitUpdates(focusNodeId, caretOffset);
-  };
-
   // MAIN "ON" EVENT CALLBACKS
   getSelectionOffsetsOrEditSectionNode = () => {
     let selectionOffsets = getHighlightedSelectionOffsets();
@@ -745,13 +720,19 @@ export default class EditPost extends React.Component {
     // format selection menu is open
     if (
       formatSelectionNode.get('id') &&
+      // don't capture holding down shift so user can resize the selection
+      !evt.shiftKey &&
       (formatSelectionModel.get(SELECTION_ACTION_LINK) ||
-        // don't capture holding down shift so user can resize the selection
-        !evt.shiftKey ||
         // but DO allow a double tap on shift to open the menu
-        [KEYCODE_SHIFT_RIGHT, KEYCODE_SHIFT_OR_COMMAND_LEFT].includes(
-          evt.keyCode
-        ))
+        [
+          KEYCODE_SHIFT_RIGHT,
+          KEYCODE_SHIFT_OR_COMMAND_LEFT,
+          KEYCODE_LEFT_ARROW,
+          KEYCODE_RIGHT_ARROW,
+          KEYCODE_SPACE,
+          KEYCODE_ESC,
+          KEYCODE_ENTER
+        ].includes(evt.keyCode))
     ) {
       // pass this event up to the menu to handle
       this.setState({ windowEventToForward: evt });
@@ -802,9 +783,6 @@ export default class EditPost extends React.Component {
     await this.handleEditSectionMenu(evt);
     await this.manageInsertMenu(evt, selectionOffsets);
     await this.manageFormatSelectionMenu(evt, selectionOffsets);
-    if (evt.defaultPrevented) {
-      this.didHandleWithKeydown = true;
-    }
   };
 
   handleKeyUp = async evt => {
@@ -822,9 +800,11 @@ export default class EditPost extends React.Component {
       evt.metaKey ||
       // cross-event coordination
       this.didCut ||
-      this.didPaste ||
-      this.didHandleWithKeydown
+      this.didPaste
     ) {
+      // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
+      this.didPaste = false;
+      this.didCut = false;
       return;
     }
     const {
@@ -840,13 +820,20 @@ export default class EditPost extends React.Component {
     if (!startNodeId) {
       return;
     }
-    console.debug('INPUT');
+    console.debug('INPUT (aka: sync back from DOM)');
     // for emoji keyboard insert
-    this.handleSyncFromDom(evt, selectionOffsets);
-    // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
-    this.didPaste = false;
-    this.didCut = false;
-    this.didHandleWithKeydown = false;
+    const { focusNodeId, caretOffset } = syncFromDom(
+      this.documentModel,
+      selectionOffsets,
+      evt
+    );
+    if (!focusNodeId) {
+      return;
+    }
+
+    // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
+    //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
+    await this.commitUpdates(focusNodeId, caretOffset);
   };
 
   handleMouseUp = async evt => {
@@ -877,6 +864,7 @@ export default class EditPost extends React.Component {
     if (evt.type !== 'cut') {
       if (startNodeCaretStart !== startNodeCaretEnd) {
         doDelete(this.documentModel, selectionOffsets);
+        await this.commitUpdates(startNodeId, startNodeCaretStart);
       }
       return;
     }
@@ -901,6 +889,18 @@ export default class EditPost extends React.Component {
     if (evt.type !== 'paste' && !(evt.metaKey && evt.keyCode === KEYCODE_V)) {
       return;
     }
+    // don't override pasting into inputs of menus
+    const {
+      state: { formatSelectionNode, formatSelectionModel }
+    } = this;
+    // format selection menu is open, and the link url input is visible
+    if (
+      formatSelectionNode.get('id') &&
+      formatSelectionModel.get(SELECTION_ACTION_LINK)
+    ) {
+      return;
+    }
+
     // this is to bypass the "keyup" & "input" handlers
     this.didPaste = true;
 
@@ -1349,17 +1349,9 @@ export default class EditPost extends React.Component {
                 <PublishPost onClick={this.togglePostMenu}>publish</PublishPost>
                 <DeletePost onClick={this.deletePost}>delete</DeletePost>
                 <NewPost to="/edit/new">new</NewPost>
-                <ListDrafts to="/drafts">drafts</ListDrafts>
-                <SignedInUser
-                  onClick={() => {
-                    if (confirm('Logout?')) {
-                      signout();
-                      this.setState({ shouldRedirect: '/' });
-                    }
-                  }}
-                >
-                  {getUserName()}
-                </SignedInUser>
+                <ListDrafts to="/discover">discover</ListDrafts>
+                <ListDrafts to="/private">private</ListDrafts>
+                <SignedInUser to="/me">{getUserName()}</SignedInUser>
               </HeaderLinksContainer>
             </HeaderContentContainer>
           </Header>
