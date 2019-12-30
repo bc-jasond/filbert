@@ -19,10 +19,10 @@ export async function signinGoogle(googleUser, filbertUsername) {
   }
   localStorage.setItem(AUTH_TOKEN_KEY, token);
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  return { signupIsIncomplete: false };
+  return { signupIsIncomplete: false, token, session };
 }
 
-export async function signout() {
+export function signout() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(SESSION_KEY);
 }
@@ -34,9 +34,5 @@ export function getSession() {
   } catch (err) {
     signout();
   }
-  return null;
-}
-
-export function getUserName() {
-  return getSession()?.username;
+  return {};
 }

@@ -1,24 +1,13 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
+import { PAGE_NAME_VIEW } from '../common/constants';
 import { apiGet } from '../common/fetch';
-import { getSession, getUserName } from '../common/session';
 import { reviver } from './edit/document-model';
 
+import Header from './header';
 import Footer from './footer';
-import {
-  Article,
-  EditPost,
-  Header,
-  HeaderContentContainer,
-  HeaderLinksContainer,
-  HeaderSpacer,
-  LinkStyledSignIn,
-  ListDrafts,
-  LogoLinkStyled,
-  NewPost,
-  SignedInUser
-} from '../common/components/layout-styled-components';
+import { Article } from '../common/components/layout-styled-components';
 
 import Page404 from './404';
 
@@ -41,9 +30,9 @@ export default class ViewPost extends React.PureComponent {
   }
 
   async componentDidUpdate(prevProps) {
-    const params = this.props?.match?.params;
+    const params = this.props?.params;
     const id = params?.canonical;
-    const prevId = prevProps?.match?.params?.canonical;
+    const prevId = prevProps?.params?.canonical;
     if (id === prevId) {
       return;
     }
@@ -53,7 +42,7 @@ export default class ViewPost extends React.PureComponent {
   async loadPost() {
     try {
       const { post, contentNodes } = await apiGet(
-        `/post/${this.props?.match?.params?.canonical}`
+        `/post/${this.props?.params?.canonical}`
       );
       this.setState({
         post: fromJS(post),
@@ -68,7 +57,8 @@ export default class ViewPost extends React.PureComponent {
 
   render() {
     const {
-      state: { post, nodesById, shouldShow404, shouldRedirectToHome }
+      state: { post, nodesById, shouldShow404, shouldRedirectToHome },
+      props: { session, setSession }
     } = this;
 
     if (shouldShow404) return <Page404 />;
@@ -76,35 +66,12 @@ export default class ViewPost extends React.PureComponent {
 
     return (
       <>
-        <Header>
-          <HeaderContentContainer>
-            <LogoLinkStyled to="/">
-              <span role="img" aria-label="hand writing with a pen">
-                ✍️
-              </span>{' '}
-              filbert
-            </LogoLinkStyled>
-            <HeaderLinksContainer>
-              {getSession() ? (
-                <>
-                  {post.get('canEdit') && (
-                    <EditPost to={`/edit/${post.get('id')}`}>edit</EditPost>
-                  )}
-                  <NewPost to="/edit/new">new</NewPost>
-                  <ListDrafts to="/discover">discover</ListDrafts>
-                  <ListDrafts to="/private">private</ListDrafts>
-                  <SignedInUser to="/me">{getUserName()}</SignedInUser>
-                </>
-              ) : (
-                <>
-                  <ListDrafts to="/discover">discover</ListDrafts>
-                  <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
-                </>
-              )}
-            </HeaderLinksContainer>
-          </HeaderContentContainer>
-        </Header>
-        <HeaderSpacer />
+        <Header
+          session={session}
+          setSession={setSession}
+          post={post}
+          pageName={PAGE_NAME_VIEW}
+        />
         <Article>
           {nodesById.size > 0 && <Document nodesById={nodesById} />}
         </Article>

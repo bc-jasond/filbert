@@ -7,7 +7,7 @@ import { darkGrey, grey, lightGrey } from '../css';
 import { monospaced, sansSerif } from '../fonts.css';
 import { NavButtonMixin } from './shared-styled-components';
 
-export const Header = styled.header`
+export const HeaderStyled = styled.header`
   position: fixed;
   display: block;
   box-sizing: border-box;
@@ -48,28 +48,10 @@ export const LogoLinkStyled = styled(LinkStyled)`
     font-size: 32px;
   }
 `;
-export const EditPost = styled(LinkStyled)`
+export const NavSpan = styled.span`
   ${NavButtonMixin};
 `;
-export const DeletePost = styled.span`
-  ${NavButtonMixin};
-`;
-export const PublishPost = styled.span`
-  ${NavButtonMixin};
-`;
-export const NewPost = styled(LinkStyled)`
-  ${NavButtonMixin};
-`;
-export const ListDrafts = styled(LinkStyled)`
-  ${NavButtonMixin};
-`;
-export const Logout = styled.div`
-  ${NavButtonMixin};
-`;
-export const SignedInUser = styled(LinkStyled)`
-  ${NavButtonMixin};
-`;
-export const LinkStyledSignIn = styled(LinkStyled)`
+export const NavLink = styled(LinkStyled)`
   ${NavButtonMixin};
 `;
 export const HeaderSpacer = styled.div`
@@ -88,7 +70,7 @@ export const Article = styled.article`
     padding: 40px 20px;
   }
 `;
-export const Footer = styled.footer`
+export const FooterStyled = styled.footer`
   font-family: ${monospaced}, monospaced;
   background: ${lightGrey};
   padding: 20px;
@@ -126,4 +108,17 @@ export const LinkedInStyled = styled(LinkedInSvg)`
 `;
 export const InfoStyled = styled(InfoSvg)`
   ${SocialIcon};
+`;
+export const StaticFooter = styled.div`
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+`;
+export const H1Center = styled.h1`
+  position: absolute;
+  width: 100%;
+  top: 40%;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 72px;
 `;

@@ -1,17 +1,5 @@
 import React from 'react';
-import {
-  Article,
-  Header,
-  HeaderContentContainer,
-  HeaderLinksContainer,
-  HeaderSpacer,
-  LinkStyledSignIn,
-  ListDrafts,
-  LogoLinkStyled,
-  Logout,
-  NewPost,
-  SignedInUser
-} from '../common/components/layout-styled-components';
+import { Article } from '../common/components/layout-styled-components';
 import {
   BoldText,
   ContentSection,
@@ -21,10 +9,10 @@ import {
   PStyled
 } from '../common/components/shared-styled-components';
 import { apiGet } from '../common/fetch';
-import { getSession, getUserName, signout } from '../common/session';
 import { formatPostDate } from '../common/utils';
 import Page404 from './404';
 
+import Header from './header';
 import Footer from './footer';
 
 export default class UserProfile extends React.Component {
@@ -40,9 +28,8 @@ export default class UserProfile extends React.Component {
   async componentDidMount() {
     const {
       props: {
-        match: {
-          params: { username }
-        }
+        params: { username },
+        session
       }
     } = this;
     if (!/^@[0-9a-z]+/.test(username)) {
@@ -50,8 +37,8 @@ export default class UserProfile extends React.Component {
       return;
     }
     const usernameWithoutAt = username.slice(1);
-    if (usernameWithoutAt === getUserName()) {
-      this.setState({ user: getSession(), userIsMe: true });
+    if (usernameWithoutAt === session?.username) {
+      this.setState({ user: session, userIsMe: true });
       return;
     }
     try {
@@ -64,48 +51,14 @@ export default class UserProfile extends React.Component {
 
   render() {
     const {
-      state: { shouldShow404, user, userIsMe }
+      state: { shouldShow404, user, userIsMe },
+      props: { session, setSession }
     } = this;
     if (shouldShow404) return <Page404 />;
 
     return (
       <>
-        <Header>
-          <HeaderContentContainer>
-            <LogoLinkStyled to="/">
-              <span role="img" aria-label="hand writing with a pen">
-                ✍️
-              </span>{' '}
-              filbert
-            </LogoLinkStyled>
-            <HeaderLinksContainer>
-              {getSession() ? (
-                <>
-                  <NewPost to="/edit/new">new</NewPost>
-                  <ListDrafts to="/discover">discover</ListDrafts>
-                  <ListDrafts to="/private">private</ListDrafts>
-                  {userIsMe ? (
-                    <Logout
-                      onClick={() => {
-                        if (confirm('Logout?')) {
-                          signout();
-                          window.location.href = '/';
-                        }
-                      }}
-                    >
-                      logout
-                    </Logout>
-                  ) : (
-                    <SignedInUser to="/me">{getUserName()}</SignedInUser>
-                  )}
-                </>
-              ) : (
-                <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
-              )}
-            </HeaderLinksContainer>
-          </HeaderContentContainer>
-        </Header>
-        <HeaderSpacer />
+        <Header session={session} setSession={setSession} userIsMe={userIsMe} />
         <Article>
           <H1Styled>User Profile</H1Styled>
           <ContentSection>

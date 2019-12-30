@@ -217,6 +217,9 @@ async function main() {
         )
         .select()
         .where("username", username);
+      if (!user) {
+        res.status(404).send({});
+      }
       res.send(user);
     });
 

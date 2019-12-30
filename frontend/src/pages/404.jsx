@@ -1,21 +1,22 @@
 import * as React from 'react';
-import styled from 'styled-components';
-
-const Container = styled.div`
-  display: flex;
-  height: 100%;
-  width: 100%;
-  position: absolute;
-  justify-content: center;
-  align-items: center;
-`;
-const H1 = styled.h1`
-  text-align: center;
-  font-size: 72px;
-`;
+import {
+  H1Center,
+  StaticFooter
+} from '../common/components/layout-styled-components';
+import Header from './header';
+import Footer from './footer';
 
 export default () => (
-  <Container>
-    <H1>404 - Not Found</H1>
-  </Container>
+  <>
+    <Header />
+    <H1Center>
+      404 Not Found{' '}
+      <span role="img" aria-label="girl shrug">
+        🤷🏻‍♀️
+      </span>
+    </H1Center>
+    <StaticFooter>
+      <Footer />
+    </StaticFooter>
+  </>
 );

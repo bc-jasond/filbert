@@ -2,22 +2,11 @@ import { fromJS, List } from 'immutable';
 import React from 'react';
 
 import { apiDelete, apiGet } from '../common/fetch';
-import { getSession, getUserName } from '../common/session';
 import { confirmPromise, formatPostDate } from '../common/utils';
 
+import Header from './header';
 import Footer from './footer';
-import {
-  Article,
-  Header,
-  HeaderContentContainer,
-  HeaderLinksContainer,
-  HeaderSpacer,
-  LinkStyledSignIn,
-  ListDrafts,
-  LogoLinkStyled,
-  NewPost,
-  SignedInUser
-} from '../common/components/layout-styled-components';
+import { Article } from '../common/components/layout-styled-components';
 import {
   AuthorExpand,
   PostAbstractRow,
@@ -68,33 +57,13 @@ export default class Discover extends React.Component {
 
   render() {
     const {
-      state: { posts }
+      state: { posts },
+      props: { session, setSession }
     } = this;
 
     return (
       <>
-        <Header>
-          <HeaderContentContainer>
-            <LogoLinkStyled to="/">
-              <span role="img" aria-label="hand writing with a pen">
-                ✍️
-              </span>{' '}
-              filbert
-            </LogoLinkStyled>
-            <HeaderLinksContainer>
-              {getSession() ? (
-                <>
-                  <NewPost to="/edit/new">new</NewPost>
-                  <ListDrafts to="/private">private</ListDrafts>
-                  <SignedInUser to="/me">{getUserName()}</SignedInUser>
-                </>
-              ) : (
-                <LinkStyledSignIn to="/signin">sign in</LinkStyledSignIn>
-              )}
-            </HeaderLinksContainer>
-          </HeaderContentContainer>
-        </Header>
-        <HeaderSpacer />
+        <Header session={session} setSession={setSession} />
         <Article>
           {posts.size > 0 && (
             <>
