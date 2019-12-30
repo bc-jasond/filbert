@@ -17,10 +17,11 @@ import {
   PostRow,
   StyledA,
   StyledH2,
+  StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
 
-export default class Discover extends React.Component {
+export default class Public extends React.Component {
   constructor(props) {
     super(props);
 
@@ -68,7 +69,8 @@ export default class Discover extends React.Component {
           {posts.size > 0 && (
             <>
               <PostRow>
-                <StyledH2>Recent Articles</StyledH2>
+                <StyledH2>Recent Public Articles</StyledH2>
+                <StyledH3>These pieces have been published and are viewable outside of ✍️ filbert</StyledH3>
               </PostRow>
               {posts.map(post => (
                 <PostRow key={`${post.get('id')}${post.get('canonical')}`}>

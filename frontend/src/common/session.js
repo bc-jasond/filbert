@@ -30,7 +30,7 @@ export function signout() {
 export function getSession() {
   try {
     const session = localStorage.getItem(SESSION_KEY);
-    return !session ? session : JSON.parse(session);
+    return !session ? {} : JSON.parse(session);
   } catch (err) {
     signout();
   }

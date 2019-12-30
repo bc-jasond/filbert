@@ -61,10 +61,10 @@ export default class ViewPost extends React.PureComponent {
       props: { session, setSession }
     } = this;
 
-    if (shouldShow404) return <Page404 />;
+    if (shouldShow404) return <Page404 session={session} />;
     if (shouldRedirectToHome) return <Redirect to="/" />;
 
-    return (
+    return nodesById.size > 0 && (
       <>
         <Header
           session={session}
@@ -73,7 +73,7 @@ export default class ViewPost extends React.PureComponent {
           pageName={PAGE_NAME_VIEW}
         />
         <Article>
-          {nodesById.size > 0 && <Document nodesById={nodesById} />}
+          <Document nodesById={nodesById} />
         </Article>
         <Footer />
       </>

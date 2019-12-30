@@ -14,7 +14,7 @@ import {
   PostMetaRow,
   PostRow,
   StyledA,
-  StyledH2,
+  StyledH2, StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
 import PublishPostForm from '../common/components/edit-publish-post-form';
@@ -145,7 +145,6 @@ export default class AllPosts extends React.Component {
       <>
         <Header session={session} setSession={setSession} />
         <Article>
-          {drafts.size > 0 && (
             <>
               {shouldShowPublishPostMenu && (
                 <PublishPostForm
@@ -159,9 +158,11 @@ export default class AllPosts extends React.Component {
                 />
               )}
               <PostRow>
-                <StyledH2>My Recent Drafts</StyledH2>
+                <StyledH2>My Private Work</StyledH2>
+                <StyledH3>These pieces have NOT been published and are only viewable to you while logged into ✍️ filbert</StyledH3>
               </PostRow>
-              {drafts.map(draft => (
+              {drafts.size === 0 && (<PostRow><StyledHeadingA href="/edit/new">Click Here or the "new" menu button above to start a new Private piece</StyledHeadingA></PostRow>)}
+                {drafts.map(draft => (
                 <PostRow key={`${draft.get('id')}${draft.get('canonical')}`}>
                   <StyledHeadingA href={`/edit/${draft.get('id')}`}>
                     {draft.get('title')}
@@ -185,7 +186,6 @@ export default class AllPosts extends React.Component {
                 </PostRow>
               ))}
             </>
-          )}
         </Article>
         <Footer />
       </>

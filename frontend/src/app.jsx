@@ -11,7 +11,7 @@ import CssPace from './common/pace.css';
 import Page404 from './pages/404';
 import KThxBye from './pages/kthxbye';
 
-import Discover from './pages/discover';
+import Public from './pages/public';
 import EditPost from './pages/edit/components/edit';
 import Private from './pages/private';
 import SignIn from './pages/signin';
@@ -34,6 +34,7 @@ export default class App extends React.Component {
     const {
       state: { session, setSession }
     } = this;
+    const { username } = session;
     const RouteWithSession = ({ component: Component, exact, path }) => {
       return (
         <Route
@@ -53,17 +54,17 @@ export default class App extends React.Component {
       <>
         <BrowserRouter>
           <Switch>
-            <Redirect push exact from="/p" to="/discover" />
+            <Redirect push exact from="/p" to="/public" />
             <Redirect push exact from="/" to="/p/homepage" />
             <Redirect push exact from="/help" to="/p/help" />
             <Redirect push exact from="/about" to="/p/about" />
-            <Redirect
+            {username && <Redirect
               push
               exact
               from="/me"
-              to={`/@${this.state?.session?.username}`}
-            />
-
+              to={`/@${username}`}
+            />}
+            
             <RouteWithSession exact path="/signout" component={KThxBye} />
             <RouteWithSession exact path="/signin" component={SignIn} />
             {/* NOTE: signin admin doesn't have a link in, you have to know the url */}
@@ -72,15 +73,15 @@ export default class App extends React.Component {
               path="/signin-admin"
               component={SignInAdmin}
             />
-            <RouteWithSession exact path="/discover" component={Discover} />
+            <RouteWithSession exact path="/public" component={Public} />
             <RouteWithSession exact path="/private" component={Private} />
             {/* NOTE: view a "published" post - this :canonical is a string like: 'some-url-87ba' */}
-            <RouteWithSession path="/p/:canonical" component={ViewPost} />
+            <RouteWithSession exact path="/p/:canonical" component={ViewPost} />
             {/* NOTE: this :id is an int like: 34 */}
-            <RouteWithSession path="/edit/:id" component={EditPost} />
-            <RouteWithSession path="/:username" component={UserProfile} />
+            <RouteWithSession exact path="/edit/:id" component={EditPost} />
+            <RouteWithSession exact path="/:username" component={UserProfile} />
 
-            <Route component={Page404} />
+            <RouteWithSession component={Page404} />
           </Switch>
         </BrowserRouter>
         <CssReset />

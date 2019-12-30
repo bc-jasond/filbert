@@ -265,7 +265,7 @@ export default class SignIn extends React.Component {
     } = this;
     if (shouldRedirect) {
       const queryParams = new URLSearchParams(window.location.search);
-      const nextUrl = queryParams.get('next') || '/'; // returns null if empty
+      const nextUrl = queryParams.get('next') || '/private'; // returns null if empty
       return <Redirect push to={nextUrl} />;
     }
     return (

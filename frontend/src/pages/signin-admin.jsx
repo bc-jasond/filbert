@@ -101,7 +101,7 @@ export default class SignInAdmin extends React.Component {
       state: { error, success, shouldRedirect }
     } = this;
     if (shouldRedirect) {
-      return <Redirect push to="/" />;
+      return <Redirect push to="/private" />;
     }
     return (
       <Container>

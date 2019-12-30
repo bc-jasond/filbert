@@ -2,11 +2,17 @@ import styled, { css } from 'styled-components';
 import { darkGrey, grey } from '../css';
 import { sansSerif } from '../fonts.css';
 import { A } from './layout-styled-components';
-import { H2Styled, NavButtonMixin } from './shared-styled-components';
+import { H2Styled, H3Styled, NavButtonMixin } from './shared-styled-components';
 
 export const StyledH2 = styled(H2Styled)`
   margin-left: 0;
   margin-right: 0;
+`;
+export const StyledH3 = styled(H3Styled)`
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: normal;
+  color: ${grey};
 `;
 export const PostRow = styled.div`
   margin: 0 auto;

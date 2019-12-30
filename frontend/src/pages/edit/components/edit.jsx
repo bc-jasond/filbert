@@ -219,7 +219,7 @@ export default class EditPost extends React.Component {
     this.updateManager.addPostIdToUpdates(postId);
     await this.saveContentBatch();
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
-    this.setState({ shouldRedirect: `/edit/${postId}` });
+    this.setState({ shouldRedirect: `/edit/${postId}?shouldFocusLastNode` });
   };
 
   loadPost = async () => {
@@ -240,7 +240,19 @@ export default class EditPost extends React.Component {
           shouldShow404: false
         },
         async () => {
-          setCaret(firstNodeId, 0);
+          let focusNodeId = firstNodeId;
+          let offset = 0;
+          let shouldFindLastNode = false;
+          const queryParams = new URLSearchParams(window.location.search);
+          if (queryParams.has('shouldFocusLastNode')) {
+            focusNodeId = DocumentModel.getLastNode(this.documentModel.nodesById).get('id');
+            offset = -1;
+            shouldFindLastNode = true;
+            queryParams.delete('shouldFocusLastNode');
+            const queryString = queryParams.toString();
+            window.history.replaceState({}, document.title, window.location.pathname + (queryString.length > 0 ? '?' + queryString : ''))
+          }
+          setCaret(focusNodeId, offset, shouldFindLastNode);
           await this.manageInsertMenu();
         }
       );
@@ -1319,10 +1331,10 @@ export default class EditPost extends React.Component {
       props: { session, setSession }
     } = this;
 
-    if (shouldShow404) return <Page404 />;
+    if (shouldShow404) return <Page404 session={session} />;
     if (shouldRedirect) return <Redirect to={shouldRedirect} />;
 
-    return (
+    return nodesById.size > 0 && (
       <>
         <div role="presentation" onMouseUp={this.handleMouseUp}>
           <Header
@@ -1334,19 +1346,17 @@ export default class EditPost extends React.Component {
             deletePost={this.deletePost}
           />
           <ArticleStyled>
-            {nodesById.size > 0 && (
-              <div
-                id="filbert-edit-container"
-                contentEditable
-                suppressContentEditableWarning
-              >
-                <Document
-                  nodesById={nodesById}
-                  currentEditNode={editSectionNode}
-                  setEditNodeId={this.sectionEdit}
-                />
-              </div>
-            )}
+            <div
+              id="filbert-edit-container"
+              contentEditable
+              suppressContentEditableWarning
+            >
+              <Document
+                nodesById={nodesById}
+                currentEditNode={editSectionNode}
+                setEditNodeId={this.sectionEdit}
+              />
+            </div>
           </ArticleStyled>
           <Footer />
         </div>

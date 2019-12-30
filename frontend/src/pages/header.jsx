@@ -41,7 +41,7 @@ export default class Header extends React.PureComponent {
     const shouldShowPublish = pageName === PAGE_NAME_EDIT && post.get('id');
     const shouldShowDelete = pageName === PAGE_NAME_EDIT && post.get('id');
     const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
-    const shouldShowNew = post.get('id');
+    const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
     return (
       <>
         <HeaderStyled>
@@ -65,7 +65,7 @@ export default class Header extends React.PureComponent {
                     <NavLink to={`/edit/${post.get('id')}`}>edit</NavLink>
                   )}
                   {shouldShowNew && <NavLink to="/edit/new">new</NavLink>}
-                  <NavLink to="/discover">discover</NavLink>
+                  <NavLink to="/public">public</NavLink>
                   <NavLink to="/private">private</NavLink>
                   {userIsMe ? (
                     <NavSpan
@@ -86,7 +86,7 @@ export default class Header extends React.PureComponent {
                 </>
               ) : (
                 <>
-                  <NavLink to="/discover">discover</NavLink>
+                  <NavLink to="/public">public</NavLink>
                   <NavLink to="/signin">sign in</NavLink>
                 </>
               )}
