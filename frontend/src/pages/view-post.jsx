@@ -64,19 +64,21 @@ export default class ViewPost extends React.PureComponent {
     if (shouldShow404) return <Page404 session={session} />;
     if (shouldRedirectToHome) return <Redirect to="/" />;
 
-    return nodesById.size > 0 && (
-      <>
-        <Header
-          session={session}
-          setSession={setSession}
-          post={post}
-          pageName={PAGE_NAME_VIEW}
-        />
-        <Article>
-          <Document nodesById={nodesById} />
-        </Article>
-        <Footer />
-      </>
+    return (
+      nodesById.size > 0 && (
+        <>
+          <Header
+            session={session}
+            setSession={setSession}
+            post={post}
+            pageName={PAGE_NAME_VIEW}
+          />
+          <Article>
+            <Document nodesById={nodesById} />
+          </Article>
+          <Footer />
+        </>
+      )
     );
   }
 }

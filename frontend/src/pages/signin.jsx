@@ -57,6 +57,10 @@ const Smaller = styled.span`
   font-family: inherit;
   font-size: smaller;
 `;
+const Smaller2 = styled(Smaller)`
+  font-weight: 400;
+  margin-top: 16px;
+`;
 const GoogleSigninButton = styled(Button)`
   display: flex;
   flex-direction: row;
@@ -198,7 +202,10 @@ export default class SignIn extends React.Component {
         });
       }, 500);
     } catch (error) {
-      this.setState({ success: null, error: error?.error });
+      this.setState({
+        success: null,
+        error: error?.error || error?.message || 'Error'
+      });
     }
   };
 
@@ -291,10 +298,10 @@ export default class SignIn extends React.Component {
             <>
               <H3StyledStyled>
                 Welcome!
-                <Smaller>
-                  Just one more step before we continue. Choose a filbert
+                <Smaller2>
+                  Just one more step before we continue - Choose a filbert
                   username.
-                </Smaller>
+                </Smaller2>
               </H3StyledStyled>
               <InputContainer>
                 <Label htmlFor="username" error={error}>

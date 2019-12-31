@@ -324,6 +324,7 @@ export const ErrorMessage = styled.span`
 `;
 export const MessageContainer = styled.div`
   min-height: 36px;
+  margin-bottom: 8px;
   text-align: center;
   font-family: ${monospaced};
   display: flex;
@@ -386,6 +387,7 @@ export const NavButtonMixin = css`
   border-radius: 26px;
   border: 1px solid transparent;
   transition: background-color 0.125s, color 0.125s;
+  flex-grow: 0;
   &:hover {
     color: white;
     background-color: ${lightBlue};
