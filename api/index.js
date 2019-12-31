@@ -155,7 +155,7 @@ async function main() {
           RegExp(/[^0-9a-z]/g).test(filbertUsername)
         ) {
           res.status(400).send({
-            error: `Invalid Username: ${filbertUsername}\nPick a username with at least 5 to 42 characters in length with only lowercase letters and numbers.  No spaces, special characters or emojis or anything of that nature.`
+            error: `Invalid Username: ${filbertUsername} - Pick a username with at least 5 to 42 characters in length with only lowercase letters and numbers.  No spaces, special characters or emojis or anything of that nature.`
           });
           return;
         }
@@ -163,7 +163,7 @@ async function main() {
         [user] = await knex("user").where("username", filbertUsername);
         if (user) {
           res.status(400).send({
-            error: `Invalid Username: ${filbertUsername}\nIt's already taken!`
+            error: `Invalid Username: ${filbertUsername} - It's already taken!`
           });
           return;
         }
@@ -224,8 +224,11 @@ async function main() {
     });
 
     app.get("/post", async (req, res) => {
-      const { loggedInUser } = req;
-      const posts = await knex("post")
+      const {
+        loggedInUser,
+        query: { username, oldest, random }
+      } = req;
+      let builder = knex("post")
         .select(
           "post.id",
           "user_id",
@@ -240,8 +243,27 @@ async function main() {
         )
         .innerJoin("user", "post.user_id", "user.id")
         .whereNotNull("published")
-        .orderBy("published", "desc")
         .limit(250);
+
+      if (username) {
+        builder = builder.andWhere("username", username);
+      }
+
+      if (typeof random === "string") {
+        /* TODO: implement
+          1) select all published post ids in the the DB
+          2) use Fisher Yates to fill up 100 random ids (swap from whole list, break at 100) for a WHERE IN clause
+          3) add whereIn() to the builder
+         */
+      }
+
+      if (typeof oldest === "string") {
+        builder = builder.orderBy("published", "asc");
+      } else {
+        builder = builder.orderBy("published", "desc");
+      }
+
+      const posts = await builder;
 
       if (!loggedInUser) {
         res.send(posts);
@@ -588,7 +610,7 @@ async function main() {
   }
 }
 
-function validateSaneEnvironment() {
+function verifySaneEnvironment() {
   const {
     env: { MYSQL_ROOT_PASSWORD, ENCRYPTION_KEY, GOOGLE_API_FILBERT_CLIENT_ID }
   } = process;
@@ -613,7 +635,7 @@ function validateSaneEnvironment() {
   return errorMessagePieces.length ? errorMessagePieces.join("\n") : "";
 }
 
-const environmentErrorMessage = validateSaneEnvironment();
+const environmentErrorMessage = verifySaneEnvironment();
 const welcomeMessage = `
    __ _ _ _               _
   / _(_) | |__   ___ _ __| |_

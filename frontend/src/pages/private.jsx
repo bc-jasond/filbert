@@ -14,7 +14,8 @@ import {
   PostMetaRow,
   PostRow,
   StyledA,
-  StyledH2, StyledH3,
+  StyledH2,
+  StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
 import PublishPostForm from '../common/components/edit-publish-post-form';
@@ -145,47 +146,72 @@ export default class AllPosts extends React.Component {
       <>
         <Header session={session} setSession={setSession} />
         <Article>
-            <>
-              {shouldShowPublishPostMenu && (
-                <PublishPostForm
-                  post={shouldShowPublishPostMenu}
-                  updatePost={this.updatePost}
-                  publishPost={this.publishDraft}
-                  savePost={this.savePost}
-                  close={this.closePostMenu}
-                  successMessage={shouldShowPostSuccess}
-                  errorMessage={shouldShowPostError}
-                />
-              )}
+          <>
+            {shouldShowPublishPostMenu && (
+              <PublishPostForm
+                post={shouldShowPublishPostMenu}
+                updatePost={this.updatePost}
+                publishPost={this.publishDraft}
+                savePost={this.savePost}
+                close={this.closePostMenu}
+                successMessage={shouldShowPostSuccess}
+                errorMessage={shouldShowPostError}
+              />
+            )}
+            <PostRow>
+              <StyledH2>My Private Work</StyledH2>
+              <StyledH3>
+                These pieces have{' '}
+                <span role="img" aria-label="lock">
+                  🔒
+                </span>{' '}
+                NOT been published{' '}
+                <span role="img" aria-label="lock">
+                  🔑
+                </span>{' '}
+                and are only viewable
+                <span role="img" aria-label="eyeballs">
+                  👀
+                </span>{' '}
+                by you while logged into{' '}
+                <span role="img" aria-label="hand writing with a pen">
+                  ✍️
+                </span>{' '}
+                filbert
+              </StyledH3>
+            </PostRow>
+            {drafts.size === 0 && (
               <PostRow>
-                <StyledH2>My Private Work</StyledH2>
-                <StyledH3>These pieces have NOT been published and are only viewable to you while logged into ✍️ filbert</StyledH3>
+                <StyledHeadingA href="/edit/new">
+                  Click Here or the &quot;new&quot; menu button above to start a
+                  new Private piece
+                </StyledHeadingA>
               </PostRow>
-              {drafts.size === 0 && (<PostRow><StyledHeadingA href="/edit/new">Click Here or the "new" menu button above to start a new Private piece</StyledHeadingA></PostRow>)}
-                {drafts.map(draft => (
-                <PostRow key={`${draft.get('id')}${draft.get('canonical')}`}>
-                  <StyledHeadingA href={`/edit/${draft.get('id')}`}>
-                    {draft.get('title')}
-                  </StyledHeadingA>
-                  <PostAbstractRow>
-                    <StyledA href={`/edit/${draft.get('id')}`}>
-                      {draft.get('abstract')}
-                    </StyledA>
-                  </PostAbstractRow>
-                  <PostMetaRow>
-                    <PostMetaContentFirst>
-                      {draft.get('updated')}
-                    </PostMetaContentFirst>
-                    <PostAction onClick={() => this.openPostMenu(draft)}>
-                      publish
-                    </PostAction>
-                    <PostAction onClick={() => this.deleteDraft(draft)}>
-                      delete
-                    </PostAction>
-                  </PostMetaRow>
-                </PostRow>
-              ))}
-            </>
+            )}
+            {drafts.map(draft => (
+              <PostRow key={`${draft.get('id')}${draft.get('canonical')}`}>
+                <StyledHeadingA href={`/edit/${draft.get('id')}`}>
+                  {draft.get('title')}
+                </StyledHeadingA>
+                <PostAbstractRow>
+                  <StyledA href={`/edit/${draft.get('id')}`}>
+                    {draft.get('abstract')}
+                  </StyledA>
+                </PostAbstractRow>
+                <PostMetaRow>
+                  <PostMetaContentFirst>
+                    {draft.get('updated')}
+                  </PostMetaContentFirst>
+                  <PostAction onClick={() => this.openPostMenu(draft)}>
+                    publish
+                  </PostAction>
+                  <PostAction onClick={() => this.deleteDraft(draft)}>
+                    delete
+                  </PostAction>
+                </PostMetaRow>
+              </PostRow>
+            ))}
+          </>
         </Article>
         <Footer />
       </>

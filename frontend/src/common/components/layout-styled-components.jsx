@@ -21,19 +21,14 @@ export const HeaderStyled = styled.header`
 `;
 export const HeaderContentContainer = styled.div`
   position: relative;
-  height: 65px;
+  min-height: 65px;
   padding-left: 20px;
   padding-right: 20px;
   margin: 0 auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-`;
-export const HeaderLinksContainer = styled.div`
-  position: absolute;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  justify-content: space-evenly;
 `;
 export const LinkStyled = styled(Link)`
   font-family: ${monospaced}, monospaced;
@@ -44,6 +39,7 @@ export const LinkStyled = styled(Link)`
 export const LogoLinkStyled = styled(LinkStyled)`
   font-size: 28px;
   transition: font-size 0.125s;
+  flex-grow: 2;
   &:hover {
     font-size: 32px;
   }

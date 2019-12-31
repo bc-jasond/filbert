@@ -6,7 +6,7 @@ import {
 import Header from './header';
 import Footer from './footer';
 
-export default ({session}) => (
+export default ({ session }) => (
   <>
     <Header session={session} />
     <H1Center>

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Article } from '../common/components/layout-styled-components';
 import {
   BoldText,
+  Code,
   ContentSection,
   H1Styled,
   H2Styled,
@@ -37,7 +38,6 @@ const FullName = styled(H2Styled)`
   margin: 0 0 8px 0;
 `;
 
-
 export default class UserProfile extends React.Component {
   constructor(props) {
     super(props);
@@ -47,7 +47,7 @@ export default class UserProfile extends React.Component {
       user: null
     };
   }
-  
+
   async componentDidMount() {
     const {
       props: {
@@ -68,42 +68,50 @@ export default class UserProfile extends React.Component {
       const user = await apiGet(`/user/${usernameWithoutAt}`);
       this.setState({ user });
     } catch (err) {
-      console.error("USER PROFILE", err)
+      console.error('USER PROFILE', err);
       this.setState({ shouldShow404: true });
     }
   }
-  
+
   render() {
     const {
       state: { shouldShow404, user, userIsMe },
       props: { session, setSession }
     } = this;
     if (shouldShow404) return <Page404 session={session} />;
-    
-    return user && (
-      <>
-        <Header session={session} setSession={setSession} userIsMe={userIsMe} />
-        <Article>
-          <H1Styled>User Profile</H1Styled>
-          <ContentSection>
-            <Row>
-              <Col>
-                {user?.pictureUrl && <BiggerImg src={user.pictureUrl} />}
-              </Col>
-              <ColRight>
-                <FullName>
-                  {user?.givenName} {user?.familyName}
-                </FullName>
-                <BoldText>@{user?.username}</BoldText>
-              </ColRight>
-            </Row>
-          </ContentSection>
-          <ContentSection>
-            <PStyled>Member Since: {formatPostDate(user?.created)}</PStyled>
-          </ContentSection>
-        </Article>
-        <Footer />
-      </>
+
+    return (
+      user && (
+        <>
+          <Header
+            session={session}
+            setSession={setSession}
+            userIsMe={userIsMe}
+          />
+          <Article>
+            <H1Styled>User Profile</H1Styled>
+            <ContentSection>
+              <Row>
+                <Col>
+                  {user?.pictureUrl && <BiggerImg src={user.pictureUrl} />}
+                </Col>
+                <ColRight>
+                  <FullName>
+                    {user?.givenName} {user?.familyName}
+                  </FullName>
+                  <BoldText>@{user?.username}</BoldText>
+                </ColRight>
+              </Row>
+            </ContentSection>
+            <ContentSection>
+              <PStyled>
+                <Code>Member Since:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+            </ContentSection>
+          </Article>
+          <Footer />
+        </>
+      )
     );
   }
 }

@@ -58,13 +58,10 @@ export default class App extends React.Component {
             <Redirect push exact from="/" to="/p/homepage" />
             <Redirect push exact from="/help" to="/p/help" />
             <Redirect push exact from="/about" to="/p/about" />
-            {username && <Redirect
-              push
-              exact
-              from="/me"
-              to={`/@${username}`}
-            />}
-            
+            {username && (
+              <Redirect push exact from="/me" to={`/@${username}`} />
+            )}
+
             <RouteWithSession exact path="/signout" component={KThxBye} />
             <RouteWithSession exact path="/signin" component={SignIn} />
             {/* NOTE: signin admin doesn't have a link in, you have to know the url */}

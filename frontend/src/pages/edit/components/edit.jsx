@@ -245,12 +245,19 @@ export default class EditPost extends React.Component {
           let shouldFindLastNode = false;
           const queryParams = new URLSearchParams(window.location.search);
           if (queryParams.has('shouldFocusLastNode')) {
-            focusNodeId = DocumentModel.getLastNode(this.documentModel.nodesById).get('id');
+            focusNodeId = DocumentModel.getLastNode(
+              this.documentModel.nodesById
+            ).get('id');
             offset = -1;
             shouldFindLastNode = true;
             queryParams.delete('shouldFocusLastNode');
             const queryString = queryParams.toString();
-            window.history.replaceState({}, document.title, window.location.pathname + (queryString.length > 0 ? '?' + queryString : ''))
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname +
+                (queryString.length > 0 ? `?${queryString}` : '')
+            );
           }
           setCaret(focusNodeId, offset, shouldFindLastNode);
           await this.manageInsertMenu();
@@ -1334,86 +1341,88 @@ export default class EditPost extends React.Component {
     if (shouldShow404) return <Page404 session={session} />;
     if (shouldRedirect) return <Redirect to={shouldRedirect} />;
 
-    return nodesById.size > 0 && (
-      <>
-        <div role="presentation" onMouseUp={this.handleMouseUp}>
-          <Header
-            session={session}
-            setSession={setSession}
-            pageName={PAGE_NAME_EDIT}
-            post={post}
-            togglePostMenu={this.togglePostMenu}
-            deletePost={this.deletePost}
-          />
-          <ArticleStyled>
-            <div
-              id="filbert-edit-container"
-              contentEditable
-              suppressContentEditableWarning
-            >
-              <Document
-                nodesById={nodesById}
-                currentEditNode={editSectionNode}
-                setEditNodeId={this.sectionEdit}
+    return (
+      nodesById.size > 0 && (
+        <>
+          <div role="presentation" onMouseUp={this.handleMouseUp}>
+            <Header
+              session={session}
+              setSession={setSession}
+              pageName={PAGE_NAME_EDIT}
+              post={post}
+              togglePostMenu={this.togglePostMenu}
+              deletePost={this.deletePost}
+            />
+            <ArticleStyled>
+              <div
+                id="filbert-edit-container"
+                contentEditable
+                suppressContentEditableWarning
+              >
+                <Document
+                  nodesById={nodesById}
+                  currentEditNode={editSectionNode}
+                  setEditNodeId={this.sectionEdit}
+                />
+              </div>
+            </ArticleStyled>
+            <Footer />
+          </div>
+          {shouldShowPublishPostMenu && (
+            <PublishPostForm
+              post={post}
+              updatePost={this.updatePost}
+              publishPost={this.publishPost}
+              savePost={this.savePost}
+              close={this.togglePostMenu}
+              successMessage={shouldShowPostSuccess}
+              errorMessage={shouldShowPostError}
+              forwardRef={this.getInputForwardedRef}
+            />
+          )}
+          {insertMenuNode.get('id') && (
+            <InsertSectionMenu
+              windowEvent={windowEventToForward}
+              insertNodeId={insertMenuNode.get('id')}
+              insertMenuTopOffset={insertMenuTopOffset}
+              insertMenuLeftOffset={insertMenuLeftOffset}
+              insertSection={this.insertSection}
+            />
+          )}
+          {editSectionNode.get('type') === NODE_TYPE_IMAGE &&
+            shouldShowEditSectionMenu && (
+              <EditImageForm
+                offsetTop={editSectionMetaFormTopOffset}
+                nodeModel={editSectionNode}
+                uploadFile={this.replaceImageFile}
+                updateMeta={this.updateEditSectionNodeMeta}
+                imageRotate={this.imageRotate}
+                forwardRef={this.getInputForwardedRef}
               />
-            </div>
-          </ArticleStyled>
-          <Footer />
-        </div>
-        {shouldShowPublishPostMenu && (
-          <PublishPostForm
-            post={post}
-            updatePost={this.updatePost}
-            publishPost={this.publishPost}
-            savePost={this.savePost}
-            close={this.togglePostMenu}
-            successMessage={shouldShowPostSuccess}
-            errorMessage={shouldShowPostError}
-            forwardRef={this.getInputForwardedRef}
-          />
-        )}
-        {insertMenuNode.get('id') && (
-          <InsertSectionMenu
-            windowEvent={windowEventToForward}
-            insertNodeId={insertMenuNode.get('id')}
-            insertMenuTopOffset={insertMenuTopOffset}
-            insertMenuLeftOffset={insertMenuLeftOffset}
-            insertSection={this.insertSection}
-          />
-        )}
-        {editSectionNode.get('type') === NODE_TYPE_IMAGE &&
-          shouldShowEditSectionMenu && (
-            <EditImageForm
-              offsetTop={editSectionMetaFormTopOffset}
-              nodeModel={editSectionNode}
-              uploadFile={this.replaceImageFile}
-              updateMeta={this.updateEditSectionNodeMeta}
-              imageRotate={this.imageRotate}
-              forwardRef={this.getInputForwardedRef}
+            )}
+          {editSectionNode.get('type') === NODE_TYPE_QUOTE &&
+            shouldShowEditSectionMenu && (
+              <EditQuoteForm
+                offsetTop={editSectionMetaFormTopOffset}
+                nodeModel={editSectionNode}
+                updateMeta={this.updateEditSectionNodeMeta}
+                forwardRef={this.getInputForwardedRef}
+              />
+            )}
+          {formatSelectionNode.get('id') && (
+            <FormatSelectionMenu
+              windowEvent={windowEventToForward}
+              offsetTop={formatSelectionMenuTopOffset}
+              offsetLeft={formatSelectionMenuLeftOffset}
+              nodeModel={formatSelectionNode}
+              selectionModel={formatSelectionModel}
+              selectionAction={this.handleSelectionAction}
+              updateLinkUrl={this.updateLinkUrl}
+              closeMenu={this.closeFormatSelectionMenu}
             />
           )}
-        {editSectionNode.get('type') === NODE_TYPE_QUOTE &&
-          shouldShowEditSectionMenu && (
-            <EditQuoteForm
-              offsetTop={editSectionMetaFormTopOffset}
-              nodeModel={editSectionNode}
-              updateMeta={this.updateEditSectionNodeMeta}
-              forwardRef={this.getInputForwardedRef}
-            />
-          )}
-        {formatSelectionNode.get('id') && (
-          <FormatSelectionMenu
-            windowEvent={windowEventToForward}
-            offsetTop={formatSelectionMenuTopOffset}
-            offsetLeft={formatSelectionMenuLeftOffset}
-            nodeModel={formatSelectionNode}
-            selectionModel={formatSelectionModel}
-            selectionAction={this.handleSelectionAction}
-            updateLinkUrl={this.updateLinkUrl}
-            closeMenu={this.closeFormatSelectionMenu}
-          />
-        )}
-      </>
+        </>
+      )
     );
   }
 }
