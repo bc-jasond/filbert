@@ -1,4 +1,5 @@
 import React from 'react';
+import styled from 'styled-components';
 import {
   A,
   FooterStyled,
@@ -8,6 +9,10 @@ import {
   LogoLinkStyled,
   SocialLinksContainer
 } from '../common/components/layout-styled-components';
+
+const HelpLink = styled(LogoLinkStyled)`
+  flex-grow: unset;
+`;
 
 export default () => (
   <FooterStyled>
@@ -22,9 +27,9 @@ export default () => (
       <A href="https://www.linkedin.com/in/jasondubaniewicz/">
         <LinkedInStyled />
       </A>
-      <LogoLinkStyled to="/help">
+      <HelpLink to="/help">
         <InfoStyled />
-      </LogoLinkStyled>
+      </HelpLink>
     </SocialLinksContainer>
   </FooterStyled>
 );

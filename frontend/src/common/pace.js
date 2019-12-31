@@ -273,12 +273,9 @@ export default function() {
           if (null == this.el) {
             if (((a = document.querySelector(D.target)), !a)) throw new i();
             (this.el = document.createElement('div')),
-              (this.el.className = 'pace pace-active'),
-              (document.body.className = document.body.className.replace(
-                /pace-done/g,
-                ''
-              )),
-              (document.body.className += ' pace-running'),
+              (this.el.classList.add('pace', 'pace-active')),
+              (document.body.classList.remove('pace-done')),
+              (document.body.classList.add('pace-running')),
               (this.el.innerHTML =
                 '<div class="pace-progress">\n  <div class="pace-progress-inner"></div>\n</div>\n<div class="pace-activity"></div>'),
               null != a.firstChild
@@ -291,13 +288,10 @@ export default function() {
           var a;
           return (
             (a = this.getElement()),
-            (a.className = a.className.replace('pace-active', '')),
-            (a.className += ' pace-inactive'),
-            (document.body.className = document.body.className.replace(
-              'pace-running',
-              ''
-            )),
-            (document.body.className += ' pace-done')
+            (a.classList.remove('pace-active')),
+            (a.classList.add('pace-inactive')),
+            (document.body.classList.remove('pace-running')),
+            (document.body.classList.add('pace-done'))
           );
         }),
         (a.prototype.update = function(a) {
