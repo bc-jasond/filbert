@@ -1,8 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { Article } from '../common/components/layout-styled-components';
+import { authorExpandMixin } from '../common/components/list-all-styled-components';
 import {
-  BoldText,
   Code,
   ContentSection,
   H1Styled,
@@ -36,6 +37,9 @@ const BiggerImg = styled(ProfileImg)`
 `;
 const FullName = styled(H2Styled)`
   margin: 0 0 8px 0;
+`;
+const AuthorExpand = styled(Link)`
+  ${authorExpandMixin};
 `;
 
 export default class UserProfile extends React.Component {
@@ -99,7 +103,9 @@ export default class UserProfile extends React.Component {
                   <FullName>
                     {user?.givenName} {user?.familyName}
                   </FullName>
-                  <BoldText>@{user?.username}</BoldText>
+                  <AuthorExpand to={`/public?username=${user?.username}`}>
+                    {user?.username}
+                  </AuthorExpand>
                 </ColRight>
               </Row>
             </ContentSection>

@@ -2,7 +2,7 @@
 # config files in the Percona Docker image look like:
 # /etc/my.cnf <-- main file
 # /etc/percona-server.conf.d/ <-- main mysqld.cnf [mysqld] section lives here
-# /etc/my.cnf.d/ <-- has a docker.cnf file with a [mysqld] section, overides live here
+# /etc/my.cnf.d/ <-- has a docker.cnf file with a [mysqld] section, overrides live here
 #
 # per https://hub.docker.com/_/percona, a custom cnf file on the host is actually mounted to
 # /etc/mysql/ <-- symlink to /etc/my.cnf.d/

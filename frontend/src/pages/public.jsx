@@ -1,12 +1,14 @@
 import { fromJS, List } from 'immutable';
 import React from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import {
   Article,
   NavSpan
 } from '../common/components/layout-styled-components';
 import {
-  AuthorExpand,
+  authorExpandMixin,
+  MetaContent,
   PostAbstractRow,
   PostAction,
   PostActionA,
@@ -66,6 +68,11 @@ const InputStyled = styled(Input)`
     opacity: 0;
   `}
 `;
+const AuthorExpand = styled(Link)`
+  ${MetaContent};
+  padding-left: 9px;
+  ${authorExpandMixin};
+`;
 
 export default class Public extends React.Component {
   usernameInputRef = React.createRef();
@@ -73,19 +80,39 @@ export default class Public extends React.Component {
   constructor(props) {
     super(props);
 
-    const queryParams = new URLSearchParams(window.location.search);
     this.state = {
       posts: List(),
-      oldestFilterIsSelected: queryParams.has('oldest'),
-      usernameFilterIsSelected: queryParams.has('username'),
-      username: queryParams.get('username') || '',
-      randomFilterIsSelected: queryParams.has('random')
+      oldestFilterIsSelected: false,
+      usernameFilterIsSelected: false,
+      username: '',
+      randomFilterIsSelected: false
     };
   }
 
   async componentDidMount() {
-    this.loadPosts();
+    this.syncQueryParamsAndLoadPosts();
   }
+
+  async componentDidUpdate() {
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.toString() !== this.prevQueryParams.toString()) {
+      this.syncQueryParamsAndLoadPosts();
+    }
+  }
+
+  syncQueryParamsAndLoadPosts = async () => {
+    const queryParams = new URLSearchParams(window.location.search);
+    this.prevQueryParams = queryParams;
+    this.setState(
+      {
+        oldestFilterIsSelected: queryParams.has('oldest'),
+        usernameFilterIsSelected: queryParams.has('username'),
+        username: queryParams.get('username') || '',
+        randomFilterIsSelected: queryParams.has('random')
+      },
+      this.loadPosts
+    );
+  };
 
   deletePost = async post => {
     try {
@@ -141,7 +168,7 @@ export default class Public extends React.Component {
     if (this.checkUsernameTimeout) {
       clearTimeout(this.checkUsernameTimeout);
     }
-    this.checkUsernameTimeout = setTimeout(this.loadPosts, 750);
+    this.checkUsernameTimeout = setTimeout(this.loadPosts, 500);
   };
 
   toggleOldestFilter = () => {
@@ -313,7 +340,9 @@ export default class Public extends React.Component {
                       </PostAction>
                     </>
                   )}
-                  <AuthorExpand>{post.get('username')}</AuthorExpand>
+                  <AuthorExpand to={`/public?username=${post.get('username')}`}>
+                    {post.get('username')}
+                  </AuthorExpand>
                 </PostMetaRow>
               </PostRow>
             ))}

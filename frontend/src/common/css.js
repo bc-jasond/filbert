@@ -7,3 +7,6 @@ export const blue = '#79bbd5';
 export const darkBlue = '#52a8c9';
 export const error = '#cc0000';
 export const success = '#5CB85C';
+
+export const bezier = property =>
+  `transition: 0.3s cubic-bezier(0.175, 0.885, 0.320, 1.275) ${property}`;
