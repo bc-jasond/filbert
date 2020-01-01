@@ -5,7 +5,6 @@ import GoogleIconSvg from '../../assets/icons/google-logo.svg';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
 
 import {
-  Button,
   ButtonSpan,
   CancelButton,
   ErrorMessage,
@@ -21,6 +20,8 @@ import {
 import { darkGrey } from '../common/css';
 import { loadScript } from '../common/dom';
 import { apiGet } from '../common/fetch';
+import ButtonSpinner from '../common/components/button-spinner';
+import { sansSerif } from '../common/fonts.css';
 
 import { signinGoogle, signout } from '../common/session';
 
@@ -61,7 +62,7 @@ const Smaller2 = styled(Smaller)`
   font-weight: 400;
   margin-top: 16px;
 `;
-const GoogleSigninButton = styled(Button)`
+const GoogleSigninButton = styled(ButtonSpinner)`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -71,11 +72,6 @@ const GoogleSigninButton = styled(Button)`
   &:hover {
     background: white;
   }
-`;
-const GoogleSigninButtonSpan = styled(ButtonSpan)`
-  color: ${darkGrey};
-  flex-grow: 2;
-  text-align: center;
 `;
 const GoogleInfo = styled.div`
   display: flex;
@@ -90,11 +86,13 @@ const GoogleInfo = styled.div`
 `;
 const GoogleIcon = styled(GoogleIconSvg)`
   position: absolute;
+  left: 16px;
   flex-shrink: 0;
   height: 24px;
   width: 24px;
 `;
-const GoogleInfoSpan = styled(ButtonSpan)`
+const GoogleInfoSpan = styled.span`
+  font-family: ${sansSerif};
   display: block;
   color: ${darkGrey};
   overflow: hidden;
@@ -111,6 +109,7 @@ export default class SignIn extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      loading: true,
       error: null,
       success: null,
       shouldRedirect: false,
@@ -125,6 +124,7 @@ export default class SignIn extends React.Component {
       usernameRef.current.focus();
     }
     window.initThaGoog = async () => {
+      this.setState({ loading: true });
       await new Promise(resolve => gapi.load('auth2', resolve));
       await gapi.auth2.init({
         client_id: process.env.GOOGLE_API_FILBERT_CLIENT_ID
@@ -132,12 +132,19 @@ export default class SignIn extends React.Component {
       this.GoogleAuth = gapi.auth2.getAuthInstance();
       if (this.GoogleAuth.isSignedIn.get()) {
         const user = this.GoogleAuth.currentUser.get();
-        this.setGoogleUser(user);
+        await this.setGoogleUser(user);
       }
+      this.setState({ loading: false });
     };
-    await loadScript(
-      'https://apis.google.com/js/platform.js?onload=initThaGoog'
-    );
+    if (!this.GoogleAuth) {
+      await loadScript(
+        'https://apis.google.com/js/platform.js?onload=initThaGoog'
+      );
+    } else if (this.GoogleAuth.isSignedIn.get()) {
+      const user = this.GoogleAuth.currentUser.get();
+      this.setGoogleUser(user);
+    }
+    this.setState({ loading: false });
   }
 
   componentWillUnmount() {
@@ -171,7 +178,7 @@ export default class SignIn extends React.Component {
       evt.stopPropagation();
       evt.preventDefault();
 
-      this.setState({ success: null, error: null });
+      this.setState({ success: null, error: null, loading: true });
 
       if (!googleUser?.idToken) {
         // open google window to let the user select a user to login as, or to grant access
@@ -187,7 +194,12 @@ export default class SignIn extends React.Component {
       );
       if (signupIsIncomplete) {
         this.setState(
-          { shouldShowUsernameInput: true, error: null, success: null },
+          {
+            shouldShowUsernameInput: true,
+            error: null,
+            success: null,
+            loading: false
+          },
           () => {
             usernameRef.current.focus();
           }
@@ -204,16 +216,17 @@ export default class SignIn extends React.Component {
     } catch (error) {
       this.setState({
         success: null,
-        error: error?.error || error?.message || 'Error'
+        error: error?.error || error?.message || 'Error',
+        loading: false
       });
     }
   };
 
   doLogout = async () => {
-    this.setState({ error: null, success: null });
+    this.setState({ error: null, success: null, loading: true });
     await this.GoogleAuth.signOut();
     signout();
-    this.setState({ googleUser: {} });
+    this.setState({ googleUser: {}, loading: false });
   };
 
   updateUsername = event => {
@@ -227,32 +240,39 @@ export default class SignIn extends React.Component {
     if (newUsername === username) {
       return;
     }
-    this.setState({ username: newUsername, error: null }, () => {
+    this.setState({ username: newUsername, error: null, loading: true }, () => {
       if (this.checkUsernameTimeout) {
         clearTimeout(this.checkUsernameTimeout);
       }
       if (newUsername.length < 5) {
         this.setState({
           error: `${newUsername} is too short.  Pick a username between 5 and 42 characters.`,
-          success: null
+          success: null,
+          loading: false
         });
         return;
       }
       if (newUsername.length > 42) {
         this.setState({
           error: `${newUsername} is too long.  Pick a username between 5 and 42 characters.`,
-          success: null
+          success: null,
+          loading: false
         });
         return;
       }
       this.checkUsernameTimeout = setTimeout(async () => {
         try {
           await apiGet(`/user/${newUsername}`);
-          this.setState({ error: `${newUsername} is taken`, success: null });
+          this.setState({
+            error: `${newUsername} is taken`,
+            success: null,
+            loading: false
+          });
         } catch (err) {
           this.setState({
             success: `"${newUsername}" is available 👍`,
-            error: null
+            error: null,
+            loading: false
           });
         }
       }, 750);
@@ -262,6 +282,7 @@ export default class SignIn extends React.Component {
   render() {
     const {
       state: {
+        loading,
         error,
         success,
         shouldRedirect,
@@ -333,15 +354,19 @@ export default class SignIn extends React.Component {
             )}
             {success && <SuccessMessage>{success}</SuccessMessage>}
           </MessageContainer>
-          <GoogleSigninButton id="google-sign-in-button" type="submit">
-            <GoogleIcon />
-            <GoogleSigninButtonSpan>
-              {givenName || shouldShowUsernameInput
+          <GoogleSigninButton
+            id="google-sign-in-button"
+            type="submit"
+            loading={loading}
+            label={
+              givenName || shouldShowUsernameInput
                 ? `Continue as ${
                     shouldShowUsernameInput ? username : givenName
                   }`
-                : 'Sign in to filbert with Google'}
-            </GoogleSigninButtonSpan>
+                : 'Sign in to filbert with Google'
+            }
+          >
+            <GoogleIcon />
           </GoogleSigninButton>
           {!shouldShowUsernameInput && givenName ? (
             <CancelButton type="button" onClick={this.doLogout}>

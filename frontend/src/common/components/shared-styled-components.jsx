@@ -364,14 +364,6 @@ export const CancelButton = styled(Button)`
     background: ${grey};
   }
 `;
-export const DeleteButton = styled(Button)`
-  background: ${mediumGrey};
-  margin-bottom: 0;
-  &:hover {
-    background: ${error};
-    color: white;
-  }
-`;
 export const ButtonSpan = styled.span`
   color: white;
   font-family: ${sansSerif};

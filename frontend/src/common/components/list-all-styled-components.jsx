@@ -1,6 +1,6 @@
 import styled, { css } from 'styled-components';
 import { darkGrey, grey } from '../css';
-import { sansSerif } from '../fonts.css';
+import { monospaced, sansSerif } from '../fonts.css';
 import { A } from './layout-styled-components';
 import { H2Styled, H3Styled, NavButtonMixin } from './shared-styled-components';
 
@@ -54,26 +54,25 @@ export const PostMetaRow = styled.div`
 // POSTS LIST
 export const MetaFont = css`
   letter-spacing: 0px;
-  font-size: 15.8px;
+  font-size: 16px;
   line-height: 20px;
   font-style: normal;
 `;
 export const MetaContent = css`
-  ${MetaFont}
+  ${MetaFont};
   color: ${grey};
   font-family: ${sansSerif};
   padding-right: 9px;
-`;
-export const PostMetaContent = styled.span`
-  ${MetaContent};
 `;
 export const PostMetaContentFirst = styled.span`
   ${MetaContent};
   padding-left: 0;
 `;
-export const AuthorExpand = styled.span`
-  ${MetaContent};
-  padding-left: 9px;
+export const authorExpandMixin = css`
+  font-family: ${monospaced}, monospaced;
+  color: ${grey};
+  cursor: pointer;
+  text-decoration: none;
   transition: letter-spacing 0.125s, color 0.125s;
   &:hover {
     letter-spacing: 8px;
