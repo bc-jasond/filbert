@@ -1,0 +1,13 @@
+{
+  "name": "filbert-cron",
+  "version": "1.0.0",
+  "description": "cron jobs for filbert.xyz",
+  "main": "filbert-cron.js",
+  "repository": "https://github.com/bc-jasond/filbert",
+  "author": "Jason Dubaniewicz",
+  "license": "MIT",
+  "private": null,
+  "dependencies": {
+    "node-cron": "^2.0.3"
+  }
+}
