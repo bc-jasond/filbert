@@ -32,7 +32,7 @@ async function wrapExec(command) {
     return stdout || true;
   }
   catch(err) {
-    console.error(`exec() command failed: ${command}`)
+    console.error(`exec() command failed: ${command}`, err)
   }
 }
 
