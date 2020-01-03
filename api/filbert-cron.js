@@ -1,8 +1,7 @@
-const { promisify } = require('util');
-const {exec: execCb} = require('child_process');
-const { performance } = require("perf_hooks");
-const exec = promisify(execCb);
+// ESM - remove after ECMAScript Module support is past Experimental node v14 ?
+require = require("esm")(module /*, options*/);
 
+const { performance } = require("perf_hooks");
 const cron = require('node-cron');
 
 const {
@@ -13,44 +12,15 @@ const {
   deleteKeysForBucket,
 } = require('./s3');
 
-const bucketPrefix = `filbert-${process.env.NODE_ENV || 'dev'}-mysqlbackups`;
-const hourlyBucketName = `${bucketPrefix}-hourly`;
-const dailyBucketName = `${bucketPrefix}-daily`;
-const adhocBucketName = `filbert-mysql-backups`;
+const {
+  assertDir,
+  makeMysqlDump,
+  rmFile,
+  stagingDirectory,
+  hourlyBucketName,
+  dailyBucketName,
+} = require('./mysql');
 
-const stagingDirectory = `/tmp/filbert-mysql-backups`;
-
-async function wrapExec(command) {
-  try {
-    const {stdout, stderr} = await exec(command);
-    console.log(`exec() command succeeded: ${command}`)
-    if (stdout) console.log(stdout);
-    // TODO: use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf
-    //  but, the percona docker doesn't create a /home/mysql dir, so need to investigate
-    // https://dev.mysql.com/doc/refman/5.6/en/mysql-config-editor.html
-    if (stderr && !stderr.includes('password')) console.error(stderr);
-    return stdout || true;
-  }
-  catch(err) {
-    console.error(`exec() command failed: ${command}`, err)
-  }
-}
-
-async function assertDir(dirname) {
-  return wrapExec(`mkdir -p ${dirname}`);
-}
-
-async function rmFile(filenameAndPath) {
-  return wrapExec(`rm ${filenameAndPath}`);
-}
-
-async function makeMysqlDump(now) {
-  const currentBackupFilename = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}.sql`;
-  const currentFileAndPath = `${stagingDirectory}/${currentBackupFilename}`;
-  const stdout = await wrapExec(`docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" > ${currentFileAndPath}`);
-  if (typeof stdout === 'string') console.log(stdout);
-  return {filenameWithAbsolutePath: currentFileAndPath};
-}
 
 /**
  * runs once every hour at 0 minutes (add a * to the end (5 stars total) to test in seconds)
