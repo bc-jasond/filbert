@@ -86,8 +86,8 @@ async function filbertMysqldumpToS3Job() {
     const startTime = performance.now();
     console.log('starting filbertMysqldumpToS3Job()');
     
-    const numberOfHourlyBackupsToKeep = 12;
-    const numberOfDailyBackupsToKeep = 7;
+    const numberOfHourlyBackupsToKeep = 24;
+    const numberOfDailyBackupsToKeep = 14;
     const now = new Date();
     const hour = now.getHours();
     // make sure the temp dir exists
