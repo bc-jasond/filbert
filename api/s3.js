@@ -18,7 +18,9 @@ const headBucket = promisify(s3Client.headBucket).bind(s3Client);
 const createBucket = promisify(s3Client.createBucket).bind(s3Client);
 const upload = promisify(s3Client.upload).bind(s3Client);
 const listObjects = promisify(s3Client.listObjectsV2).bind(s3Client);
+const getObject = promisify(s3Client.getObject).bind(s3Client);
 const deleteObjects = promisify(s3Client.deleteObjects).bind(s3Client);
+const copyObject = promisify(s3Client.copyObject).bind(s3Client);
 
 /**
  * creates a bucket if it doesn't exist
@@ -57,6 +59,14 @@ async function listKeysForBucket(bucket, { sortOrder } = { sortOrder: 'desc' }) 
     .sort(comparisonFn)
 }
 
+async function getKeyFromBucket(bucket, key) {
+  return getObject({Bucket: bucket, Key: key});
+}
+
+async function copyKeyFromBucketToBucket(bucketSrc, bucketDest, key) {
+  return copyObject({Bucket: bucketDest, CopySource: `/${bucketSrc}/${key}`, Key: key});
+}
+
 async function deleteKeysForBucket(bucket, keys) {
   const formattedKeys = keys.map(k => ({ Key: k }));
   const params = {
@@ -74,6 +84,8 @@ module.exports = {
   assertBucket,
   uploadFileToBucket,
   listKeysForBucket,
+  getKeyFromBucket,
+  copyKeyFromBucketToBucket,
   deleteKeysForBucket,
 };
 
