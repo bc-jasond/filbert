@@ -143,4 +143,5 @@ async function filbertMysqldumpToS3Job() {
 }
 //filbertMysqldumpToS3Job();
 // run once an hour at 0 minutes i.e. 1:00, 2:00, 11:00...
+console.log('Starting filbert-cron scheduler...');
 cron.schedule('0 * * * *', filbertMysqldumpToS3Job);
