@@ -84,13 +84,15 @@ async function filbertMysqldumpToS3Job() {
     await assertBucket(dailyBucketName);
     
     console.log(`Attempting a mysqldump at ${now.toISOString()}`);
-    // TODO: replace path with 'bucket'
+    // TODO: gzip the output?
     const { filenameWithAbsolutePath } = await makeMysqlDump(now);
     await uploadFileToBucket(hourlyBucketName, filenameWithAbsolutePath);
     console.log(`Uploaded ${filenameWithAbsolutePath} to ${hourlyBucketName} 👍`);
-    await rmFile(filenameWithAbsolutePath);
-    // TODO: replace files in path with files in 'bucket'
+    // delete the /tmp/ file - this causes problems on retry...
+    //await rmFile(filenameWithAbsolutePath);
     const filesInHourly = await listKeysForBucket(hourlyBucketName)
+    // just keep X backups at most, doesn't do any checking of dates
+    // assumes the files are named by when they were created
     if (filesInHourly.length < numberOfHourlyBackupsToKeep) {
       console.log(
         `finished filbertMysqldumpToS3Job(). Took ${Math.round(performance.now() - startTime) /
