@@ -106,5 +106,5 @@ if (missingEnvVariables.length > 0) {
   process.exit(1);
 }
 //filbertMysqldumpToS3Job();
-// run once an hour at 0 minutes i.e. 1:00, 2:00, 11:00...
-cron.schedule('0 * * * *', filbertMysqldumpToS3Job);
+// run once an hour at 5 minutes i.e. 1:05, 2:05, 11:05...
+cron.schedule('5 * * * *', filbertMysqldumpToS3Job);
