@@ -47,13 +47,9 @@ async function rmFile(filenameAndPath) {
 async function makeMysqlDump(now) {
   const currentBackupFilename = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}.sql`;
   const currentFileAndPath = `${stagingDirectory}/${currentBackupFilename}`;
-  try {
-    const stdout = await wrapExec(`docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" > ${currentFileAndPath}`);
-    if (typeof stdout === 'string') console.log(stdout);
-    return {filenameWithAbsolutePath: currentFileAndPath};
-  } catch (error) {
-    return rmFile(currentFileAndPath);
-  }
+  const stdout = await wrapExec(`docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" > ${currentFileAndPath}`);
+  if (typeof stdout === 'string') console.log(stdout);
+  return {filenameWithAbsolutePath: currentFileAndPath};
 }
 
 /**
@@ -88,8 +84,8 @@ async function filbertMysqldumpToS3Job() {
     const { filenameWithAbsolutePath } = await makeMysqlDump(now);
     await uploadFileToBucket(hourlyBucketName, filenameWithAbsolutePath);
     console.log(`Uploaded ${filenameWithAbsolutePath} to ${hourlyBucketName} 👍`);
-    // delete the /tmp/ file - this causes problems on retry...
-    //await rmFile(filenameWithAbsolutePath);
+    // delete the /tmp/ file
+    await rmFile(filenameWithAbsolutePath);
     const filesInHourly = await listKeysForBucket(hourlyBucketName)
     // just keep X backups at most, doesn't do any checking of dates
     // assumes the files are named by when they were created
