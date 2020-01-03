@@ -1,3 +1,5 @@
+import { error } from '../frontend/src/common/css';
+
 const knex = require("knex");
 
 let knexConnection;
@@ -136,13 +138,10 @@ export const stagingDirectory = `/tmp/filbert-mysql-backups`;
 export async function wrapExec(command) {
   try {
     const {stdout, stderr} = await exec(command);
-    console.log(`exec() command succeeded: ${command}`)
+    console.log(`exec() command succeeded: ${command}`, stdout);
     if (stdout) console.log(stdout);
-    // TODO: use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf
-    //  but, the percona docker doesn't create a /home/mysql dir, so need to investigate
-    // https://dev.mysql.com/doc/refman/5.6/en/mysql-config-editor.html
-    if (stderr && !stderr.includes('password')) console.error(stderr);
-    return stdout || true;
+    if (stderr) console.error(stderr);
+    return {stdout, stderr};
   }
   catch(err) {
     console.error(`exec() command failed: ${command}`, err)
@@ -160,7 +159,9 @@ export async function rmFile(filenameAndPath) {
 export async function makeMysqlDump(now) {
   const currentBackupFilename = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}.sql`;
   const currentFileAndPath = `${stagingDirectory}/${currentBackupFilename}`;
-  const stdout = await wrapExec(`docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" > ${currentFileAndPath}`);
-  if (typeof stdout === 'string') console.log(stdout);
+  // TODO: use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf
+  //  but, the percona docker doesn't create a /home/mysql dir, so need to investigate
+  // https://dev.mysql.com/doc/refman/5.6/en/mysql-config-editor.html
+  await wrapExec(`docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" --verbose 2>>/var/log/mysqldump.log > ${currentFileAndPath}`);
   return {filenameWithAbsolutePath: currentFileAndPath};
 }
