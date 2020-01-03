@@ -56,19 +56,6 @@ async function makeMysqlDump(now) {
   }
 }
 
-async function lsDateDesc(path) {
-  const stdout = await wrapExec(`ls -td $PWD/${path}/*`);
-  return stdout.trim().split('\n');
-}
-
-async function deleteFiles(files) {
-  if (files.length === 0) {
-    return;
-  }
-  console.log(`deleting ${files.length} files: `, files)
-  return wrapExec(`rm ${files.join(' ')}`)
-}
-
 /**
  * runs once every hour at 0 minutes (add a * to the end (5 stars total) to test in seconds)
  *
@@ -141,7 +128,15 @@ async function filbertMysqldumpToS3Job() {
     isRunning = false;
   }
 }
+
+console.log('Starting filbert-cron scheduler...');
+const { env } = process;
+const missingEnvVariables = ['MYSQL_ROOT_PASSWORD','PERCONA_CONTAINER_NAME','LINODE_OBJECT_STORAGE_ACCESS_KEY','LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY']
+  .filter(key => !env[key] && key);
+if (missingEnvVariables.length > 0) {
+  console.error(`process.env not sane!\n\nThe following variables are missing:\n${missingEnvVariables.join('\n')}`);
+  process.exit(1);
+}
 //filbertMysqldumpToS3Job();
 // run once an hour at 0 minutes i.e. 1:00, 2:00, 11:00...
-console.log('Starting filbert-cron scheduler...');
 cron.schedule('0 * * * *', filbertMysqldumpToS3Job);
