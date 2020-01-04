@@ -28,6 +28,7 @@ const {
 } = require("./mysql");
 const { checkPassword } = require("./user");
 const { encrypt, decrypt, getChecksum } = require("./cipher");
+const { saneEnvironmentOrExit } = require("./util");
 
 async function main() {
   try {
