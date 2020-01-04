@@ -113,6 +113,33 @@ export default class UserProfile extends React.Component {
               <PStyled>
                 <Code>Member Since:</Code> {formatPostDate(user?.created)}
               </PStyled>
+              <PStyled>
+                <Code>Current Streak:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+              <PStyled>
+                <Code>Longest Streak:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+              <PStyled>
+                <Code># of Posts Total:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+              <PStyled>
+                <Code># of Posts Published:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+              <PStyled>
+                <Code># of Words Total:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+              <PStyled>
+                <Code>Most Used Word:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+              <PStyled>
+                <Code># of Images:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+              <PStyled>
+                <Code># of Quotes:</Code> {formatPostDate(user?.created)}
+              </PStyled>
+              <PStyled>
+                <Code># of Posts:</Code> {formatPostDate(user?.created)}
+              </PStyled>
             </ContentSection>
           </Article>
           <Footer />

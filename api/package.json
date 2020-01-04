@@ -14,7 +14,7 @@
     "pretty": "prettier --parser=babel --write \"**/*.js\"",
     "pretty-ci": "prettier --parser=babel --check -l \"**/*.js\"",
     "cron": "nohup node filbert-cron.js >> /var/log/filbert-cron.log &",
-    "mysqldump": "node filbert-mysqldump-adhoc.js"
+    "dump": "node filbert-mysqldump-adhoc.js"
   },
   "devDependencies": {
     "nodemon": "^1.18.11",

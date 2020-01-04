@@ -1,5 +1,3 @@
-import { error } from '../frontend/src/common/css';
-
 const knex = require("knex");
 
 let knexConnection;
