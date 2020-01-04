@@ -110,9 +110,6 @@ export default ({
       <Button onClick={savePost}>
         <ButtonSpan>Save</ButtonSpan>
       </Button>
-      <CancelButton onClick={close}>
-        <ButtonSpan>Close</ButtonSpan>
-      </CancelButton>
       <Button
         onClick={publishPost}
         disabled={post.get('published') && 'disabled'}
@@ -123,6 +120,9 @@ export default ({
             : 'Publish'
         }`}</ButtonSpan>
       </Button>
+      <CancelButton onClick={close}>
+        <ButtonSpan>Close</ButtonSpan>
+      </CancelButton>
     </PublishPostForm>
   </PublishPostFormContainer>
 );

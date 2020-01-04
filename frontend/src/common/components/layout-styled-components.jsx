@@ -39,7 +39,6 @@ export const LinkStyled = styled(Link)`
 export const LogoLinkStyled = styled(LinkStyled)`
   font-size: 28px;
   transition: font-size 0.125s;
-  flex-grow: 2;
   &:hover {
     font-size: 32px;
   }

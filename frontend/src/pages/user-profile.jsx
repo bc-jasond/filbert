@@ -38,6 +38,7 @@ const BiggerImg = styled(ProfileImg)`
 const FullName = styled(H2Styled)`
   margin: 0 0 8px 0;
 `;
+const AuthorContainer = styled.div``;
 const AuthorExpand = styled(Link)`
   ${authorExpandMixin};
 `;
@@ -103,9 +104,11 @@ export default class UserProfile extends React.Component {
                   <FullName>
                     {user?.givenName} {user?.familyName}
                   </FullName>
-                  <AuthorExpand to={`/public?username=${user?.username}`}>
-                    {user?.username}
-                  </AuthorExpand>
+                  <AuthorContainer>
+                    <AuthorExpand to={`/public?username=${user?.username}`}>
+                      {user?.username}
+                    </AuthorExpand>
+                  </AuthorContainer>
                 </ColRight>
               </Row>
             </ContentSection>

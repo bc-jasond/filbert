@@ -331,20 +331,39 @@ export const MessageContainer = styled.div`
   align-items: center;
   justify-content: center;
 `;
-export const Button = styled.button`
-  display: block;
-  border-radius: 26px;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
-  width: 100%;
-  margin-bottom: 16px;
-  background: ${blue};
-  padding: 14px 18px;
-  font-size: 18px;
+export const NavButtonMixin = css`
+  font-family: ${monospaced}, monospaced;
+  color: ${grey};
   cursor: pointer;
+  text-decoration: none;
+  font-size: 18px;
+  line-height: 24px;
+  padding: 14px 18px;
+  border-radius: 26px;
   border: 1px solid transparent;
+  transition: background-color 0.125s, color 0.125s;
+  flex-grow: 0;
   -webkit-appearance: none;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  &:hover {
+    color: white;
+    background-color: ${lightBlue};
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
+  }
+  ${p =>
+    p.isOpen &&
+    `
+    color: white;
+    background-color: ${lightBlue};
+  `}
+`;
+export const Button = styled.button`
+  ${NavButtonMixin};
+  display: block;
+  width: 100%;
+  margin-bottom: 16px;
+  background: ${blue};
 
   &:hover {
     background: ${darkBlue};
@@ -367,29 +386,6 @@ export const CancelButton = styled(Button)`
 export const ButtonSpan = styled.span`
   color: white;
   font-family: ${sansSerif};
-`;
-export const NavButtonMixin = css`
-  font-family: ${monospaced}, monospaced;
-  color: ${grey};
-  cursor: pointer;
-  text-decoration: none;
-  font-size: 18px;
-  line-height: 24px;
-  padding: 14px 18px;
-  border-radius: 26px;
-  border: 1px solid transparent;
-  transition: background-color 0.125s, color 0.125s;
-  flex-grow: 0;
-  &:hover {
-    color: white;
-    background-color: ${lightBlue};
-  }
-  ${p =>
-    p.isOpen &&
-    `
-    color: white;
-    background-color: ${lightBlue};
-  `}
 `;
 
 // LIL SASSY FORMS with ICONS

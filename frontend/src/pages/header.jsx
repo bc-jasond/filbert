@@ -1,3 +1,4 @@
+import styled from 'styled-components';
 import { Map } from 'immutable';
 import React from 'react';
 import { Redirect } from 'react-router-dom';
@@ -11,6 +12,10 @@ import {
 } from '../common/components/layout-styled-components';
 import { PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../common/constants';
 import { signout } from '../common/session';
+
+const LogoContainer = styled.div`
+  flex-grow: 2;
+`;
 
 export default class Header extends React.PureComponent {
   constructor(props) {
@@ -45,12 +50,14 @@ export default class Header extends React.PureComponent {
       <>
         <HeaderStyled>
           <HeaderContentContainer>
-            <LogoLinkStyled to="/">
-              <span role="img" aria-label="hand writing with a pen">
-                ✍️
-              </span>{' '}
-              filbert
-            </LogoLinkStyled>
+            <LogoContainer>
+              <LogoLinkStyled to="/">
+                <span role="img" aria-label="hand writing with a pen">
+                  ✍️
+                </span>{' '}
+                filbert
+              </LogoLinkStyled>
+            </LogoContainer>
             {session?.userId ? (
               <>
                 {shouldShowPublish && (
@@ -68,7 +75,7 @@ export default class Header extends React.PureComponent {
                 {userIsMe ? (
                   <NavSpan
                     onClick={() => {
-                      if (confirm('Logout?')) {
+                      if (confirm('Sign out?')) {
                         this.setState({ shouldRedirect: true }, () => {
                           signout();
                           setSession({});
@@ -76,7 +83,7 @@ export default class Header extends React.PureComponent {
                       }
                     }}
                   >
-                    logout
+                    sign out
                   </NavSpan>
                 ) : (
                   <NavLink to="/me">{session?.username}</NavLink>
@@ -85,7 +92,7 @@ export default class Header extends React.PureComponent {
             ) : (
               <>
                 <NavLink to="/public">public</NavLink>
-                <NavLink to="/signin">sign in</NavLink>
+                <NavLink to="/signin">join or sign in</NavLink>
               </>
             )}
           </HeaderContentContainer>
