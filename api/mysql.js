@@ -124,25 +124,25 @@ export async function bulkContentNodeDelete(records) {
     .del();
 }
 
-const { promisify } = require('util');
-const {exec: execCb} = require('child_process');
+const { promisify } = require("util");
+const { exec: execCb } = require("child_process");
 const exec = promisify(execCb);
 
-export const bucketPrefix = `filbert-${process.env.NODE_ENV || 'dev'}-mysqlbackups`;
+export const bucketPrefix = `filbert-${process.env.NODE_ENV ||
+  "dev"}-mysqlbackups`;
 export const hourlyBucketName = `${bucketPrefix}-hourly`;
 export const dailyBucketName = `${bucketPrefix}-daily`;
 export const stagingDirectory = `/tmp/filbert-mysql-backups`;
 
 export async function wrapExec(command) {
   try {
-    const {stdout, stderr} = await exec(command);
+    const { stdout, stderr } = await exec(command);
     console.log(`exec() command succeeded: ${command}`, stdout);
     if (stdout) console.log(stdout);
     if (stderr) console.error(stderr);
-    return {stdout, stderr};
-  }
-  catch(err) {
-    console.error(`exec() command failed: ${command}`, err)
+    return { stdout, stderr };
+  } catch (err) {
+    console.error(`exec() command failed: ${command}`, err);
   }
 }
 
@@ -155,11 +155,27 @@ export async function rmFile(filenameAndPath) {
 }
 
 export async function makeMysqlDump(now) {
-  const currentBackupFilename = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}.sql`;
+  const currentBackupFilename = `${now.getFullYear()}-${(now.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}-${now
+    .getDate()
+    .toString()
+    .padStart(2, "0")}_${now
+    .getHours()
+    .toString()
+    .padStart(2, "0")}${now
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")}${now
+    .getSeconds()
+    .toString()
+    .padStart(2, "0")}.sql`;
   const currentFileAndPath = `${stagingDirectory}/${currentBackupFilename}`;
   // TODO: use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf
   //  but, the percona docker doesn't create a /home/mysql dir, so need to investigate
   // https://dev.mysql.com/doc/refman/5.6/en/mysql-config-editor.html
-  await wrapExec(`docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" --verbose 2>>/var/log/mysqldump.log > ${currentFileAndPath}`);
-  return {filenameWithAbsolutePath: currentFileAndPath};
+  await wrapExec(
+    `docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" --verbose 2>>/var/log/mysqldump.log > ${currentFileAndPath}`
+  );
+  return { filenameWithAbsolutePath: currentFileAndPath };
 }

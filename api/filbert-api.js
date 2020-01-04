@@ -251,9 +251,9 @@ async function main() {
 
       if (typeof random === "string") {
         /* TODO: implement
-          1) select all published post ids in the the DB
-          2) use Fisher Yates to fill up 100 random ids (swap from whole list, break at 100) for a WHERE IN clause
-          3) add whereIn() to the builder
+         1) select all published post ids in the the DB
+         2) use Fisher Yates to fill up 100 random ids (swap from whole list, break at 100) for a WHERE IN clause
+         3) add whereIn() to the builder
          */
       }
 
@@ -610,32 +610,14 @@ async function main() {
   }
 }
 
-function verifySaneEnvironment() {
-  const {
-    env: { MYSQL_ROOT_PASSWORD, ENCRYPTION_KEY, GOOGLE_API_FILBERT_CLIENT_ID }
-  } = process;
-  const errorMessagePieces = [];
-  if (!MYSQL_ROOT_PASSWORD) {
-    errorMessagePieces.push("process.env.MYSQL_ROOT_PASSWORD is missing!");
-  }
-  if (
-    !ENCRYPTION_KEY ||
-    typeof ENCRYPTION_KEY !== "string" ||
-    ENCRYPTION_KEY.length !== 32
-  ) {
-    errorMessagePieces.push(
-      "process.env.ENCRYPTION_KEY is missing! (expected: a string of 32 characters)"
-    );
-  }
-  if (!GOOGLE_API_FILBERT_CLIENT_ID) {
-    errorMessagePieces.push(
-      "process.env.GOOGLE_API_FILBERT_CLIENT_ID is missing!"
-    );
-  }
-  return errorMessagePieces.length ? errorMessagePieces.join("\n") : "";
-}
+saneEnvironmentOrExit([
+  "MYSQL_ROOT_PASSWORD",
+  "ENCRYPTION_KEY",
+  "GOOGLE_API_FILBERT_CLIENT_ID",
+  "LINODE_OBJECT_STORAGE_ACCESS_KEY",
+  "LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY"
+]);
 
-const environmentErrorMessage = verifySaneEnvironment();
 const welcomeMessage = `
    __ _ _ _               _
   / _(_) | |__   ___ _ __| |_
@@ -643,11 +625,4 @@ const welcomeMessage = `
  |  _| | | |_) |  __/ |  | |_
  |_| |_|_|_.__/ \\___|_|   \\__|\n\n`;
 console.info(chalk.cyan(welcomeMessage));
-if (environmentErrorMessage.length) {
-  console.error(
-    chalk.red(`❌ filbert API cannot start!\n\n${environmentErrorMessage}`)
-  );
-  process.exitCode = 1;
-} else {
-  main();
-}
+main();

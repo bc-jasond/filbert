@@ -123,7 +123,8 @@ export default class UserProfile extends React.Component {
                 <Code># of Posts Total:</Code> {formatPostDate(user?.created)}
               </PStyled>
               <PStyled>
-                <Code># of Posts Published:</Code> {formatPostDate(user?.created)}
+                <Code># of Posts Published:</Code>{' '}
+                {formatPostDate(user?.created)}
               </PStyled>
               <PStyled>
                 <Code># of Words Total:</Code> {formatPostDate(user?.created)}
