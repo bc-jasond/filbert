@@ -102,6 +102,7 @@ export const ImageSection = styled(ContentSection)`
 export const PStyled = styled.p`
   position: relative;
   margin-bottom: 32px;
+  word-break: break-all;
 `;
 export const QuoteP = styled(PStyled)`
   ${editSectionBorderMixin};
@@ -135,8 +136,7 @@ export const Ol = styled.ol`
   padding: 0;
   list-style: none;
   list-style-image: none;
-  word-break: break-word;
-  word-wrap: break-word;
+  word-break: break-all;
   visibility: visible;
 `;
 export const LiStyled = styled.li`

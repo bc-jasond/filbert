@@ -1,9 +1,10 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
 import { sansSerif } from '../fonts.css';
+import { NavButtonMixin } from './shared-styled-components';
 
 import Spinner from './spinner';
-import { bezier, blue, darkBlue, lightBlue, mediumGrey } from '../css';
+import { bezier, blue, darkBlue, darkGrey, lightBlue, mediumGrey } from '../css';
 
 /*!
  * Inspired by: Ladda
@@ -46,33 +47,24 @@ const ButtonLabel = styled.div`
     `}
 `;
 const Button = styled.button`
+  ${NavButtonMixin};
   display: flex;
   justify-content: center;
   overflow: hidden;
   position: relative;
-  border-radius: 26px;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
   width: 100%;
   margin-bottom: 16px;
-  background: ${p => (p.primary ? blue : 'white')};
-  padding: 14px 18px;
-  font-size: 18px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  -webkit-appearance: none;
-  -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   ${bezier('all')};
   &:hover {
-    background: ${p => (p.primary ? darkBlue : lightBlue)};
-    color: white;
+    background-color: ${p => p.primary && 'white'};
+    color: ${p => p.primary && darkGrey};
   }
   ${p =>
     p.disabled &&
     css`
-      background: ${mediumGrey};
+      background-color: ${mediumGrey};
       &:hover {
-        background: ${mediumGrey};
+        background-color: ${mediumGrey};
       }
     `}
   ${p =>
@@ -87,11 +79,11 @@ const Button = styled.button`
 `;
 
 export default props => {
-  const { label, loading, children } = props;
+  const { label, loading, children, primary } = props;
   return (
-    <Button disabled={loading ? 'disabled' : ''} loading={loading}>
+    <Button disabled={loading ? 'disabled' : ''} primary={primary} loading={loading ? 'true' : undefined}>
       {children}
-      <ButtonLabel loading={loading}>{label}</ButtonLabel>
+      <ButtonLabel loading={loading ? 'true' : undefined}>{label}</ButtonLabel>
       <SpinnerStyled loading={loading ? 'true' : undefined} />
     </Button>
   );

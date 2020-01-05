@@ -62,17 +62,7 @@ const Smaller2 = styled(Smaller)`
   font-weight: 400;
   margin-top: 16px;
 `;
-const GoogleSigninButton = styled(ButtonSpinner)`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  background: white;
-  padding: 0 16px;
-  height: 52px;
-  &:hover {
-    background: white;
-  }
-`;
+const GoogleSigninButton = styled(ButtonSpinner)``;
 const GoogleInfo = styled.div`
   display: flex;
   flex-direction: column;
@@ -357,6 +347,7 @@ export default class SignIn extends React.Component {
           <GoogleSigninButton
             id="google-sign-in-button"
             type="submit"
+            primary
             loading={loading}
             label={
               givenName || shouldShowUsernameInput
