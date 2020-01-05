@@ -4,7 +4,7 @@ import { sansSerif } from '../fonts.css';
 import { NavButtonMixin } from './shared-styled-components';
 
 import Spinner from './spinner';
-import { bezier, blue, darkBlue, darkGrey, lightBlue, mediumGrey } from '../css';
+import { bezier, darkGrey, mediumGrey } from '../css';
 
 /*!
  * Inspired by: Ladda
@@ -29,7 +29,7 @@ const SpinnerStyled = styled(Spinner)`
     p.loading &&
     `
     opacity: 1;
-    margin-top: -2px;
+    margin-top: -3px;
   `}
 `;
 const ButtonLabel = styled.div`
@@ -54,8 +54,18 @@ const Button = styled.button`
   position: relative;
   width: 100%;
   margin-bottom: 16px;
+  ${p =>
+    p.primary &&
+    css`
+      border: 1px solid ${mediumGrey};
+    `};
   ${bezier('all')};
   &:hover {
+    ${p =>
+      p.primary &&
+      css`
+        border-color: transparent;
+      `};
     background-color: ${p => p.primary && 'white'};
     color: ${p => p.primary && darkGrey};
   }
@@ -81,7 +91,11 @@ const Button = styled.button`
 export default props => {
   const { label, loading, children, primary } = props;
   return (
-    <Button disabled={loading ? 'disabled' : ''} primary={primary} loading={loading ? 'true' : undefined}>
+    <Button
+      disabled={loading ? 'disabled' : ''}
+      primary={primary}
+      loading={loading ? 'true' : undefined}
+    >
       {children}
       <ButtonLabel loading={loading ? 'true' : undefined}>{label}</ButtonLabel>
       <SpinnerStyled loading={loading ? 'true' : undefined} />

@@ -122,18 +122,33 @@ export function handlePasteTextType(
     caretPosition,
     clipboardText
   );
-  const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
-  const { length: diffLength } = clipboardText;
-  selectedNode = selectedNode.set('content', updatedContent);
-  selectedNode = adjustSelectionOffsetsAndCleanup(
-    selectedNode,
-    content,
-    caretPosition,
-    diffLength
-  );
-  documentModel.update(selectedNode);
+  const clipboardLines = clipboardText.split('\n');
+  if (clipboardLines.length === 1) {
+    const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
+    const { length: diffLength } = clipboardText;
+    selectedNode = selectedNode.set('content', updatedContent);
+    selectedNode = adjustSelectionOffsetsAndCleanup(
+      selectedNode,
+      content,
+      caretPosition,
+      diffLength
+    );
+    documentModel.update(selectedNode);
+    return {
+      focusNodeId: selectedNodeId,
+      caretOffset: contentLeft.length + diffLength
+    };
+  }
+  // doSplit()
+  // add 'firstLine' content to end of "left"
+  // const firstLine = clipboardLines.shift();
+  // add 'lastLine' content to beginning of "right"
+  const lastLine = clipboardLines.pop();
+  if (clipboardLines.length > 0) {
+    // there are middle lines, insert Paragraphs after "left"
+  }
   return {
-    focusNodeId: selectedNodeId,
-    caretOffset: contentLeft.length + diffLength
+    focusNodeId: 'foo', // right.get('id'),
+    caretOffset: lastLine.length
   };
 }

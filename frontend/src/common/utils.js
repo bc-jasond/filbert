@@ -111,3 +111,10 @@ export function deleteContentRange(content, startIdx, length) {
   // delete all highlighted chars in front of the caret
   return `${content.slice(0, startIdx)}${content.slice(startIdx + length)}`;
 }
+
+export function stopAndPrevent(evt) {
+  if (evt && evt.stopPropagation && evt.preventDefault) {
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+}

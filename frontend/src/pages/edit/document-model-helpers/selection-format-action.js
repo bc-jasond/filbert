@@ -1,5 +1,4 @@
 /* eslint-disable import/prefer-default-export */
-import { Map } from 'immutable';
 import {
   NODE_TYPE_H1,
   NODE_TYPE_H2,
@@ -13,32 +12,37 @@ import {
 } from '../../../common/constants';
 import { Selection, upsertSelection } from '../selection-helpers';
 
-export function selectionFormatAction(documentModel, node, selection, action) {
+export function selectionFormatAction(
+  documentModel,
+  nodeArg,
+  selection,
+  action
+) {
   const previousActionValue = selection.get(action);
 
   console.info('HANDLE SELECTION ACTION: ', action, selection.toJS());
 
-  let newSectionType;
+  let node = nodeArg;
   if (action === SELECTION_ACTION_H1) {
-    newSectionType =
-      node.get('type') === NODE_TYPE_H1 ? NODE_TYPE_P : NODE_TYPE_H1;
+    node = node
+      .set(
+        'type',
+        node.get('type') === NODE_TYPE_H1 ? NODE_TYPE_P : NODE_TYPE_H1
+      )
+      .deleteIn(['meta', 'selections']);
   } else if (action === SELECTION_ACTION_H2) {
-    newSectionType =
-      node.get('type') === NODE_TYPE_H2 ? NODE_TYPE_P : NODE_TYPE_H2;
+    node = node
+      .set(
+        'type',
+        node.get('type') === NODE_TYPE_H2 ? NODE_TYPE_P : NODE_TYPE_H2
+      )
+      .deleteIn(['meta', 'selections']);
   }
-  if (newSectionType) {
-    documentModel.update(node.set('type', newSectionType));
+  if (!node.equals(nodeArg)) {
+    documentModel.update(node);
     return {
       focusNodeId: node.get('id'),
-      updatedNode: Map(),
-      updatedSelection: Selection()
-    };
-  }
-
-  if (!documentModel.canHaveSelections(node.get('id'))) {
-    return {
-      focusNodeId: node.get('id'),
-      updatedNode: Map(),
+      updatedNode: node,
       updatedSelection: Selection()
     };
   }

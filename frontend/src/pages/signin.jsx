@@ -24,6 +24,7 @@ import ButtonSpinner from '../common/components/button-spinner';
 import { sansSerif } from '../common/fonts.css';
 
 import { signinGoogle, signout } from '../common/session';
+import { stopAndPrevent } from '../common/utils';
 
 const Container = styled.div`
   display: flex;
@@ -165,8 +166,8 @@ export default class SignIn extends React.Component {
       } = this;
       let currentUser;
       // evt is a 'submit' event, we don't want the page to reload
-      evt.stopPropagation();
-      evt.preventDefault();
+
+      stopAndPrevent(evt);
 
       this.setState({ success: null, error: null, loading: true });
 

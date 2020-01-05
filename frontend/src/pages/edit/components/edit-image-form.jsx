@@ -37,9 +37,6 @@ export const EditImageMenu = styled(LilSassyMenu)`
 `;
 export const ImageCaptionInput = styled(DarkInput)`
   margin: 0 8px;
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
 `;
 export default ({
   offsetTop,

@@ -14,7 +14,11 @@ import { Article } from '../../../common/components/layout-styled-components';
 import Header from '../../header';
 import Footer from '../../footer';
 
-import { confirmPromise, getCanonicalFromTitle } from '../../../common/utils';
+import {
+  confirmPromise,
+  getCanonicalFromTitle,
+  stopAndPrevent
+} from '../../../common/utils';
 import {
   caretIsOnEdgeOfParagraphText,
   getFirstHeadingContent,
@@ -29,13 +33,12 @@ import {
 
 import {
   KEYCODE_BACKSPACE,
+  KEYCODE_CTRL,
   KEYCODE_DOWN_ARROW,
   KEYCODE_ENTER,
   KEYCODE_ESC,
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
-  KEYCODE_SHIFT_OR_COMMAND_LEFT,
-  KEYCODE_SHIFT_RIGHT,
   KEYCODE_SPACE,
   KEYCODE_UP_ARROW,
   KEYCODE_V,
@@ -390,6 +393,13 @@ export default class EditPost extends React.Component {
     });
   };
 
+  replaceRangeEdit = () => {
+    const {
+      selectionOffsets: { startNodeId, startNodeCaretStart, startNodeCaretEnd }
+    } = this;
+    return replaceRange(startNodeId, startNodeCaretStart, startNodeCaretEnd);
+  };
+
   commitUpdates = (focusNodeId, offset = -1, shouldFocusLastChild) => {
     // TODO: optimistically save updated nodes - look ma, no errors!
     return new Promise((resolve /* , reject */) => {
@@ -498,8 +508,7 @@ export default class EditPost extends React.Component {
         // down or right - collapse to end
         getRange().collapse(false);
       }
-      evt.stopPropagation();
-      evt.preventDefault();
+      stopAndPrevent(evt);
       return;
     }
 
@@ -517,8 +526,7 @@ export default class EditPost extends React.Component {
         // we won't be leaving the current node, let contenteditable handle the caret
         return;
       }
-      evt.stopPropagation();
-      evt.preventDefault();
+      stopAndPrevent(evt);
       if (this.documentModel.isMetaType(neighborNode.get('id'))) {
         removeAllRanges();
         await this.sectionEdit(neighborNode.get('id'));
@@ -542,8 +550,7 @@ export default class EditPost extends React.Component {
     ) {
       return;
     }
-    evt.stopPropagation();
-    evt.preventDefault();
+    stopAndPrevent(evt);
     if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
       const prevNode = this.documentModel.getPrevNode(
         editSectionNode.get('id')
@@ -583,8 +590,7 @@ export default class EditPost extends React.Component {
       return;
     }
 
-    evt.stopPropagation();
-    evt.preventDefault();
+    stopAndPrevent(evt);
 
     const { focusNodeId, caretOffset, shouldFocusLastNode } = doDelete(
       this.documentModel,
@@ -620,8 +626,7 @@ export default class EditPost extends React.Component {
       return;
     }
 
-    evt.stopPropagation();
-    evt.preventDefault();
+    stopAndPrevent(evt);
 
     await this.closeAllEditContentMenus();
 
@@ -651,8 +656,7 @@ export default class EditPost extends React.Component {
     ) {
       return;
     }
-    evt.stopPropagation();
-    evt.preventDefault();
+    stopAndPrevent(evt);
 
     const {
       state: { editSectionNode }
@@ -707,7 +711,7 @@ export default class EditPost extends React.Component {
     const {
       state: { insertMenuNode, formatSelectionNode, formatSelectionModel }
     } = this;
-    // BAIL conditions
+    // HANDOFF conditions - should this event be passed down to a child (menu) component?
     //
     // insert menu button is displayed (on empty P)
     if (
@@ -715,30 +719,29 @@ export default class EditPost extends React.Component {
       // no range means the menu is closed
       (!getRange() ||
         // allow shift through so user can double tap it to open the menu
-        [KEYCODE_SHIFT_RIGHT, KEYCODE_SHIFT_OR_COMMAND_LEFT].includes(
-          evt.keyCode
-        ))
+        [KEYCODE_CTRL].includes(evt.keyCode))
     ) {
       // pass this event up to the menu to handle
       this.setState({ windowEventToForward: evt });
+      stopAndPrevent(evt);
       return;
     }
     // format selection menu is open
     if (
       formatSelectionNode.get('id') &&
-      // don't capture holding down shift so user can resize the selection
-      !evt.shiftKey &&
+      // if 'link' is selected, there's an input focused, send all keystrokes up - except
       (formatSelectionModel.get(SELECTION_ACTION_LINK) ||
-        // but DO allow a double tap on shift to open the menu
-        [
-          KEYCODE_SHIFT_RIGHT,
-          KEYCODE_SHIFT_OR_COMMAND_LEFT,
-          KEYCODE_LEFT_ARROW,
-          KEYCODE_RIGHT_ARROW,
-          KEYCODE_SPACE,
-          KEYCODE_ESC,
-          KEYCODE_ENTER
-        ].includes(evt.keyCode))
+        // don't capture holding down shift so user can resize the selection
+        (!evt.shiftKey &&
+          // but DO allow a double tap on ctrl to open the menu
+          [
+            KEYCODE_CTRL,
+            KEYCODE_LEFT_ARROW,
+            KEYCODE_RIGHT_ARROW,
+            KEYCODE_SPACE,
+            KEYCODE_ESC,
+            KEYCODE_ENTER
+          ].includes(evt.keyCode)))
     ) {
       // pass this event up to the menu to handle
       this.setState({ windowEventToForward: evt });
@@ -792,7 +795,13 @@ export default class EditPost extends React.Component {
   };
 
   handleKeyUp = async evt => {
-    if (!(evt.shiftKey && isControlKey(evt.keyCode))) {
+    const {
+      state: { formatSelectionModel }
+    } = this;
+    if (
+      formatSelectionModel.get(SELECTION_ACTION_LINK) ||
+      (!evt.shiftKey && !isControlKey(evt.keyCode))
+    ) {
       return;
     }
     console.debug('KEYUP');
@@ -880,8 +889,7 @@ export default class EditPost extends React.Component {
     evt.clipboardData.setData('text/plain', selectionString);
 
     // NOTE: if these get called on the 'keydown' event, they'll cancel the 'cut' event
-    evt.stopPropagation();
-    evt.preventDefault();
+    stopAndPrevent(evt);
 
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
@@ -897,11 +905,11 @@ export default class EditPost extends React.Component {
     }
     // don't override pasting into inputs of menus
     const {
-      state: { formatSelectionNode, formatSelectionModel }
+      state: { shouldShowEditSectionMenu, formatSelectionModel }
     } = this;
     // format selection menu is open, and the link url input is visible
     if (
-      formatSelectionNode.get('id') &&
+      shouldShowEditSectionMenu ||
       formatSelectionModel.get(SELECTION_ACTION_LINK)
     ) {
       return;
@@ -922,8 +930,7 @@ export default class EditPost extends React.Component {
       return;
     }
     // NOTE: if these get called on the 'keydown' event, they'll cancel the 'paste' event
-    evt.stopPropagation();
-    evt.preventDefault();
+    stopAndPrevent(evt);
 
     const { focusNodeId, caretOffset } = doPaste(
       this.documentModel,
@@ -1140,7 +1147,7 @@ export default class EditPost extends React.Component {
   closeFormatSelectionMenu = async () => {
     const {
       state: { formatSelectionNode },
-      selectionOffsets: { startNodeId, startNodeCaretStart, startNodeCaretEnd }
+      selectionOffsets: { startNodeId, startNodeCaretEnd }
     } = this;
     if (formatSelectionNode.get('id')) {
       await new Promise(resolve => {
@@ -1154,7 +1161,7 @@ export default class EditPost extends React.Component {
           resolve
         );
       });
-      replaceRange(startNodeId, startNodeCaretStart, startNodeCaretEnd);
+      setCaret(startNodeId, startNodeCaretEnd);
     }
   };
 
@@ -1211,8 +1218,7 @@ export default class EditPost extends React.Component {
 
     // allow user to hold shift and use arrow keys to adjust selection range
     if (!evt.shiftKey) {
-      evt.stopPropagation();
-      evt.preventDefault();
+      stopAndPrevent(evt);
     }
 
     const range = getRange();
@@ -1250,8 +1256,7 @@ export default class EditPost extends React.Component {
 
   handleSelectionAction = async (action, shouldCloseMenu = false) => {
     const {
-      state: { formatSelectionModel, formatSelectionNode },
-      selectionOffsets: { startNodeCaretStart, startNodeCaretEnd, startNodeId }
+      state: { formatSelectionModel, formatSelectionNode }
     } = this;
     const {
       focusNodeId,
@@ -1266,7 +1271,6 @@ export default class EditPost extends React.Component {
     await this.commitUpdates(focusNodeId);
     if (shouldCloseMenu) {
       await this.closeFormatSelectionMenu();
-      replaceRange(startNodeId, startNodeCaretStart, startNodeCaretEnd);
       return;
     }
     this.setState(
@@ -1279,11 +1283,7 @@ export default class EditPost extends React.Component {
           this.inputRef.focus();
         }
         // this replaces the selection after calling setState
-        const replacementRange = replaceRange(
-          startNodeId,
-          startNodeCaretStart,
-          startNodeCaretEnd
-        );
+        const replacementRange = this.replaceRangeEdit();
         // reposition menu since formatting changes move the selection around on the screen
         const rect = replacementRange.getBoundingClientRect();
         await new Promise(resolve =>

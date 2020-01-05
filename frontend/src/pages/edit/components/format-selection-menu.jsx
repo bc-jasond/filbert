@@ -13,6 +13,7 @@ import IconStrikethroughSvg from '../../../../assets/icons/strikethrough.svg';
 import {
   Arrow,
   ButtonSeparator,
+  Cursor,
   DarkInput,
   IconButton,
   LilSassyMenu,
@@ -20,13 +21,14 @@ import {
   SvgIconMixin
 } from '../../../common/components/shared-styled-components';
 import {
+  KEYCODE_CTRL,
   KEYCODE_ENTER,
   KEYCODE_ESC,
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
-  KEYCODE_SHIFT_OR_COMMAND_LEFT,
-  KEYCODE_SHIFT_RIGHT,
   KEYCODE_SPACE,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,
   SELECTION_ACTION_H1,
@@ -38,6 +40,7 @@ import {
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_LINK_URL
 } from '../../../common/constants';
+import { stopAndPrevent } from '../../../common/utils';
 
 const IconBold = styled(IconBoldSvg)`
   ${SvgIconMixin};
@@ -74,10 +77,7 @@ const FormatSelectionMenu = styled(LilSassyMenu)`
   left: ${p => p.left - 183}px; // 183 is half the width of the menu
 `;
 const LinkInput = styled(DarkInput)`
-  display: block;
-  box-sizing: border-box;
   height: 0;
-  width: 100%;
   padding: 0;
   transition: 0.05s height;
   ${p =>
@@ -99,13 +99,14 @@ const FormatSelectionMenuItem = ({
   <>
     {shouldAddSpacer && <ButtonSeparator />}
     <IconButton onClick={onClick}>
-      <Styled selected={selected} checked={checked} />
+      <Styled checked={checked} />
+      {selected && <Cursor />}
     </IconButton>
   </>
 );
 
 export default class FormatSelectionMenuComponent extends React.Component {
-  didHitShift = false;
+  didHitOpenMenuKey = false;
 
   ref = React.createRef();
 
@@ -181,34 +182,33 @@ export default class FormatSelectionMenuComponent extends React.Component {
   handleKeyDown = evt => {
     const {
       props: { selectionModel },
-      state: { currentIdx }
+      state: { currentIdx, isMenuOpen }
     } = this;
 
     // if 'link' is selected we need to let keystrokes pass through to the URL input... messy business
     // only allow 'enter' and 'esc' through to close the menu
     if (
+      isMenuOpen &&
       selectionModel.get(SELECTION_ACTION_LINK) &&
       ![KEYCODE_ENTER, KEYCODE_ESC].includes(evt.keyCode)
     ) {
       return;
     }
     // don't let contenteditable take over!
-    evt.preventDefault();
-    evt.stopPropagation();
+    stopAndPrevent(evt);
 
     /* eslint-disable-next-line default-case */
     switch (evt.keyCode) {
-      case KEYCODE_SHIFT_OR_COMMAND_LEFT: // fall-through
-      case KEYCODE_SHIFT_RIGHT: {
-        if (this.didHitShift) {
+      case KEYCODE_CTRL: {
+        if (this.didHitOpenMenuKey) {
           // user double-tapped shift
           this.setState({ isMenuOpen: true });
-          this.didHitShift = false;
+          this.didHitOpenMenuKey = false;
           return;
         }
-        this.didHitShift = true;
+        this.didHitOpenMenuKey = true;
         setTimeout(() => {
-          this.didHitShift = false;
+          this.didHitOpenMenuKey = false;
         }, 500);
         return;
       }
@@ -221,12 +221,6 @@ export default class FormatSelectionMenuComponent extends React.Component {
         break;
       }
       case KEYCODE_ESC: {
-        // if "link" is selected, user is "stranded" in the url input.  Override 'esc' here to provide
-        // a keyboard only escape hatch
-        if (selectionModel.get(SELECTION_ACTION_LINK)) {
-          this.props?.selectionAction?.(SELECTION_ACTION_LINK);
-          return;
-        }
         this.setState({ currentIdx: -1, isMenuOpen: false }, () => {
           this.props?.closeMenu?.();
         });
@@ -264,6 +258,25 @@ export default class FormatSelectionMenuComponent extends React.Component {
     }
   };
 
+  isChecked = type => {
+    const {
+      props: { selectionModel, nodeModel }
+    } = this;
+    if (
+      nodeModel.get('type') === NODE_TYPE_H1 &&
+      type === SELECTION_ACTION_H1
+    ) {
+      return true;
+    }
+    if (
+      nodeModel.get('type') === NODE_TYPE_H2 &&
+      type === SELECTION_ACTION_H2
+    ) {
+      return true;
+    }
+    return selectionModel.get(type) || undefined;
+  };
+
   render() {
     const {
       props: { offsetTop, offsetLeft, selectionModel, updateLinkUrl },
@@ -283,7 +296,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
             onClick={() => this.props?.selectionAction?.(type)}
             Styled={Styled}
             selected={currentIdx === idx}
-            checked={selectionModel.get(type) || undefined}
+            checked={this.isChecked(type)}
             shouldAddSpacer={shouldAddSpacer}
           />
         ))}

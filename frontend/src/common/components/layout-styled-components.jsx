@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import GitHubSvg from '../../../assets/icons/github-mark.svg';
-import LinkedInSvg from '../../../assets/icons/linkedin-logo.svg';
 import InfoSvg from '../../../assets/icons/info.svg';
 import { darkGrey, grey, lightGrey } from '../css';
 import { monospaced, sansSerif } from '../fonts.css';
@@ -96,12 +95,11 @@ export const SocialIcon = css`
   }
 `;
 export const GitHubStyled = styled(GitHubSvg)`
-  ${SocialIcon};
-`;
-export const LinkedInStyled = styled(LinkedInSvg)`
+  cursor: pointer;
   ${SocialIcon};
 `;
 export const InfoStyled = styled(InfoSvg)`
+  cursor: pointer;
   ${SocialIcon};
 `;
 export const StaticFooter = styled.div`

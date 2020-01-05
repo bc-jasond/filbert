@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import { Link } from 'react-router-dom';
 import {
   contentSerif,
@@ -400,20 +400,32 @@ export const LilSassyMenu = styled.div`
   padding: 0 10px;
   color: ${darkGrey};
 `;
+const blink = keyframes`
+  from, to {
+    background-color: ${darkBlue};
+  }
+  50% {
+    background-color: transparent;
+  }
+`;
+export const Cursor = styled.div`
+  position: absolute;
+  height: 2px;
+  width: 100%;
+  background-color: ${darkBlue};
+  animation: 1s ${blink} step-end infinite;
+}
+`;
 export const SvgIconMixin = css`
   fill: #fff;
   position: relative;
   top: -1px;
   vertical-align: middle;
   height: 21px;
+  border-bottom: 2px solid transparent;
   &:hover {
     fill: ${blue};
   }
-  ${p =>
-    p.selected &&
-    `
-    fill: ${blue};
-  `}
   ${p =>
     p.checked &&
     `
@@ -445,6 +457,9 @@ export const DarkInput = styled.input`
   outline: 0;
   font-size: 16px;
   border-radius: 5px;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
   //appearance: none;
 `;
 export const ButtonSeparator = styled.div`

@@ -1,12 +1,11 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
 import {
+  KEYCODE_CTRL,
   KEYCODE_ENTER,
   KEYCODE_ESC,
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
-  KEYCODE_SHIFT_OR_COMMAND_LEFT,
-  KEYCODE_SHIFT_RIGHT,
   KEYCODE_SPACE,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
@@ -20,6 +19,7 @@ import {
 import { grey } from '../../../common/css';
 import { NavButtonMixin } from '../../../common/components/shared-styled-components';
 import { removeAllRanges, setCaret } from '../../../common/dom';
+import { stopAndPrevent } from '../../../common/utils';
 
 const InsertSectionMenu = styled.div`
   position: absolute;
@@ -174,8 +174,7 @@ export default class InsertSectionMenuComponent extends React.Component {
 
   handleKeyDown = evt => {
     // don't let contenteditable take over!
-    evt.preventDefault();
-    evt.stopPropagation();
+    stopAndPrevent(evt);
 
     const {
       state: { currentIdx }
@@ -183,8 +182,7 @@ export default class InsertSectionMenuComponent extends React.Component {
 
     /* eslint-disable-next-line default-case */
     switch (evt.keyCode) {
-      case KEYCODE_SHIFT_OR_COMMAND_LEFT: // fall-through
-      case KEYCODE_SHIFT_RIGHT: {
+      case KEYCODE_CTRL: {
         if (this.didHitShift) {
           // user double-tapped shift
           this.setState({ menuIsOpen: true });

@@ -26,7 +26,7 @@ export default class Quote extends React.PureComponent {
           isEditing={isEditing}
           onClick={() => setEditNodeId && setEditNodeId(id)}
         >
-          {'💡Remember: '}
+          {'💡 '}
           <ItalicText>
             {quote && `"${quote}" `}
             <A target="_blank" href={url}>
