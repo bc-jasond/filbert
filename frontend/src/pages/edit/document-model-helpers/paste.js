@@ -10,6 +10,8 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
 
   // split selectedNodeContent at caret
   const clipboardText = clipboardData.getData('text/plain');
+  // TODO: convert HTML => filbert documentModel
+  // const clipboardHtml = clipboardData.getData('text/html');
 
   if (!documentModel.isTextType(startNodeId)) {
     console.warn(

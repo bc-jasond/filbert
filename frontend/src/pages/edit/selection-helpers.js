@@ -429,12 +429,12 @@ export function upsertSelection(nodeModelArg, newSelection) {
 }
 
 /**
- * NOTE: this function returns an array of Left & Right selections List()s NOT a document nodeModel
+ * NOTE: this function returns an object of Left & Right selections List()s NOT a document nodeModel
  * the reason is because we don't have a Right model (don't have an id) yet.  I could make this so but, it seems reach-outy
  *
  * @param nodeModel
  * @param caretOffset
- * @returns {List<any>[]}
+ * @returns {leftNode, rightNode}
  */
 export function splitSelectionsAtCaretOffset(
   leftNodeModelArg,

@@ -29,7 +29,7 @@ const SpinnerStyled = styled(Spinner)`
     p.loading &&
     `
     opacity: 1;
-    margin-top: -3px;
+    margin-top: -4px;
   `}
 `;
 const ButtonLabel = styled.div`

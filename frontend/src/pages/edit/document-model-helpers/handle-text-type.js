@@ -1,3 +1,4 @@
+import pre from '../../../common/components/pre';
 import {
   NODE_TYPE_LI,
   NODE_TYPE_P,
@@ -123,6 +124,7 @@ export function handlePasteTextType(
     clipboardText
   );
   const clipboardLines = clipboardText.split('\n');
+  // single line paste
   if (clipboardLines.length === 1) {
     const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
     const { length: diffLength } = clipboardText;
@@ -139,16 +141,73 @@ export function handlePasteTextType(
       caretOffset: contentLeft.length + diffLength
     };
   }
-  // doSplit()
-  // add 'firstLine' content to end of "left"
-  // const firstLine = clipboardLines.shift();
-  // add 'lastLine' content to beginning of "right"
+  // MULTI LINE PASTE
+  // NOTE: the order of operations is important here
+  console.info("PASTE: multi-line")
+  const firstLine = clipboardLines.shift();
   const lastLine = clipboardLines.pop();
-  if (clipboardLines.length > 0) {
-    // there are middle lines, insert Paragraphs after "left"
+  const leftNodeId = selectedNodeId;
+  // add 'lastLine' content to beginning of "right"
+  const updatedRightNodeContent = `${lastLine}${contentRight}`;
+  // add 'firstLine' content to end of "left"
+  const updatedLeftNodeContent = `${contentLeft}${firstLine}`;
+  // TODO: this is largely copied from handleEnterTextType() above, maybe split the shared code into a helper?
+  // NOTE: rightNode insert (last before first) so that leftNode gets updated with a next_sibling_id
+  // 1) insert a new node (rightNode) for 'lastLine' - using BEFORE content
+  const rightNodeId = documentModel.insert(
+    selectedNode.get('type'),
+    leftNodeId,
+    contentRight
+  );
+  // now leftNode has 'next_sibling_id' set to rightNode
+  // important: 'content' is now contentLeft
+  let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
+  let rightNode = documentModel.getNode(rightNodeId);
+  
+  // 2) if the original selected node can have Selections - move them to the right node if needed
+  // NOTE: do this with BEFORE content
+  if (documentModel.canHaveSelections(leftNodeId)) {
+    ({ leftNode, rightNode } = splitSelectionsAtCaretOffset(
+      leftNode,
+      rightNode,
+      caretPosition
+    ));
   }
+  
+  // 3) update content with firstLine & lastLine
+  leftNode = leftNode.set('content', updatedLeftNodeContent);
+  rightNode = rightNode.set('content', updatedRightNodeContent);
+  
+  // 4) adjust offsets with updated content
+  leftNode = adjustSelectionOffsetsAndCleanup(
+    leftNode,
+    contentLeft, //this is before content! takes this as an argument for comparison with now updated content in leftNode
+    caretPosition,
+    firstLine.length
+  );
+  rightNode = adjustSelectionOffsetsAndCleanup(
+    rightNode,
+    contentRight, // before content!
+    0,
+    lastLine.length
+  );
+  documentModel.update(leftNode);
+  documentModel.update(rightNode);
+  
+  // there are middle lines, insert Paragraphs after "left"
+  let prevNodeId = selectedNodeId;
+  while (clipboardLines.length > 0) {
+    let currentLine = clipboardLines.shift();
+    const nextId = documentModel.insert(
+      leftNode.get('type'),
+      prevNodeId,
+      currentLine
+    )
+    prevNodeId = nextId;
+  }
+  
   return {
-    focusNodeId: 'foo', // right.get('id'),
+    focusNodeId: rightNodeId,
     caretOffset: lastLine.length
   };
 }
