@@ -198,6 +198,10 @@ export function handlePasteTextType(
   let prevNodeId = selectedNodeId;
   while (clipboardLines.length > 0) {
     let currentLine = clipboardLines.shift();
+    // skip whitespace only lines TODO: allow in Code sections?
+    if (currentLine.trim().length === 0) {
+      continue;
+    }
     const nextId = documentModel.insert(
       leftNode.get('type'),
       prevNodeId,

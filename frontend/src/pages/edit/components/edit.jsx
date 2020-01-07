@@ -875,15 +875,14 @@ export default class EditPost extends React.Component {
       startNodeId
     } = selectionOffsets;
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
-    // we'll come back through from "paste" with clipboard data...
+    // we'll come back through from "cut" with clipboard data...
     if (evt.type !== 'cut') {
       if (startNodeCaretStart !== startNodeCaretEnd) {
         doDelete(this.documentModel, selectionOffsets);
-        await this.commitUpdates(startNodeId, startNodeCaretStart);
       }
       return;
     }
-    // NOTE: have to manually set selection string into clipboard
+    // NOTE: have to manually set selection string into clipboard since we're cancelling the event
     const selectionString = document.getSelection().toString();
     console.debug('CUT selection', selectionString);
     evt.clipboardData.setData('text/plain', selectionString);
@@ -1217,7 +1216,7 @@ export default class EditPost extends React.Component {
     }
 
     // allow user to hold shift and use arrow keys to adjust selection range
-    if (!evt.shiftKey) {
+    if (!evt.shiftKey && !(evt.metaKey && [KEYCODE_X, KEYCODE_V].includes(evt.keyCode))) {
       stopAndPrevent(evt);
     }
 
