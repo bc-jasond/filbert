@@ -118,21 +118,9 @@ describe('selectionReviver', () => {
       [SELECTION_START]: 3,
       [SELECTION_END]: 8
     });
-    expect(fromJS({ [SELECTION_START]: 3, [SELECTION_END]: 8 }, reviver))
-      .toMatchInlineSnapshot(`
-      Immutable.Record {
-        "start": 3,
-        "end": 8,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      }
-    `);
+    expect(
+      fromJS({ [SELECTION_START]: 3, [SELECTION_END]: 8 }, reviver)
+    ).toMatchSnapshot();
   });
 });
 
@@ -179,44 +167,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(
       modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
     ).toBe(true);
-    expect(modelAdjusted).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "graph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 5,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 5,
-              "end": 13,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete all highlighted characters up to caret (up to edge of a selection)', () => {
     const prevContent = 'and some paragraph for good measure?';
@@ -296,68 +247,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       9,
       -9
     );
-    expect(updatedModel).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "paragraph for good measure?",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 9,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 9,
-              "end": 14,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 14,
-              "end": 18,
-              "selection-bold": true,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 18,
-              "end": 27,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "ce7b",
-        "post_id": 166,
-      }
-    `);
+    expect(updatedModel).toMatchSnapshot();
   });
   test('delete all highlighted characters from caret through the end (when "start" with multiple nodes in handleBackspace)', () => {
     const expectedSelections = fromJS(
@@ -434,80 +324,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(
       modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
     ).toBe(true);
-    expect(modelAdjusted).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And a second para",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 12,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 12,
-              "end": 13,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 13,
-              "end": 17,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete highlighted characters from middle, deletes a selection, adjusts overlapping selections', () => {
     const expectedSelections = fromJS(
@@ -572,68 +389,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(
       modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
     ).toBe(true);
-    expect(modelAdjusted).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And graph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 4,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 4,
-              "end": 9,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 9,
-              "end": 17,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete highlighted characters from middle of one selection', () => {
     const expectedSelections = fromJS(
@@ -720,92 +476,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(
       modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
     ).toBe(true);
-    expect(modelAdjusted).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And a sed paragraph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 9,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 9,
-              "end": 10,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 10,
-              "end": 19,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 19,
-              "end": 27,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete all characters', () => {
     const modelAdjusted = adjustSelectionOffsetsAndCleanup(
@@ -817,19 +488,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(modelAdjusted.getIn(['meta', 'selections']).equals(fromJS([]))).toBe(
       true
     );
-    expect(modelAdjusted).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(modelAdjusted).toMatchSnapshot();
   });
   test('noop - default arguments', () => {
     const testModel = nodeModelWithSelections.set('content', testContent);
@@ -839,92 +498,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
         .getIn(['meta', 'selections'])
         .equals(testModel.getIn(['meta', 'selections']))
     ).toBe(true);
-    expect(modelAdjusted).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And a second paragraph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 12,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 12,
-              "end": 13,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 13,
-              "end": 22,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 22,
-              "end": 30,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(modelAdjusted).toMatchSnapshot();
   });
   test('paste a word with collapsed caret (similar to adding one character on keypress)', () => {
     const expectedSelections = fromJS(
@@ -1011,92 +585,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(
       modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
     ).toBe(true);
-    expect(modelAdjusted).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And apple second paragraph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 10,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 10,
-              "end": 16,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 16,
-              "end": 17,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 17,
-              "end": 26,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 26,
-              "end": 34,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(modelAdjusted).toMatchSnapshot();
   });
   test.todo('add one character at the boundary of two selections');
   test.todo(
@@ -1113,92 +602,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       12,
       -1
     );
-    expect(updatedModel).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And a secon paragraph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 11,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 11,
-              "end": 12,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 12,
-              "end": 21,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 21,
-              "end": 29,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(updatedModel).toMatchSnapshot();
   });
   test.todo(
     'delete last character (caret collapsed) of a selection, surrounding selections have same formats and should merge'
@@ -1257,17 +661,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       14,
       -1
     );
-    expect(updatedModel).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And a second aragraph because",
-        "meta": Immutable.Map {},
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(updatedModel).toMatchSnapshot();
   });
   test('start or end out of bounds should throw', () => {
     expect(() => {
@@ -1308,39 +702,13 @@ describe('getSelection', () => {
     );
     const testSelection = getSelection(testModel, 13, 22);
     // testModel.getIn(["meta", "selections"]).get(4)
-    expect(testSelection).toMatchInlineSnapshot(`
-      Immutable.Record {
-        "start": 13,
-        "end": 22,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": true,
-        "linkUrl": "http://foo.bar",
-      }
-    `);
+    expect(testSelection).toMatchSnapshot();
   });
   test('creates new selection with intersection of overlapping Selection formats applied (no formats)', () => {
     const testModel = nodeModelWithSelections.set('content', testContent);
     const testSelection = getSelection(testModel, 2, 22);
     // testModel.getIn(["meta", "selections"]).get(4)
-    expect(testSelection).toMatchInlineSnapshot(`
-      Immutable.Record {
-        "start": 2,
-        "end": 22,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      }
-    `);
+    expect(testSelection).toMatchSnapshot();
   });
   test('creates new selection on paragraph with no selections', () => {
     const testModel = nodeModelWithSelections
@@ -1348,20 +716,7 @@ describe('getSelection', () => {
       .deleteIn(['meta', 'selections']);
     const testSelection = getSelection(testModel, 10, 15);
     // testModel.getIn(["meta", "selections"]).get(4)
-    expect(testSelection).toMatchInlineSnapshot(`
-      Immutable.Record {
-        "start": 10,
-        "end": 15,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      }
-    `);
+    expect(testSelection).toMatchSnapshot();
   });
   test('creates new selection with intersection of overlapping Selection formats applied', () => {
     const selections = nodeModelWithSelections.getIn(['meta', 'selections']);
@@ -1375,39 +730,13 @@ describe('getSelection', () => {
           .set(3, selections.get(3).set(SELECTION_ACTION_CODE, true))
       );
     const testSelection = getSelection(testModel, 10, 20);
-    expect(testSelection).toMatchInlineSnapshot(`
-      Immutable.Record {
-        "start": 10,
-        "end": 20,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      }
-    `);
+    expect(testSelection).toMatchSnapshot();
   });
   test('applies formats of outer selection if selection is made within one selection', () => {
     const testModel = nodeModelWithSelections.set('content', testContent);
     const testSelection = getSelection(testModel, 16, 20);
     // testModel.getIn(["meta", "selections"]).get(4)
-    expect(testSelection).toMatchInlineSnapshot(`
-      Immutable.Record {
-        "start": 16,
-        "end": 20,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      }
-    `);
+    expect(testSelection).toMatchSnapshot();
   });
 });
 
@@ -1463,56 +792,7 @@ describe('upsertSelection', () => {
     expect(
       updatedModel.getIn(['meta', 'selections']).equals(expectedSelections)
     ).toBe(true);
-    expect(updatedModel).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And a second paragraph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 12,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 12,
-              "end": 30,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(updatedModel).toMatchSnapshot();
   });
   test('new Selection matches existing Selection', () => {
     const testModel = nodeModelWithSelections.set('content', testContent);
@@ -1523,92 +803,7 @@ describe('upsertSelection', () => {
         .get(4)
         .set(SELECTION_ACTION_BOLD, true)
     );
-    expect(updatedModel).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And a second paragraph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 12,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 12,
-              "end": 13,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 13,
-              "end": 22,
-              "selection-bold": true,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 22,
-              "end": 30,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(updatedModel).toMatchSnapshot();
   });
   test('new Selection overlaps existing Selections', () => {
     const testModel = nodeModelWithSelections.set('content', testContent);
@@ -1620,92 +815,7 @@ describe('upsertSelection', () => {
       .set(SELECTION_START, 10)
       .set(SELECTION_END, 20);
     const updatedModel = upsertSelection(testModel, newSelection);
-    expect(updatedModel).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "And a second paragraph because",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 10,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 10,
-              "end": 20,
-              "selection-bold": true,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": true,
-              "linkUrl": "http://hot.flakes",
-            },
-            Immutable.Record {
-              "start": 20,
-              "end": 22,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 22,
-              "end": 30,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(updatedModel).toMatchSnapshot();
   });
   test.todo('new Selection is inside existing Selection');
   test.todo("unset last Selection, should remove 'selections' key from 'meta'");
@@ -1720,118 +830,8 @@ describe('splitSelectionsAtCaretOffset', () => {
       rightModel,
       17
     );
-    expect(leftNode).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 3,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": true,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 3,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 12,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 12,
-              "end": 13,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 13,
-              "end": 17,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
-    expect(rightNode).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 5,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 5,
-              "end": 13,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(leftNode).toMatchSnapshot();
+    expect(rightNode).toMatchSnapshot();
   });
   test.todo('split at the edge of 2 Selections');
   test('split with selections on left and none on right', () => {
@@ -1900,67 +900,8 @@ describe('splitSelectionsAtCaretOffset', () => {
       testModelRight,
       19
     );
-    expect(leftNode).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "post_id": 166,
-        "id": "21ba",
-        "parent_id": "39fb",
-        "position": 0,
-        "type": "p",
-        "content": "Here's a first para",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 9,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 9,
-              "end": 11,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 11,
-              "end": 19,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-      }
-    `);
-    expect(rightNode).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "post_id": 166,
-        "id": "21bc",
-        "parent_id": "39fb",
-        "position": 1,
-        "type": "p",
-        "content": "graph because",
-        "meta": Immutable.Map {},
-      }
-    `);
+    expect(leftNode).toMatchSnapshot();
+    expect(rightNode).toMatchSnapshot();
   });
 });
 
@@ -1989,128 +930,7 @@ describe('concatSelections', () => {
       testSelections
     );
     const updatedModel = concatSelections(leftModel, rightModel);
-    expect(updatedModel).toMatchInlineSnapshot(`
-      Immutable.Map {
-        "type": "p",
-        "parent_id": "39fb",
-        "position": 1,
-        "content": "",
-        "meta": Immutable.Map {
-          "selections": Immutable.List [
-            Immutable.Record {
-              "start": 0,
-              "end": 6,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 6,
-              "end": 12,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 12,
-              "end": 13,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 13,
-              "end": 22,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 22,
-              "end": 36,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 36,
-              "end": 42,
-              "selection-bold": false,
-              "selection-italic": true,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 42,
-              "end": 43,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 43,
-              "end": 52,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": true,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-            Immutable.Record {
-              "start": 52,
-              "end": 60,
-              "selection-bold": false,
-              "selection-italic": false,
-              "selection-code": false,
-              "selection-siteinfo": false,
-              "selection-mini": false,
-              "selection-strikethrough": false,
-              "selection-link": false,
-              "linkUrl": "",
-            },
-          ],
-        },
-        "id": "6eda",
-        "post_id": 166,
-      }
-    `);
+    expect(updatedModel).toMatchSnapshot();
   });
   test.todo('left has no selections, right has selections');
   test.todo('left has selections, right nas no selections');
@@ -2120,7 +940,7 @@ describe('getContentForSelection', () => {
   test('nominal case', () => {
     const testModel = nodeModelWithSelections.set('content', testContent);
     const selection = testModel.getIn(['meta', 'selections']).get(4);
-    expect(getContentForSelection(testModel, selection)).toMatchInlineSnapshot(
+    expect(getContentForSelection(testModel, selection)).toMatchSnapshot(
       `"paragraph"`
     );
   });
@@ -2153,9 +973,7 @@ describe('getSelectionKey', () => {
       },
       reviver
     );
-    expect(getSelectionKey(testSelection)).toMatchInlineSnapshot(
-      `"12-115-1-0-1-0-0-0-0-0"`
-    );
+    expect(getSelectionKey(testSelection)).toBe('12-115-1-0-1-0-0-0-0-0');
   });
 });
 

@@ -25,22 +25,7 @@ beforeEach(() => {
 
 describe('UpdateManager', () => {
   test('init method', () => {
-    expect(updateManager).toMatchInlineSnapshot(`
-      UpdateManager {
-        "nodeUpdates": Immutable.Map {},
-        "post": Immutable.Map {
-          "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
-          "created": "2019-05-18 17:28:55",
-          "published": "2019-01-04 00:00:00",
-          "user_id": 1,
-          "canonical": "hello-world",
-          "title": "Hello World!",
-          "deleted": null,
-          "updated": "2019-05-25 00:36:52",
-          "id": 1,
-        },
-      }
-    `);
+    expect(updateManager).toMatchSnapshot();
   });
   test('stageNodeUpdate method', () => {
     updateManager.stageNodeUpdate();
@@ -54,27 +39,7 @@ describe('UpdateManager', () => {
     // test that last-write-wins, update overwrites delete
     updateManager.stageNodeDelete('foo');
     updateManager.stageNodeUpdate('foo');
-    expect(updateManager).toMatchInlineSnapshot(`
-      UpdateManager {
-        "nodeUpdates": Immutable.Map {
-          "foo": Immutable.Map {
-            "action": "update",
-            "post_id": 1,
-          },
-        },
-        "post": Immutable.Map {
-          "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
-          "created": "2019-05-18 17:28:55",
-          "published": "2019-01-04 00:00:00",
-          "user_id": 1,
-          "canonical": "hello-world",
-          "title": "Hello World!",
-          "deleted": null,
-          "updated": "2019-05-25 00:36:52",
-          "id": 1,
-        },
-      }
-    `);
+    expect(updateManager).toMatchSnapshot();
   });
   test('stageNodeDelete method', () => {
     updateManager.stageNodeDelete();
@@ -88,27 +53,7 @@ describe('UpdateManager', () => {
     // test that last-write-wins, delete overwrites update
     updateManager.stageNodeUpdate('foo');
     updateManager.stageNodeDelete('foo');
-    expect(updateManager).toMatchInlineSnapshot(`
-      UpdateManager {
-        "nodeUpdates": Immutable.Map {
-          "foo": Immutable.Map {
-            "action": "delete",
-            "post_id": 1,
-          },
-        },
-        "post": Immutable.Map {
-          "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
-          "created": "2019-05-18 17:28:55",
-          "published": "2019-01-04 00:00:00",
-          "user_id": 1,
-          "canonical": "hello-world",
-          "title": "Hello World!",
-          "deleted": null,
-          "updated": "2019-05-25 00:36:52",
-          "id": 1,
-        },
-      }
-    `);
+    expect(updateManager).toMatchSnapshot();
   });
   test('nodeHasBeenStagedForDelete method', () => {
     updateManager.stageNodeUpdate('foo');
@@ -136,37 +81,7 @@ describe('UpdateManager', () => {
         .mockImplementation(id => (id === 'badId' ? Map() : Map({ id })))
     };
     const updatesJS = updateManager.updates(documentModelMock);
-    expect(updatesJS).toMatchInlineSnapshot(`
-      Array [
-        Array [
-          "foo",
-          Object {
-            "action": "update",
-            "node": Object {
-              "id": "foo",
-            },
-            "post_id": 1,
-          },
-        ],
-        Array [
-          "qux",
-          Object {
-            "action": "update",
-            "node": Object {
-              "id": "qux",
-            },
-            "post_id": 1,
-          },
-        ],
-        Array [
-          "bar",
-          Object {
-            "action": "delete",
-            "post_id": 1,
-          },
-        ],
-      ]
-    `);
+    expect(updatesJS).toMatchSnapshot();
   });
   test('clearUpdates method', () => {
     updateManager.stageNodeUpdate('foo');

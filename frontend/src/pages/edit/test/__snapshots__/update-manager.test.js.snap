@@ -1,0 +1,112 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UpdateManager init method 1`] = `
+UpdateManager {
+  "commitTimeoutId": undefined,
+  "lastUndoHistoryPush": undefined,
+  "nodeUpdates": Immutable.Map {},
+  "post": Immutable.Map {
+    "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
+    "created": "2019-05-18 17:28:55",
+    "published": "2019-01-04 00:00:00",
+    "user_id": 1,
+    "canonical": "hello-world",
+    "title": "Hello World!",
+    "deleted": null,
+    "updated": "2019-05-25 00:36:52",
+    "id": 1,
+  },
+  "redoHistory": Array [],
+  "saveContentBatch": [Function],
+  "saveContentBatchDebounce": [Function],
+  "undoHistory": Array [],
+}
+`;
+
+exports[`UpdateManager stageNodeDelete method 1`] = `
+UpdateManager {
+  "commitTimeoutId": undefined,
+  "lastUndoHistoryPush": undefined,
+  "nodeUpdates": Immutable.Map {
+    "foo": Immutable.Map {
+      "action": "delete",
+      "post_id": 1,
+    },
+  },
+  "post": Immutable.Map {
+    "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
+    "created": "2019-05-18 17:28:55",
+    "published": "2019-01-04 00:00:00",
+    "user_id": 1,
+    "canonical": "hello-world",
+    "title": "Hello World!",
+    "deleted": null,
+    "updated": "2019-05-25 00:36:52",
+    "id": 1,
+  },
+  "redoHistory": Array [],
+  "saveContentBatch": [Function],
+  "saveContentBatchDebounce": [Function],
+  "undoHistory": Array [],
+}
+`;
+
+exports[`UpdateManager stageNodeUpdate method 1`] = `
+UpdateManager {
+  "commitTimeoutId": undefined,
+  "lastUndoHistoryPush": undefined,
+  "nodeUpdates": Immutable.Map {
+    "foo": Immutable.Map {
+      "action": "update",
+      "post_id": 1,
+    },
+  },
+  "post": Immutable.Map {
+    "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
+    "created": "2019-05-18 17:28:55",
+    "published": "2019-01-04 00:00:00",
+    "user_id": 1,
+    "canonical": "hello-world",
+    "title": "Hello World!",
+    "deleted": null,
+    "updated": "2019-05-25 00:36:52",
+    "id": 1,
+  },
+  "redoHistory": Array [],
+  "saveContentBatch": [Function],
+  "saveContentBatchDebounce": [Function],
+  "undoHistory": Array [],
+}
+`;
+
+exports[`UpdateManager updates method 1`] = `
+Array [
+  Array [
+    "foo",
+    Object {
+      "action": "update",
+      "node": Object {
+        "id": "foo",
+      },
+      "post_id": 1,
+    },
+  ],
+  Array [
+    "qux",
+    Object {
+      "action": "update",
+      "node": Object {
+        "id": "qux",
+      },
+      "post_id": 1,
+    },
+  ],
+  Array [
+    "bar",
+    Object {
+      "action": "delete",
+      "post_id": 1,
+    },
+  ],
+]
+`;

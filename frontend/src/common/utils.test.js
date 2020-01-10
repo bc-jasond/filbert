@@ -35,8 +35,8 @@ describe('utils', () => {
     expect(caught).toBe(true);
   });
   test('formatPostDate', () => {
-    expect(formatPostDate('2019-01-04 00:00:00')).toMatchInlineSnapshot(
-      `"Friday, January 4, 2019"`
+    expect(formatPostDate('2019-01-04 00:00:00')).toBe(
+      'Friday, January 4, 2019'
     );
   });
   test('s4', () => {
@@ -65,7 +65,7 @@ describe('utils', () => {
   test('cleanText', () => {
     const textWithPlaceholder = `${ZERO_LENGTH_CHAR}hey dawg`;
     const textWithPlaceholderClean = cleanText(textWithPlaceholder);
-    expect(textWithPlaceholderClean).toMatchInlineSnapshot(`"hey dawg"`);
+    expect(textWithPlaceholderClean).toBe('hey dawg');
     expect(textWithPlaceholderClean.length).toBe(
       textWithPlaceholder.length - 1
     );
@@ -125,14 +125,14 @@ describe('utils', () => {
   test('deleteContentRange', () => {
     const text = 'Someone must have been telling lies about Josef K.';
     // user presses "backspace"
-    expect(deleteContentRange(text, 12, 0)).toMatchInlineSnapshot(
-      `"Someone mus have been telling lies about Josef K."`
+    expect(deleteContentRange(text, 12, 0)).toBe(
+      'Someone mus have been telling lies about Josef K.'
     );
     // no-op
-    expect(deleteContentRange(text, 0, 0)).toMatchInlineSnapshot(
-      `"Someone must have been telling lies about Josef K."`
+    expect(deleteContentRange(text, 0, 0)).toBe(
+      'Someone must have been telling lies about Josef K.'
     );
     // delete the whole string - can specify beyond end of string...
-    expect(deleteContentRange(text, 0, 100)).toMatchInlineSnapshot(`""`);
+    expect(deleteContentRange(text, 0, 100)).toBe('');
   });
 });
