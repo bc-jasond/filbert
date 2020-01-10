@@ -43,6 +43,7 @@ import {
   KEYCODE_UP_ARROW,
   KEYCODE_V,
   KEYCODE_X,
+  KEYCODE_Z,
   NEW_POST_URL_ID,
   NODE_TYPE_IMAGE,
   NODE_TYPE_P,
@@ -83,8 +84,6 @@ export default class EditPost extends React.Component {
   documentModel = new DocumentModel();
 
   updateManager = new UpdateManager();
-
-  commitTimeoutId;
 
   inputRef;
 
@@ -181,25 +180,6 @@ export default class EditPost extends React.Component {
     window.removeEventListener('cut', this.handleCut, { capture: true });
   };
 
-  saveContentBatch = async () => {
-    try {
-      const updated = this.updateManager.updates(this.documentModel);
-      if (updated.length === 0) return;
-      // console.info('Save Batch', updated);
-      const result = await apiPost('/content', updated);
-      this.updateManager.clearUpdates();
-      console.info('Save Batch result', result);
-    } catch (err) {
-      console.error('Content Batch Update Error: ', err);
-    }
-  };
-
-  saveContentBatchDebounce = () => {
-    console.debug('Batch Debounce');
-    clearTimeout(this.commitTimeoutId);
-    this.commitTimeoutId = setTimeout(this.saveContentBatch, 750);
-  };
-
   newPost = () => {
     console.debug('New PostNew PostNew PostNew PostNew PostNew Post');
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
@@ -220,7 +200,7 @@ export default class EditPost extends React.Component {
     const { postId } = await apiPost('/post', { title, canonical });
     // update post id for all updates
     this.updateManager.addPostIdToUpdates(postId);
-    await this.saveContentBatch();
+    await this.updateManager.saveContentBatch(this.documentModel);
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
     this.setState({ shouldRedirect: `/edit/${postId}?shouldFocusLastNode` });
   };
@@ -247,6 +227,7 @@ export default class EditPost extends React.Component {
           let offset = 0;
           let shouldFindLastNode = false;
           const queryParams = new URLSearchParams(window.location.search);
+          // all this just to advance the cursor for a new post...
           if (queryParams.has('shouldFocusLastNode')) {
             focusNodeId = DocumentModel.getLastNode(
               this.documentModel.nodesById
@@ -400,9 +381,32 @@ export default class EditPost extends React.Component {
     return replaceRange(startNodeId, startNodeCaretStart, startNodeCaretEnd);
   };
 
+  undo = (shouldUndo = true) => {
+    const {
+      state: { nodesById }
+    } = this;
+    const prevNodesById = shouldUndo
+      ? this.updateManager.undo(nodesById)
+      : this.updateManager.redo(nodesById);
+    if (!prevNodesById) {
+      return;
+    }
+    console.debug(`${shouldUndo ? 'UNDO!' : 'REDO!'}`);
+    this.documentModel.nodesById = prevNodesById;
+    this.setState({ nodesById: this.documentModel.nodesById }, () => {
+      this.updateManager.saveContentBatchDebounce(this.documentModel);
+    });
+  };
+
   commitUpdates = (focusNodeId, offset = -1, shouldFocusLastChild) => {
     // TODO: optimistically save updated nodes - look ma, no errors!
     return new Promise((resolve /* , reject */) => {
+      const {
+        state: { nodesById, post }
+      } = this;
+      if (post.size > 0) {
+        this.updateManager.addToUndoHistory(nodesById);
+      }
       // roll with state changes TODO: handle errors - roll back?
       const newState = {
         nodesById: this.documentModel.nodesById,
@@ -415,7 +419,7 @@ export default class EditPost extends React.Component {
       this.setState(newState, () => {
         // if we're on /edit/new, we don't save until user hits "enter"
         if (this.props?.params?.id !== NEW_POST_URL_ID) {
-          this.saveContentBatchDebounce();
+          this.updateManager.saveContentBatchDebounce(this.documentModel);
         }
         // if a menu isn't open, re-place the caret
         if (!this.anyEditContentMenuIsOpen()) {
@@ -708,6 +712,16 @@ export default class EditPost extends React.Component {
   };
 
   handleKeyDown = async evt => {
+    // redo
+    if (evt.keyCode === KEYCODE_Z && evt.shiftKey && evt.metaKey) {
+      this.undo(false);
+      return;
+    }
+    // redo
+    if (evt.keyCode === KEYCODE_Z && evt.metaKey) {
+      this.undo();
+      return;
+    }
     const {
       state: { insertMenuNode, formatSelectionNode, formatSelectionModel }
     } = this;
@@ -776,6 +790,12 @@ export default class EditPost extends React.Component {
       // allow holding down shift
       !evt.shiftKey
     ) {
+      return;
+    }
+
+    // undo
+    if (evt.keyCode === KEYCODE_Z && evt.metaKey) {
+      this.undo(!evt.shiftKey);
       return;
     }
     console.debug('KEYDOWN', evt, this.state);
@@ -897,7 +917,7 @@ export default class EditPost extends React.Component {
 
   handlePaste = async (evt, selectionOffsetsArg) => {
     // NOTE: this handler needs to pass through twice on a "paste" event
-    // 1st: on "keydown" - this is to handle deleting selected text
+    // 1st: on "keydown" - this is to handle deleting selected text TODO: why? let the keydown noop
     // 2nd: on "paste" - now that the selection is clear, paste in the text
     if (evt.type !== 'paste' && !(evt.metaKey && evt.keyCode === KEYCODE_V)) {
       return;
@@ -1216,7 +1236,10 @@ export default class EditPost extends React.Component {
     }
 
     // allow user to hold shift and use arrow keys to adjust selection range
-    if (!evt.shiftKey && !(evt.metaKey && [KEYCODE_X, KEYCODE_V].includes(evt.keyCode))) {
+    if (
+      !evt.shiftKey &&
+      !(evt.metaKey && [KEYCODE_X, KEYCODE_V].includes(evt.keyCode))
+    ) {
       stopAndPrevent(evt);
     }
 

@@ -1,4 +1,3 @@
-import pre from '../../../common/components/pre';
 import {
   NODE_TYPE_LI,
   NODE_TYPE_P,
@@ -105,7 +104,7 @@ export function handleEnterTextType(
   documentModel.update(rightNode);
   return didConvertLeftNodeToP ? leftNodeId : rightNodeId;
 }
-
+// TODO: preserve format of copied text
 export function handlePasteTextType(
   documentModel,
   selectedNodeId,
@@ -143,7 +142,7 @@ export function handlePasteTextType(
   }
   // MULTI LINE PASTE
   // NOTE: the order of operations is important here
-  console.info("PASTE: multi-line")
+  console.info('PASTE: multi-line');
   const firstLine = clipboardLines.shift();
   const lastLine = clipboardLines.pop();
   const leftNodeId = selectedNodeId;
@@ -163,7 +162,7 @@ export function handlePasteTextType(
   // important: 'content' is now contentLeft
   let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
   let rightNode = documentModel.getNode(rightNodeId);
-  
+
   // 2) if the original selected node can have Selections - move them to the right node if needed
   // NOTE: do this with BEFORE content
   if (documentModel.canHaveSelections(leftNodeId)) {
@@ -173,15 +172,15 @@ export function handlePasteTextType(
       caretPosition
     ));
   }
-  
+
   // 3) update content with firstLine & lastLine
   leftNode = leftNode.set('content', updatedLeftNodeContent);
   rightNode = rightNode.set('content', updatedRightNodeContent);
-  
+
   // 4) adjust offsets with updated content
   leftNode = adjustSelectionOffsetsAndCleanup(
     leftNode,
-    contentLeft, //this is before content! takes this as an argument for comparison with now updated content in leftNode
+    contentLeft, // this is before content! takes this as an argument for comparison with now updated content in leftNode
     caretPosition,
     firstLine.length
   );
@@ -193,23 +192,22 @@ export function handlePasteTextType(
   );
   documentModel.update(leftNode);
   documentModel.update(rightNode);
-  
+
   // there are middle lines, insert Paragraphs after "left"
   let prevNodeId = selectedNodeId;
   while (clipboardLines.length > 0) {
-    let currentLine = clipboardLines.shift();
+    const currentLine = clipboardLines.shift();
     // skip whitespace only lines TODO: allow in Code sections?
-    if (currentLine.trim().length === 0) {
-      continue;
+    if (currentLine.trim().length > 0) {
+      const nextId = documentModel.insert(
+        leftNode.get('type'),
+        prevNodeId,
+        currentLine
+      );
+      prevNodeId = nextId;
     }
-    const nextId = documentModel.insert(
-      leftNode.get('type'),
-      prevNodeId,
-      currentLine
-    )
-    prevNodeId = nextId;
   }
-  
+
   return {
     focusNodeId: rightNodeId,
     caretOffset: lastLine.length

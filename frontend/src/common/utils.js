@@ -118,3 +118,43 @@ export function stopAndPrevent(evt) {
     evt.preventDefault();
   }
 }
+
+export function moreThanNCharsAreDifferent(left, right, n) {
+  let numDifferent = 0;
+  if (typeof left !== 'string' || typeof right !== 'string') {
+    return false;
+  }
+  if (Math.abs(left.length - right.length) > n) {
+    return true;
+  }
+  let j = 0;
+  let k = 0;
+  for (let i = 0; i < Math.max(left.length, right.length); i++) {
+    const leftChar = left.charAt(j);
+    const rightChar = right.charAt(k);
+    if (!leftChar) {
+      numDifferent += 1;
+      k += 1;
+    } else if (!rightChar) {
+      numDifferent += 1;
+      j += 1;
+    } else if (leftChar !== rightChar) {
+      numDifferent += 1;
+      if (left.length === right.length) {
+        j += 1;
+        k += 1;
+      } else if (left.length > right.length) {
+        j += 1;
+      } else {
+        k += 1;
+      }
+    } else {
+      j += 1;
+      k += 1;
+    }
+    if (numDifferent > n) {
+      return true;
+    }
+  }
+  return false;
+}
