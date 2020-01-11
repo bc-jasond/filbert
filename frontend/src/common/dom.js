@@ -158,7 +158,7 @@ export function scrollToCaretIfOutOfView(nodeId) {
 }
 
 export function focusAndScrollSmooth(nodeId, domElem) {
-  domElem.focus({preventScroll: true});
+  domElem.focus({ preventScroll: true });
   scrollToCaretIfOutOfView(nodeId);
 }
 

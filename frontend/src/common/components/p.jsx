@@ -1,5 +1,5 @@
 import React from 'react';
-import { getFormattedSelections } from './render-helpers';
+import FormattedSelections from './render-helpers';
 import { PStyled } from './shared-styled-components';
 
 export default class P extends React.PureComponent {
@@ -10,7 +10,7 @@ export default class P extends React.PureComponent {
     } = this;
     return (
       <PStyled data-type={node.get('type')} name={node.get('id')}>
-        {getFormattedSelections(node)}
+        <FormattedSelections node={node} />
       </PStyled>
     );
   }

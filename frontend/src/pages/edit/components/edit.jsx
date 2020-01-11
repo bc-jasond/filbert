@@ -20,7 +20,8 @@ import {
   stopAndPrevent
 } from '../../../common/utils';
 import {
-  caretIsOnEdgeOfParagraphText, focusAndScrollSmooth,
+  caretIsOnEdgeOfParagraphText,
+  focusAndScrollSmooth,
   getFirstHeadingContent,
   getHighlightedSelectionOffsets,
   getNodeById,

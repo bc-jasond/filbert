@@ -4,7 +4,6 @@ exports[`UpdateManager init method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
   "lastUndoHistoryPush": undefined,
-  "nodeUpdates": Immutable.Map {},
   "post": Immutable.Map {
     "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
     "created": "2019-05-18 17:28:55",
@@ -16,10 +15,8 @@ UpdateManager {
     "updated": "2019-05-25 00:36:52",
     "id": 1,
   },
-  "redoHistory": Array [],
   "saveContentBatch": [Function],
   "saveContentBatchDebounce": [Function],
-  "undoHistory": Array [],
 }
 `;
 
@@ -27,12 +24,6 @@ exports[`UpdateManager stageNodeDelete method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
   "lastUndoHistoryPush": undefined,
-  "nodeUpdates": Immutable.Map {
-    "foo": Immutable.Map {
-      "action": "delete",
-      "post_id": 1,
-    },
-  },
   "post": Immutable.Map {
     "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
     "created": "2019-05-18 17:28:55",
@@ -44,10 +35,8 @@ UpdateManager {
     "updated": "2019-05-25 00:36:52",
     "id": 1,
   },
-  "redoHistory": Array [],
   "saveContentBatch": [Function],
   "saveContentBatchDebounce": [Function],
-  "undoHistory": Array [],
 }
 `;
 
@@ -55,12 +44,6 @@ exports[`UpdateManager stageNodeUpdate method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
   "lastUndoHistoryPush": undefined,
-  "nodeUpdates": Immutable.Map {
-    "foo": Immutable.Map {
-      "action": "update",
-      "post_id": 1,
-    },
-  },
   "post": Immutable.Map {
     "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
     "created": "2019-05-18 17:28:55",
@@ -72,10 +55,8 @@ UpdateManager {
     "updated": "2019-05-25 00:36:52",
     "id": 1,
   },
-  "redoHistory": Array [],
   "saveContentBatch": [Function],
   "saveContentBatchDebounce": [Function],
-  "undoHistory": Array [],
 }
 `;
 

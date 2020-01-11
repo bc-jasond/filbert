@@ -1,5 +1,5 @@
 import { API_URL, AUTH_TOKEN_KEY } from './constants';
-import { get } from './session';
+import { get } from './local-storage';
 
 async function handleResponse(res) {
   const response = res?.status === 204 ? {} : await res.json();

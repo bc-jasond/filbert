@@ -1,6 +1,9 @@
 import { Map } from 'immutable';
 import UpdateManager from '../update-manager';
-import { overrideConsole } from '../../../common/test-helpers';
+import {
+  overrideConsole,
+  mockLocalStorage
+} from '../../../common/test-helpers';
 
 const testPostJS = {
   id: 1,
@@ -16,9 +19,11 @@ const testPostJS = {
 };
 
 overrideConsole();
+mockLocalStorage();
 let updateManager;
 
 beforeEach(() => {
+  localStorage.clear();
   updateManager = new UpdateManager();
   updateManager.init(testPostJS);
 });

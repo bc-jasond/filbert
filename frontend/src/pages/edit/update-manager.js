@@ -1,21 +1,69 @@
-import Immutable, { Map } from 'immutable';
+import Immutable, { List, Map } from 'immutable';
 
-import { NODE_ACTION_DELETE, NODE_ACTION_UPDATE } from '../../common/constants';
+import {
+  NEW_POST_URL_ID,
+  NODE_ACTION_DELETE,
+  NODE_ACTION_UPDATE
+} from '../../common/constants';
+import { get, set } from '../../common/local-storage';
 import { apiPost } from '../../common/fetch';
 import { moreThanNCharsAreDifferent } from '../../common/utils';
+
+const characterDiffSize = 6;
 
 export default class UpdateManager {
   commitTimeoutId;
 
   lastUndoHistoryPush;
 
-  nodeUpdates;
+  post = Map();
 
-  post;
+  getPostIdNamespaceValue(key, defaultValue) {
+    // if (this.post.size === 0) return defaultValue;
+    return get(`${this.post.get('id', NEW_POST_URL_ID)}${key}`, defaultValue);
+  }
 
-  redoHistory = [];
+  setPostIdNamespaceValue(key, value) {
+    set(`${this.post.get('id', NEW_POST_URL_ID)}${key}`, value);
+    return this;
+  }
 
-  undoHistory = [];
+  get nodeUpdates() {
+    return this.getPostIdNamespaceValue('nodeUpdates', Map());
+  }
+
+  set nodeUpdates(value) {
+    this.setPostIdNamespaceValue('nodeUpdates', value);
+    return this;
+  }
+
+  get redoHistory() {
+    return this.getPostIdNamespaceValue('redoHistory', List());
+  }
+
+  set redoHistory(value) {
+    this.setPostIdNamespaceValue('redoHistory', value);
+    return this;
+  }
+
+  get undoHistory() {
+    return this.getPostIdNamespaceValue('undoHistory', List());
+  }
+
+  set undoHistory(value) {
+    this.setPostIdNamespaceValue('undoHistory', value);
+    return this;
+  }
+
+  init(post) {
+    this.post = Immutable.fromJS(post);
+    /* eslint-disable prefer-destructuring, no-self-assign */
+    // side-effectful getters to init from localStorage
+    this.nodeUpdates = this.nodeUpdates;
+    this.undoHistory = this.undoHistory;
+    this.redoHistory = this.redoHistory;
+    /* eslint-enable prefer-destructuring, no-self-assign */
+  }
 
   addPostIdToUpdates(postId) {
     this.nodeUpdates = this.nodeUpdates.map(update =>
@@ -26,9 +74,9 @@ export default class UpdateManager {
   addToUndoHistory(nodesById) {
     const add = () => {
       this.lastUndoHistoryPush = Date.now();
-      this.undoHistory.push(nodesById);
+      this.undoHistory = this.undoHistory.push(nodesById);
     };
-    this.redoHistory = [];
+    this.redoHistory = List();
     // add to the undo history if...
     // it's been long enough
     if (
@@ -41,9 +89,9 @@ export default class UpdateManager {
       return;
     }
     // user added / removed one or more nodes
-    const [mostRecent] = this.undoHistory.slice(-1);
+    const mostRecent = this.undoHistory.last(Map());
     const merged = mostRecent.merge(nodesById);
-    if (Math.abs(merged.size - nodesById.size) > 0) {
+    if (Math.abs(merged.size - mostRecent.size) > 0) {
       console.debug(
         'addToUndoHistory - user added / removed one or more nodes'
       );
@@ -71,11 +119,11 @@ export default class UpdateManager {
       moreThanNCharsAreDifferent(
         updatedNode.get('content'),
         mostRecentNode.get('content'),
-        6
+        characterDiffSize
       )
     ) {
       console.debug(
-        'addToUndoHistory - one node changed more than 2 characters in CONTENT'
+        `addToUndoHistory - one node changed more than ${characterDiffSize} characters in CONTENT`
       );
       add();
     }
@@ -113,11 +161,6 @@ export default class UpdateManager {
     });
   }
 
-  init(post) {
-    this.post = Immutable.fromJS(post);
-    this.nodeUpdates = Map();
-  }
-
   nodeHasBeenStagedForDelete(searchNodeId) {
     return !!this.nodeUpdates.find(
       (update, nodeId) =>
@@ -126,18 +169,20 @@ export default class UpdateManager {
   }
 
   undo(current) {
-    const mostRecent = this.undoHistory.pop();
+    const mostRecent = this.undoHistory.last();
+    this.undoHistory = this.undoHistory.pop();
     if (mostRecent) {
-      this.redoHistory.push(current);
+      this.redoHistory = this.redoHistory.push(current);
       this.diff(current, mostRecent);
     }
     return mostRecent;
   }
 
   redo(current) {
-    const mostRecent = this.redoHistory.pop();
+    const mostRecent = this.redoHistory.last();
+    this.redoHistory = this.redoHistory.pop();
     if (mostRecent) {
-      this.undoHistory.push(current);
+      this.undoHistory = this.undoHistory.push(current);
       this.diff(current, mostRecent);
     }
     return mostRecent;

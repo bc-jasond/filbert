@@ -7,3 +7,12 @@ export function overrideConsole() {
     error: jest.fn()
   };
 }
+
+export function mockLocalStorage() {
+  global.localStorageStorage = {};
+  global.localStorage = {
+    getItem: k => global.localStorageStorage[k],
+    setItem: (k, v) => (global.localStorageStorage[k] = v),
+    clear: () => (global.localStorageStorage = {})
+  };
+}

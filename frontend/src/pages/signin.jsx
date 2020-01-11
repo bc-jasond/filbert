@@ -179,10 +179,7 @@ export default class SignIn extends React.Component {
         // user was already logged in and set in this.state
         currentUser = googleUser;
       }
-      const { signupIsIncomplete } = await signinGoogle(
-        currentUser,
-        username
-      );
+      const { signupIsIncomplete } = await signinGoogle(currentUser, username);
       if (signupIsIncomplete) {
         this.setState(
           {
