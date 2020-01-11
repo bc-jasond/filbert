@@ -157,6 +157,11 @@ export function scrollToCaretIfOutOfView(nodeId) {
   }
 }
 
+export function focusAndScrollSmooth(nodeId, domElem) {
+  domElem.focus({preventScroll: true});
+  scrollToCaretIfOutOfView(nodeId);
+}
+
 // TODO: support multi-node
 //  takes a nodeId and a start and end position relative to the node content and sets a new DOM range
 export function replaceRange(
@@ -181,7 +186,8 @@ export function replaceRange(
   selection.addRange(replacementRange);
   return replacementRange;
 }
-
+// TODO: refactor to take one argument: selectionOffsets
+// TODO: combine this with replaceRange();
 export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
   let offset = offsetArg;
   const [containerNode] = document.getElementsByName(nodeId);

@@ -20,7 +20,7 @@ import {
   stopAndPrevent
 } from '../../../common/utils';
 import {
-  caretIsOnEdgeOfParagraphText,
+  caretIsOnEdgeOfParagraphText, focusAndScrollSmooth,
   getFirstHeadingContent,
   getHighlightedSelectionOffsets,
   getNodeById,
@@ -1066,7 +1066,7 @@ export default class EditPost extends React.Component {
       this.setState(newState, () => {
         if (this.inputRef) {
           // allow animations to finish or scroll goes wacko
-          setTimeout(() => this.inputRef.focus(), 500);
+          setTimeout(() => focusAndScrollSmooth(sectionId, this.inputRef), 0);
         }
         resolve();
       });
@@ -1076,7 +1076,6 @@ export default class EditPost extends React.Component {
   getInputForwardedRef = ref => {
     if (!ref) return;
     this.inputRef = ref;
-    ref.focus();
   };
 
   replaceImageFile = async ([firstFile]) => {

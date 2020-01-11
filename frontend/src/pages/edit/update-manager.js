@@ -41,7 +41,7 @@ export default class UpdateManager {
       return;
     }
     // user added / removed one or more nodes
-    const mostRecent = this.undoHistory.slice(-1);
+    const [mostRecent] = this.undoHistory.slice(-1);
     const merged = mostRecent.merge(nodesById);
     if (Math.abs(merged.size - nodesById.size) > 0) {
       console.debug(
