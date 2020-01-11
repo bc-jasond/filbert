@@ -23,7 +23,7 @@ import { apiGet } from '../common/fetch';
 import ButtonSpinner from '../common/components/button-spinner';
 import { sansSerif } from '../common/fonts.css';
 
-import { signinGoogle, signout } from '../common/session';
+import { getSession, signinGoogle, signout } from '../common/session';
 import { stopAndPrevent } from '../common/utils';
 
 const Container = styled.div`
@@ -179,7 +179,7 @@ export default class SignIn extends React.Component {
         // user was already logged in and set in this.state
         currentUser = googleUser;
       }
-      const { signupIsIncomplete, session } = await signinGoogle(
+      const { signupIsIncomplete } = await signinGoogle(
         currentUser,
         username
       );
@@ -201,7 +201,7 @@ export default class SignIn extends React.Component {
       setTimeout(() => {
         this.setState({ shouldRedirect: true }, () => {
           // set session on App state on the way out...
-          this.props?.setSession?.(session);
+          this.props?.setSession?.(getSession());
         });
       }, 500);
     } catch (error) {

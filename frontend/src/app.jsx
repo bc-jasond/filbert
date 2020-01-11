@@ -34,7 +34,7 @@ export default class App extends React.Component {
     const {
       state: { session, setSession }
     } = this;
-    const { username } = session;
+    const username = session.get('username');
     const RouteWithSession = ({ component: Component, exact, path }) => {
       return (
         <Route

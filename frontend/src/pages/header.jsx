@@ -58,7 +58,7 @@ export default class Header extends React.PureComponent {
                 filbert
               </LogoLinkStyled>
             </LogoContainer>
-            {session?.userId ? (
+            {session.get('userId') ? (
               <>
                 {shouldShowPublish && (
                   <NavSpan onClick={togglePostMenu}>publish</NavSpan>
@@ -86,7 +86,7 @@ export default class Header extends React.PureComponent {
                     sign out
                   </NavSpan>
                 ) : (
-                  <NavLink to="/me">{session?.username}</NavLink>
+                  <NavLink to="/me">{session.get('username')}</NavLink>
                 )}
               </>
             ) : (

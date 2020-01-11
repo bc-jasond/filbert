@@ -8,7 +8,7 @@ import Header from './header';
 import Footer from './footer';
 
 export default ({ session, setSession }) => {
-  if (session?.userId) {
+  if (session.get('userId')) {
     signout();
     setSession({});
   }

@@ -1,4 +1,5 @@
 import { API_URL, AUTH_TOKEN_KEY } from './constants';
+import { get } from './session';
 
 async function handleResponse(res) {
   const response = res?.status === 204 ? {} : await res.json();
@@ -25,7 +26,7 @@ function getBaseConfig() {
     cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
     headers: {
       'Content-Type': 'application/json',
-      Authorization: localStorage.getItem(AUTH_TOKEN_KEY)
+      Authorization: get(AUTH_TOKEN_KEY)
     },
     redirect: 'follow', // manual, *follow, error
     referrer: 'no-referrer' // no-referrer, *client
