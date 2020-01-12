@@ -15,20 +15,20 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
   const prevNodeId = prevNode.get('id');
   // if at beginning of first node, nothing to do
   if (!prevNodeId) {
-    return { focusNodeId: selectedNodeId };
+    return { startNodeId: selectedNodeId };
   }
   if (!documentModel.isTextType(prevNodeId)) {
     // delete an empty TextType node
     if (documentModel.getNode(selectedNodeId).get('content').length === 0) {
       documentModel.delete(selectedNodeId);
     }
-    return { focusNodeId: prevNodeId };
+    return { startNodeId: prevNodeId };
   }
   // optionally handles Selections
   documentModel.mergeParagraphs(prevNodeId, selectedNodeId);
   return {
-    focusNodeId: prevNodeId,
-    caretOffset: prevNode.get('content').length
+    startNodeId: prevNodeId,
+    caretStart: prevNode.get('content').length
   };
 }
 
@@ -136,8 +136,8 @@ export function handlePasteTextType(
     );
     documentModel.update(selectedNode);
     return {
-      focusNodeId: selectedNodeId,
-      caretOffset: contentLeft.length + diffLength
+      startNodeId: selectedNodeId,
+      caretStart: contentLeft.length + diffLength
     };
   }
   // MULTI LINE PASTE
@@ -209,7 +209,7 @@ export function handlePasteTextType(
   }
 
   return {
-    focusNodeId: rightNodeId,
-    caretOffset: lastLine.length
+    startNodeId: rightNodeId,
+    caretStart: lastLine.length
   };
 }

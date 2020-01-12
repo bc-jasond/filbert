@@ -169,7 +169,7 @@ export default class InsertSectionMenuComponent extends React.Component {
     const {
       props: { insertNodeId }
     } = this;
-    setCaret(insertNodeId);
+    setCaret({ startNodeId: insertNodeId });
   };
 
   handleKeyDown = evt => {
@@ -229,10 +229,10 @@ export default class InsertSectionMenuComponent extends React.Component {
 
     this.setState({ menuIsOpen: !menuWasOpen }, () => {
       if (menuWasOpen) {
-        // will be closed, replace caret
-        setCaret(insertNodeId);
+        // now it will be closed, replace caret
+        setCaret({ startNodeId: insertNodeId });
       } else {
-        // will be open, hide caret
+        // now it will be open, hide caret
         removeAllRanges();
       }
     });

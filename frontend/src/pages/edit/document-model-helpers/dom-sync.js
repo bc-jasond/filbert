@@ -44,8 +44,8 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
   documentModel.update(selectedNodeMap);
 
   return {
-    focusNodeId: startNodeId,
-    caretOffset: caretStart + newChar.length
+    startNodeId,
+    caretStart: caretStart + newChar.length
   };
 }
 
@@ -93,5 +93,5 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   documentModel.update(selectedNodeMap);
 
   // return original caretStart for correct setCaret() positioning
-  return { focusNodeId: startNodeId, caretOffset: caretStart };
+  return { startNodeId, caretStart };
 }

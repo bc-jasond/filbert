@@ -7,7 +7,10 @@ import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
 /**
  */
-export function doDelete(documentModel, selectionOffsets) {
+export function doDelete(
+  documentModel,
+  { caretStart, caretEnd, startNodeId, endNodeId }
+) {
   function deleteOrUpdateNode(diffLength, nodeId, startIdx) {
     let node = documentModel.getNode(nodeId);
     if (documentModel.isMetaType(nodeId)) {
@@ -28,13 +31,12 @@ export function doDelete(documentModel, selectionOffsets) {
     );
     documentModel.update(node);
   }
-  const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('doDelete() bad selection, no id ', startNodeId);
     return {};
   }
 
-  console.info('doDelete()', selectionOffsets);
+  console.info('doDelete()', caretStart, caretEnd, startNodeId, endNodeId);
   /**
    * Backspace scenarios:
    *
@@ -96,8 +98,8 @@ export function doDelete(documentModel, selectionOffsets) {
     //  we'll place the caret where the selection ended and the user can hit backspace again to merge sections
     if (!doesMergeParagraphs) {
       return {
-        focusNodeId: selectedNodeId,
-        caretOffset: startDiffLength === 0 ? caretStart - 1 : caretStart
+        startNodeId: selectedNodeId,
+        caretStart: startDiffLength === 0 ? caretStart - 1 : caretStart
       };
     }
   }
@@ -115,10 +117,9 @@ export function doDelete(documentModel, selectionOffsets) {
    *
    *  UPDATE 3: wow, so much easier using a linked list data structure to represent the document, le sigh 🤦‍♀️
    */
-  let focusNodeId;
-  let caretOffset;
   if (documentModel.isMetaType(selectedNodeId)) {
-    focusNodeId = documentModel.getPrevNode(selectedNodeId).get('id');
+    /* eslint-disable-next-line no-param-reassign */
+    startNodeId = documentModel.getPrevNode(selectedNodeId).get('id');
     documentModel.delete(selectedNodeId);
     const selectedNode = documentModel.getNode(selectedNodeId);
     // Don't forget to delete that image from the DB!
@@ -130,10 +131,11 @@ export function doDelete(documentModel, selectionOffsets) {
       }
     }
   } else {
-    ({ focusNodeId, caretOffset } = handleBackspaceTextType(
+    /* eslint-disable-next-line no-param-reassign */
+    ({ startNodeId, caretStart } = handleBackspaceTextType(
       documentModel,
       selectedNodeId
     ));
   }
-  return { focusNodeId, caretOffset, shouldFocusLastChild: true };
+  return { startNodeId, caretStart };
 }

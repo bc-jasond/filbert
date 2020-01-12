@@ -37,8 +37,6 @@ import {
 } from './constants';
 import { cleanText } from './utils';
 
-let infiniteLoopCount = 0;
-
 export function removeAllRanges() {
   const sel = window.getSelection();
   sel.removeAllRanges();
@@ -164,7 +162,7 @@ export function focusAndScrollSmooth(nodeId, domElem) {
 
 // TODO: support multi-node
 //  takes a nodeId and a start and end position relative to the node content and sets a new DOM range (selection)
-export function replaceRange(startNodeId, caretStart, caretEnd) {
+export function replaceRange({ startNodeId, caretStart, caretEnd }) {
   const selection = window.getSelection();
   const replacementRange = document.createRange();
   const node = getNodeById(startNodeId);
@@ -184,57 +182,51 @@ export function replaceRange(startNodeId, caretStart, caretEnd) {
 }
 // TODO: refactor to take one argument: selectionOffsets
 // TODO: combine this with replaceRange();
-export function setCaret(nodeId, offsetArg = -1, shouldFindLastNode = false) {
-  let offset = offsetArg;
-  const [containerNode] = document.getElementsByName(nodeId);
+export function setCaret({ startNodeId, caretStart = -1 }) {
+  const [containerNode] = document.getElementsByName(startNodeId);
   if (!containerNode) {
-    console.warn('setCaret containerNode NOT FOUND ', nodeId);
+    console.warn('setCaret containerNode NOT FOUND ', startNodeId);
     return;
   }
-  console.info('setCaret containerNode ', nodeId);
+  console.info('setCaret containerNode ', startNodeId);
   // has a text node?
   const sel = removeAllRanges();
   const range = document.createRange();
   // find text node, if present
-  infiniteLoopCount = 0;
   let textNode;
   if ([NODE_TYPE_P, NODE_TYPE_LI].includes(containerNode.dataset.type)) {
     ({
       childNode: textNode,
-      childOffset: offset
-    } = getChildTextNodeAndOffsetFromParentOffset(containerNode, offset));
+      childOffset: caretStart // eslint-disable-line no-param-reassign
+    } = getChildTextNodeAndOffsetFromParentOffset(containerNode, caretStart));
   } else {
-    const queue = [...containerNode.childNodes];
-    while (queue.length) {
-      infiniteLoopCount += 1;
-      if (infiniteLoopCount > 1000) {
-        throw new Error('setCaret is Fuera de Control!!!');
-      }
-      // find first (queue), find last - (stack) yay!
-      const current = shouldFindLastNode ? queue.pop() : queue.shift();
-      if (current.nodeType === DOM_TEXT_NODE_TYPE_ID) {
-        textNode = current;
-        break;
-      }
-      if (current.childNodes.length) {
-        queue.push(...current.childNodes);
-      }
+    if (containerNode.childNodes.length > 1) {
+      console.warn(
+        'setCaret() - containerNode has more than one child...',
+        containerNode
+      );
+    }
+    const [hopefullyTextNode] = containerNode.childNodes; // eslint-disable-line prefer-destructuring
+    if (hopefullyTextNode.nodeType === DOM_TEXT_NODE_TYPE_ID) {
+      textNode = hopefullyTextNode;
     }
   }
   if (textNode) {
-    console.info('setCaret textNode ', textNode, ' offset ', offset);
+    console.info('setCaret textNode ', textNode, ' caretStart ', caretStart);
     // set caret to end of text content
-    let caretOffset = offset;
-    if (offset === -1 || offset > textNode.textContent.length) {
-      /* eslint-disable-next-line prefer-destructuring */
-      caretOffset = textNode.textContent.length;
+    if (caretStart === -1 || caretStart > textNode.textContent.length) {
+      /* eslint-disable-next-line prefer-destructuring, no-param-reassign */
+      caretStart = textNode.textContent.length;
     }
-    range.setStart(textNode, caretOffset);
+    range.setStart(textNode, caretStart);
     sel.addRange(range);
     // scroll caret into view
     scrollToCaretIfOutOfView();
   } else {
-    console.warn(`setCaret - couldn't find a text node inside of `, nodeId);
+    console.warn(
+      `setCaret - couldn't find a text node inside of `,
+      startNodeId
+    );
   }
 }
 

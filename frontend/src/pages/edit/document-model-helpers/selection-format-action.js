@@ -41,7 +41,7 @@ export function selectionFormatAction(
   if (!node.equals(nodeArg)) {
     documentModel.update(node);
     return {
-      focusNodeId: node.get('id'),
+      startNodeId: node.get('id'),
       updatedNode: node,
       updatedSelection: Selection()
     };

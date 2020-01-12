@@ -433,13 +433,13 @@ export function upsertSelection(nodeModelArg, newSelection) {
  * the reason is because we don't have a Right model (don't have an id) yet.  I could make this so but, it seems reach-outy
  *
  * @param nodeModel
- * @param caretOffset
+ * @param caretStart
  * @returns {leftNode, rightNode}
  */
 export function splitSelectionsAtCaretOffset(
   leftNodeModelArg,
   rightNodeModelArg,
-  caretOffset
+  caretStart
 ) {
   let left = List();
   let right = List();
@@ -449,21 +449,21 @@ export function splitSelectionsAtCaretOffset(
   for (let i = 0; i < selections.size; i++) {
     const current = selections.get(i);
     // const currentJS = current.toJS();
-    if (current.get(SELECTION_END) <= caretOffset) {
+    if (current.get(SELECTION_END) <= caretStart) {
       left = left.push(current);
-    } else if (current.get(SELECTION_START) >= caretOffset) {
+    } else if (current.get(SELECTION_START) >= caretStart) {
       right = right.push(
         current
-          .set(SELECTION_START, current.get(SELECTION_START) - caretOffset)
-          .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
+          .set(SELECTION_START, current.get(SELECTION_START) - caretStart)
+          .set(SELECTION_END, current.get(SELECTION_END) - caretStart)
       );
     } else {
-      // caretOffset must be in the middle of a selection, split
-      left = left.push(current.set(SELECTION_END, caretOffset));
+      // caretStart must be in the middle of a selection, split
+      left = left.push(current.set(SELECTION_END, caretStart));
       right = right.push(
         current
           .set(SELECTION_START, 0)
-          .set(SELECTION_END, current.get(SELECTION_END) - caretOffset)
+          .set(SELECTION_END, current.get(SELECTION_END) - caretStart)
       );
     }
   }

@@ -4,7 +4,7 @@ import { handleEnterMetaType } from './handle-meta-type';
 import { handleEnterTextType } from './handle-text-type';
 
 /**
- * @returns focusNodeId|undefined string i.e. "4eb7"
+ * @returns startNodeId|undefined string i.e. "4eb7"
  */
 export function doSplit(documentModel, selectionOffsets) {
   const { caretStart, startNodeId } = selectionOffsets;
