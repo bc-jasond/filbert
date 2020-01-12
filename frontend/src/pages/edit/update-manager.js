@@ -71,10 +71,12 @@ export default class UpdateManager {
     );
   }
 
-  addToUndoHistory(nodesById) {
+  addToUndoHistory(nodesById, selectionOffsets) {
     const add = () => {
       this.lastUndoHistoryPush = Date.now();
-      this.undoHistory = this.undoHistory.push(nodesById);
+      this.undoHistory = this.undoHistory.push(
+        Map({ nodesById, selectionOffsets })
+      );
     };
     this.redoHistory = List();
     // add to the undo history if...
@@ -84,17 +86,16 @@ export default class UpdateManager {
       this.undoHistory.length === 0 ||
       Date.now() - this.lastUndoHistoryPush > 30000
     ) {
-      console.debug("addToUndoHistory - it's been long enough");
+      console.info("addToUndoHistory - it's been long enough");
       add();
       return;
     }
     // user added / removed one or more nodes
-    const mostRecent = this.undoHistory.last(Map());
+    const lastHistory = this.undoHistory.last(Map());
+    const mostRecent = lastHistory.get('nodesById', Map());
     const merged = mostRecent.merge(nodesById);
     if (Math.abs(merged.size - mostRecent.size) > 0) {
-      console.debug(
-        'addToUndoHistory - user added / removed one or more nodes'
-      );
+      console.info('addToUndoHistory - user added / removed one or more nodes');
       add();
       return;
     }
@@ -106,12 +107,12 @@ export default class UpdateManager {
     }
     const updatedNode = nodesById.get(mostRecentNode.get('id'));
     if (updatedNode.get('type') !== mostRecentNode.get('type')) {
-      console.debug('addToUndoHistory - one node changed TYPE');
+      console.info('addToUndoHistory - one node changed TYPE');
       add();
       return;
     }
     if (!updatedNode.get('meta').equals(mostRecentNode.get('meta'))) {
-      console.debug('addToUndoHistory - one node changed META');
+      console.info('addToUndoHistory - one node changed META');
       add();
       return;
     }
@@ -122,7 +123,7 @@ export default class UpdateManager {
         characterDiffSize
       )
     ) {
-      console.debug(
+      console.info(
         `addToUndoHistory - one node changed more than ${characterDiffSize} characters in CONTENT`
       );
       add();
@@ -168,24 +169,20 @@ export default class UpdateManager {
     );
   }
 
-  undo(current) {
-    const mostRecent = this.undoHistory.last();
-    this.undoHistory = this.undoHistory.pop();
+  undoRedo(current, selectionOffsets, shouldUndo = true) {
+    const key = shouldUndo ? 'undoHistory' : 'redoHistory';
+    const otherKey = shouldUndo ? 'redoHistory' : 'undoHistory';
+    const lastHistoryEntry = this[key].last();
+    const mostRecent = lastHistoryEntry.get('nodesById', Map());
+    const mostRecentOffsets = lastHistoryEntry.get('selectionOffsets', Map());
+    this[key] = this[key].pop();
     if (mostRecent) {
-      this.redoHistory = this.redoHistory.push(current);
+      this[otherKey] = this[otherKey].push(
+        Map({ nodesById: current, selectionOffsets })
+      );
       this.diff(current, mostRecent);
     }
-    return mostRecent;
-  }
-
-  redo(current) {
-    const mostRecent = this.redoHistory.last();
-    this.redoHistory = this.redoHistory.pop();
-    if (mostRecent) {
-      this.undoHistory = this.undoHistory.push(current);
-      this.diff(current, mostRecent);
-    }
-    return mostRecent;
+    return Map({ nodesById: mostRecent, selectionOffsets: mostRecentOffsets });
   }
 
   saveContentBatch = async documentModel => {
@@ -204,7 +201,7 @@ export default class UpdateManager {
   };
 
   saveContentBatchDebounce = documentModel => {
-    console.debug('Batch Debounce');
+    console.info('Batch Debounce');
     clearTimeout(this.commitTimeoutId);
     this.commitTimeoutId = setTimeout(
       () => this.saveContentBatch(documentModel),

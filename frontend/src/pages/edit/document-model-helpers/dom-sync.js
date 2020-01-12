@@ -7,7 +7,7 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
     console.warn('To DOM SYNC - bad selection, no id ', startNodeId);
     return {};
   }
-  console.info('To DOM SYNC', startNodeId, 'offset', caretStart);
+  console.debug('To DOM SYNC', startNodeId, 'offset', caretStart);
 
   const newChar = getCharFromEvent(evt);
   if (newChar.length > 1) {

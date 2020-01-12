@@ -76,6 +76,10 @@ export function getChildTextNodeAndOffsetFromParentOffset(
     parentOffset === -1 ? parent.textContent.length : parentOffset;
   const textNodesOnlyFlattened = [];
   const queue = [...parent.childNodes];
+  // there's no formatting, so no offset adjustment necessary
+  if (queue.length === 1) {
+    return { childNode: queue.pop(), childOffset };
+  }
   while (queue.length) {
     const currentNode = queue.shift();
     if (currentNode.nodeType === DOM_TEXT_NODE_TYPE_ID) {
@@ -207,7 +211,7 @@ export function setCaret({ startNodeId, caretStart = -1 }) {
       );
     }
     const [hopefullyTextNode] = containerNode.childNodes; // eslint-disable-line prefer-destructuring
-    if (hopefullyTextNode.nodeType === DOM_TEXT_NODE_TYPE_ID) {
+    if (hopefullyTextNode?.nodeType === DOM_TEXT_NODE_TYPE_ID) {
       textNode = hopefullyTextNode;
     }
   }
