@@ -8,7 +8,7 @@ import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 /**
  */
 export function doDelete(documentModel, selectionOffsets) {
-  function deleteOrUpdateNode(diffLength, nodeId, startIdx, endIdx) {
+  function deleteOrUpdateNode(diffLength, nodeId, startIdx) {
     let node = documentModel.getNode(nodeId);
     if (documentModel.isMetaType(nodeId)) {
       documentModel.delete(node);
@@ -23,19 +23,12 @@ export function doDelete(documentModel, selectionOffsets) {
     node = adjustSelectionOffsetsAndCleanup(
       node,
       content,
-      endIdx,
+      startIdx + diffLength,
       diffLength === 0 ? -1 : -diffLength
     );
     documentModel.update(node);
   }
-  const {
-    startNodeCaretStart,
-    startNodeCaretEnd,
-    startNodeId,
-    endNodeCaretStart,
-    endNodeCaretEnd,
-    endNodeId
-  } = selectionOffsets;
+  const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('doDelete() bad selection, no id ', startNodeId);
     return {};
@@ -47,8 +40,8 @@ export function doDelete(documentModel, selectionOffsets) {
    *
    * 1) caret is collapsed OR
    * 2) caret highlights 1 or more characters
-   * 3) startNodeCaretStart === 0
-   * 4) startNodeCaretEnd === selectedNodeMap.get('content').length
+   * 3) caretStart === 0
+   * 4) caretEnd === selectedNodeMap.get('content').length
    * 5) caret start and end nodes are different (multi-node selection)
    * 6) there are middle nodes (this is easy, just delete them)
    * 7) merge (heal) content from two different nodes
@@ -78,18 +71,18 @@ export function doDelete(documentModel, selectionOffsets) {
   if (endNodeId) {
     // since we're spanning more than one node, we might merge (if we don't delete the "end" node)
     doesMergeParagraphs = true;
-    const endDiffLength = endNodeCaretEnd - endNodeCaretStart;
     // Set this to update focusNode
     selectedNodeId = endNodeId;
     // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
-    deleteOrUpdateNode(endDiffLength, endNodeId, 0, endNodeCaretEnd);
+    // end diff length is caretEnd - 0 (implied caretStart for the end node)
+    deleteOrUpdateNode(caretEnd, endNodeId, 0);
   }
 
   const startNodeMap = documentModel.getNode(startNodeId);
   const startNodeContent = startNodeMap.get('content');
 
-  const startDiffLength = startNodeCaretEnd - startNodeCaretStart;
-  if ((startNodeCaretStart > 0 && startNodeContent) || startDiffLength > 0) {
+  const startDiffLength = caretEnd - caretStart;
+  if ((caretStart > 0 && startNodeContent) || startDiffLength > 0) {
     //  not at beginning of node text and node text isn't empty OR
     //  there's one or more chars of highlighted text
     //
@@ -97,20 +90,14 @@ export function doDelete(documentModel, selectionOffsets) {
     //  the former removes a character behind the caret and the latter removes one in front...
 
     // all of the startNode's content has been selected, delete it
-    deleteOrUpdateNode(
-      startDiffLength,
-      startNodeId,
-      startNodeCaretStart,
-      startNodeCaretEnd
-    );
+    deleteOrUpdateNode(startDiffLength, startNodeId, caretStart, caretEnd);
 
     // NOTE: reaching this code means we don't need to merge any nodes.  If the user deleted all text in the current node
     //  we'll place the caret where the selection ended and the user can hit backspace again to merge sections
     if (!doesMergeParagraphs) {
       return {
         focusNodeId: selectedNodeId,
-        caretOffset:
-          startDiffLength === 0 ? startNodeCaretStart - 1 : startNodeCaretStart
+        caretOffset: startDiffLength === 0 ? caretStart - 1 : caretStart
       };
     }
   }
@@ -118,7 +105,6 @@ export function doDelete(documentModel, selectionOffsets) {
   /**
    * TODO: make these into sets of atomic commands that are added to a queue,
    *  then make a 'flush' command to process this queue.
-   *  Right now, live updates are happening and it's clobber city
    *
    *  UPDATE: immutablejs has helped make this situation more predictable but,
    *  it still isn't conducive to an undo/redo workflow, so leaving the TODO

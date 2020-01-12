@@ -7,7 +7,7 @@ import { handleEnterTextType } from './handle-text-type';
  * @returns focusNodeId|undefined string i.e. "4eb7"
  */
 export function doSplit(documentModel, selectionOffsets) {
-  const { startNodeCaretStart, startNodeId } = selectionOffsets;
+  const { caretStart, startNodeId } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('doSplit() bad selection, no id ', startNodeId);
     return null;
@@ -17,7 +17,7 @@ export function doSplit(documentModel, selectionOffsets) {
     return handleEnterMetaType(documentModel, startNodeId);
   }
 
-  console.debug('doSplit()', startNodeId, startNodeCaretStart);
+  console.debug('doSplit()', startNodeId, caretStart);
   // split selectedNodeContent at caret
   const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(
     documentModel.getNode(startNodeId).get('content')
@@ -25,7 +25,7 @@ export function doSplit(documentModel, selectionOffsets) {
   return handleEnterTextType(
     documentModel,
     startNodeId,
-    startNodeCaretStart,
+    caretStart,
     selectedNodeContent
   );
 }

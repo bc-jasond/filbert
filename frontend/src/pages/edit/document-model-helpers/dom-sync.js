@@ -2,12 +2,12 @@ import { getCharFromEvent } from '../../../common/utils';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
 export function syncToDom(documentModel, selectionOffsets, evt) {
-  const { startNodeCaretStart, startNodeId } = selectionOffsets;
+  const { caretStart, startNodeId } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('To DOM SYNC - bad selection, no id ', startNodeId);
     return {};
   }
-  console.info('To DOM SYNC', startNodeId, 'offset', startNodeCaretStart);
+  console.info('To DOM SYNC', startNodeId, 'offset', caretStart);
 
   const newChar = getCharFromEvent(evt);
   if (newChar.length > 1) {
@@ -22,12 +22,12 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
   const beforeContentMap = selectedNodeMap.get('content') || '';
   const updatedContentMap = `${beforeContentMap.slice(
     0,
-    startNodeCaretStart
-  )}${newChar}${beforeContentMap.slice(startNodeCaretStart)}`;
+    caretStart
+  )}${newChar}${beforeContentMap.slice(caretStart)}`;
 
   console.info(
     'To DOM SYNC diff: ',
-    startNodeCaretStart,
+    caretStart,
     ' diffLen: ',
     newChar.length,
     'length: ',
@@ -38,24 +38,24 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
   selectedNodeMap = adjustSelectionOffsetsAndCleanup(
     selectedNodeMap,
     beforeContentMap,
-    startNodeCaretStart,
+    caretStart,
     newChar.length
   );
   documentModel.update(selectedNodeMap);
 
   return {
     focusNodeId: startNodeId,
-    caretOffset: startNodeCaretStart + newChar.length
+    caretOffset: caretStart + newChar.length
   };
 }
 
 export function syncFromDom(documentModel, selectionOffsets, evt) {
-  const { startNodeCaretStart, startNodeId } = selectionOffsets;
+  const { caretStart, startNodeId } = selectionOffsets;
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('From DOM SYNC - bad selection, no id ', startNodeId);
     return {};
   }
-  console.info('From DOM SYNC', startNodeId, 'offset', startNodeCaretStart);
+  console.info('From DOM SYNC', startNodeId, 'offset', caretStart);
 
   // NOTE: following for emojis keyboard insert only...
   const { data: emoji } = evt;
@@ -67,10 +67,10 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   const beforeContentMap = selectedNodeMap.get('content') || '';
   const updatedContentMap = `${beforeContentMap.slice(
     0,
-    startNodeCaretStart - emoji.length
-  )}${emoji}${beforeContentMap.slice(startNodeCaretStart - emoji.length)}`;
+    caretStart - emoji.length
+  )}${emoji}${beforeContentMap.slice(caretStart - emoji.length)}`;
   // since this is called after the content has been updated, subtract the length of the emoji from the start because the adjustSelectionOffsetsAndCleanup function expects to be processing PRE-update
-  const preUpdateStart = startNodeCaretStart - emoji.length;
+  const preUpdateStart = caretStart - emoji.length;
 
   console.debug(
     'From DOM SYNC diff - this should be an emoji: ',
@@ -92,6 +92,6 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   );
   documentModel.update(selectedNodeMap);
 
-  // return original startNodeCaretStart for correct setCaret() positioning
-  return { focusNodeId: startNodeId, caretOffset: startNodeCaretStart };
+  // return original caretStart for correct setCaret() positioning
+  return { focusNodeId: startNodeId, caretOffset: caretStart };
 }

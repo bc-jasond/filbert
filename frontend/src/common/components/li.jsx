@@ -1,5 +1,5 @@
 import React from 'react';
-import FormattedSelections from './render-helpers';
+import FormattedSelections from './formatted-selections';
 import { LiStyled } from './shared-styled-components';
 
 export default class Li extends React.PureComponent {

@@ -163,24 +163,20 @@ export function focusAndScrollSmooth(nodeId, domElem) {
 }
 
 // TODO: support multi-node
-//  takes a nodeId and a start and end position relative to the node content and sets a new DOM range
-export function replaceRange(
-  startNodeId,
-  startNodeCaretStart,
-  startNodeCaretEnd
-) {
+//  takes a nodeId and a start and end position relative to the node content and sets a new DOM range (selection)
+export function replaceRange(startNodeId, caretStart, caretEnd) {
   const selection = window.getSelection();
   const replacementRange = document.createRange();
   const node = getNodeById(startNodeId);
   const {
     childNode: startNode,
     childOffset: startOffset
-  } = getChildTextNodeAndOffsetFromParentOffset(node, startNodeCaretStart);
+  } = getChildTextNodeAndOffsetFromParentOffset(node, caretStart);
   replacementRange.setStart(startNode, startOffset);
   const {
     childNode: endNode,
     childOffset: endOffset
-  } = getChildTextNodeAndOffsetFromParentOffset(node, startNodeCaretEnd);
+  } = getChildTextNodeAndOffsetFromParentOffset(node, caretEnd);
   replacementRange.setEnd(endNode, endOffset);
   selection.removeAllRanges();
   selection.addRange(replacementRange);
@@ -281,13 +277,10 @@ function getParagraphContentOffset(formattingNodeArg, paragraph) {
  * attribute) content
  *
  * @return {
- *  startNodeCaretStart, int
- *  startNodeCaretEnd, int
+ *  caretStart, int
+ *  caretEnd, int
  *  startNodeId, string
- *  //end node meta: if user has highlighted across > 1 nodes
- *  endNodeCaretStart, int
- *  endNodeCaretEnd, int
- *  endNodeId, string
+ *  endNodeId, string // if user has highlighted across > 1 nodes
  * }
  */
 export function getHighlightedSelectionOffsets() {
@@ -297,33 +290,34 @@ export function getHighlightedSelectionOffsets() {
   }
   const startNode = getFirstAncestorWithId(range.startContainer);
   const endNode = getFirstAncestorWithId(range.endContainer);
-  // const commonAncestor = range.commonAncestorContainer;
-  const { startOffset: rangeStartOffset } = range;
-  const { endOffset: rangeEndOffset } = range;
-
   if (startNode === null || endNode === null) {
     return {};
   }
 
+  const { startOffset: rangeStartOffset } = range;
+  const { endOffset: rangeEndOffset } = range;
   const startNodeOffset = getParagraphContentOffset(
     range.startContainer,
     startNode
   );
-  let startNodeCaretStart = rangeStartOffset + startNodeOffset;
+  // add the range offset (position within an inner formatting node) to the offset of
+  // all content in the paragraph for where that formatting node starts.  This gives the
+  // offset of caret relative to the paragraph content length
+  let caretStart = rangeStartOffset + startNodeOffset;
   // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
   if (rangeStartOffset === 1 && cleanText(startNode.textContent).length === 0) {
-    startNodeCaretStart = 0;
+    caretStart = 0;
   }
-  // in consumer code range.collapsed can be checked by start[0] === start[1]
-  const start = {
-    startNodeCaretStart,
-    startNodeCaretEnd: range.collapsed
-      ? startNodeCaretStart
+  // in consumer code range.collapsed can be checked by caretStart === caretEnd
+  const selectionOffsets = {
+    caretStart,
+    caretEnd: range.collapsed
+      ? caretStart
       : cleanText(startNode.textContent).length,
     startNodeId: getNodeId(startNode)
   };
   if (range.collapsed) {
-    return start;
+    return selectionOffsets;
   }
 
   const endNodeOffset = getParagraphContentOffset(range.endContainer, endNode);
@@ -332,34 +326,16 @@ export function getHighlightedSelectionOffsets() {
   if (rangeEndOffset === 1 && cleanText(endNode.textContent).length === 0) {
     endNodeCaretEnd = 0;
   }
-  const end = {
-    endNodeCaretStart: 0,
-    endNodeCaretEnd,
-    endNodeId: getNodeId(endNode)
-  };
+  selectionOffsets.caretEnd = endNodeCaretEnd;
 
   if (startNode === endNode) {
-    start.startNodeCaretEnd = endNodeCaretEnd;
     console.debug('getHighlightedSelectionOffsets SINGLE NODE');
-    return start;
+    return selectionOffsets;
   }
-
   console.debug('getHighlightedSelectionOffsets MULTIPLE NODES');
-  // const selectedTextStart = startNode.textContent.slice(start[0]);
-  // const selectedTextEnd = endNode.textContent.slice(0, end[1]);
-  return { ...start, ...end };
+  selectionOffsets.endNodeId = getNodeId(endNode);
+  return selectionOffsets;
 }
-
-/**
- * TODO: When React re-renders after setState() to apply formatting changes, the highlight is lost.
- *  Use this to replace it.
- 
-export function replaceHighlightedSelection(
-  startNode,
-  startOffset,
-  endNode,
-  endOffset
-) {} */
 
 // this is used to determine whether the caret will leave the current node
 // if the user presses the up or down arrow

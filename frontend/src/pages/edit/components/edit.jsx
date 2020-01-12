@@ -377,9 +377,9 @@ export default class EditPost extends React.Component {
 
   replaceRangeEdit = () => {
     const {
-      selectionOffsets: { startNodeId, startNodeCaretStart, startNodeCaretEnd }
+      selectionOffsets: { startNodeId, caretStart, caretEnd }
     } = this;
-    return replaceRange(startNodeId, startNodeCaretStart, startNodeCaretEnd);
+    return replaceRange(startNodeId, caretStart, caretEnd);
   };
 
   undo = (shouldUndo = true) => {
@@ -498,11 +498,11 @@ export default class EditPost extends React.Component {
       return;
     }
     console.debug('ARROW');
-    const { startNodeCaretStart, startNodeCaretEnd } = selectionOffsets;
+    const { caretStart, caretEnd } = selectionOffsets;
 
     // collapse range if there's highlighted selection and the user hits an arrow
     if (
-      startNodeCaretStart !== startNodeCaretEnd &&
+      caretStart !== caretEnd &&
       // ignore shift key because user could be in the middle of adjusting a selection
       !evt.shiftKey
     ) {
@@ -670,9 +670,9 @@ export default class EditPost extends React.Component {
       return;
     }
 
-    const { startNodeCaretStart, startNodeCaretEnd } = selectionOffsets;
+    const { caretStart, caretEnd } = selectionOffsets;
     // select-and-type ?? delete selection first
-    if (startNodeCaretStart !== startNodeCaretEnd) {
+    if (caretStart !== caretEnd) {
       doDelete(this.documentModel, selectionOffsets);
     }
 
@@ -704,8 +704,8 @@ export default class EditPost extends React.Component {
         return {};
       }
       selectionOffsets = {
-        startNodeCaretStart: 0,
-        startNodeCaretEnd: 0,
+        caretStart: 0,
+        caretEnd: 0,
         startNodeId: editSectionNode.get('id')
       };
     }
@@ -890,15 +890,11 @@ export default class EditPost extends React.Component {
     this.didCut = true;
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
-    const {
-      startNodeCaretStart,
-      startNodeCaretEnd,
-      startNodeId
-    } = selectionOffsets;
+    const { caretStart, caretEnd, startNodeId } = selectionOffsets;
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "cut" with clipboard data...
     if (evt.type !== 'cut') {
-      if (startNodeCaretStart !== startNodeCaretEnd) {
+      if (caretStart !== caretEnd) {
         doDelete(this.documentModel, selectionOffsets);
       }
       return;
@@ -913,7 +909,7 @@ export default class EditPost extends React.Component {
 
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    await this.commitUpdates(startNodeId, startNodeCaretStart);
+    await this.commitUpdates(startNodeId, caretStart);
   };
 
   handlePaste = async (evt, selectionOffsetsArg) => {
@@ -940,11 +936,11 @@ export default class EditPost extends React.Component {
 
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
-    const { startNodeCaretStart, startNodeCaretEnd } = selectionOffsets;
+    const { caretStart, caretEnd } = selectionOffsets;
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "paste" with clipboard data...
     if (evt.type !== 'paste') {
-      if (startNodeCaretStart !== startNodeCaretEnd) {
+      if (caretStart !== caretEnd) {
         doDelete(this.documentModel, selectionOffsets);
       }
       return;
@@ -969,11 +965,7 @@ export default class EditPost extends React.Component {
   manageInsertMenu = async (evt, selectionOffsetsArg) => {
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
-    const {
-      startNodeCaretStart,
-      startNodeCaretEnd,
-      startNodeId
-    } = selectionOffsets;
+    const { caretStart, caretEnd, startNodeId } = selectionOffsets;
     if (!startNodeId) {
       return;
     }
@@ -985,7 +977,7 @@ export default class EditPost extends React.Component {
 
     if (
       selectedNode &&
-      startNodeCaretStart === startNodeCaretEnd &&
+      caretStart === caretEnd &&
       selectedNodeMap.get('type') === NODE_TYPE_P &&
       selectedNodeMap.get('content', '').length === 0
     ) {
@@ -1166,7 +1158,7 @@ export default class EditPost extends React.Component {
   closeFormatSelectionMenu = async () => {
     const {
       state: { formatSelectionNode },
-      selectionOffsets: { startNodeId, startNodeCaretEnd }
+      selectionOffsets: { startNodeId, caretEnd }
     } = this;
     if (formatSelectionNode.get('id')) {
       await new Promise(resolve => {
@@ -1180,7 +1172,7 @@ export default class EditPost extends React.Component {
           resolve
         );
       });
-      setCaret(startNodeId, startNodeCaretEnd);
+      setCaret(startNodeId, caretEnd);
     }
   };
 
@@ -1210,17 +1202,12 @@ export default class EditPost extends React.Component {
 
   // TODO: bug - selection highlighting disappears on user input on format selection menu
   manageFormatSelectionMenu = async (evt, selectionOffsets) => {
-    const {
-      startNodeCaretStart,
-      startNodeCaretEnd,
-      startNodeId,
-      endNodeId
-    } = selectionOffsets;
+    const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
     if (
       // no node
       !startNodeId ||
       // collapsed caret
-      startNodeCaretStart === startNodeCaretEnd
+      caretStart === caretEnd
     ) {
       await this.closeFormatSelectionMenu();
       return;
@@ -1246,8 +1233,8 @@ export default class EditPost extends React.Component {
     const range = getRange();
     console.info(
       'SELECTION: ',
-      startNodeCaretStart,
-      startNodeCaretEnd,
+      caretStart,
+      caretEnd,
       endNodeId,
       range,
       range.getBoundingClientRect()
@@ -1263,8 +1250,8 @@ export default class EditPost extends React.Component {
           formatSelectionNode: selectedNodeModel,
           formatSelectionModel: getSelection(
             selectedNodeModel,
-            startNodeCaretStart,
-            startNodeCaretEnd
+            caretStart,
+            caretEnd
           ),
           // NOTE: need to add current vertical scroll position of the window to the
           // rect position to get offset relative to the whole document

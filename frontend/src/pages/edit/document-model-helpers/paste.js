@@ -2,7 +2,7 @@
 import { handlePasteTextType } from './handle-text-type';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
-  const { startNodeCaretStart, startNodeId } = selectionOffsets;
+  const { caretStart, startNodeId } = selectionOffsets;
 
   if (!startNodeId) {
     return {};
@@ -24,7 +24,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   return handlePasteTextType(
     documentModel,
     startNodeId,
-    startNodeCaretStart,
+    caretStart,
     clipboardText
   );
 }

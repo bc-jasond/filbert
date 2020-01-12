@@ -1,5 +1,5 @@
 import React from 'react';
-import FormattedSelections from './render-helpers';
+import FormattedSelections from './formatted-selections';
 import { PStyled } from './shared-styled-components';
 
 export default class P extends React.PureComponent {
