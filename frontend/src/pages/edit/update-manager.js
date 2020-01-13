@@ -172,16 +172,17 @@ export default class UpdateManager {
   undoRedo(current, selectionOffsets, shouldUndo = true) {
     const key = shouldUndo ? 'undoHistory' : 'redoHistory';
     const otherKey = shouldUndo ? 'redoHistory' : 'undoHistory';
-    const lastHistoryEntry = this[key].last();
+    const lastHistoryEntry = this[key].last(Map());
     const mostRecent = lastHistoryEntry.get('nodesById', Map());
     const mostRecentOffsets = lastHistoryEntry.get('selectionOffsets', Map());
     this[key] = this[key].pop();
-    if (mostRecent) {
-      this[otherKey] = this[otherKey].push(
-        Map({ nodesById: current, selectionOffsets })
-      );
-      this.diff(current, mostRecent);
+    if (mostRecent.size === 0) {
+      return Map();
     }
+    this[otherKey] = this[otherKey].push(
+      Map({ nodesById: current, selectionOffsets })
+    );
+    this.diff(current, mostRecent);
     return Map({ nodesById: mostRecent, selectionOffsets: mostRecentOffsets });
   }
 

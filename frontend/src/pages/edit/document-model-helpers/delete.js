@@ -120,6 +120,9 @@ export function doDelete(
   if (documentModel.isMetaType(selectedNodeId)) {
     /* eslint-disable-next-line no-param-reassign */
     startNodeId = documentModel.getPrevNode(selectedNodeId).get('id');
+    // focus end of previous node
+    /* eslint-disable-next-line no-param-reassign */
+    caretStart = -1;
     documentModel.delete(selectedNodeId);
     const selectedNode = documentModel.getNode(selectedNodeId);
     // Don't forget to delete that image from the DB!

@@ -433,6 +433,11 @@ export default class EditPost extends React.Component {
         if (this.props?.params?.id !== NEW_POST_URL_ID) {
           this.updateManager.saveContentBatchDebounce(this.documentModel);
         }
+        // no more caret work necessary for Meta nodes
+        if (this.documentModel.isMetaType(startNodeId)) {
+          resolve();
+          return;
+        }
         // if a menu isn't open, re-place the caret
         if (!caretEnd || caretStart === caretEnd) {
           setCaret(selectionOffsets);
