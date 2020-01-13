@@ -538,7 +538,7 @@ export default class EditPost extends React.Component {
     }
 
     const {
-      state: { editSectionNode }
+      state: { editSectionNode, insertMenuNode }
     } = this;
     // if there's no currently selected MetaType node
     if (!editSectionNode.get('id')) {
@@ -556,6 +556,15 @@ export default class EditPost extends React.Component {
         removeAllRanges();
         await this.sectionEdit(neighborNode.get('id'));
         return;
+      }
+      // NOTE: unset insertMenuNode here or arrow navigation breaks
+      if (
+        insertMenuNode.size > 0 &&
+        neighborNode.get('id') !== insertMenuNode.get('id')
+      ) {
+        await new Promise(resolve => {
+          this.setState({ insertMenuNode: Map() }, resolve);
+        });
       }
       setCaret({
         startNodeId: neighborNode.get('id'),
