@@ -493,3 +493,5 @@ export const ProfileImg = styled.img`
   width: 72px;
   z-index: 0;
 `;
+
+

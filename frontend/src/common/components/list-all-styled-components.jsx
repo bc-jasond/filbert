@@ -1,8 +1,8 @@
 import styled, { css } from 'styled-components';
-import { darkGrey, grey } from '../css';
+import { darkGrey, grey, lightBlue } from '../css';
 import { monospaced, sansSerif } from '../fonts.css';
-import { A } from './layout-styled-components';
-import { H2Styled, H3Styled, NavButtonMixin } from './shared-styled-components';
+import { A, NavSpan } from './layout-styled-components';
+import { H2Styled, H3Styled, Input, NavButtonMixin } from './shared-styled-components';
 
 export const StyledH2 = styled(H2Styled)`
   margin-left: 0;
@@ -89,4 +89,43 @@ export const PostActionA = styled(A)`
   ${NavButtonMixin};
   ${MetaFont};
   padding: 7px 9px;
+`;
+export const FilterContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-around;
+`;
+export const Filter = styled(NavSpan)`
+  padding: 9px;
+  margin: 8px;
+`;
+export const FilterWithInput = styled(Filter)`
+  border: 1px solid transparent;
+  border-right: none;
+  margin-right: 0;
+  ${p =>
+  p.isOpen &&
+  `
+    border: 1px solid ${lightBlue};
+    border-right: none;
+    margin-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  `}
+`;
+export const FilterInput = styled(Input)`
+  height: 36px;
+  margin-right: 8px;
+  transition: opacity 0.2s;
+  opacity: 1;
+  //outline: 0; // outline is ugly but, a11y
+  border: 1px solid ${lightBlue};
+  border-left: none;
+  border-radius: 0 26px 26px 0;
+  ${p =>
+  p.shouldHide &&
+  `
+    opacity: 0;
+  `}
 `;
