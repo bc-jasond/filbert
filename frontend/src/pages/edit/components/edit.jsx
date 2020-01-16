@@ -353,13 +353,6 @@ export default class EditPost extends React.Component {
     this.setState({ shouldShowPublishPostMenu: !oldVal });
   };
 
-  anyEditContentMenuIsOpen = () => {
-    const {
-      state: { formatSelectionNode, editSectionNode }
-    } = this;
-    return formatSelectionNode.get('id') || editSectionNode.get('id');
-  };
-
   closeAllEditContentMenus = async () => {
     return new Promise(resolve => {
       this.setState(
@@ -404,15 +397,7 @@ export default class EditPost extends React.Component {
         state: { nodesById, post }
       } = this;
       if (post.size > 0 && prevSelectionOffsets) {
-        // not sure how long it takes to write to localStorage but, it doesn't need to be blocking
-        setTimeout(
-          () =>
-            this.updateManager.addToUndoHistory(
-              nodesById,
-              prevSelectionOffsets
-            ),
-          0
-        );
+        this.updateManager.addToUndoHistory(nodesById, prevSelectionOffsets);
       }
       // roll with state changes TODO: handle errors - roll back?
       const newState = {
@@ -444,8 +429,8 @@ export default class EditPost extends React.Component {
         } else {
           replaceRange(selectionOffsets);
         }
-        await this.manageInsertMenu({}, selectionOffsets);
-        await this.manageFormatSelectionMenu({}, selectionOffsets);
+        this.manageInsertMenu({}, selectionOffsets);
+        this.manageFormatSelectionMenu({}, selectionOffsets);
         resolve();
       });
     });
@@ -717,8 +702,8 @@ export default class EditPost extends React.Component {
 
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
-    await this.closeAllEditContentMenus();
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    this.closeAllEditContentMenus();
+    this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
   };
 
   // MAIN "ON" EVENT CALLBACKS
@@ -1009,7 +994,7 @@ export default class EditPost extends React.Component {
       selectionOffsetsArg || getHighlightedSelectionOffsets();
     const { caretStart, caretEnd, startNodeId } = selectionOffsets;
     if (!startNodeId) {
-      return;
+      return Promise.resolve();
     }
 
     console.debug('MANAGE INSERT');
@@ -1023,7 +1008,7 @@ export default class EditPost extends React.Component {
       selectedNodeMap.get('type') === NODE_TYPE_P &&
       selectedNodeMap.get('content', '').length === 0
     ) {
-      await new Promise(resolve => {
+      return new Promise(resolve => {
         this.setState(
           {
             // save current node because the selection will disappear when the insert menu is shown
@@ -1034,10 +1019,9 @@ export default class EditPost extends React.Component {
           resolve
         );
       });
-      return;
     }
 
-    await new Promise(resolve => {
+    return new Promise(resolve => {
       this.setState({ insertMenuNode: Map() }, resolve);
     });
   };

@@ -87,10 +87,15 @@ export const POST_ACTION_REDIRECT_TIMEOUT = 1000;
 export const API_URL = process.env.API_URL;
 
 // AUTH
-export const FILBERT_LOCALSTORAGE_KEY = 'filbert';
-export const AUTH_TOKEN_KEY = 'filbert-token';
-export const SESSION_KEY = 'filbert-session';
+export const FILBERT_LOCALSTORAGE_NAMESPACE = 'filbert';
+export const AUTH_TOKEN_KEY = 'token';
+export const SESSION_KEY = 'session';
 
 // DOM
 export const DOM_ELEMENT_NODE_TYPE_ID = 1;
 export const DOM_TEXT_NODE_TYPE_ID = 3;
+
+// HISTORY - undo / redo
+export const HISTORY_KEY_NODE_UPDATES = 'nodeUpdates';
+export const HISTORY_KEY_UNDO_HISTORY = 'undoHistory';
+export const HISTORY_KEY_REDO_HISTORY = 'redoHistory';

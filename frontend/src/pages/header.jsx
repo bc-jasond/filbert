@@ -28,7 +28,7 @@ export default class Header extends React.PureComponent {
   render() {
     const {
       props: {
-        session,
+        session = Map(),
         setSession = () => {},
         pageName,
         userIsMe,

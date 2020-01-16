@@ -1,13 +1,17 @@
-import Immutable, { List, Map } from 'immutable';
+import { fromJS, List, Map } from 'immutable';
 
 import {
+  HISTORY_KEY_NODE_UPDATES,
+  HISTORY_KEY_REDO_HISTORY,
+  HISTORY_KEY_UNDO_HISTORY,
   NEW_POST_URL_ID,
   NODE_ACTION_DELETE,
   NODE_ACTION_UPDATE
 } from '../../common/constants';
-import { get, set } from '../../common/local-storage';
 import { apiPost } from '../../common/fetch';
+import { get, set } from '../../common/local-storage';
 import { moreThanNCharsAreDifferent } from '../../common/utils';
+import { reviver } from './document-model';
 
 const characterDiffSize = 6;
 
@@ -18,51 +22,48 @@ export default class UpdateManager {
 
   post = Map();
 
+  getKey(key) {
+    return `${this.post.get('id', NEW_POST_URL_ID)}-${key}`;
+  }
+
   getPostIdNamespaceValue(key, defaultValue) {
     // if (this.post.size === 0) return defaultValue;
-    return get(`${this.post.get('id', NEW_POST_URL_ID)}${key}`, defaultValue);
+    return get(this.getKey(key), defaultValue);
   }
 
   setPostIdNamespaceValue(key, value) {
-    set(`${this.post.get('id', NEW_POST_URL_ID)}${key}`, value);
+    set(this.getKey(key), value);
     return this;
   }
 
   get nodeUpdates() {
-    return this.getPostIdNamespaceValue('nodeUpdates', Map());
+    return this.getPostIdNamespaceValue(HISTORY_KEY_NODE_UPDATES, Map());
   }
 
   set nodeUpdates(value) {
-    this.setPostIdNamespaceValue('nodeUpdates', value);
-    return this;
+    return this.setPostIdNamespaceValue(HISTORY_KEY_NODE_UPDATES, value);
   }
 
   get redoHistory() {
-    return this.getPostIdNamespaceValue('redoHistory', List());
+    return this.getPostIdNamespaceValue(HISTORY_KEY_REDO_HISTORY, List());
   }
 
   set redoHistory(value) {
-    this.setPostIdNamespaceValue('redoHistory', value);
-    return this;
+    return this.setPostIdNamespaceValue(
+      HISTORY_KEY_REDO_HISTORY,
+      value.takeLast(100)
+    );
   }
 
   get undoHistory() {
-    return this.getPostIdNamespaceValue('undoHistory', List());
+    return this.getPostIdNamespaceValue(HISTORY_KEY_UNDO_HISTORY, List());
   }
 
   set undoHistory(value) {
-    this.setPostIdNamespaceValue('undoHistory', value);
-    return this;
-  }
-
-  init(post) {
-    this.post = Immutable.fromJS(post);
-    /* eslint-disable prefer-destructuring, no-self-assign */
-    // side-effectful getters to init from localStorage
-    this.nodeUpdates = this.nodeUpdates;
-    this.undoHistory = this.undoHistory;
-    this.redoHistory = this.redoHistory;
-    /* eslint-enable prefer-destructuring, no-self-assign */
+    return this.setPostIdNamespaceValue(
+      HISTORY_KEY_UNDO_HISTORY,
+      value.takeLast(100)
+    );
   }
 
   addPostIdToUpdates(postId) {
@@ -90,15 +91,22 @@ export default class UpdateManager {
       add();
       return;
     }
+    // TODO: this doesn't scale - but, it provides a simple undo/redo for now
+    //  1) It needs to be deltas (currently, it's whole copies of the document)
+    //  2) it needs to be scoped to the actively edited node (currently, it diffs the whole document each time)
+    //  3) it needs to sync with localStorage asynchronously (done)
     // user added / removed one or more nodes
     const lastHistory = this.undoHistory.last(Map());
     const mostRecent = lastHistory.get('nodesById', Map());
     const merged = mostRecent.merge(nodesById);
+    // TODO: this doesn't account for highlighting n nodes and pasting in n new nodes
     if (Math.abs(merged.size - mostRecent.size) > 0) {
       console.info('addToUndoHistory - user added / removed one or more nodes');
       add();
       return;
     }
+    // O(n) operation on the number of nodes in the document... :(
+    // we know by here that only 1 node changed
     const mostRecentNode = mostRecent
       .filter((node, id) => !node.equals(merged.get(id)))
       .first();
@@ -162,28 +170,21 @@ export default class UpdateManager {
     });
   }
 
+  init(post) {
+    this.post = fromJS(post);
+    /* eslint-disable prefer-destructuring, no-self-assign */
+    // side-effectful getters to init from localStorage
+    this.nodeUpdates = this.nodeUpdates;
+    this.undoHistory = this.undoHistory;
+    this.redoHistory = this.redoHistory;
+    /* eslint-enable prefer-destructuring, no-self-assign */
+  }
+
   nodeHasBeenStagedForDelete(searchNodeId) {
     return !!this.nodeUpdates.find(
       (update, nodeId) =>
         nodeId === searchNodeId && update.get('action') === NODE_ACTION_DELETE
     );
-  }
-
-  undoRedo(current, selectionOffsets, shouldUndo = true) {
-    const key = shouldUndo ? 'undoHistory' : 'redoHistory';
-    const otherKey = shouldUndo ? 'redoHistory' : 'undoHistory';
-    const lastHistoryEntry = this[key].last(Map());
-    const mostRecent = lastHistoryEntry.get('nodesById', Map());
-    const mostRecentOffsets = lastHistoryEntry.get('selectionOffsets', Map());
-    this[key] = this[key].pop();
-    if (mostRecent.size === 0) {
-      return Map();
-    }
-    this[otherKey] = this[otherKey].push(
-      Map({ nodesById: current, selectionOffsets })
-    );
-    this.diff(current, mostRecent);
-    return Map({ nodesById: mostRecent, selectionOffsets: mostRecentOffsets });
   }
 
   saveContentBatch = async documentModel => {
@@ -243,6 +244,30 @@ export default class UpdateManager {
     this.nodeUpdates = this.nodeUpdates.set(
       nodeId,
       Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id') })
+    );
+  }
+
+  undoRedo(current, selectionOffsets, shouldUndo = true) {
+    const key = shouldUndo
+      ? HISTORY_KEY_UNDO_HISTORY
+      : HISTORY_KEY_REDO_HISTORY;
+    const otherKey = shouldUndo
+      ? HISTORY_KEY_REDO_HISTORY
+      : HISTORY_KEY_UNDO_HISTORY;
+    const lastHistoryEntry = this[key].last(Map());
+    const mostRecent = lastHistoryEntry.get('nodesById', Map());
+    const mostRecentOffsets = lastHistoryEntry.get('selectionOffsets', Map());
+    this[key] = this[key].pop();
+    if (mostRecent.size === 0) {
+      return Map();
+    }
+    this[otherKey] = this[otherKey].push(
+      fromJS({ nodesById: current, selectionOffsets }, reviver)
+    );
+    this.diff(current, mostRecent);
+    return fromJS(
+      { nodesById: mostRecent, selectionOffsets: mostRecentOffsets },
+      reviver
     );
   }
 

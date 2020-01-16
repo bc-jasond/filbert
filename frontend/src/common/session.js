@@ -6,8 +6,8 @@ import { get, set } from './local-storage';
 
 export async function signin(username, password) {
   const { token, session } = await apiPost('/signin', { username, password });
-  set(AUTH_TOKEN_KEY, token);
-  set(SESSION_KEY, session);
+  set(AUTH_TOKEN_KEY, token, false);
+  set(SESSION_KEY, session, false);
   return { token, session };
 }
 
@@ -20,14 +20,14 @@ export async function signinGoogle(googleUser, filbertUsername) {
   if (signupIsIncomplete) {
     return { signupIsIncomplete };
   }
-  set(AUTH_TOKEN_KEY, token);
-  set(SESSION_KEY, session);
+  set(AUTH_TOKEN_KEY, token, false);
+  set(SESSION_KEY, session, false);
   return { signupIsIncomplete: false };
 }
 
 export function signout() {
-  set(AUTH_TOKEN_KEY);
-  set(SESSION_KEY);
+  set(AUTH_TOKEN_KEY, undefined, false);
+  set(SESSION_KEY, undefined, false);
 }
 
 export function getSession() {

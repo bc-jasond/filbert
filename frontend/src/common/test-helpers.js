@@ -16,3 +16,7 @@ export function mockLocalStorage() {
     clear: () => (global.localStorageStorage = {})
   };
 }
+
+export function mockSetTimeout() {
+  global.setTimeout = jest.fn();
+}

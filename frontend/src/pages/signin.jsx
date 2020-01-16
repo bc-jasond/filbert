@@ -200,7 +200,7 @@ export default class SignIn extends React.Component {
           // set session on App state on the way out...
           this.props?.setSession?.(getSession());
         });
-      }, 500);
+      }, 400);
     } catch (error) {
       this.setState({
         success: null,
