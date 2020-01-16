@@ -13,11 +13,14 @@ export function doDelete(
 ) {
   function deleteOrUpdateNode(diffLength, nodeId, startIdx) {
     let node = documentModel.getNode(nodeId);
-    if (documentModel.isMetaType(nodeId)) {
-      documentModel.delete(node);
-      return;
+    const content = node.get('content', '');
+    if (
+      documentModel.isMetaType(nodeId) ||
+      (startIdx === 0 && diffLength >= content.length)
+    ) {
+      documentModel.delete(nodeId);
+      return true;
     }
-    const content = node.get('content');
     // only some of endNode's content has been selected, delete that content
     node = node.set(
       'content',
@@ -27,9 +30,11 @@ export function doDelete(
       node,
       content,
       startIdx + diffLength,
+      // -1 for "regular" backspace to delete 1 char
       diffLength === 0 ? -1 : -diffLength
     );
     documentModel.update(node);
+    return false;
   }
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('doDelete() bad selection, no id ', startNodeId);
@@ -69,34 +74,50 @@ export function doDelete(
    */
   // default the selectedNode to "startNode" - it can change to endNode below
   let selectedNodeId = startNodeId;
-  let doesMergeParagraphs = false;
+  let didDeleteEndNode = false;
   if (endNodeId) {
-    // since we're spanning more than one node, we might merge (if we don't delete the "end" node)
-    doesMergeParagraphs = true;
-    // Set this to update focusNode
-    selectedNodeId = endNodeId;
     // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
     // end diff length is caretEnd - 0 (implied caretStart for the end node)
-    deleteOrUpdateNode(caretEnd, endNodeId, 0);
+    if (caretEnd > 0) {
+      didDeleteEndNode = deleteOrUpdateNode(caretEnd, endNodeId, 0);
+    }
+    if (!didDeleteEndNode) {
+      selectedNodeId = endNodeId;
+    }
   }
 
   const startNodeMap = documentModel.getNode(startNodeId);
   const startNodeContent = startNodeMap.get('content');
 
-  const startDiffLength = caretEnd - caretStart;
-  if ((caretStart > 0 && startNodeContent) || startDiffLength > 0) {
-    //  not at beginning of node text and node text isn't empty OR
-    //  there's one or more chars of highlighted text
+  // if there's an endNodeId - startNode has been selected from caretStart through the end
+  const startDiffLength =
+    (endNodeId ? startNodeContent.length : caretEnd) - caretStart;
+  if (
+    // collapsed caret, user hit backspace anywhere after the beginning - "regular" backspace
+    (caretStart > 0 && startNodeContent) ||
+    // higlighted selection
+    startDiffLength > 0
+  ) {
     //
     // NOTE: need to distinguish between collapsed caret backspace and highlight 1 char backspace
     //  the former removes a character behind the caret and the latter removes one in front...
+    const prevNodeId = documentModel.getPrevNode(startNodeId).get('id');
+    const didDeleteStartNode = deleteOrUpdateNode(
+      startDiffLength,
+      startNodeId,
+      caretStart
+    );
 
-    // all of the startNode's content has been selected, delete it
-    deleteOrUpdateNode(startDiffLength, startNodeId, caretStart, caretEnd);
+    if (didDeleteStartNode) {
+      return {
+        startNodeId: didDeleteEndNode ? prevNodeId : endNodeId,
+        caretStart: didDeleteEndNode ? -1 : 0
+      };
+    }
 
-    // NOTE: reaching this code means we don't need to merge any nodes.  If the user deleted all text in the current node
-    //  we'll place the caret where the selection ended and the user can hit backspace again to merge sections
-    if (!doesMergeParagraphs) {
+    // After updating or deleting start/middle/end nodes - are we done (return here)? Or do we need to merge nodes?
+    // We're done if the user deleted:
+    if (!endNodeId || didDeleteEndNode || startDiffLength === 0) {
       return {
         startNodeId: selectedNodeId,
         caretStart: startDiffLength === 0 ? caretStart - 1 : caretStart

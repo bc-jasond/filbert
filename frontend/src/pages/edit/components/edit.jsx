@@ -623,8 +623,8 @@ export default class EditPost extends React.Component {
 
     // clear the selected format node when deleting the highlighted selection
     // NOTE: must wait for state have been set or setCaret will check stale values
-    await this.closeAllEditContentMenus();
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    this.closeAllEditContentMenus();
+    this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
   };
 
   /**
