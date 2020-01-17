@@ -21,6 +21,7 @@ import {
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
 import { Input } from '../common/components/shared-styled-components';
+import { PAGE_NAME_PUBLIC } from '../common/constants';
 import { lightBlue } from '../common/css';
 
 import { apiDelete, apiGet } from '../common/fetch';
@@ -244,7 +245,11 @@ export default class Public extends React.Component {
 
     return (
       <>
-        <Header session={session} setSession={setSession} />
+        <Header
+          session={session}
+          setSession={setSession}
+          pageName={PAGE_NAME_PUBLIC}
+        />
         <Article>
           <>
             <PostRow>

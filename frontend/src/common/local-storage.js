@@ -54,11 +54,15 @@ export function get(key, defaultValue) {
     if (inMemoryCache.has(key)) {
       return inMemoryCache.get(key) || defaultValue;
     }
-    const woke = fromJS(
-      JSON.parse(localStorage.getItem(namespacedKey)),
-      reviver
-    );
-    inMemoryCache = inMemoryCache.set(key, woke);
+    const currentLocal = localStorage.getItem(namespacedKey);
+    if (
+      currentLocal &&
+      currentLocal !== 'undefined' &&
+      currentLocal !== 'null'
+    ) {
+      const woke = fromJS(JSON.parse(currentLocal), reviver);
+      inMemoryCache = inMemoryCache.set(key, woke);
+    }
   } catch (err) {
     console.error(err);
     // if JSON.parse() fails, just blow this key away!

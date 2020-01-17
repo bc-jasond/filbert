@@ -66,7 +66,7 @@ export default class UserProfile extends React.Component {
     }
     const usernameWithoutAt = username.slice(1);
     if (usernameWithoutAt === session.get('username')) {
-      this.setState({ user: session, userIsMe: true });
+      this.setState({ user: session.toJS(), userIsMe: true });
       return;
     }
     try {

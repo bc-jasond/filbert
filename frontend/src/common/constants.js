@@ -3,6 +3,7 @@ export const NODE_TYPE_ROOT = 'root';
 
 export const PAGE_NAME_VIEW = 'view';
 export const PAGE_NAME_EDIT = 'edit';
+export const PAGE_NAME_PUBLIC = 'public';
 
 // sections that can have text content
 export const NODE_TYPE_H1 = 'h1';

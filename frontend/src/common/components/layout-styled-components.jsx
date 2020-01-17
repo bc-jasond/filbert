@@ -20,7 +20,7 @@ export const HeaderStyled = styled.header`
 `;
 export const HeaderContentContainer = styled.div`
   position: relative;
-  min-height: 65px;
+  min-height: 64px;
   padding-left: 20px;
   padding-right: 20px;
   margin: 0 auto;

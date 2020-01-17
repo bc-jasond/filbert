@@ -19,11 +19,12 @@ import {
 } from '../common/components/shared-styled-components';
 import { darkGrey } from '../common/css';
 import { loadScript } from '../common/dom';
-import { apiGet } from '../common/fetch';
+import { apiGet, signinGoogle } from '../common/fetch';
 import ButtonSpinner from '../common/components/button-spinner';
 import { sansSerif } from '../common/fonts.css';
 
-import { getSession, signinGoogle, signout } from '../common/session';
+import { getSession, signout } from '../common/session';
+import { getGoogleUser, googleAuthInit } from '../common/google-auth';
 import { stopAndPrevent } from '../common/utils';
 
 const Container = styled.div`
@@ -116,11 +117,7 @@ export default class SignIn extends React.Component {
     }
     window.initThaGoog = async () => {
       this.setState({ loading: true });
-      await new Promise(resolve => gapi.load('auth2', resolve));
-      await gapi.auth2.init({
-        client_id: process.env.GOOGLE_API_FILBERT_CLIENT_ID
-      });
-      this.GoogleAuth = gapi.auth2.getAuthInstance();
+      this.GoogleAuth = await googleAuthInit();
       if (this.GoogleAuth.isSignedIn.get()) {
         const user = this.GoogleAuth.currentUser.get();
         await this.setGoogleUser(user);
@@ -133,7 +130,7 @@ export default class SignIn extends React.Component {
       );
     } else if (this.GoogleAuth.isSignedIn.get()) {
       const user = this.GoogleAuth.currentUser.get();
-      this.setGoogleUser(user);
+      await this.setGoogleUser(user);
     }
     this.setState({ loading: false });
   }
@@ -143,17 +140,7 @@ export default class SignIn extends React.Component {
   }
 
   setGoogleUser = async user => {
-    if (!user.getBasicProfile) {
-      return Promise.resolve();
-    }
-    const profile = user.getBasicProfile();
-    const googleUser = {
-      name: profile.getName(),
-      givenName: profile.getGivenName(),
-      imageUrl: profile.getImageUrl(),
-      email: profile.getEmail(),
-      idToken: user.getAuthResponse().id_token
-    };
+    const googleUser = getGoogleUser(user);
     return new Promise(resolve =>
       this.setState({ googleUser }, () => resolve(googleUser))
     );

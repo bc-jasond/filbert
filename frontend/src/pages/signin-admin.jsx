@@ -17,7 +17,7 @@ import {
   SuccessMessage
 } from '../common/components/shared-styled-components';
 
-import { signin } from '../common/session';
+import { signin } from '../common/fetch';
 
 const Container = styled.div`
   display: flex;

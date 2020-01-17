@@ -10,7 +10,11 @@ import {
   NavLink,
   NavSpan
 } from '../common/components/layout-styled-components';
-import { PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../common/constants';
+import {
+  PAGE_NAME_EDIT,
+  PAGE_NAME_PUBLIC,
+  PAGE_NAME_VIEW
+} from '../common/constants';
 import { signout } from '../common/session';
 
 const LogoContainer = styled.div`
@@ -46,6 +50,7 @@ export default class Header extends React.PureComponent {
     const shouldShowDelete = pageName === PAGE_NAME_EDIT && post.get('id');
     const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
     const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
+    const shouldShowPublic = pageName !== PAGE_NAME_PUBLIC;
     return (
       <>
         <HeaderStyled>
@@ -70,7 +75,7 @@ export default class Header extends React.PureComponent {
                   <NavLink to={`/edit/${post.get('id')}`}>edit</NavLink>
                 )}
                 {shouldShowNew && <NavLink to="/edit/new">new</NavLink>}
-                <NavLink to="/public">public</NavLink>
+                {shouldShowPublic && <NavLink to="/public">public</NavLink>}
                 <NavLink to="/private">private</NavLink>
                 {userIsMe ? (
                   <NavSpan
@@ -91,7 +96,7 @@ export default class Header extends React.PureComponent {
               </>
             ) : (
               <>
-                <NavLink to="/public">public</NavLink>
+                {shouldShowPublic && <NavLink to="/public">public</NavLink>}
                 <NavLink to="/signin">join or sign in</NavLink>
               </>
             )}
