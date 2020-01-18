@@ -60,8 +60,8 @@ async function main() {
           );
           const decryptedToken = JSON.parse(decrypt(authorization));
           const nowInSeconds = Math.floor(Date.now() / 1000);
-          // auto-fail to test redirect to ?next=/some-previous-page flow
-          //    decryptedToken.exp = nowInSeconds;
+          // uncomment below to auto-fail to test expired token redirect to ?next=/some-previous-page flow
+          //decryptedToken.exp = nowInSeconds;
           if (decryptedToken.exp - nowInSeconds <= 5 * 60 /* 5 minutes */) {
             // token expired if within 5 minutes of the 'exp' time
             res.status(401).send({ error: "expired token" });

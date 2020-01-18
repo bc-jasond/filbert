@@ -52,28 +52,34 @@ export async function signinGoogle(googleUser, filbertUsername) {
 }
 
 async function fetchRefresh(url, config) {
-  const res = await fetch(url, config);
-  const data = await handleResponse(res);
-  // retry once for all 401 responses (or optionally only for token expired)
-  const shouldRefreshToken = res?.status === 401; // && data?.error?.includes('expired');
-  if (!shouldRefreshToken) {
+  try {
+    const res = await fetch(url, config);
+    const data = await handleResponse(res);
     return data;
+  } catch (err) {
+    // retry once for 401 token expired
+    if (!err.message.includes('expired token')) {
+      throw err;
+    }
+    console.info('Retrying fetch...');
+    const user = await googleGetLoggedInUser();
+    let signupIsIncomplete;
+    if (user) {
+      ({ signupIsIncomplete } = await signinGoogle(getGoogleUser(user)));
+      // !signupIsIncomplete means the signin succeeded!
+      console.info('SUCCESS: Google Auth refresh');
+    }
+    if (!user || signupIsIncomplete) {
+      window.location.href = `signin?next=${window.location.pathname}`;
+    }
+    // one retry
+    // reset Authorization header
+    const res2 = await fetch(url, {
+      ...config,
+      headers: { Authorization: get(AUTH_TOKEN_KEY) }
+    });
+    return handleResponse(res2);
   }
-  console.info('Retrying fetch...');
-  const user = await googleGetLoggedInUser();
-  const { signupIsIncomplete } = await signinGoogle(getGoogleUser(user));
-  // !signupIsIncomplete means the signin succeeded!
-  console.info('SUCCESS: Google Auth refresh');
-  if (signupIsIncomplete) {
-    window.location.href = `signin?next=${window.location.pathname}`;
-  }
-  // one retry
-  // reset Authorization header
-  const res2 = await fetch(url, {
-    ...config,
-    headers: { Authorization: get(AUTH_TOKEN_KEY) }
-  });
-  return handleResponse(res2);
 }
 
 async function apiCall(method, url, data, config = getBaseConfig()) {
