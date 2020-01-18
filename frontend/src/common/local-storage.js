@@ -18,7 +18,12 @@ function getNamespacedKey(key) {
 }
 
 export function set(key, value, debounce = true) {
-  inMemoryCache = inMemoryCache.set(key, fromJS(value, reviver));
+  if (!value) {
+    inMemoryCache = inMemoryCache.delete(key);
+  } else {
+    inMemoryCache = inMemoryCache.set(key, fromJS(value, reviver));
+  }
+  
   if (writeTimeout[key]) {
     clearTimeout(writeTimeout[key]);
   }
@@ -29,7 +34,11 @@ export function set(key, value, debounce = true) {
       if (isImmutable(item)) {
         item = item.toJS();
       }
-      localStorage.setItem(namespacedKey, JSON.stringify(item));
+      if (!item) {
+        localStorage.removeItem(namespacedKey);
+      } else {
+        localStorage.setItem(namespacedKey, JSON.stringify(item));
+      }
     } catch (err) {
       // sometimes the localStorage.setItem() call fails - probably exceeded quota
       console.error(err);

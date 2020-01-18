@@ -29,6 +29,10 @@ export default class App extends React.Component {
       }
     };
   }
+  
+  componentDidUpdate() {
+  
+  }
 
   render() {
     const {

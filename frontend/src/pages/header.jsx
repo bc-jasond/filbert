@@ -83,7 +83,7 @@ export default class Header extends React.PureComponent {
                       if (confirm('Sign out?')) {
                         this.setState({ shouldRedirect: true }, () => {
                           signout();
-                          setSession({});
+                          setSession(Map());
                         });
                       }
                     }}
