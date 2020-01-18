@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { Article } from '../common/components/layout-styled-components';
 import { authorExpandMixin } from '../common/components/list-all-styled-components';
 import {
@@ -8,11 +8,10 @@ import {
   ContentSection,
   H1Styled,
   H2Styled,
-  NavButtonMixin,
   ProfileImg
 } from '../common/components/shared-styled-components';
 
-import { apiGet } from '../common/fetch';
+import { apiGet, apiPatch } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
 import Page404 from './404';
 import Footer from './footer';
@@ -51,13 +50,15 @@ export default class UserProfile extends React.Component {
     this.state = {
       shouldShow404: false,
       userIsMe: false,
-      user: null,
-      profileIsPublic: false,
-      statsArePublic: false
+      user: null
     };
   }
 
   async componentDidMount() {
+    this.getUser();
+  }
+
+  async getUser() {
     const {
       props: {
         params: { username },
@@ -70,8 +71,7 @@ export default class UserProfile extends React.Component {
     }
     const usernameWithoutAt = username.slice(1);
     if (usernameWithoutAt === session.get('username')) {
-      this.setState({ user: session.toJS(), userIsMe: true });
-      return;
+      this.setState({ userIsMe: true });
     }
     try {
       const user = await apiGet(`/user/${usernameWithoutAt}`);
@@ -82,22 +82,33 @@ export default class UserProfile extends React.Component {
     }
   }
 
-  updateProfilePublic = () => {
+  updateProfilePublic = async () => {
     const {
-      state: { profileIsPublic }
+      state: { user }
     } = this;
-    this.setState({ profileIsPublic: !profileIsPublic });
+    this.setState(
+      { user: { ...user, profileIsPublic: !user?.profileIsPublic } },
+      () => {
+        apiPatch('/profile', { profileIsPublic: !user?.profileIsPublic });
+      }
+    );
   };
-  updateStatsArePublic = () => {
+
+  updateStatsArePublic = async () => {
     const {
-      state: { statsArePublic }
+      state: { user }
     } = this;
-    this.setState({ statsArePublic: !statsArePublic });
+    this.setState(
+      { user: { ...user, statsArePublic: !user?.statsArePublic } },
+      () => {
+        apiPatch('/profile', { statsArePublic: !user?.statsArePublic });
+      }
+    );
   };
 
   render() {
     const {
-      state: { shouldShow404, user, userIsMe, profileIsPublic, statsArePublic },
+      state: { shouldShow404, user, userIsMe },
       props: { session, setSession }
     } = this;
     if (shouldShow404) return <Page404 session={session} />;
@@ -129,59 +140,65 @@ export default class UserProfile extends React.Component {
                 </ColRight>
               </Row>
             </ContentSection>
-            <ContentSection>
-              <H2Styled>Settings</H2Styled>
-              <Toggle
-                label="Make my profile public?"
-                value={profileIsPublic}
-                onUpdate={this.updateProfilePublic}
-              />
-              <Toggle
-                label="Make my stats public?"
-                value={statsArePublic}
-                onUpdate={this.updateStatsArePublic}
-              />
-            </ContentSection>
-            <ContentSection>
-              <H2Styled>Stats</H2Styled>
-              <PStyled>
-                <Code>Member Since:</Code>
-                {formatPostDate(user?.created)}
-              </PStyled>
-              <PStyled>
-                <Code>Current Streak:</Code>TODO
-              </PStyled>
-              <PStyled>
-                <Code>Longest Streak:</Code>TODO
-              </PStyled>
-              <PStyled>
-                <Code>Favorite Word:</Code>TODO
-              </PStyled>
-              <PStyled>
-                <Code>Avg Post Length:</Code>TODO words
-              </PStyled>
-              <PStyled>
-                <Code>Longest Post:</Code>TODO words
-              </PStyled>
-              <PStyled>
-                <Code># of Posts Total:</Code>TODO
-              </PStyled>
-              <PStyled>
-                <Code># of Posts Published:</Code>TODO
-              </PStyled>
-              <PStyled>
-                <Code># of Words Total:</Code>TODO
-              </PStyled>
-              <PStyled>
-                <Code># of Characters:</Code>TODO
-              </PStyled>
-              <PStyled>
-                <Code># of Images:</Code>TODO
-              </PStyled>
-              <PStyled>
-                <Code># of Quotes:</Code>TODO
-              </PStyled>
-            </ContentSection>
+            {userIsMe && (
+              <ContentSection>
+                <H2Styled>Settings</H2Styled>
+                <Toggle
+                  label="Make my profile public?"
+                  value={user?.profileIsPublic}
+                  onUpdate={this.updateProfilePublic}
+                />
+                <Toggle
+                  label="Make my stats public?"
+                  value={user?.statsArePublic}
+                  onUpdate={this.updateStatsArePublic}
+                />
+              </ContentSection>
+            )}
+            {userIsMe || user?.statsArePublic ? (
+              <ContentSection>
+                <H2Styled>Stats</H2Styled>
+                <PStyled>
+                  <Code>Member Since:</Code>
+                  {formatPostDate(user?.created)}
+                </PStyled>
+                <PStyled>
+                  <Code>Current Streak:</Code>TODO
+                </PStyled>
+                <PStyled>
+                  <Code>Longest Streak:</Code>TODO
+                </PStyled>
+                <PStyled>
+                  <Code>Favorite Word:</Code>TODO
+                </PStyled>
+                <PStyled>
+                  <Code>Avg Post Length:</Code>TODO words
+                </PStyled>
+                <PStyled>
+                  <Code>Longest Post:</Code>TODO words
+                </PStyled>
+                <PStyled>
+                  <Code># of Posts Total:</Code>TODO
+                </PStyled>
+                <PStyled>
+                  <Code># of Posts Published:</Code>TODO
+                </PStyled>
+                <PStyled>
+                  <Code># of Words Total:</Code>TODO
+                </PStyled>
+                <PStyled>
+                  <Code># of Characters:</Code>TODO
+                </PStyled>
+                <PStyled>
+                  <Code># of Images:</Code>TODO
+                </PStyled>
+                <PStyled>
+                  <Code># of Quotes:</Code>TODO
+                </PStyled>
+              </ContentSection>
+            ) : (
+              undefined
+            )}
           </Article>
           <Footer />
         </>

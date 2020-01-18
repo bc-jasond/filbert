@@ -61,14 +61,14 @@ export default class extends React.PureComponent {
     } = this;
     return (
       <Wrapper>
-        {children ? children : <Label>{label}</Label>}
+        {children || <Label>{label}</Label>}
         <ToggleWrapper value={value} onClick={onUpdate} isFocused={isFocused}>
           <Knob value={value} />
         </ToggleWrapper>
         <HiddenCheckbox
           key={`checkbox${value}`}
           type="checkbox"
-          checked={value ? true : false}
+          checked={!!value}
           onFocus={() => this.setState({ isFocused: true })}
           onBlur={() => this.setState({ isFocused: false })}
           onChange={onUpdate}

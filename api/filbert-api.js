@@ -195,7 +195,8 @@ async function main() {
      */
     app.get("/user/:username", async (req, res) => {
       const {
-        params: { username }
+        params: { username },
+        loggedInUser
       } = req;
       if (!username) {
         res.status(404).send({});
@@ -205,7 +206,7 @@ async function main() {
         res.status(404).send({});
         return;
       }
-      const [user] = await knex("user")
+      let builder = knex("user")
         .column(
           { userId: "id" },
           "username",
@@ -214,10 +215,24 @@ async function main() {
           { familyName: "family_name" },
           { pictureUrl: "picture_url" },
           "created",
-          "iss"
+          "iss",
+          { profileIsPublic: "is_public" },
+          { statsArePublic: "show_stats" }
         )
         .select()
         .where("username", username);
+
+      if (
+        !(
+          loggedInUser &&
+          loggedInUser.username &&
+          loggedInUser.username === username
+        )
+      ) {
+        builder = builder.where("is_public", true);
+      }
+
+      const [user] = await builder;
       if (!user) {
         res.status(404).send({});
       }
@@ -319,6 +334,29 @@ async function main() {
         return;
       }
       next();
+    });
+
+    app.patch("/profile", async (req, res) => {
+      const {
+        body: { profileIsPublic, statsArePublic } = {},
+        loggedInUser: { id }
+      } = req;
+      let updateCount = 0;
+      const update = {};
+      if (typeof profileIsPublic !== "undefined") {
+        updateCount += 1;
+        update.is_public = profileIsPublic;
+      }
+      if (typeof statsArePublic !== "undefined") {
+        updateCount += 1;
+        update.show_stats = statsArePublic;
+      }
+      if (updateCount > 0) {
+        const result = await knex("user")
+          .update({ is_public: profileIsPublic, show_stats: statsArePublic })
+          .where({ id });
+      }
+      res.send({});
     });
 
     /**
