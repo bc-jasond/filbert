@@ -247,7 +247,7 @@ async function main() {
         .limit(250);
 
       if (username) {
-        builder = builder.andWhere("username", username);
+        builder = builder.andWhere("username", "like", `%${username}%`);
       }
 
       if (typeof random === "string") {
@@ -522,7 +522,11 @@ async function main() {
      * list drafts for logged in user
      */
     app.get("/draft", async (req, res) => {
-      const posts = await knex("post")
+      const {
+        loggedInUser,
+        query: { contains, oldest, random }
+      } = req;
+      let builder = knex("post")
         .select(
           "post.id",
           "user_id",
@@ -537,11 +541,30 @@ async function main() {
         )
         .innerJoin("user", "post.user_id", "user.id")
         .whereNull("published")
-        .andWhere("post.user_id", req.loggedInUser.id)
-        .orderBy("post.created", "desc")
+        .andWhere("post.user_id", loggedInUser.id)
         .limit(250);
 
-      res.send(posts);
+      if (typeof contains === "string") {
+        builder = builder.andWhereRaw(
+          "MATCH (title,abstract) AGAINST (? IN BOOLEAN MODE)",
+          [contains]
+        );
+      }
+
+      if (typeof random === "string") {
+        /* TODO: implement random
+         1) select all published post ids in the the DB
+         2) use Fisher Yates to fill up 100 random ids (swap from whole list, break at 100) for a WHERE IN clause
+         3) add whereIn() to the builder
+         */
+      }
+
+      builder = builder.orderBy(
+        "post.created",
+        typeof oldest === "string" ? "asc" : "desc"
+      );
+
+      res.send(await builder);
     });
 
     /**

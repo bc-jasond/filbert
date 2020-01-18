@@ -41,7 +41,7 @@ CREATE TABLE `image` (
 CREATE TABLE `post` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
-  `canonical` varchar(255) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `canonical` varchar(255) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `title` text COLLATE utf8mb4_unicode_520_ci,
   `abstract` text COLLATE utf8mb4_unicode_520_ci,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -49,6 +49,10 @@ CREATE TABLE `post` (
   `published` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `canonical_UNIQUE` (`canonical`),
   KEY `user_id_fk_idx` (`user_id`),
+  KEY `published` (`published`),
+  KEY `deleted` (`deleted`),
+  FULLTEXT KEY `title_abstract` (`title`,`abstract`),
   CONSTRAINT `user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=206 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;

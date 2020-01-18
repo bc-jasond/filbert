@@ -23,7 +23,7 @@ export function set(key, value, debounce = true) {
   } else {
     inMemoryCache = inMemoryCache.set(key, fromJS(value, reviver));
   }
-  
+
   if (writeTimeout[key]) {
     clearTimeout(writeTimeout[key]);
   }

@@ -2,12 +2,13 @@ import { fromJS, List } from 'immutable';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import {
-  Article,
-  NavSpan
-} from '../common/components/layout-styled-components';
+import { Article } from '../common/components/layout-styled-components';
 import {
   authorExpandMixin,
+  Filter,
+  FilterContainer,
+  FilterInput,
+  FilterWithInput,
   MetaContent,
   PostAbstractRow,
   PostAction,
@@ -20,55 +21,12 @@ import {
   StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
-import { Input } from '../common/components/shared-styled-components';
 import { PAGE_NAME_PUBLIC } from '../common/constants';
-import { lightBlue } from '../common/css';
-
 import { apiDelete, apiGet } from '../common/fetch';
 import { confirmPromise, formatPostDate } from '../common/utils';
 import Footer from './footer';
-
 import Header from './header';
 
-const FilterContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-around;
-`;
-const Filter = styled(NavSpan)`
-  padding: 9px;
-  margin: 8px;
-`;
-const UsernameFilter = styled(Filter)`
-  border: 1px solid transparent;
-  border-right: none;
-  margin-right: 0;
-  ${p =>
-    p.isOpen &&
-    `
-    border: 1px solid ${lightBlue};
-    border-right: none;
-    margin-right: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-  `}
-`;
-const InputStyled = styled(Input)`
-  height: 36px;
-  margin-right: 8px;
-  transition: opacity 0.2s;
-  opacity: 1;
-  //outline: 0; // outline is ugly but, a11y
-  border: 1px solid ${lightBlue};
-  border-left: none;
-  border-radius: 0 26px 26px 0;
-  ${p =>
-    p.shouldHide &&
-    `
-    opacity: 0;
-  `}
-`;
 const AuthorExpand = styled(Link)`
   ${MetaContent};
   padding-left: 9px;
@@ -86,7 +44,8 @@ export default class Public extends React.Component {
       oldestFilterIsSelected: false,
       usernameFilterIsSelected: false,
       username: '',
-      randomFilterIsSelected: false
+      randomFilterIsSelected: false,
+      loading: false
     };
   }
 
@@ -128,11 +87,16 @@ export default class Public extends React.Component {
   loadPosts = async () => {
     const {
       state: {
+        loading,
         username,
         randomFilterIsSelected: random,
         oldestFilterIsSelected: oldest
       }
     } = this;
+    if (loading) {
+      return;
+    }
+    await new Promise(resolve => this.setState({ loading: true }, resolve));
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.delete('username');
     queryParams.delete('random');
@@ -154,28 +118,35 @@ export default class Public extends React.Component {
       document.title,
       `${window.location.pathname}${queryString}`
     );
-    const posts = await apiGet(`/post${queryString}`);
-    const postsFormatted = fromJS(
-      posts.map(post => ({
-        ...post,
-        published: formatPostDate(post.published),
-        updated: formatPostDate(post.updated)
-      }))
-    );
-    this.setState({ posts: postsFormatted });
+    try {
+      const posts = await apiGet(`/post${queryString}`);
+      const postsFormatted = fromJS(
+        posts.map(post => ({
+          ...post,
+          published: formatPostDate(post.published),
+          updated: formatPostDate(post.updated)
+        }))
+      );
+      this.setState({ posts: postsFormatted });
+    } finally {
+      this.setState({ loading: false });
+    }
   };
 
   loadPostsDebounce = async () => {
     if (this.checkUsernameTimeout) {
       clearTimeout(this.checkUsernameTimeout);
     }
-    this.checkUsernameTimeout = setTimeout(this.loadPosts, 500);
+    this.checkUsernameTimeout = setTimeout(this.loadPosts, 750);
   };
 
   toggleOldestFilter = () => {
     const {
-      state: { oldestFilterIsSelected }
+      state: { oldestFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       { oldestFilterIsSelected: !oldestFilterIsSelected },
       this.loadPosts
@@ -184,8 +155,11 @@ export default class Public extends React.Component {
 
   toggleRandomFilter = () => {
     const {
-      state: { randomFilterIsSelected }
+      state: { randomFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       { randomFilterIsSelected: !randomFilterIsSelected },
       this.loadPosts
@@ -194,8 +168,11 @@ export default class Public extends React.Component {
 
   toggleUsernameFilter = () => {
     const {
-      state: { usernameFilterIsSelected }
+      state: { usernameFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       {
         usernameFilterIsSelected: !usernameFilterIsSelected,
@@ -216,8 +193,11 @@ export default class Public extends React.Component {
       target: { value }
     } = event;
     const {
-      state: { username }
+      state: { username, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     const newUsername = value.replace(/[^0-9a-z]/g, '');
     this.setState({ username: newUsername }, () => {
       if (
@@ -234,6 +214,7 @@ export default class Public extends React.Component {
   render() {
     const {
       state: {
+        loading,
         posts,
         oldestFilterIsSelected,
         usernameFilterIsSelected,
@@ -265,7 +246,7 @@ export default class Public extends React.Component {
                 </span>
               </StyledH3>
             </PostRow>
-            <PostRow>
+            <PostRow loading={loading ? 1 : undefined}>
               <StyledH3>Filter by:</StyledH3>
               <FilterContainer>
                 <Filter
@@ -287,13 +268,13 @@ export default class Public extends React.Component {
                   random ?
                 </Filter>
                 <div>
-                  <UsernameFilter
+                  <FilterWithInput
                     isOpen={usernameFilterIsSelected}
                     onClick={this.toggleUsernameFilter}
                   >
                     username @
-                  </UsernameFilter>
-                  <InputStyled
+                  </FilterWithInput>
+                  <FilterInput
                     ref={this.usernameInputRef}
                     shouldHide={!usernameFilterIsSelected}
                     name="username"

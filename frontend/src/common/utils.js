@@ -36,7 +36,7 @@ export function getMapWithId(obj) {
   const { id } = obj;
   return Map({ ...obj, id: id || s4() });
 }
-
+// TODO: use KEYCODE_SPACE to fix word-wrap issue, not sure what's going on but sometimes formatted lines don't break on wordsolllllllllllllllllll;
 export function cleanText(text = '') {
   // ensure no more than 1 space in a row
   let final = '';
