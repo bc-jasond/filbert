@@ -9,6 +9,7 @@ import {
 } from '../fonts.css';
 import {
   blue,
+  boxShadow,
   darkBlue,
   darkGrey,
   error,
@@ -349,7 +350,7 @@ export const NavButtonMixin = css`
   &:hover {
     color: white;
     background-color: ${lightBlue};
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.25);
+    box-shadow: ${boxShadow};
   }
   ${p =>
     p.isOpen &&

@@ -104,7 +104,7 @@ async function apiCall(
     result = fetchRefresh(`${API_URL}${url}`, configInternal);
   } catch (err) {
     console.error(`Fetch ${method} Error: `, err);
-    // TODO: don't throw - return error-first object { error: ..., data: ...}
+    // TODO: don't throw - return error/data object { error: ..., data: ...}
     throw err;
   } finally {
     Pace.stop();

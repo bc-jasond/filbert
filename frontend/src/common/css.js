@@ -8,5 +8,9 @@ export const darkBlue = '#52a8c9';
 export const error = '#cc0000';
 export const success = '#5CB85C';
 
-export const bezier = property =>
-  `transition: 0.3s cubic-bezier(0.175, 0.885, 0.320, 1.275) ${property}`;
+export const bezier = (property = 'all') =>
+  `transition: ${property} 0.3s cubic-bezier(0.175, 0.885, 0.320, 1.275);`;
+export const ease = (property = 'all') =>
+  `transition: ${property} 0.125s ease-out`;
+export const boxShadow = '0 2px 4px 0 rgba(0, 0, 0, 0.25);';
+export const outline = '3px solid #67A1F9';
