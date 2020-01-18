@@ -2,15 +2,13 @@ import { fromJS, List } from 'immutable';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import {
-  Article,
-} from '../common/components/layout-styled-components';
+import { Article } from '../common/components/layout-styled-components';
 import {
   authorExpandMixin,
-  FilterContainer,
   Filter,
-  FilterWithInput,
+  FilterContainer,
   FilterInput,
+  FilterWithInput,
   MetaContent,
   PostAbstractRow,
   PostAction,
@@ -46,7 +44,8 @@ export default class Public extends React.Component {
       oldestFilterIsSelected: false,
       usernameFilterIsSelected: false,
       username: '',
-      randomFilterIsSelected: false
+      randomFilterIsSelected: false,
+      loading: false
     };
   }
 
@@ -88,11 +87,16 @@ export default class Public extends React.Component {
   loadPosts = async () => {
     const {
       state: {
+        loading,
         username,
         randomFilterIsSelected: random,
         oldestFilterIsSelected: oldest
       }
     } = this;
+    if (loading) {
+      return;
+    }
+    await new Promise(resolve => this.setState({ loading: true }, resolve));
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.delete('username');
     queryParams.delete('random');
@@ -114,28 +118,35 @@ export default class Public extends React.Component {
       document.title,
       `${window.location.pathname}${queryString}`
     );
-    const posts = await apiGet(`/post${queryString}`);
-    const postsFormatted = fromJS(
-      posts.map(post => ({
-        ...post,
-        published: formatPostDate(post.published),
-        updated: formatPostDate(post.updated)
-      }))
-    );
-    this.setState({ posts: postsFormatted });
+    try {
+      const posts = await apiGet(`/post${queryString}`);
+      const postsFormatted = fromJS(
+        posts.map(post => ({
+          ...post,
+          published: formatPostDate(post.published),
+          updated: formatPostDate(post.updated)
+        }))
+      );
+      this.setState({ posts: postsFormatted });
+    } finally {
+      this.setState({ loading: false });
+    }
   };
 
   loadPostsDebounce = async () => {
     if (this.checkUsernameTimeout) {
       clearTimeout(this.checkUsernameTimeout);
     }
-    this.checkUsernameTimeout = setTimeout(this.loadPosts, 500);
+    this.checkUsernameTimeout = setTimeout(this.loadPosts, 750);
   };
 
   toggleOldestFilter = () => {
     const {
-      state: { oldestFilterIsSelected }
+      state: { oldestFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       { oldestFilterIsSelected: !oldestFilterIsSelected },
       this.loadPosts
@@ -144,8 +155,11 @@ export default class Public extends React.Component {
 
   toggleRandomFilter = () => {
     const {
-      state: { randomFilterIsSelected }
+      state: { randomFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       { randomFilterIsSelected: !randomFilterIsSelected },
       this.loadPosts
@@ -154,8 +168,11 @@ export default class Public extends React.Component {
 
   toggleUsernameFilter = () => {
     const {
-      state: { usernameFilterIsSelected }
+      state: { usernameFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       {
         usernameFilterIsSelected: !usernameFilterIsSelected,
@@ -176,8 +193,11 @@ export default class Public extends React.Component {
       target: { value }
     } = event;
     const {
-      state: { username }
+      state: { username, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     const newUsername = value.replace(/[^0-9a-z]/g, '');
     this.setState({ username: newUsername }, () => {
       if (
@@ -194,6 +214,7 @@ export default class Public extends React.Component {
   render() {
     const {
       state: {
+        loading,
         posts,
         oldestFilterIsSelected,
         usernameFilterIsSelected,
@@ -225,7 +246,7 @@ export default class Public extends React.Component {
                 </span>
               </StyledH3>
             </PostRow>
-            <PostRow>
+            <PostRow loading={loading ? 1 : undefined}>
               <StyledH3>Filter by:</StyledH3>
               <FilterContainer>
                 <Filter

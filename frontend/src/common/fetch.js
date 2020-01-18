@@ -2,8 +2,8 @@ import { API_URL, AUTH_TOKEN_KEY, SESSION_KEY } from './constants';
 import { get, set } from './local-storage';
 import { getGoogleUser, googleGetLoggedInUser } from './google-auth';
 
-function getBaseConfig() {
-  return {
+function getBaseConfig(abortSignal = null) {
+  const config = {
     // Default options are marked with *
     mode: 'cors', // no-cors, cors, *same-origin
     cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
@@ -14,6 +14,10 @@ function getBaseConfig() {
     redirect: 'follow', // manual, *follow, error
     referrer: 'no-referrer' // no-referrer, *client
   };
+  if (abortSignal) {
+    config.signal = abortSignal;
+  }
+  return config;
 }
 
 async function handleResponse(res) {
@@ -73,16 +77,23 @@ async function fetchRefresh(url, config) {
       window.location.href = `signin?next=${window.location.pathname}`;
     }
     // one retry
-    // reset Authorization header
     const res2 = await fetch(url, {
       ...config,
+      // reset Authorization header
       headers: { Authorization: get(AUTH_TOKEN_KEY) }
     });
     return handleResponse(res2);
   }
 }
 
-async function apiCall(method, url, data, config = getBaseConfig()) {
+async function apiCall(
+  method,
+  url,
+  data,
+  abortSignal = null,
+  config = getBaseConfig(abortSignal)
+) {
+  let result;
   try {
     Pace.start();
     const configInternal = { ...config };
@@ -90,34 +101,40 @@ async function apiCall(method, url, data, config = getBaseConfig()) {
     if (data) {
       configInternal.body = JSON.stringify(data); // body data type must match "Content-Type" header
     }
-    return fetchRefresh(`${API_URL}${url}`, configInternal);
+    result = fetchRefresh(`${API_URL}${url}`, configInternal);
   } catch (err) {
-    Pace.stop();
     console.error(`Fetch ${method} Error: `, err);
+    // TODO: don't throw - return error-first object { error: ..., data: ...}
     throw err;
+  } finally {
+    Pace.stop();
   }
+  return result;
 }
 
-export async function apiGet(url) {
-  return apiCall('GET', url);
+export async function apiGet(url, abortSignal = null) {
+  return apiCall('GET', url, undefined, abortSignal);
 }
 
-export async function apiPost(url, data) {
-  return apiCall('POST', url, data);
+export async function apiPost(url, data, abortSignal = null) {
+  return apiCall('POST', url, data, abortSignal);
 }
 
-export async function apiPatch(url, data) {
-  return apiCall('PATCH', url, data);
+export async function apiPatch(url, data, abortSignal = null) {
+  return apiCall('PATCH', url, data, abortSignal);
 }
 
-export async function apiDelete(url) {
-  return apiCall('DELETE', url);
+export async function apiDelete(url, abortSignal = null) {
+  return apiCall('DELETE', url, undefined, abortSignal);
 }
 
-export async function uploadImage(formData) {
+export async function uploadImage(formData, abortSignal = null) {
   const config = getBaseConfig();
   delete config.headers['Content-Type'];
   config.body = formData;
+  if (abortSignal) {
+    config.signal = abortSignal;
+  }
   return apiCall('POST', '/image', undefined, config);
 }
 

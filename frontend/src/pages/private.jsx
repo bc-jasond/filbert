@@ -8,10 +8,10 @@ import Header from './header';
 import Footer from './footer';
 import { Article } from '../common/components/layout-styled-components';
 import {
-  FilterContainer,
   Filter,
-  FilterWithInput,
+  FilterContainer,
   FilterInput,
+  FilterWithInput,
   PostAbstractRow,
   PostAction,
   PostMetaContentFirst,
@@ -26,6 +26,7 @@ import PublishPostForm from '../common/components/edit-publish-post-form';
 
 export default class AllPosts extends React.Component {
   containsInputRef = React.createRef();
+
   constructor(props) {
     super(props);
 
@@ -37,21 +38,22 @@ export default class AllPosts extends React.Component {
       oldestFilterIsSelected: false,
       containsFilterIsSelected: false,
       contains: '',
-      randomFilterIsSelected: false
+      randomFilterIsSelected: false,
+      loading: false
     };
   }
 
   async componentDidMount() {
     this.syncQueryParamsAndLoadDrafts();
   }
-  
+
   async componentDidUpdate() {
     const queryParams = new URLSearchParams(window.location.search);
     if (queryParams.toString() !== this.prevQueryParams.toString()) {
       this.syncQueryParamsAndLoadDrafts();
     }
   }
-  
+
   syncQueryParamsAndLoadDrafts = async () => {
     const queryParams = new URLSearchParams(window.location.search);
     this.prevQueryParams = queryParams;
@@ -65,15 +67,20 @@ export default class AllPosts extends React.Component {
       this.loadDrafts
     );
   };
-  
+
   loadDrafts = async () => {
     const {
       state: {
+        loading,
         contains,
         randomFilterIsSelected: random,
         oldestFilterIsSelected: oldest
       }
     } = this;
+    if (loading) {
+      return;
+    }
+    await new Promise(resolve => this.setState({ loading: true }, resolve));
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.delete('contains');
     queryParams.delete('random');
@@ -95,14 +102,18 @@ export default class AllPosts extends React.Component {
       document.title,
       `${window.location.pathname}${queryString}`
     );
-    const drafts = await apiGet(`/draft${queryString}`);
-    const postsFormatted = fromJS(
-      drafts.map(draft => ({
-        ...draft,
-        updated: formatPostDate(draft.updated)
-      }))
-    );
-    this.setState({ drafts: postsFormatted });
+    try {
+      const drafts = await apiGet(`/draft${queryString}`);
+      const postsFormatted = fromJS(
+        drafts.map(draft => ({
+          ...draft,
+          updated: formatPostDate(draft.updated)
+        }))
+      );
+      this.setState({ drafts: postsFormatted });
+    } finally {
+      this.setState({ loading: false });
+    }
   };
 
   deleteDraft = async draft => {
@@ -188,38 +199,47 @@ export default class AllPosts extends React.Component {
   closePostMenu = () => {
     this.setState({ shouldShowPublishPostMenu: false });
   };
-  
+
   loadDraftsDebounce = async () => {
     if (this.containsTimeout) {
       clearTimeout(this.containsTimeout);
     }
-    this.containsTimeout = setTimeout(this.loadDrafts, 500);
+    this.containsTimeout = setTimeout(this.loadDrafts, 750);
   };
-  
+
   toggleOldestFilter = () => {
     const {
-      state: { oldestFilterIsSelected }
+      state: { oldestFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       { oldestFilterIsSelected: !oldestFilterIsSelected },
       this.loadDrafts
     );
   };
-  
+
   toggleRandomFilter = () => {
     const {
-      state: { randomFilterIsSelected }
+      state: { randomFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       { randomFilterIsSelected: !randomFilterIsSelected },
       this.loadDrafts
     );
   };
-  
+
   toggleContainsFilter = () => {
     const {
-      state: { containsFilterIsSelected }
+      state: { containsFilterIsSelected, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState(
       {
         containsFilterIsSelected: !containsFilterIsSelected,
@@ -234,19 +254,19 @@ export default class AllPosts extends React.Component {
       }
     );
   };
-  
+
   updateContains = event => {
     const {
       target: { value }
     } = event;
     const {
-      state: { contains }
+      state: { contains, loading }
     } = this;
+    if (loading) {
+      return;
+    }
     this.setState({ contains: value }, () => {
-      if (
-        value === contains ||
-        value.length < 3
-      ) {
+      if (value === contains || value.length < 3) {
         return;
       }
       this.loadDraftsDebounce();
@@ -256,6 +276,7 @@ export default class AllPosts extends React.Component {
   render() {
     const {
       state: {
+        loading,
         drafts,
         shouldShowPublishPostMenu,
         shouldShowPostError,
@@ -306,7 +327,7 @@ export default class AllPosts extends React.Component {
                 filbert
               </StyledH3>
             </PostRow>
-            <PostRow>
+            <PostRow loading={loading ? 1 : undefined}>
               <StyledH3>Filter by:</StyledH3>
               <FilterContainer>
                 <Filter
@@ -349,8 +370,11 @@ export default class AllPosts extends React.Component {
             {drafts.size === 0 && (
               <PostRow>
                 <StyledHeadingA href="/edit/new">
-                  <span role="img" aria-label="magnifying glass">🔍</span>{' '}Clear Filters or Click Here or the &quot;new&quot; menu button above to start a
-                  new Private piece
+                  <span role="img" aria-label="magnifying glass">
+                    🔍
+                  </span>{' '}
+                  Clear Filters or Click Here or the &quot;new&quot; menu button
+                  above to start a new Private piece
                 </StyledHeadingA>
               </PostRow>
             )}

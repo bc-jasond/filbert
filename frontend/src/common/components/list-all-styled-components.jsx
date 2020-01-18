@@ -2,7 +2,12 @@ import styled, { css } from 'styled-components';
 import { darkGrey, grey, lightBlue } from '../css';
 import { monospaced, sansSerif } from '../fonts.css';
 import { A, NavSpan } from './layout-styled-components';
-import { H2Styled, H3Styled, Input, NavButtonMixin } from './shared-styled-components';
+import {
+  H2Styled,
+  H3Styled,
+  Input,
+  NavButtonMixin
+} from './shared-styled-components';
 
 export const StyledH2 = styled(H2Styled)`
   margin-left: 0;
@@ -28,20 +33,25 @@ export const PostRow = styled.div`
   @media (max-width: 768px) {
     margin: 0;
   }
+  ${p =>
+    p.loading &&
+    css`
+      opacity: 0.3;
+    `}
 `;
 export const PostAbstractRow = styled.div`
   margin-top: 4px;
 `;
 export const StyledHeadingA = styled(A)`
   max-height: 56px;
-  letter-spacing: -0.47px;
-  font-size: 25.2px;
+  letter-spacing: -0.5px;
+  font-size: 25px;
   line-height: 28px;
   font-weight: 600;
 `;
 export const StyledA = styled(A)`
   max-height: 48px;
-  font-size: 18.96px;
+  font-size: 19px;
   line-height: 24px;
   color: ${grey};
   letter-spacing: 0px;
@@ -105,8 +115,8 @@ export const FilterWithInput = styled(Filter)`
   border-right: none;
   margin-right: 0;
   ${p =>
-  p.isOpen &&
-  `
+    p.isOpen &&
+    `
     border: 1px solid ${lightBlue};
     border-right: none;
     margin-right: 0;
@@ -124,8 +134,8 @@ export const FilterInput = styled(Input)`
   border-left: none;
   border-radius: 0 26px 26px 0;
   ${p =>
-  p.shouldHide &&
-  `
+    p.shouldHide &&
+    `
     opacity: 0;
   `}
 `;
