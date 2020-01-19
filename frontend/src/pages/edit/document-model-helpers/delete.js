@@ -5,6 +5,19 @@ import { deleteContentRange, imageUrlIsId } from '../../../common/utils';
 import { handleBackspaceTextType } from './handle-text-type';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
+function deleteNodeAndImage(documentModel, nodeId) {
+  const node = documentModel.getNode(nodeId);
+  // Don't forget to delete that image from the DB!
+  // TODO: move this to a job that checks for unused images every so often
+  if (node.get('type') === NODE_TYPE_IMAGE) {
+    const urlField = node.getIn(['meta', 'url']);
+    if (imageUrlIsId(urlField)) {
+      apiDelete(`/image/${urlField}`);
+    }
+  }
+  documentModel.delete(nodeId);
+}
+
 /**
  */
 export function doDelete(
@@ -18,7 +31,7 @@ export function doDelete(
       documentModel.isMetaType(nodeId) ||
       (startIdx === 0 && diffLength >= content.length)
     ) {
-      documentModel.delete(nodeId);
+      deleteNodeAndImage(documentModel, nodeId);
       return true;
     }
     // only some of endNode's content has been selected, delete that content
@@ -62,7 +75,7 @@ export function doDelete(
     const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
     console.info('doDelete() - middle nodes', middle);
     middle.forEach(nodeId => {
-      documentModel.delete(nodeId);
+      deleteNodeAndImage(documentModel, nodeId);
     });
   }
 
@@ -144,16 +157,7 @@ export function doDelete(
     // focus end of previous node
     /* eslint-disable-next-line no-param-reassign */
     caretStart = -1;
-    documentModel.delete(selectedNodeId);
-    const selectedNode = documentModel.getNode(selectedNodeId);
-    // Don't forget to delete that image from the DB!
-    // TODO: move this to a job that checks for unused images every so often
-    if (selectedNode.get('type') === NODE_TYPE_IMAGE) {
-      const urlField = selectedNode.getIn(['meta', 'url']);
-      if (imageUrlIsId(urlField)) {
-        apiDelete(`/image/${urlField}`);
-      }
-    }
+    deleteNodeAndImage(documentModel, selectedNodeId);
   } else {
     /* eslint-disable-next-line no-param-reassign */
     ({ startNodeId, caretStart } = handleBackspaceTextType(
