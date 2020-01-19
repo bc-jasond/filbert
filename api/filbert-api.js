@@ -6,7 +6,7 @@ const cors = require("cors");
 const multer = require("multer");
 const chalk = require("chalk");
 
-const { saneEnvironmentOrExit } = require("./lib/util");
+const { saneEnvironmentOrExit, wrapMiddleware } = require("./lib/util");
 
 const {
   parseAuthorizationHeader,
@@ -75,11 +75,22 @@ async function main() {
     app.post("/content", postContentNodes);
     app.post("/image", upload.single("fileData"), uploadImage);
     app.delete("/image/:id", deleteImage);
-    app.get("/draft", getDrafts);
+    app.get("/draft", wrapMiddleware(getDrafts));
     app.post("/publish/:id", publishDraft);
     app.delete("/draft/:id", deleteDraftAndContentNodes);
 
     // STARTUP
+    // global error handler
+    app.use((err, req, res) => {
+      if (err) {
+        console.error(err);
+        // SQL error from bad user input
+        if (err.code && err.code === "ER_PARSE_ERROR") {
+          return res.status(400).send({message: "Bad Request"})
+        }
+        res.status(500).send({})
+      }
+    })
     app.listen(3001);
     console.info(chalk.green("Filbert API Started 👍"));
   } catch (err) {
