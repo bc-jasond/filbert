@@ -237,7 +237,7 @@ export default class SignIn extends React.Component {
       }
       this.checkUsernameTimeout = setTimeout(async () => {
         try {
-          await apiGet(`/user/${newUsername}`);
+          await apiGet(`/user/${newUsername}?forSignup`);
           this.setState({
             error: `${newUsername} is taken`,
             success: null,

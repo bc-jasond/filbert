@@ -10,16 +10,14 @@ const {
   listKeysForBucket,
   copyKeyFromBucketToBucket,
   deleteKeysForBucket
-} = require("./s3");
+} = require("./lib/s3");
+const { makeMysqlDump } = require("./lib/mysql");
 const {
-  assertDir,
-  makeMysqlDump,
-  rmFile,
-  stagingDirectory,
-  hourlyBucketName,
-  dailyBucketName
-} = require("./mysql");
-const { saneEnvironmentOrExit } = require("./util");
+  fileUploadStagingDirectory,
+  dailyBucketName,
+  hourlyBucketName
+} = require("./lib/constants");
+const { saneEnvironmentOrExit, assertDir, rmFile } = require("./lib/util");
 
 /**
  * runs once every hour at 0 minutes (add a * to the end (5 stars total) to test in seconds)
@@ -43,14 +41,17 @@ async function filbertMysqldumpToS3Job() {
     const now = new Date();
     const hour = now.getHours();
     // make sure the temp dir exists
-    await assertDir(stagingDirectory);
+    await assertDir(fileUploadStagingDirectory);
     // make sure the buckets exist...
     await assertBucket(hourlyBucketName);
     await assertBucket(dailyBucketName);
 
     console.log(`Attempting a mysqldump at ${now.toISOString()}`);
     // TODO: gzip the output?
-    const { filenameWithAbsolutePath } = await makeMysqlDump(now);
+    const { filenameWithAbsolutePath } = await makeMysqlDump(
+      now,
+      fileUploadStagingDirectory
+    );
     await uploadFileToBucket(hourlyBucketName, filenameWithAbsolutePath);
     console.log(
       `Uploaded ${filenameWithAbsolutePath} to ${hourlyBucketName} 👍`

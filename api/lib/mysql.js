@@ -1,9 +1,12 @@
 const knex = require("knex");
 
+const { wrapExec } = require("./util");
+
 let knexConnection;
 
 export async function getKnex() {
   if (!knexConnection) {
+    console.info("Connecting to MySQL...");
     knexConnection = knex({
       client: "mysql2",
       connection: {
@@ -124,37 +127,7 @@ export async function bulkContentNodeDelete(records) {
     .del();
 }
 
-const { promisify } = require("util");
-const { exec: execCb } = require("child_process");
-const exec = promisify(execCb);
-
-export const bucketPrefix = `filbert-${process.env.NODE_ENV ||
-  "dev"}-mysqlbackups`;
-export const hourlyBucketName = `${bucketPrefix}-hourly`;
-export const dailyBucketName = `${bucketPrefix}-daily`;
-export const stagingDirectory = `/tmp/filbert-mysql-backups`;
-
-export async function wrapExec(command) {
-  try {
-    const { stdout, stderr } = await exec(command);
-    console.log(`exec() command succeeded: ${command}`, stdout);
-    if (stdout) console.log(stdout);
-    if (stderr) console.error(stderr);
-    return { stdout, stderr };
-  } catch (err) {
-    console.error(`exec() command failed: ${command}`, err);
-  }
-}
-
-export async function assertDir(dirname) {
-  return wrapExec(`mkdir -p ${dirname}`);
-}
-
-export async function rmFile(filenameAndPath) {
-  return wrapExec(`rm ${filenameAndPath}`);
-}
-
-export async function makeMysqlDump(now) {
+export async function makeMysqlDump(now, stagingDirectory) {
   const currentBackupFilename = `${now.getFullYear()}-${(now.getMonth() + 1)
     .toString()
     .padStart(2, "0")}-${now

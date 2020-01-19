@@ -135,7 +135,7 @@ export async function uploadImage(formData, abortSignal = null) {
   if (abortSignal) {
     config.signal = abortSignal;
   }
-  return apiCall('POST', '/image', undefined, config);
+  return apiCall('POST', '/image', undefined, undefined, config);
 }
 
 export async function signin(username, password) {

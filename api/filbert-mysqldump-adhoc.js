@@ -2,15 +2,13 @@
 require = require("esm")(module /*, options*/);
 
 const { performance } = require("perf_hooks");
-const { assertBucket, uploadFileToBucket } = require("./s3");
+const { assertBucket, uploadFileToBucket } = require("./lib/s3");
+const { makeMysqlDump } = require("./lib/mysql");
+const { assertDir, rmFile } = require("./lib/util");
 const {
-  assertDir,
-  stagingDirectory,
-  makeMysqlDump,
-  rmFile
-} = require("./mysql");
-
-const adhocBucketName = `filbert-mysql-backups`;
+  fileUploadStagingDirectory,
+  adhocBucketName
+} = require("./lib/constants");
 
 async function filbertMysqldumpToS3Adhoc() {
   try {
@@ -19,13 +17,16 @@ async function filbertMysqldumpToS3Adhoc() {
 
     const now = new Date();
     // make sure the temp dir exists
-    await assertDir(stagingDirectory);
+    await assertDir(fileUploadStagingDirectory);
     // make sure the buckets exist...
     await assertBucket(adhocBucketName);
 
     console.log(`Attempting a mysqldump at ${now.toISOString()}`);
     // TODO: gzip the output?
-    const { filenameWithAbsolutePath } = await makeMysqlDump(now);
+    const { filenameWithAbsolutePath } = await makeMysqlDump(
+      now,
+      fileUploadStagingDirectory
+    );
     await uploadFileToBucket(adhocBucketName, filenameWithAbsolutePath);
     console.log(
       `Uploaded ${filenameWithAbsolutePath} to ${adhocBucketName} 👍`

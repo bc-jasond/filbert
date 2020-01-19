@@ -6,7 +6,7 @@ const figlet = require("figlet");
 
 const { getKnex, getNodes, bulkContentNodeUpsert } = require("./mysql");
 
-const { getMapWithId } = require("../frontend/src/common/utils");
+const { getMapWithId } = require("../../frontend/src/common/utils");
 
 async function main(ids) {
   try {
