@@ -1,5 +1,5 @@
 const { getKnex } = require("../lib/mysql");
-
+// for "is username taken?" - add ?forSignup
 async function getUser(req, res) {
   const {
     query: { forSignup },

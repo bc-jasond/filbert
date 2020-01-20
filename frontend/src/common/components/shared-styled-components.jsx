@@ -24,7 +24,7 @@ const sectionWidthMixin = css`
   max-width: 740px;
   margin: 0 auto;
 `;
-const editSectionBorderMixin = css`
+export const editSectionBorderMixin = css`
   border: 4px solid ${p => (p.isEditing ? blue : 'transparent')};
   ${p =>
     p.isEditMode &&
@@ -94,11 +94,6 @@ export const SpacerSection = styled(ContentSection)`
     width: 266px;
   }
   ${editSectionBorderMixin};
-`;
-export const ImageSection = styled(ContentSection)`
-  overflow: hidden;
-  max-width: 1000px;
-  margin: 0 auto 52px;
 `;
 export const PStyled = styled.p`
   position: relative;
@@ -200,7 +195,7 @@ export const StrikeText = styled.span`
 export const BoldText = styled.strong`
   font-weight: 700;
 `;
-const miniText = css`
+export const miniText = css`
   font-family: ${sansSerif}, sans-serif;
   font-weight: 300;
   font-style: normal;
@@ -211,61 +206,6 @@ const miniText = css`
 `;
 export const MiniText = styled.span`
   ${miniText}
-`;
-export const Figure = styled.figure`
-  padding: 5px 0;
-  position: relative;
-  ${p =>
-    Number.isInteger(p.heightOverride) &&
-    `
-    height: ${p.heightOverride}px;
-  `}
-`;
-export const FigureCaption = styled.figcaption`
-  ${miniText}
-  text-align: center;
-  margin-top: 5px;
-`;
-export const ImagePlaceholderContainer = styled.div`
-  position: relative;
-  width: 100%;
-  margin: 0 auto;
-  ${p => `
-    max-width: ${p.w}px;
-    max-height: ${p.h}px;
-  `}
-`;
-export const ImagePlaceholderFill = styled.div`
-  ${p => `padding-bottom: ${(p.h / p.w) * 100}%;`}
-`;
-export const Img = styled.img`
-  position: absolute;
-  box-sizing: border-box;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  display: block;
-  max-width: 100%;
-  ${editSectionBorderMixin};
-  ${p =>
-    p.rotationDegrees === 90 &&
-    `
-    transform-origin: left;
-    transform: translate(50%, -50%) rotate(90deg) ;
-  `}
-  ${p =>
-    p.rotationDegrees === 180 &&
-    `
-    transform: scale(1,-1) ;
-  `}
-  ${p =>
-    p.rotationDegrees === 270 &&
-    `
-    transform-origin: right;
-    transform: translate(-50%, -50%) rotate(-90deg) ;
-  `}
 `;
 
 // FORMS

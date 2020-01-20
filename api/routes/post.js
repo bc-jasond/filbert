@@ -34,8 +34,11 @@ async function getPosts(req, res) {
      3) add whereIn() to the builder
      */
   }
-  
-  builder = builder.orderBy("published", (typeof oldest === "string") ? "asc" : "desc");
+
+  builder = builder.orderBy(
+    "published",
+    typeof oldest === "string" ? "asc" : "desc"
+  );
 
   const posts = await builder;
 

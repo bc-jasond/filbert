@@ -15,6 +15,11 @@ function sendSession(res, user) {
   });
 }
 
+// forward middleware errors to a global handler
+const wrapMiddleware = fn => (...args) =>
+  fn(...args).catch(args[2] /* the next() callback */);
+
 module.exports = {
-  sendSession
+  sendSession,
+  wrapMiddleware
 };

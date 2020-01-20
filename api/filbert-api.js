@@ -6,7 +6,8 @@ const cors = require("cors");
 const multer = require("multer");
 const chalk = require("chalk");
 
-const { saneEnvironmentOrExit, wrapMiddleware } = require("./lib/util");
+const { saneEnvironmentOrExit } = require("./lib/util");
+const { wrapMiddleware } = require("./lib/express-util");
 
 const {
   parseAuthorizationHeader,
@@ -56,7 +57,6 @@ async function main() {
      */
     app.post("/signin", postSignin);
     app.post("/signin-google", postSigninGoogle);
-    // username is taken - add ?forSignup
     app.get("/user/:username", getUser);
     app.get("/post", getPosts);
     app.get("/post/:canonical", getPostByCanonical);
@@ -80,17 +80,17 @@ async function main() {
     app.delete("/draft/:id", deleteDraftAndContentNodes);
 
     // STARTUP
-    // global error handler
+    // global error handler - use with wrapMiddleware to collect all errors here
     app.use((err, req, res) => {
       if (err) {
         console.error(err);
         // SQL syntax error - probably from bad user input
         if (err.code && err.code === "ER_PARSE_ERROR") {
-          return res.status(400).send({message: "Bad Request"})
+          return res.status(400).send({ message: "Bad Request" });
         }
-        res.status(500).send({})
+        res.status(500).send({});
       }
-    })
+    });
     app.listen(3001);
     console.info(chalk.green("Filbert API Started 👍"));
   } catch (err) {

@@ -167,6 +167,15 @@ export default class FormatSelectionMenuComponent extends React.Component {
     };
   }
 
+  componentDidMount() {
+    const {
+      props: { selectionModel }
+    } = this;
+    if (selectionModel.get(SELECTION_ACTION_LINK) && this.ref) {
+      this.ref.current.focus();
+    }
+  }
+
   componentDidUpdate(prevProps) {
     const {
       props: { selectionModel, windowEvent }

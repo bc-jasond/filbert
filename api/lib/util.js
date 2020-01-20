@@ -31,9 +31,6 @@ async function wrapExec(command) {
   }
 }
 
-// forward middleware errors to a global handler
-const wrapMiddleware = fn => (...args) => fn(...args).catch(args[2] /* the next() callback */)
-
 async function assertDir(dirname) {
   return wrapExec(`mkdir -p ${dirname}`);
 }
@@ -46,6 +43,5 @@ module.exports = {
   saneEnvironmentOrExit,
   wrapExec,
   assertDir,
-  rmFile,
-  wrapMiddleware
+  rmFile
 };

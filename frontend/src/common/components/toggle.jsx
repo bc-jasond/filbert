@@ -22,11 +22,13 @@ const ToggleWrapper = styled.div`
   width: 64px;
   height: 34px;
   &:hover {
-    cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
+    cursor: ${p => (p.disabled ? 'not-allowed' : 'pointer')};
   }
-  ${p => p.disabled && css`
-    background-color: ${lightGrey};
-  `}
+  ${p =>
+    p.disabled &&
+    css`
+      background-color: ${lightGrey};
+    `}
 `;
 const Knob = styled.div`
   position: absolute;
@@ -67,7 +69,12 @@ export default class extends React.PureComponent {
     return (
       <Wrapper>
         {children || <Label>{label}</Label>}
-        <ToggleWrapper value={value} disabled={disabled} onClick={() => !disabled && onUpdate()} isFocused={isFocused}>
+        <ToggleWrapper
+          value={value}
+          disabled={disabled}
+          onClick={() => !disabled && onUpdate()}
+          isFocused={isFocused}
+        >
           <Knob value={value} />
         </ToggleWrapper>
         <HiddenCheckbox

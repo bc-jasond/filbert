@@ -77,8 +77,9 @@ export function getChildTextNodeAndOffsetFromParentOffset(
   const textNodesOnlyFlattened = [];
   const queue = [...parent.childNodes];
   // there's no formatting, so no offset adjustment necessary
-  if (queue.length === 1) {
-    return { childNode: queue.pop(), childOffset };
+  const [firstNode] = queue;
+  if (queue.length === 1 && firstNode.nodeType === DOM_TEXT_NODE_TYPE_ID) {
+    return { childNode: firstNode, childOffset };
   }
   while (queue.length) {
     const currentNode = queue.shift();

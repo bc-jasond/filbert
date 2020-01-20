@@ -350,7 +350,11 @@ export default class EditPost extends React.Component {
       // showing menu, unregister to not interfere
       this.unregisterWindowEventHandlers();
     }
-    this.setState({ shouldShowPublishPostMenu: !oldVal });
+    this.setState({ shouldShowPublishPostMenu: !oldVal }, () => {
+      if (this.inputRef) {
+        this.inputRef.focus();
+      }
+    });
   };
 
   closeAllEditContentMenus = async () => {
@@ -389,7 +393,7 @@ export default class EditPost extends React.Component {
   commitUpdates = (prevSelectionOffsets, selectionOffsets) => {
     const { startNodeId, caretStart, caretEnd } = selectionOffsets;
     const {
-      state: { editSectionNode }
+      state: { editSectionNode, formatSelectionModel }
     } = this;
     // TODO: optimistically save updated nodes - look ma, no errors!
     return new Promise((resolve /* , reject */) => {
@@ -410,7 +414,6 @@ export default class EditPost extends React.Component {
         this.documentModel.isMetaType(startNodeId) &&
         editSectionNode.get('id') !== startNodeId
       ) {
-        removeAllRanges();
         newState.editSectionNode = this.documentModel.getNode(startNodeId);
       }
       this.setState(newState, async () => {
@@ -419,7 +422,11 @@ export default class EditPost extends React.Component {
           this.updateManager.saveContentBatchDebounce(this.documentModel);
         }
         // no more caret work necessary for Meta nodes
-        if (this.documentModel.isMetaType(startNodeId)) {
+        if (
+          this.documentModel.isMetaType(startNodeId) ||
+          // OR if we're typing a url in the formatSelection menu
+          formatSelectionModel.get(SELECTION_ACTION_LINK)
+        ) {
           resolve();
           return;
         }
@@ -538,7 +545,6 @@ export default class EditPost extends React.Component {
       }
       stopAndPrevent(evt);
       if (this.documentModel.isMetaType(neighborNode.get('id'))) {
-        removeAllRanges();
         await this.sectionEdit(neighborNode.get('id'));
         return;
       }
@@ -1045,17 +1051,8 @@ export default class EditPost extends React.Component {
     const newSectionId = this.documentModel.update(
       insertMenuNode.set('type', sectionType).set('meta', meta)
     );
-    let startNodeId = newSectionId;
-    // TODO: put a P after any MetaType - maybe only if it's the last node in the document
-    if (
-      this.documentModel.isMetaType(startNodeId) &&
-      DocumentModel.getLastNode(this.documentModel.nodesById).get('id') ===
-        startNodeId
-    ) {
-      startNodeId = this.documentModel.insert(NODE_TYPE_P, startNodeId);
-    }
     await this.commitUpdates(this.getSelectionOffsetsOrEditSectionNode(), {
-      startNodeId
+      startNodeId: newSectionId
     });
     if (
       [NODE_TYPE_IMAGE, NODE_TYPE_QUOTE, NODE_TYPE_SPACER].includes(sectionType)
@@ -1067,7 +1064,9 @@ export default class EditPost extends React.Component {
   sectionEdit = async sectionId => {
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = this.documentModel.getNode(sectionId);
-    removeAllRanges();
+    if (section.get('type') === NODE_TYPE_SPACER) {
+      removeAllRanges();
+    }
     console.debug('SECTION CALLBACK ', sectionId);
 
     const newState = {
@@ -1311,7 +1310,6 @@ export default class EditPost extends React.Component {
       formatSelectionModel,
       action
     );
-    await this.commitUpdates(selectionOffsets, selectionOffsets);
     if (shouldCloseMenu) {
       await this.closeFormatSelectionMenu();
       return;
@@ -1322,8 +1320,9 @@ export default class EditPost extends React.Component {
         formatSelectionModel: updatedSelection
       },
       async () => {
-        if (updatedSelection.get(SELECTION_ACTION_LINK) && this.inputRef) {
-          this.inputRef.focus();
+        await this.commitUpdates(selectionOffsets, selectionOffsets);
+        if (updatedSelection.get(SELECTION_ACTION_LINK)) {
+          return;
         }
         // this replaces the selection after calling setState
         const replacementRange = replaceRange(selectionOffsets);

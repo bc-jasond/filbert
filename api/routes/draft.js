@@ -1,7 +1,4 @@
-const {
-  getKnex,
-  getMysqlDatetime
-} = require("../lib/mysql");
+const { getKnex, getMysqlDatetime } = require("../lib/mysql");
 /**
  * creates a new draft for logged in user
  */
