@@ -22,8 +22,11 @@ const ToggleWrapper = styled.div`
   width: 64px;
   height: 34px;
   &:hover {
-    cursor: pointer;
+    cursor: ${p => p.disabled ? 'not-allowed' : 'pointer'};
   }
+  ${p => p.disabled && css`
+    background-color: ${lightGrey};
+  `}
 `;
 const Knob = styled.div`
   position: absolute;
@@ -40,7 +43,9 @@ const Knob = styled.div`
       left: 1px;
     `}
 `;
-const Label = styled.label``;
+const Label = styled.label`
+  flex-grow: 2;
+`;
 const HiddenCheckbox = styled.input`
   opacity: 0;
 `;
@@ -56,19 +61,20 @@ export default class extends React.PureComponent {
 
   render() {
     const {
-      props: { value, onUpdate, label, children },
+      props: { value, onUpdate, label, children, disabled },
       state: { isFocused }
     } = this;
     return (
       <Wrapper>
         {children || <Label>{label}</Label>}
-        <ToggleWrapper value={value} onClick={onUpdate} isFocused={isFocused}>
+        <ToggleWrapper value={value} disabled={disabled} onClick={() => !disabled && onUpdate()} isFocused={isFocused}>
           <Knob value={value} />
         </ToggleWrapper>
         <HiddenCheckbox
           key={`checkbox${value}`}
           type="checkbox"
           checked={!!value}
+          disabled={disabled}
           onFocus={() => this.setState({ isFocused: true })}
           onBlur={() => this.setState({ isFocused: false })}
           onChange={onUpdate}

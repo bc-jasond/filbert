@@ -149,6 +149,7 @@ export default class UserProfile extends React.Component {
                   onUpdate={this.updateProfilePublic}
                 />
                 <Toggle
+                  disabled={!user?.profileIsPublic}
                   label="Make my stats public?"
                   value={user?.statsArePublic}
                   onUpdate={this.updateStatsArePublic}

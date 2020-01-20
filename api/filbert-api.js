@@ -84,7 +84,7 @@ async function main() {
     app.use((err, req, res) => {
       if (err) {
         console.error(err);
-        // SQL error from bad user input
+        // SQL syntax error - probably from bad user input
         if (err.code && err.code === "ER_PARSE_ERROR") {
           return res.status(400).send({message: "Bad Request"})
         }
