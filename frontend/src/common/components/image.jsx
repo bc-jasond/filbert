@@ -3,7 +3,6 @@ import React from 'react';
 import styled from 'styled-components';
 import { NODE_TYPE_IMAGE } from '../constants';
 import { ease } from '../css';
-import { imageUrlIsId } from '../utils';
 import {
   ContentSection,
   editSectionBorderMixin,
@@ -82,11 +81,7 @@ export default class Image extends React.PureComponent {
     const meta = node.get('meta', Map());
     const w = meta.get('width');
     const h = meta.get('height');
-    const urlField = meta.get('url') || '';
-    // construct our url from the hash OR assume 3rd party URL
-    const url = imageUrlIsId(urlField)
-      ? `${process.env.API_URL}/image/${urlField}`
-      : urlField;
+    const url = meta.get('url');
     const rotationDegrees = meta.get('rotationDegrees', 0);
     let heightOverride;
     // if the image is rotated left once or right once change the height of the image container
@@ -100,7 +95,7 @@ export default class Image extends React.PureComponent {
         <Figure heightOverride={heightOverride}>
           <ImagePlaceholderContainer w={w} h={h}>
             <ImagePlaceholderFill w={w} h={h} />
-            {urlField.length > 0 && (
+            {url.length > 0 && (
               <Img
                 isEditMode={setEditNodeId}
                 isEditing={isEditing}

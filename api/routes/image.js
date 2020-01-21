@@ -1,24 +1,11 @@
 const sharp = require("sharp");
 const { getChecksum } = require("../lib/cipher");
-const { getKnex } = require("../lib/mysql");
 const { bucketHasKey, uploadImageToBucket } = require("../lib/s3");
 const { imageBucketName, objectStorageBaseUrl } = require("../lib/constants");
 
 async function getImageKey(buffer, userId, imgMeta) {
   const checksum = await getChecksum(buffer);
   return `${process.env.NODE_ENV}_${userId}_${checksum}.${imgMeta.format}`;
-}
-
-async function getImageById(req, res) {
-  const { id } = req.params;
-  const knex = await getKnex();
-  const [image] = await knex("image").where({ id });
-  if (!image) {
-    res.status(404).send({});
-    return;
-  }
-  res.contentType(image.mime_type);
-  res.send(image.file_data);
 }
 
 async function uploadImage(req, res) {
@@ -76,6 +63,5 @@ async function uploadImage(req, res) {
 }
 
 module.exports = {
-  getImageById,
   uploadImage
 };

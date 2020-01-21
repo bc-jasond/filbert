@@ -14,7 +14,6 @@ const {
   cleanText,
   getCharFromEvent,
   getCanonicalFromTitle,
-  imageUrlIsId,
   deleteContentRange
 } = require('./utils');
 const { idRegExp } = require('./test-helpers');
@@ -108,19 +107,6 @@ describe('utils', () => {
     const pieces = canonical.split('-');
     expect(pieces.length).toBe(5);
     expect(idRegExp.test(pieces[pieces.length - 1])).toBe(true);
-  });
-  test('imageUrlIsId', () => {
-    expect(imageUrlIsId(100)).toBe(false);
-    expect(
-      imageUrlIsId(
-        '313a8df039a32a3b708a982bed01c2bc7d6af316acf20a1e2a2aeef020a378e4'
-      )
-    ).toBe(true);
-    expect(
-      imageUrlIsId(
-        'http://oops.some.duplicate.hash.on.another.site/313a8df039a32a3b708a982bed01c2bc7d6af316acf20a1e2a2aeef020a378e4'
-      )
-    ).toBe(false);
   });
   test('deleteContentRange', () => {
     const text = 'Someone must have been telling lies about Josef K.';

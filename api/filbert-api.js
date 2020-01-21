@@ -27,7 +27,7 @@ const {
   publishDraft,
   deleteDraftAndContentNodes
 } = require("./routes/draft");
-const { getImageById, uploadImage } = require("./routes/image");
+const { uploadImage } = require("./routes/image");
 const { getPostForEdit } = require("./routes/edit");
 const { postContentNodes } = require("./routes/content-nodes");
 
@@ -39,7 +39,7 @@ async function main() {
       //dest: './uploads/', // store in filesystem
       limits: {
         // busboy option
-        fileSize: 16777216 // 16MB in bytes max size for mysql MEDIUMBLOB
+        fileSize: 16777216 // 16MB in bytes max file size
       }
     });
 
@@ -60,7 +60,6 @@ async function main() {
     app.get("/user/:username", getUser);
     app.get("/post", getPosts);
     app.get("/post/:canonical", getPostByCanonical);
-    app.get("/image/:id", getImageById);
 
     /**
      * SIGNED-IN routes - all routes defined after this middleware require a logged in user
@@ -79,7 +78,7 @@ async function main() {
     app.delete("/draft/:id", deleteDraftAndContentNodes);
 
     // STARTUP
-    // global error handler - use with wrapMiddleware to collect all errors here
+    // global error handler - use with wrapMiddleware() to collect all errors here
     app.use((err, req, res) => {
       if (err) {
         console.error(err);
