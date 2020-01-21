@@ -72,11 +72,11 @@ export default class UpdateManager {
     );
   }
 
-  addToUndoHistory(nodesById, selectionOffsets) {
+  addToUndoHistory(nodeUpdate, selectionOffsets) {
     const add = () => {
       this.lastUndoHistoryPush = Date.now();
       this.undoHistory = this.undoHistory.push(
-        Map({ nodesById, selectionOffsets })
+        Map({ nodeUpdate, selectionOffsets })
       );
     };
     this.redoHistory = List();
@@ -91,10 +91,7 @@ export default class UpdateManager {
       add();
       return;
     }
-    // TODO: this doesn't scale - but, it provides a simple undo/redo for now
-    //  1) It needs to be deltas (currently, it's whole copies of the document)
-    //  2) it needs to be scoped to the actively edited node (currently, it diffs the whole document each time)
-    //  3) it needs to sync with localStorage asynchronously (done)
+    
     // user added / removed one or more nodes
     const lastHistory = this.undoHistory.last(Map());
     const mostRecent = lastHistory.get('nodesById', Map());
@@ -148,28 +145,6 @@ export default class UpdateManager {
     this.nodeUpdates = Map();
   }
 
-  diff(current, next) {
-    // TODO: flush updates first?
-    this.clearUpdates();
-    current.merge(next).forEach(node => {
-      const nodeId = node.get('id');
-      const currentNode = current.get(nodeId);
-      const nextNode = next.get(nodeId);
-      if (
-        // update
-        (currentNode && nextNode && !nextNode.equals(currentNode)) ||
-        // insert
-        !currentNode
-      ) {
-        this.stageNodeUpdate(nodeId);
-        return;
-      }
-      if (!nextNode) {
-        this.stageNodeDelete(nodeId);
-      }
-    });
-  }
-
   init(post) {
     this.post = fromJS(post);
     /* eslint-disable prefer-destructuring, no-self-assign */
@@ -211,15 +186,15 @@ export default class UpdateManager {
     );
   };
 
-  stageNodeDelete(nodeId) {
-    if (!nodeId || nodeId === 'null' || nodeId === 'undefined') {
-      console.error('stageNodeDelete - trying to update null');
+  stageNodeDelete(node) {
+    if (!node || node.size === 0 || ['null','undefined'].includes(nodeId.get('id'))) {
+      console.error('stageNodeDelete - bad node', node);
       return;
     }
-    if (
-      this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE
-    ) {
-      console.warn('stageNodeDelete - deleting an updated node ', nodeId);
+    const nodeId = node.get('id');
+    if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE) {
+      // TODO: ensure this is saved in history before replacing it
+      console.info('stageNodeDelete - deleting an updated node ', nodeId);
     } else {
       console.info('stageNodeDelete ', nodeId);
     }
@@ -229,21 +204,21 @@ export default class UpdateManager {
     );
   }
 
-  stageNodeUpdate(nodeId) {
-    if (!nodeId || nodeId === 'null' || nodeId === 'undefined') {
-      console.error('stageNodeUpdate - trying to update null');
+  stageNodeUpdate(node) {
+    if (!node || node.size === 0 || ['null','undefined'].includes(nodeId.get('id'))) {
+      console.error('stageNodeUpdate - bad node', node);
       return;
     }
-    if (
-      this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE
-    ) {
-      console.warn('stageNodeUpdate - updating a deleted node ', nodeId);
+    const nodeId = node.get('id');
+    if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE) {
+      // TODO: ensure this is saved in history before replacing it
+      console.info('stageNodeUpdate - updating a deleted node ', nodeId);
     } else {
       console.info('stageNodeUpdate ', nodeId);
     }
     this.nodeUpdates = this.nodeUpdates.set(
       nodeId,
-      Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id') })
+      Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id'), node })
     );
   }
 
@@ -264,7 +239,28 @@ export default class UpdateManager {
     this[otherKey] = this[otherKey].push(
       fromJS({ nodesById: current, selectionOffsets }, reviver)
     );
-    this.diff(current, mostRecent);
+    
+    //this.diff(current, mostRecent);
+      // TODO: flush updates first?
+      this.clearUpdates();
+      current.merge(next).forEach(node => {
+        const nodeId = node.get('id');
+        const currentNode = current.get(nodeId);
+        const nextNode = next.get(nodeId);
+        if (
+          // update
+          (currentNode && nextNode && !nextNode.equals(currentNode)) ||
+          // insert
+          !currentNode
+        ) {
+          this.stageNodeUpdate(nodeId);
+          return;
+        }
+        if (!nextNode) {
+          this.stageNodeDelete(nodeId);
+        }
+      });
+    
     return fromJS(
       { nodesById: mostRecent, selectionOffsets: mostRecentOffsets },
       reviver
