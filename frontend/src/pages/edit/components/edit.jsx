@@ -1098,12 +1098,14 @@ export default class EditPost extends React.Component {
     const {
       state: { editSectionNode }
     } = this;
-    const { imageId, width, height } = await this.uploadFile(firstFile);
+    if (!firstFile) {
+      // TODO: user hit cancel in the file dialog?
+      return;
+    }
+    const imageMeta = await this.uploadFile(firstFile);
     const updatedImageSectionNode = editSectionNode
-      .deleteIn(['meta', 'rotationDegrees'])
-      .setIn(['meta', 'url'], imageId)
-      .setIn(['meta', 'width'], width)
-      .setIn(['meta', 'height'], height);
+      .delete('meta')
+      .set('meta', Map(imageMeta));
     this.documentModel.update(updatedImageSectionNode);
     this.setState(
       {
