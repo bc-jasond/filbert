@@ -1041,12 +1041,8 @@ export default class EditPost extends React.Component {
     } = this;
     let meta = Map();
     if (sectionType === NODE_TYPE_IMAGE) {
-      const { imageId, width, height } = await this.uploadFile(firstFile);
-      meta = Map({
-        url: imageId,
-        width,
-        height
-      });
+      const imageMeta = await this.uploadFile(firstFile);
+      meta = Map(imageMeta);
     }
     const newSectionId = this.documentModel.update(
       insertMenuNode.set('type', sectionType).set('meta', meta)

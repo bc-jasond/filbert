@@ -2,11 +2,18 @@ const { promisify } = require("util");
 const fs = require("fs");
 const path = require("path");
 const AWS = require("aws-sdk");
+const {
+  objectStorageRegion,
+  objectStorageApiVersion,
+  objectStorageBaseUrl,
+  objectStorageACLPublic,
+  objectStorageACLPrivate
+} = require("./constants");
 
 const s3Client = new AWS.S3({
-  region: "us-east-1",
-  endpoint: "us-east-1.linodeobjects.com",
-  apiVersion: "2006-03-01",
+  region: objectStorageRegion,
+  endpoint: objectStorageBaseUrl,
+  apiVersion: objectStorageApiVersion,
   credentials: new AWS.Credentials({
     accessKeyId: process.env.LINODE_OBJECT_STORAGE_ACCESS_KEY,
     secretAccessKey: process.env.LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY
@@ -18,7 +25,7 @@ const headBucket = promisify(s3Client.headBucket).bind(s3Client);
 const createBucket = promisify(s3Client.createBucket).bind(s3Client);
 const upload = promisify(s3Client.upload).bind(s3Client);
 const listObjects = promisify(s3Client.listObjectsV2).bind(s3Client);
-const getObject = promisify(s3Client.getObject).bind(s3Client);
+const headObject = promisify(s3Client.headObject).bind(s3Client);
 const deleteObjects = promisify(s3Client.deleteObjects).bind(s3Client);
 const copyObject = promisify(s3Client.copyObject).bind(s3Client);
 
@@ -49,6 +56,22 @@ async function uploadFileToBucket(bucket, fileNameWithAbsolutePath) {
   });
 }
 
+async function uploadImageToBucket(
+  bucket,
+  key,
+  buffer,
+  metadata,
+  public = false
+) {
+  return upload({
+    Bucket: bucket,
+    Body: buffer,
+    Key: key,
+    Metadata: metadata,
+    ACL: public ? objectStorageACLPublic : objectStorageACLPrivate
+  });
+}
+
 async function listKeysForBucket(
   bucket,
   { sortOrder } = { sortOrder: "desc" }
@@ -71,8 +94,8 @@ async function listKeysForBucket(
   return response.Contents.map(({ Key }) => Key).sort(comparisonFn);
 }
 
-async function getKeyFromBucket(bucket, key) {
-  return getObject({ Bucket: bucket, Key: key });
+async function bucketHasKey(bucket, key) {
+  return headObject({ Bucket: bucket, Key: key });
 }
 
 async function copyKeyFromBucketToBucket(bucketSrc, bucketDest, key) {
@@ -98,9 +121,10 @@ async function deleteKeysForBucket(bucket, keys) {
 module.exports = {
   listBuckets,
   assertBucket,
+  uploadImageToBucket,
   uploadFileToBucket,
   listKeysForBucket,
-  getKeyFromBucket,
+  bucketHasKey,
   copyKeyFromBucketToBucket,
   deleteKeysForBucket
 };

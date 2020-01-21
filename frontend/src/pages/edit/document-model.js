@@ -243,6 +243,4 @@ export default class DocumentModel {
     }
     // else - deleting first node - noop
   }
-
-  // TODO: need a way to focus "terminal" sections like IMAGE, SPACER, QUOTE
 }

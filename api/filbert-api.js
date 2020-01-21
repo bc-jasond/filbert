@@ -27,7 +27,7 @@ const {
   publishDraft,
   deleteDraftAndContentNodes
 } = require("./routes/draft");
-const { getImageById, uploadImage, deleteImage } = require("./routes/image");
+const { getImageById, uploadImage } = require("./routes/image");
 const { getPostForEdit } = require("./routes/edit");
 const { postContentNodes } = require("./routes/content-nodes");
 
@@ -73,8 +73,7 @@ async function main() {
     app.delete("/post/:id", deletePublishedPost);
     app.get("/edit/:id", getPostForEdit);
     app.post("/content", postContentNodes);
-    app.post("/image", upload.single("fileData"), uploadImage);
-    app.delete("/image/:id", deleteImage);
+    app.post("/image", upload.single("fileData"), wrapMiddleware(uploadImage));
     app.get("/draft", wrapMiddleware(getDrafts));
     app.post("/publish/:id", publishDraft);
     app.delete("/draft/:id", deleteDraftAndContentNodes);
