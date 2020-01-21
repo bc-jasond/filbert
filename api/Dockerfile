@@ -1,7 +1,7 @@
 FROM node:12
 
 WORKDIR /api/
-COPY * /api/
+COPY . /api/
 
 ENV NODE_ENV=production
 RUN yarn
