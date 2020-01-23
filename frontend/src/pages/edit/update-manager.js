@@ -2,11 +2,16 @@ import { fromJS, List, Map } from 'immutable';
 
 import {
   HISTORY_KEY_NODE_UPDATES,
-  HISTORY_KEY_REDO_HISTORY,
-  HISTORY_KEY_UNDO_HISTORY,
+  HISTORY_KEY_REDO,
+  HISTORY_KEY_REDO_OFFSETS,
+  HISTORY_KEY_REDO_UPDATES,
+  HISTORY_KEY_UNDO,
+  HISTORY_KEY_UNDO_OFFSETS,
+  HISTORY_KEY_UNDO_UPDATES,
   NEW_POST_URL_ID,
   NODE_ACTION_DELETE,
-  NODE_ACTION_UPDATE
+  NODE_ACTION_UPDATE,
+  SELECTION_LINK_URL
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
@@ -18,7 +23,10 @@ const characterDiffSize = 6;
 export default class UpdateManager {
   commitTimeoutId;
 
-  lastUndoHistoryPush;
+  lastUndoHistoryNode = Map();
+
+  // cache one node for text changes, so we don't add a history entry for every keystroke
+  lastUndoHistoryOffsets;
 
   post = Map();
 
@@ -45,25 +53,19 @@ export default class UpdateManager {
   }
 
   get redoHistory() {
-    return this.getPostIdNamespaceValue(HISTORY_KEY_REDO_HISTORY, List());
+    return this.getPostIdNamespaceValue(HISTORY_KEY_REDO, List());
   }
 
   set redoHistory(value) {
-    return this.setPostIdNamespaceValue(
-      HISTORY_KEY_REDO_HISTORY,
-      value.takeLast(100)
-    );
+    return this.setPostIdNamespaceValue(HISTORY_KEY_REDO, value.takeLast(100));
   }
 
   get undoHistory() {
-    return this.getPostIdNamespaceValue(HISTORY_KEY_UNDO_HISTORY, List());
+    return this.getPostIdNamespaceValue(HISTORY_KEY_UNDO, List());
   }
 
   set undoHistory(value) {
-    return this.setPostIdNamespaceValue(
-      HISTORY_KEY_UNDO_HISTORY,
-      value.takeLast(100)
-    );
+    return this.setPostIdNamespaceValue(HISTORY_KEY_UNDO, value.takeLast(100));
   }
 
   addPostIdToUpdates(postId) {
@@ -72,66 +74,105 @@ export default class UpdateManager {
     );
   }
 
-  addToUndoHistory(nodeUpdate, selectionOffsets) {
-    const add = () => {
-      this.lastUndoHistoryPush = Date.now();
-      this.undoHistory = this.undoHistory.push(
-        Map({ nodeUpdate, selectionOffsets })
-      );
-    };
+  addToUndoHistory(prevNodesById, prevSelectionOffsets, selectionOffsets) {
+    // always clear redoHistory list since it would require a merge strategy to maintain
     this.redoHistory = List();
-    // add to the undo history if...
-    // it's been long enough
-    if (
-      !this.lastUndoHistoryPush ||
-      this.undoHistory.length === 0 ||
-      Date.now() - this.lastUndoHistoryPush > 30000
-    ) {
-      console.info("addToUndoHistory - it's been long enough");
-      add();
-      return;
-    }
-    
-    // user added / removed one or more nodes
-    const lastHistory = this.undoHistory.last(Map());
-    const mostRecent = lastHistory.get('nodesById', Map());
-    const merged = mostRecent.merge(nodesById);
-    // TODO: this doesn't account for highlighting n nodes and pasting in n new nodes
-    if (Math.abs(merged.size - mostRecent.size) > 0) {
-      console.info('addToUndoHistory - user added / removed one or more nodes');
-      add();
-      return;
-    }
-    // O(n) operation on the number of nodes in the document... :(
-    // we know by here that only 1 node changed
-    const mostRecentNode = mostRecent
-      .filter((node, id) => !node.equals(merged.get(id)))
-      .first();
-    if (!mostRecentNode) {
-      return;
-    }
-    const updatedNode = nodesById.get(mostRecentNode.get('id'));
-    if (updatedNode.get('type') !== mostRecentNode.get('type')) {
-      console.info('addToUndoHistory - one node changed TYPE');
-      add();
-      return;
-    }
-    if (!updatedNode.get('meta').equals(mostRecentNode.get('meta'))) {
-      console.info('addToUndoHistory - one node changed META');
-      add();
-      return;
-    }
-    if (
-      moreThanNCharsAreDifferent(
-        updatedNode.get('content'),
-        mostRecentNode.get('content'),
-        characterDiffSize
-      )
-    ) {
-      console.info(
-        `addToUndoHistory - one node changed more than ${characterDiffSize} characters in CONTENT`
+    // "reverse" the current updates list to get an "undo" list
+    // for text content changes - only add to history after N characters are different
+    const newHistoryEntry = this.nodeUpdates
+      .map((update, nodeId) => {
+        const prevNode = prevNodesById.get(nodeId);
+        // insert (update in nodeUpdates not present in prevNodesById) -> delete
+        // we inserted a new node, delete it (we'll update next_sibling_id for it's previous node below)
+        if (!prevNode) {
+          return update.set('action', NODE_ACTION_DELETE).delete('node');
+        }
+        // delete -> update
+        // if we just deleted this node, add it back
+        if (update.get('action') === NODE_ACTION_DELETE) {
+          return update.set('action', NODE_ACTION_UPDATE).set('node', prevNode);
+        }
+        const updatedNode = update.get('node');
+        // update - update
+        // if it's "structural" ('type', 'next_sibling_id', or certain changes to 'meta') - add it
+        if (
+          // node type changed
+          updatedNode.get('type') !== prevNode.get('type') ||
+          // node position in document changed
+          updatedNode.get('next_sibling_id') !==
+            prevNode.get('next_sibling_id') ||
+          // node meta data changed structure
+          updatedNode.get('meta', Map()).size !== prevNode.get('meta').size ||
+          // node meta,selections changed structure
+          updatedNode.getIn(['meta', 'selections'], List()).size !==
+            prevNode.getIn(['meta', 'selections'], List()).size
+        ) {
+          return update.set('node', prevNode);
+        }
+        // At this point, changes should be local to one text content field of one node.
+        // Cache the node to refer back to on subsequent diff checks
+        if (this.lastUndoHistoryNode.get('id') !== nodeId) {
+          this.lastUndoHistoryNode = update.get('node');
+          this.lastUndoHistoryOffsets = prevSelectionOffsets;
+        }
+        // content can live in a few different places: ('content', ['meta':'url', 'caption', 'author', 'context', 'quote'], ['meta':'selections':N:'linkUrl'] - add if enough characters changed
+        // find first field that changed and see if it meets the threshold
+        if (
+          // text content in 'content' changed enough
+          moreThanNCharsAreDifferent(
+            updatedNode.get('content'),
+            this.lastUndoHistoryNode.get('content'),
+            characterDiffSize
+          ) ||
+          // text content in 'meta' fields changed enough
+          List(['url', 'caption', 'author', 'context', 'quote'])
+            .filter(keyName =>
+              moreThanNCharsAreDifferent(
+                updatedNode.getIn(['meta', keyName], ''),
+                this.lastUndoHistoryNode.getIn(['meta', keyName], ''),
+                characterDiffSize
+              )
+            )
+            .first() ||
+          // linkUrl in a selection changed enough
+          updatedNode
+            .getIn(['meta', 'selections'], List())
+            .filter((updatedSelection, idx) =>
+              moreThanNCharsAreDifferent(
+                updatedSelection.get(SELECTION_LINK_URL, ''),
+                this.lastUndoHistoryNode.getIn(
+                  ['meta', 'selections', idx, SELECTION_LINK_URL],
+                  ''
+                ),
+                characterDiffSize
+              )
+            )
+            .first()
+        ) {
+          const updateWithNewNode = update.set(
+            'node',
+            this.lastUndoHistoryNode
+          );
+          this.lastUndoHistoryNode = Map();
+          this.lastUndoHistoryOffsets = undefined;
+          return updateWithNewNode;
+        }
+        return Map();
+      })
+      // remove empty Map()s
+      .filter(update => update.get('action'));
+
+    if (newHistoryEntry.size > 0) {
+      this.undoHistory = this.undoHistory.push(
+        Map({
+          // execute == 'undo'
+          executeUpdates: newHistoryEntry,
+          executeOffsets: this.lastUndoHistoryOffsets || prevSelectionOffsets,
+          // unexecute == 'redo'
+          unexecuteUpdates: this.nodeUpdates,
+          unexecuteOffsets: selectionOffsets
+        })
       );
-      add();
     }
   }
 
@@ -155,16 +196,9 @@ export default class UpdateManager {
     /* eslint-enable prefer-destructuring, no-self-assign */
   }
 
-  nodeHasBeenStagedForDelete(searchNodeId) {
-    return !!this.nodeUpdates.find(
-      (update, nodeId) =>
-        nodeId === searchNodeId && update.get('action') === NODE_ACTION_DELETE
-    );
-  }
-
-  saveContentBatch = async documentModel => {
+  saveContentBatch = async () => {
     try {
-      const updated = this.updates(documentModel);
+      const updated = Object.entries(this.nodeUpdates.toJS());
       if (updated.length === 0) return;
       // console.info('Save Batch', updated);
       const result = await apiPost('/content', updated);
@@ -177,26 +211,29 @@ export default class UpdateManager {
     }
   };
 
-  saveContentBatchDebounce = documentModel => {
+  saveContentBatchDebounce = () => {
     console.info('Batch Debounce');
     clearTimeout(this.commitTimeoutId);
-    this.commitTimeoutId = setTimeout(
-      () => this.saveContentBatch(documentModel),
-      750
-    );
+    this.commitTimeoutId = setTimeout(() => this.saveContentBatch(), 750);
   };
 
   stageNodeDelete(node) {
-    if (!node || node.size === 0 || ['null','undefined'].includes(nodeId.get('id'))) {
+    if (
+      !node ||
+      node.size === 0 ||
+      ['null', 'undefined'].includes(node.get('id'))
+    ) {
       console.error('stageNodeDelete - bad node', node);
       return;
     }
     const nodeId = node.get('id');
-    if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE) {
-      // TODO: ensure this is saved in history before replacing it
-      console.info('stageNodeDelete - deleting an updated node ', nodeId);
+    if (
+      this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE
+    ) {
+      // TODO: ensure this is saved in history before replacing it ?
+      console.info('stageNodeDelete - deleting an updated node ', node);
     } else {
-      console.info('stageNodeDelete ', nodeId);
+      console.info('stageNodeDelete ', node);
     }
     this.nodeUpdates = this.nodeUpdates.set(
       nodeId,
@@ -205,13 +242,19 @@ export default class UpdateManager {
   }
 
   stageNodeUpdate(node) {
-    if (!node || node.size === 0 || ['null','undefined'].includes(nodeId.get('id'))) {
+    if (
+      !node ||
+      node.size === 0 ||
+      ['null', 'undefined'].includes(node.get('id'))
+    ) {
       console.error('stageNodeUpdate - bad node', node);
       return;
     }
     const nodeId = node.get('id');
-    if (this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE) {
-      // TODO: ensure this is saved in history before replacing it
+    if (
+      this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE
+    ) {
+      // TODO: ensure this is saved in history before replacing it ?;
       console.info('stageNodeUpdate - updating a deleted node ', nodeId);
     } else {
       console.info('stageNodeUpdate ', nodeId);
@@ -222,74 +265,58 @@ export default class UpdateManager {
     );
   }
 
-  undoRedo(current, selectionOffsets, shouldUndo = true) {
-    const key = shouldUndo
-      ? HISTORY_KEY_UNDO_HISTORY
-      : HISTORY_KEY_REDO_HISTORY;
-    const otherKey = shouldUndo
-      ? HISTORY_KEY_REDO_HISTORY
-      : HISTORY_KEY_UNDO_HISTORY;
-    const lastHistoryEntry = this[key].last(Map());
-    const mostRecent = lastHistoryEntry.get('nodesById', Map());
-    const mostRecentOffsets = lastHistoryEntry.get('selectionOffsets', Map());
-    this[key] = this[key].pop();
-    if (mostRecent.size === 0) {
+  applyUpdates(updates, nodesById) {
+    let updatedNodesById = nodesById;
+    updates.forEach((update, nodeId) => {
+      if (update.get('action') === NODE_ACTION_DELETE) {
+        updatedNodesById = updatedNodesById.delete(nodeId);
+      } else {
+        updatedNodesById = updatedNodesById.set(nodeId, update.get('node'));
+      }
+    });
+    // TODO: clear or merge?
+    this.clearUpdates();
+    this.nodeUpdates = updates;
+    return updatedNodesById;
+  }
+
+  undo(currentNodesById) {
+    const lastHistoryEntry = this[HISTORY_KEY_UNDO].last(Map());
+    const undoUpdates = lastHistoryEntry.get(HISTORY_KEY_UNDO_UPDATES, Map());
+    const undoOffsets = lastHistoryEntry.get(HISTORY_KEY_UNDO_OFFSETS, Map());
+    this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO].pop();
+    if (undoUpdates.size === 0) {
       return Map();
     }
-    this[otherKey] = this[otherKey].push(
-      fromJS({ nodesById: current, selectionOffsets }, reviver)
-    );
-    
-    //this.diff(current, mostRecent);
-      // TODO: flush updates first?
-      this.clearUpdates();
-      current.merge(next).forEach(node => {
-        const nodeId = node.get('id');
-        const currentNode = current.get(nodeId);
-        const nextNode = next.get(nodeId);
-        if (
-          // update
-          (currentNode && nextNode && !nextNode.equals(currentNode)) ||
-          // insert
-          !currentNode
-        ) {
-          this.stageNodeUpdate(nodeId);
-          return;
-        }
-        if (!nextNode) {
-          this.stageNodeDelete(nodeId);
-        }
-      });
-    
+    // since history objects are self-contained with both undo and redo data
+    // we just move them back and forth between undo / redo stacks
+    this[HISTORY_KEY_REDO] = this[HISTORY_KEY_REDO].push(lastHistoryEntry);
+
+    const updatedNodesById = this.applyUpdates(undoUpdates, currentNodesById);
+
     return fromJS(
-      { nodesById: mostRecent, selectionOffsets: mostRecentOffsets },
+      { nodesById: updatedNodesById, selectionOffsets: undoOffsets },
       reviver
     );
   }
 
-  /**
-   * 1) validates that a node with "nodeId" exists in the document model
-   * 2) grabs the current state of node with "nodeId" at the time of this call - destructive editing without a concept of history
-   *
-   * TODO: for undo/redo #2 will need to move up into the calls to stageNodeForUpdate(), this will require a
-   *  a rolling delta approach
-   */
-  updates(documentModel) {
-    return Object.entries(
-      this.nodeUpdates
-        // don't send bad updates
-        .filterNot(
-          (update, nodeId) =>
-            update.get('action') === NODE_ACTION_UPDATE &&
-            documentModel.getNode(nodeId).size === 0
-        )
-        // don't look for deleted nodes...
-        .map((update, nodeId) =>
-          update.get('action') === NODE_ACTION_DELETE
-            ? update
-            : update.set('node', documentModel.getNode(nodeId))
-        )
-        .toJS()
+  redo(currentNodesById) {
+    const lastHistoryEntry = this[HISTORY_KEY_REDO].last(Map());
+    const redoUpdates = lastHistoryEntry.get(HISTORY_KEY_REDO_UPDATES, Map());
+    const redoOffsets = lastHistoryEntry.get(HISTORY_KEY_REDO_OFFSETS, Map());
+    this[HISTORY_KEY_REDO] = this[HISTORY_KEY_REDO].pop();
+    if (redoUpdates.size === 0) {
+      return Map();
+    }
+    // since history objects are self-contained with both undo and redo data
+    // we just move them back and forth between undo / redo stacks
+    this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO].push(lastHistoryEntry);
+
+    const updatedNodesById = this.applyUpdates(redoUpdates, currentNodesById);
+
+    return fromJS(
+      { nodesById: updatedNodesById, selectionOffsets: redoOffsets },
+      reviver
     );
   }
 }

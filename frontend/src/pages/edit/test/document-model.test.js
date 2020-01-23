@@ -10,8 +10,7 @@ import { testPostWithAllTypesJS } from './test-post-with-all-types';
 overrideConsole();
 const updateManagerMock = {
   stageNodeUpdate: jest.fn(),
-  stageNodeDelete: jest.fn(),
-  nodeHasBeenStagedForDelete: jest.fn()
+  stageNodeDelete: jest.fn()
 };
 
 const { post, contentNodes } = testPostWithAllTypesJS;

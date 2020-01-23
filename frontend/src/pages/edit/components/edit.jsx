@@ -185,6 +185,8 @@ export default class EditPost extends React.Component {
     console.debug('New PostNew PostNew PostNew PostNew PostNew Post');
     const postPlaceholder = Map({ id: NEW_POST_URL_ID });
     this.updateManager.init(postPlaceholder);
+    // don't bring forward failed updates to other posts!
+    this.updateManager.clearUpdates();
     const startNodeId = this.documentModel.init(
       postPlaceholder,
       this.updateManager
@@ -201,7 +203,7 @@ export default class EditPost extends React.Component {
     const { postId } = await apiPost('/post', { title, canonical });
     // update post id for all updates
     this.updateManager.addPostIdToUpdates(postId);
-    await this.updateManager.saveContentBatch(this.documentModel);
+    await this.updateManager.saveContentBatch();
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
     this.setState({ shouldRedirect: `/edit/${postId}?shouldFocusLastNode` });
   };
@@ -374,20 +376,17 @@ export default class EditPost extends React.Component {
     const {
       state: { nodesById }
     } = this;
-    const currentSelectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-    const historyEntry = this.updateManager.undoRedo(
-      nodesById,
-      currentSelectionOffsets,
-      shouldUndo
-    );
-    const prevNodesById = historyEntry.get('nodesById');
-    const selectionOffsets = historyEntry.get('selectionOffsets');
-    if (!prevNodesById) {
+    const historyEntry = shouldUndo
+      ? this.updateManager.undo(nodesById)
+      : this.updateManager.redo(nodesById);
+    const historyNodesById = historyEntry.get('nodesById', Map());
+    const historyOffsets = historyEntry.get('selectionOffsets', Map());
+    if (historyNodesById.size === 0) {
       return;
     }
     console.info(`${shouldUndo ? 'UNDO!' : 'REDO!'}`);
-    this.documentModel.nodesById = prevNodesById;
-    this.commitUpdates(undefined, selectionOffsets.toJS());
+    this.documentModel.nodesById = historyNodesById;
+    this.commitUpdates(undefined, historyOffsets.toJS());
   };
 
   commitUpdates = (prevSelectionOffsets, selectionOffsets) => {
@@ -398,10 +397,18 @@ export default class EditPost extends React.Component {
     // TODO: optimistically save updated nodes - look ma, no errors!
     return new Promise((resolve /* , reject */) => {
       const {
-        state: { nodesById, post }
+        state: {
+          // these are the previous nodes - the updated ones are still in this.documentModel.nodesById
+          nodesById: prevNodesById,
+          post
+        }
       } = this;
       if (post.size > 0 && prevSelectionOffsets) {
-        this.updateManager.addToUndoHistory(nodesById, prevSelectionOffsets);
+        this.updateManager.addToUndoHistory(
+          prevNodesById,
+          prevSelectionOffsets,
+          selectionOffsets
+        );
       }
       // roll with state changes TODO: handle errors - roll back?
       const newState = {
@@ -419,7 +426,7 @@ export default class EditPost extends React.Component {
       this.setState(newState, async () => {
         // if we're on /edit/new, we don't save until user hits "enter"
         if (this.props?.params?.id !== NEW_POST_URL_ID) {
-          this.updateManager.saveContentBatchDebounce(this.documentModel);
+          this.updateManager.saveContentBatchDebounce();
         }
         // no more caret work necessary for Meta nodes
         if (

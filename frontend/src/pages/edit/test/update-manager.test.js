@@ -64,12 +64,6 @@ describe('UpdateManager', () => {
     updateManager.stageNodeDelete('foo');
     expect(updateManager).toMatchSnapshot();
   });
-  test('nodeHasBeenStagedForDelete method', () => {
-    updateManager.stageNodeUpdate('foo');
-    expect(updateManager.nodeHasBeenStagedForDelete('foo')).toBe(false);
-    updateManager.stageNodeDelete('foo');
-    expect(updateManager.nodeHasBeenStagedForDelete('foo')).toBe(true);
-  });
   test('addPostIdToUpdates method', () => {
     // mimic a "not-yet-saved" post
     updateManager.init({});
