@@ -1,5 +1,6 @@
 import { fromJS, List, Map } from 'immutable';
 
+import DocumentModel from './document-model';
 import {
   HISTORY_KEY_NODE_UPDATES,
   HISTORY_KEY_REDO,
@@ -218,11 +219,7 @@ export default class UpdateManager {
   };
 
   stageNodeDelete(node) {
-    if (
-      !node ||
-      node.size === 0 ||
-      ['null', 'undefined'].includes(node.get('id'))
-    ) {
+    if (!DocumentModel.nodeIsValid(node)) {
       console.error('stageNodeDelete - bad node', node);
       return;
     }
@@ -242,11 +239,7 @@ export default class UpdateManager {
   }
 
   stageNodeUpdate(node) {
-    if (
-      !node ||
-      node.size === 0 ||
-      ['null', 'undefined'].includes(node.get('id'))
-    ) {
+    if (!DocumentModel.nodeIsValid(node)) {
       console.error('stageNodeUpdate - bad node', node);
       return;
     }
