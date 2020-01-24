@@ -23,10 +23,9 @@ const characterDiffSize = 6;
 
 export default class UpdateManager {
   commitTimeoutId;
-
+  
+  // cache last node for text changes, so we don't add a history entry for every keystroke
   lastUndoHistoryNode = Map();
-
-  // cache one node for text changes, so we don't add a history entry for every keystroke
   lastUndoHistoryOffsets;
 
   post = Map();
@@ -111,9 +110,9 @@ export default class UpdateManager {
           return update.set('node', prevNode);
         }
         // At this point, changes should be local to one text content field of one node.
-        // Cache the node to refer back to on subsequent diff checks
+        // Cache the node to refer back to on subsequent diff checks (for each keystroke on the same node)
         if (this.lastUndoHistoryNode.get('id') !== nodeId) {
-          this.lastUndoHistoryNode = update.get('node');
+          this.lastUndoHistoryNode = prevNode;
           this.lastUndoHistoryOffsets = prevSelectionOffsets;
         }
         // content can live in a few different places: ('content', ['meta':'url', 'caption', 'author', 'context', 'quote'], ['meta':'selections':N:'linkUrl'] - add if enough characters changed

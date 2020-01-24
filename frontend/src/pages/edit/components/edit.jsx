@@ -376,16 +376,18 @@ export default class EditPost extends React.Component {
     const {
       state: { nodesById }
     } = this;
+    // this pops the undo/redo stack AND applies the updates to the document (nodesById)
     const historyEntry = shouldUndo
       ? this.updateManager.undo(nodesById)
       : this.updateManager.redo(nodesById);
-    const historyNodesById = historyEntry.get('nodesById', Map());
+    const updatedNodesById = historyEntry.get('nodesById', Map());
     const historyOffsets = historyEntry.get('selectionOffsets', Map());
-    if (historyNodesById.size === 0) {
+    if (updatedNodesById.size === 0) {
       return;
     }
     console.info(`${shouldUndo ? 'UNDO!' : 'REDO!'}`);
-    this.documentModel.nodesById = historyNodesById;
+    this.documentModel.nodesById = updatedNodesById;
+    // passing undefined as prevSelectionOffsets will skip adding this operation to history again
     this.commitUpdates(undefined, historyOffsets.toJS());
   };
 
@@ -398,7 +400,7 @@ export default class EditPost extends React.Component {
     return new Promise((resolve /* , reject */) => {
       const {
         state: {
-          // these are the previous nodes - the updated ones are still in this.documentModel.nodesById
+          // these are the "clean" nodes - the updated (dirty) ones are in this.documentModel.nodesById (and this.updateManager.nodeUpdates)
           nodesById: prevNodesById,
           post
         }
