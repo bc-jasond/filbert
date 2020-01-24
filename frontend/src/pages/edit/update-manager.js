@@ -1,6 +1,6 @@
 import { fromJS, List, Map } from 'immutable';
 
-import DocumentModel from './document-model';
+import DocumentModel, { reviver } from './document-model';
 import {
   HISTORY_KEY_NODE_UPDATES,
   HISTORY_KEY_REDO,
@@ -17,15 +17,15 @@ import {
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
 import { moreThanNCharsAreDifferent } from '../../common/utils';
-import { reviver } from './document-model';
 
 const characterDiffSize = 6;
 
 export default class UpdateManager {
   commitTimeoutId;
-  
+
   // cache last node for text changes, so we don't add a history entry for every keystroke
   lastUndoHistoryNode = Map();
+
   lastUndoHistoryOffsets;
 
   post = Map();

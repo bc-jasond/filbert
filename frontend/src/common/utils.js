@@ -149,6 +149,6 @@ export function moreThanNCharsAreDifferent(left, right, n) {
   return false;
 }
 
-export function idIsValid(maybeId){
+export function idIsValid(maybeId) {
   return new RegExp(/[0-9a-f]{4}/).test(maybeId);
 }

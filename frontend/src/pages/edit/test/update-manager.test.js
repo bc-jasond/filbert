@@ -41,13 +41,13 @@ describe('UpdateManager', () => {
     expect(updateManager.nodeUpdates.size).toBe(0);
     updateManager.stageNodeUpdate(null);
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeUpdate(Map({id:'null'}));
+    updateManager.stageNodeUpdate(Map({ id: 'null' }));
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeUpdate(Map({id:'undefined'}));
+    updateManager.stageNodeUpdate(Map({ id: 'undefined' }));
     expect(updateManager.nodeUpdates.size).toBe(0);
     // test that last-write-wins, update overwrites delete
-    updateManager.stageNodeDelete(Map({id:'1234'}));
-    updateManager.stageNodeUpdate(Map({id:'1234'}));
+    updateManager.stageNodeDelete(Map({ id: '1234' }));
+    updateManager.stageNodeUpdate(Map({ id: '1234' }));
     expect(updateManager.nodeUpdates.size).toBe(1);
     expect(updateManager).toMatchSnapshot();
   });
@@ -56,27 +56,29 @@ describe('UpdateManager', () => {
     expect(updateManager.nodeUpdates.size).toBe(0);
     updateManager.stageNodeDelete(null);
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeDelete(Map({id:'null'}));
+    updateManager.stageNodeDelete(Map({ id: 'null' }));
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeDelete(Map({id:'undefined'}));
+    updateManager.stageNodeDelete(Map({ id: 'undefined' }));
     expect(updateManager.nodeUpdates.size).toBe(0);
     // test that last-write-wins, delete overwrites update
-    updateManager.stageNodeUpdate(Map({id:'1234'}));
-    updateManager.stageNodeDelete(Map({id:'1234'}));
+    updateManager.stageNodeUpdate(Map({ id: '1234' }));
+    updateManager.stageNodeDelete(Map({ id: '1234' }));
     expect(updateManager).toMatchSnapshot();
   });
   test('addPostIdToUpdates method', () => {
     // mimic a "not-yet-saved" post
     updateManager.init({});
-    updateManager.stageNodeUpdate(Map({id:'abcd'}));
-    expect(updateManager.nodeUpdates.get('abcd').get('post_id')).toBeUndefined();
+    updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
+    expect(
+      updateManager.nodeUpdates.get('abcd').get('post_id')
+    ).toBeUndefined();
     updateManager.addPostIdToUpdates(1);
     expect(updateManager.nodeUpdates.get('abcd').get('post_id')).toBe(1);
   });
   test('clearUpdates method', () => {
-    updateManager.stageNodeUpdate(Map({id:'1111'}));
-    updateManager.stageNodeUpdate(Map({id:'abcd'}));
-    updateManager.stageNodeDelete(Map({id:'2222'}));
+    updateManager.stageNodeUpdate(Map({ id: '1111' }));
+    updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
+    updateManager.stageNodeDelete(Map({ id: '2222' }));
     expect(updateManager.nodeUpdates.size).toBe(3);
     updateManager.clearUpdates();
     expect(updateManager.nodeUpdates.size).toBe(0);
