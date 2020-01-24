@@ -16,7 +16,7 @@ const {
   getCanonicalFromTitle,
   deleteContentRange
 } = require('./utils');
-const { idRegExp } = require('./test-helpers');
+const { idIsValid } = require('../common/utils');
 
 global.confirm = jest.fn().mockImplementation(arg => arg);
 
@@ -39,7 +39,7 @@ describe('utils', () => {
     );
   });
   test('s4', () => {
-    expect(idRegExp.test(s4())).toBe(true);
+    expect(idIsValid(s4())).toBe(true);
   });
   test('getMapWithId', () => {
     const objWithId = {
@@ -53,7 +53,7 @@ describe('utils', () => {
     };
     const map2 = getMapWithId(mapWithoutId);
     expect(Map.isMap(map2)).toBe(true);
-    expect(idRegExp.test(map2.get('id'))).toBe(true);
+    expect(idIsValid(map2.get('id'))).toBe(true);
     expect(map2.get('foo')).toBe('bar');
   });
   test('cleanTextOrZeroLengthPlaceholder', () => {
@@ -106,7 +106,7 @@ describe('utils', () => {
     // i.e. "a-sultry-stifling-midday-5940"
     const pieces = canonical.split('-');
     expect(pieces.length).toBe(5);
-    expect(idRegExp.test(pieces[pieces.length - 1])).toBe(true);
+    expect(idIsValid(pieces[pieces.length - 1])).toBe(true);
   });
   test('deleteContentRange', () => {
     const text = 'Someone must have been telling lies about Josef K.';

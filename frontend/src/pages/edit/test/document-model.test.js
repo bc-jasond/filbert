@@ -1,6 +1,6 @@
 import { Map } from 'immutable';
 import { NODE_TYPE_H1 } from '../../../common/constants';
-import { idRegExp, overrideConsole } from '../../../common/test-helpers';
+import { overrideConsole } from '../../../common/test-helpers';
 
 import * as SelectionHelpers from '../selection-helpers';
 
@@ -10,8 +10,7 @@ import { testPostWithAllTypesJS } from './test-post-with-all-types';
 overrideConsole();
 const updateManagerMock = {
   stageNodeUpdate: jest.fn(),
-  stageNodeDelete: jest.fn(),
-  nodeHasBeenStagedForDelete: jest.fn()
+  stageNodeDelete: jest.fn()
 };
 
 const { post, contentNodes } = testPostWithAllTypesJS;
@@ -32,11 +31,11 @@ describe('DocumentModel', () => {
       documentModel.nodesById
     );
     expect(placeholderTitle.get('type')).toBe(NODE_TYPE_H1);
-    expect(idRegExp.test(placeholderTitle.get('id'))).toBe(true);
+    expect(DocumentModel.nodeIsValid(placeholderTitle)).toBe(true);
   });
   test('getMapWithId', () => {
     const result = documentModel.getMapWithId({});
-    expect(idRegExp.test(result.get('id'))).toBe(true);
+    expect(DocumentModel.nodeIsValid(result)).toBe(true);
     expect(result.get('post_id')).toBe(175);
   });
   test('getNode', () => {

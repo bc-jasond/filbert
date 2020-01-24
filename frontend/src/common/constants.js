@@ -98,5 +98,9 @@ export const DOM_TEXT_NODE_TYPE_ID = 3;
 
 // HISTORY - undo / redo
 export const HISTORY_KEY_NODE_UPDATES = 'nodeUpdates';
-export const HISTORY_KEY_UNDO_HISTORY = 'undoHistory';
-export const HISTORY_KEY_REDO_HISTORY = 'redoHistory';
+export const HISTORY_KEY_UNDO = 'undoHistory';
+export const HISTORY_KEY_REDO = 'redoHistory';
+export const HISTORY_KEY_UNDO_UPDATES = 'executeUpdates';
+export const HISTORY_KEY_UNDO_OFFSETS = 'executeOffsets';
+export const HISTORY_KEY_REDO_UPDATES = 'unexecuteUpdates';
+export const HISTORY_KEY_REDO_OFFSETS = 'unexecuteOffsets';

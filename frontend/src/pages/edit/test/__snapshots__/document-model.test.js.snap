@@ -418,7 +418,6 @@ DocumentModel {
     "id": 175,
   },
   "updateManager": Object {
-    "nodeHasBeenStagedForDelete": [MockFunction],
     "stageNodeDelete": [MockFunction],
     "stageNodeUpdate": [MockFunction],
   },

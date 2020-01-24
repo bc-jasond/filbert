@@ -41,13 +41,14 @@ describe('UpdateManager', () => {
     expect(updateManager.nodeUpdates.size).toBe(0);
     updateManager.stageNodeUpdate(null);
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeUpdate('null');
+    updateManager.stageNodeUpdate(Map({ id: 'null' }));
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeUpdate('undefined');
+    updateManager.stageNodeUpdate(Map({ id: 'undefined' }));
     expect(updateManager.nodeUpdates.size).toBe(0);
     // test that last-write-wins, update overwrites delete
-    updateManager.stageNodeDelete('foo');
-    updateManager.stageNodeUpdate('foo');
+    updateManager.stageNodeDelete(Map({ id: '1234' }));
+    updateManager.stageNodeUpdate(Map({ id: '1234' }));
+    expect(updateManager.nodeUpdates.size).toBe(1);
     expect(updateManager).toMatchSnapshot();
   });
   test('stageNodeDelete method', () => {
@@ -55,47 +56,29 @@ describe('UpdateManager', () => {
     expect(updateManager.nodeUpdates.size).toBe(0);
     updateManager.stageNodeDelete(null);
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeDelete('null');
+    updateManager.stageNodeDelete(Map({ id: 'null' }));
     expect(updateManager.nodeUpdates.size).toBe(0);
-    updateManager.stageNodeDelete('undefined');
+    updateManager.stageNodeDelete(Map({ id: 'undefined' }));
     expect(updateManager.nodeUpdates.size).toBe(0);
     // test that last-write-wins, delete overwrites update
-    updateManager.stageNodeUpdate('foo');
-    updateManager.stageNodeDelete('foo');
+    updateManager.stageNodeUpdate(Map({ id: '1234' }));
+    updateManager.stageNodeDelete(Map({ id: '1234' }));
     expect(updateManager).toMatchSnapshot();
-  });
-  test('nodeHasBeenStagedForDelete method', () => {
-    updateManager.stageNodeUpdate('foo');
-    expect(updateManager.nodeHasBeenStagedForDelete('foo')).toBe(false);
-    updateManager.stageNodeDelete('foo');
-    expect(updateManager.nodeHasBeenStagedForDelete('foo')).toBe(true);
   });
   test('addPostIdToUpdates method', () => {
     // mimic a "not-yet-saved" post
     updateManager.init({});
-    updateManager.stageNodeUpdate('bar');
-    expect(updateManager.nodeUpdates.get('bar').get('post_id')).toBeUndefined();
+    updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
+    expect(
+      updateManager.nodeUpdates.get('abcd').get('post_id')
+    ).toBeUndefined();
     updateManager.addPostIdToUpdates(1);
-    expect(updateManager.nodeUpdates.get('bar').get('post_id')).toBe(1);
-  });
-  test('updates method', () => {
-    // filter out ids that are "falsy", "null" or not found in the documentModel
-    updateManager.stageNodeUpdate('foo');
-    updateManager.stageNodeUpdate('qux');
-    updateManager.stageNodeDelete('bar');
-    updateManager.stageNodeUpdate('badId');
-    const documentModelMock = {
-      getNode: jest
-        .fn()
-        .mockImplementation(id => (id === 'badId' ? Map() : Map({ id })))
-    };
-    const updatesJS = updateManager.updates(documentModelMock);
-    expect(updatesJS).toMatchSnapshot();
+    expect(updateManager.nodeUpdates.get('abcd').get('post_id')).toBe(1);
   });
   test('clearUpdates method', () => {
-    updateManager.stageNodeUpdate('foo');
-    updateManager.stageNodeUpdate('qux');
-    updateManager.stageNodeDelete('bar');
+    updateManager.stageNodeUpdate(Map({ id: '1111' }));
+    updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
+    updateManager.stageNodeDelete(Map({ id: '2222' }));
     expect(updateManager.nodeUpdates.size).toBe(3);
     updateManager.clearUpdates();
     expect(updateManager.nodeUpdates.size).toBe(0);
@@ -103,4 +86,11 @@ describe('UpdateManager', () => {
     updateManager.clearUpdates();
     expect(updateManager.nodeUpdates.size).toBe(0);
   });
+  test.todo('addToUndoHistory');
+  test.todo('applyUpdates');
+  test.todo('undo');
+  test.todo('redo');
+  test.todo('getters / setters');
+  test.todo('saveContentBatch');
+  test.todo('saveContentDebounce');
 });

@@ -3,7 +3,8 @@
 exports[`UpdateManager init method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
-  "lastUndoHistoryPush": undefined,
+  "lastUndoHistoryNode": Immutable.Map {},
+  "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
     "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
     "created": "2019-05-18 17:28:55",
@@ -23,7 +24,8 @@ UpdateManager {
 exports[`UpdateManager stageNodeDelete method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
-  "lastUndoHistoryPush": undefined,
+  "lastUndoHistoryNode": Immutable.Map {},
+  "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
     "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
     "created": "2019-05-18 17:28:55",
@@ -43,7 +45,8 @@ UpdateManager {
 exports[`UpdateManager stageNodeUpdate method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
-  "lastUndoHistoryPush": undefined,
+  "lastUndoHistoryNode": Immutable.Map {},
+  "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
     "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
     "created": "2019-05-18 17:28:55",
@@ -58,36 +61,4 @@ UpdateManager {
   "saveContentBatch": [Function],
   "saveContentBatchDebounce": [Function],
 }
-`;
-
-exports[`UpdateManager updates method 1`] = `
-Array [
-  Array [
-    "foo",
-    Object {
-      "action": "update",
-      "node": Object {
-        "id": "foo",
-      },
-      "post_id": 1,
-    },
-  ],
-  Array [
-    "qux",
-    Object {
-      "action": "update",
-      "node": Object {
-        "id": "qux",
-      },
-      "post_id": 1,
-    },
-  ],
-  Array [
-    "bar",
-    Object {
-      "action": "delete",
-      "post_id": 1,
-    },
-  ],
-]
 `;
