@@ -268,7 +268,7 @@ function getParagraphContentOffset(formattingNodeArg, paragraph) {
 }
 
 export function caretIsAtBeginningOfInput() {
-  const active = document.activeElement;
+  const { activeElement: active } = document;
   return active.tagName === DOM_INPUT_TAG_NAME && active.selectionStart === 0;
 }
 

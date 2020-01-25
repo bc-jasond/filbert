@@ -68,17 +68,21 @@ const MenuItem = ({ onClick, Styled, isSelected }) => (
 
 export default class EditImageForm extends React.Component {
   captionRef = React.createRef();
+
   fileInputRef = React.createRef();
 
   menuItems = [
-    { Component: IconImage, onClick: () => this.props.imageResize(true) },
+    {
+      Component: IconImage,
+      onClick: () => this.fileInputRef?.current?.click?.()
+    },
     {
       Component: IconRotate,
       onClick: () =>
-        this.props.imageRotate(this.props.nodeModel.getIn(['meta', 'url']))
+        this.props?.imageRotate(this.props?.nodeModel?.getIn?.(['meta', 'url']))
     },
-    { Component: PlusPx, onClick: () => this.props.imageResize(true) },
-    { Component: MinusPx, onClick: () => this.props.imageResize(false) }
+    { Component: PlusPx, onClick: () => this.props?.imageResize?.(true) },
+    { Component: MinusPx, onClick: () => this.props?.imageResize?.(false) }
   ];
 
   constructor(props) {
@@ -86,6 +90,30 @@ export default class EditImageForm extends React.Component {
     this.state = {
       currentIdx: 4
     };
+  }
+
+  componentDidMount() {
+    const {
+      props: { nodeModel }
+    } = this;
+    if (this.captionRef) {
+      focusAndScrollSmooth(nodeModel.get('id'), this.captionRef.current);
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const {
+      state: { currentIdx },
+      props: { windowEvent }
+    } = this;
+    if (windowEvent && windowEvent !== prevProps.windowEvent) {
+      this.handleKeyDown(windowEvent);
+    }
+    if (currentIdx === 4) {
+      this.captionRef?.current?.focus?.();
+      return;
+    }
+    this.captionRef?.current?.blur?.();
   }
 
   handleKeyDown = evt => {
@@ -114,30 +142,6 @@ export default class EditImageForm extends React.Component {
       stopAndPrevent(evt);
     }
   };
-
-  componentDidMount() {
-    const {
-      props: { nodeModel }
-    } = this;
-    if (this.captionRef) {
-      focusAndScrollSmooth(nodeModel.get('id'), this.captionRef.current);
-    }
-  }
-
-  componentDidUpdate(prevProps) {
-    const {
-      state: { currentIdx },
-      props: { windowEvent }
-    } = this;
-    if (windowEvent && windowEvent !== prevProps.windowEvent) {
-      this.handleKeyDown(windowEvent);
-    }
-    if (currentIdx === 4) {
-      this.captionRef?.current?.focus?.();
-      return;
-    }
-    this.captionRef?.current?.blur?.();
-  }
 
   render() {
     const {
