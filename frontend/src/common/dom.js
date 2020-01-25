@@ -1,5 +1,6 @@
 import {
   DOM_ELEMENT_NODE_TYPE_ID,
+  DOM_INPUT_TAG_NAME,
   DOM_TEXT_NODE_TYPE_ID,
   KEYCODE_ALT,
   KEYCODE_CAPS_LOCK,
@@ -264,6 +265,11 @@ function getParagraphContentOffset(formattingNodeArg, paragraph) {
     offset += paragraph.childNodes[i].textContent.length;
   }
   return offset;
+}
+
+export function caretIsAtBeginningOfInput() {
+  const active = document.activeElement;
+  return active.tagName === DOM_INPUT_TAG_NAME && active.selectionStart === 0;
 }
 
 /**
