@@ -3,7 +3,6 @@ import styled from 'styled-components';
 
 import {
   Arrow,
-  ButtonSeparator,
   DarkInput,
   IconButton,
   LilSassyMenu,
@@ -56,6 +55,7 @@ export default ({
   uploadFile,
   updateMeta,
   imageRotate,
+  imageResize,
   forwardRef
 }) => (
   <EditImageMenu data-is-menu top={offsetTop}>
@@ -65,10 +65,10 @@ export default ({
     <IconButton onClick={() => imageRotate(nodeModel.getIn(['meta', 'url']))}>
       <IconRotate />
     </IconButton>
-    <IconButton>
+    <IconButton onClick={() => imageResize(true)}>
       <PlusPx />
     </IconButton>
-    <IconButton>
+    <IconButton onClick={() => imageResize(false)}>
       <MinusPx />
     </IconButton>
     <ImageCaptionInput

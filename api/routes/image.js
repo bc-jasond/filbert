@@ -5,7 +5,7 @@ const { imageBucketName, objectStorageBaseUrl } = require("../lib/constants");
 
 async function getImageKey(buffer, userId, imgMeta) {
   const checksum = await getChecksum(buffer);
-  return `${process.env.NODE_ENV}_${userId}_${checksum}.${imgMeta.format}`;
+  return `${process.env.NODE_ENV || 'dev'}_${userId}_${checksum}.${imgMeta.format}`;
 }
 
 async function uploadImage(req, res) {

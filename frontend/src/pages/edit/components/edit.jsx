@@ -1157,6 +1157,67 @@ export default class EditPost extends React.Component {
     );
   };
 
+  imageResize = shouldGetBigger => {
+    const {
+      state: { editSectionNode }
+    } = this;
+    const maxAllowed = 1000;
+    const resizeAmount = 0.1; // +/- by 10% at a time
+    // plus/minus buttons resize the image by a fixed amount
+    const originalWidth = editSectionNode.getIn(['meta', 'width']);
+    const currentResizeWidth = editSectionNode.getIn(
+      ['meta', 'resizeWidth'],
+      originalWidth
+    );
+    const originalHeight = editSectionNode.getIn(['meta', 'height']);
+    const currentResizeHeight = editSectionNode.getIn(
+      ['meta', 'resizeHeight'],
+      originalHeight
+    );
+    const resizeAmountWidth = resizeAmount * originalWidth;
+    const resizeAmountHeight = resizeAmount * originalHeight;
+    // no-op because image is already biggest/smallest allowed?
+    if (
+      // user clicked plus but image is already max size
+      (shouldGetBigger &&
+        (currentResizeHeight + resizeAmountHeight > maxAllowed ||
+          currentResizeWidth + resizeAmountWidth > maxAllowed)) ||
+      // user clicked minus but image is already min size
+      (!shouldGetBigger &&
+        (currentResizeHeight - resizeAmountHeight < resizeAmountHeight ||
+          currentResizeWidth - resizeAmountWidth < resizeAmountWidth))
+    ) {
+      return;
+    }
+
+    const updatedImageSectionNode = editSectionNode
+      .setIn(
+        ['meta', 'resizeWidth'],
+        shouldGetBigger
+          ? currentResizeWidth + resizeAmountWidth
+          : currentResizeWidth - resizeAmountWidth
+      )
+      .setIn(
+        ['meta', 'resizeHeight'],
+        shouldGetBigger
+          ? currentResizeHeight + resizeAmountHeight
+          : currentResizeHeight - resizeAmountHeight
+      );
+
+    this.documentModel.update(updatedImageSectionNode);
+    this.setState(
+      {
+        editSectionNode: updatedImageSectionNode
+      },
+      async () => {
+        await this.commitUpdates(
+          this.getSelectionOffsetsOrEditSectionNode(),
+          this.getSelectionOffsetsOrEditSectionNode()
+        );
+      }
+    );
+  };
+
   updateEditSectionNodeMeta = (metaKey, value) => {
     const {
       state: { editSectionNode }
@@ -1446,6 +1507,7 @@ export default class EditPost extends React.Component {
                 uploadFile={this.replaceImageFile}
                 updateMeta={this.updateEditSectionNodeMeta}
                 imageRotate={this.imageRotate}
+                imageResize={this.imageResize}
                 forwardRef={this.getInputForwardedRef}
               />
             )}
