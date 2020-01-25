@@ -21,7 +21,8 @@ import {
 } from '../../../common/constants';
 import { stopAndPrevent } from '../../../common/utils';
 import {
-  caretIsAtBeginningOfInput, caretIsAtEndOfInput,
+  caretIsAtBeginningOfInput,
+  caretIsAtEndOfInput,
   focusAndScrollSmooth
 } from '../../../common/dom';
 
@@ -130,7 +131,10 @@ export default class EditImageForm extends React.Component {
       stopAndPrevent(evt);
       return;
     }
-    if (evt.keyCode === KEYCODE_RIGHT_ARROW && (currentIdx < 4 || caretIsAtEndOfInput())) {
+    if (
+      evt.keyCode === KEYCODE_RIGHT_ARROW &&
+      (currentIdx < 4 || caretIsAtEndOfInput())
+    ) {
       const nextIdx = currentIdx === 4 ? 0 : currentIdx + 1;
       this.setState({ currentIdx: nextIdx });
       stopAndPrevent(evt);

@@ -273,7 +273,10 @@ export function caretIsAtBeginningOfInput() {
 }
 export function caretIsAtEndOfInput() {
   const { activeElement: active } = document;
-  return active.tagName === DOM_INPUT_TAG_NAME && active.selectionStart === active.value.length;
+  return (
+    active.tagName === DOM_INPUT_TAG_NAME &&
+    active.selectionStart === active.value.length
+  );
 }
 
 /**
