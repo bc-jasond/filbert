@@ -18,7 +18,7 @@ export const Figure = styled.figure`
   padding: 5px 0;
   position: relative;
   ${p =>
-    Number.isInteger(p.heightOverride) &&
+    !Number.isNaN(p.heightOverride) &&
     `
     height: ${p.heightOverride}px;
   `}
@@ -79,8 +79,8 @@ export default class Image extends React.PureComponent {
     } = this;
     const id = node.get('id');
     const meta = node.get('meta', Map());
-    const w = meta.get('width');
-    const h = meta.get('height');
+    const w = meta.get('resizeWidth', meta.get('width'));
+    const h = meta.get('resizeHeight', meta.get('height'));
     const url = meta.get('url');
     const rotationDegrees = meta.get('rotationDegrees', 0);
     let heightOverride;

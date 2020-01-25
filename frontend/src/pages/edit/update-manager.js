@@ -115,7 +115,7 @@ export default class UpdateManager {
           this.lastUndoHistoryNode = prevNode;
           this.lastUndoHistoryOffsets = prevSelectionOffsets;
         }
-        // content can live in a few different places: ('content', ['meta':'url', 'caption', 'author', 'context', 'quote'], ['meta':'selections':N:'linkUrl'] - add if enough characters changed
+        // node content can live in a few different places: ('content', ['meta':'url', 'caption', 'author', 'context', 'quote'], ['meta':'selections':N:'linkUrl'] - add if enough characters changed
         // find first field that changed and see if it meets the threshold
         if (
           // text content in 'content' changed enough

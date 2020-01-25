@@ -363,6 +363,7 @@ export const SvgIconMixin = css`
   top: -1px;
   vertical-align: middle;
   height: 21px;
+  width: 21px;
   border-bottom: 2px solid transparent;
   &:hover {
     fill: ${blue};
