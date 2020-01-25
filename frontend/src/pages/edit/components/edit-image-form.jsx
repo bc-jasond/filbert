@@ -21,7 +21,7 @@ import {
 } from '../../../common/constants';
 import { stopAndPrevent } from '../../../common/utils';
 import {
-  caretIsAtBeginningOfInput,
+  caretIsAtBeginningOfInput, caretIsAtEndOfInput,
   focusAndScrollSmooth
 } from '../../../common/dom';
 
@@ -125,13 +125,14 @@ export default class EditImageForm extends React.Component {
       evt.keyCode === KEYCODE_LEFT_ARROW &&
       (currentIdx < 4 || caretIsAtBeginningOfInput())
     ) {
-      this.setState({ currentIdx: Math.max(0, currentIdx - 1) });
+      const nextIdx = currentIdx === 0 ? 4 : currentIdx - 1;
+      this.setState({ currentIdx: nextIdx });
       stopAndPrevent(evt);
       return;
     }
-    if (evt.keyCode === KEYCODE_RIGHT_ARROW && currentIdx < 4) {
-      // wrap currentIdx back to 0? input.isFocused() && caretIsAtBeginning) || ) {
-      this.setState({ currentIdx: Math.min(8, currentIdx + 1) });
+    if (evt.keyCode === KEYCODE_RIGHT_ARROW && (currentIdx < 4 || caretIsAtEndOfInput())) {
+      const nextIdx = currentIdx === 4 ? 0 : currentIdx + 1;
+      this.setState({ currentIdx: nextIdx });
       stopAndPrevent(evt);
       return;
     }
@@ -153,6 +154,7 @@ export default class EditImageForm extends React.Component {
       <EditImageMenu data-is-menu top={offsetTop}>
         {this.menuItems.map(({ Component, onClick }, idx) => (
           <MenuItem
+            key={Component.displayName}
             Styled={Component}
             onClick={onClick}
             isSelected={currentIdx === idx}

@@ -271,6 +271,10 @@ export function caretIsAtBeginningOfInput() {
   const { activeElement: active } = document;
   return active.tagName === DOM_INPUT_TAG_NAME && active.selectionStart === 0;
 }
+export function caretIsAtEndOfInput() {
+  const { activeElement: active } = document;
+  return active.tagName === DOM_INPUT_TAG_NAME && active.selectionStart === active.value.length;
+}
 
 /**
  * Once formatting is applied to a paragraph, subsequent selections
