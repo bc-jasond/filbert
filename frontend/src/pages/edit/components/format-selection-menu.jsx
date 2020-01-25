@@ -40,6 +40,10 @@ import {
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_LINK_URL
 } from '../../../common/constants';
+import {
+  caretIsAtBeginningOfInput,
+  caretIsAtEndOfInput
+} from '../../../common/dom';
 import { stopAndPrevent } from '../../../common/utils';
 
 const IconBold = styled(IconBoldSvg)`
@@ -110,6 +114,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
 
   ref = React.createRef();
 
+  linkMenuItemIdx = 6;
   sectionTypes = [
     {
       type: SELECTION_ACTION_BOLD,
@@ -142,7 +147,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
       shouldAddSpacer: false
     },
     {
-      type: SELECTION_ACTION_LINK,
+      type: SELECTION_ACTION_LINK, // position 6
       Styled: IconLink,
       shouldAddSpacer: false
     },
@@ -161,8 +166,11 @@ export default class FormatSelectionMenuComponent extends React.Component {
   constructor(props) {
     super(props);
 
+    const { selectionModel } = props;
     this.state = {
-      currentIdx: -1,
+      currentIdx: selectionModel?.get(SELECTION_LINK_URL)
+        ? this.linkMenuItemIdx
+        : -1,
       isMenuOpen: true
     };
   }
@@ -172,20 +180,26 @@ export default class FormatSelectionMenuComponent extends React.Component {
       props: { selectionModel }
     } = this;
     if (selectionModel.get(SELECTION_ACTION_LINK) && this.ref) {
-      this.ref.current.focus();
+      this.ref?.current?.focus();
     }
   }
 
   componentDidUpdate(prevProps) {
     const {
+      state: { currentIdx },
       props: { selectionModel, windowEvent }
     } = this;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
       this.handleKeyDown(windowEvent);
     }
-    if (selectionModel.get(SELECTION_ACTION_LINK) && this.ref) {
-      this.ref.current.focus();
+    if (
+      selectionModel.get(SELECTION_ACTION_LINK) &&
+      currentIdx === this.linkMenuItemIdx
+    ) {
+      this.ref?.current?.focus?.();
+      return;
     }
+    this.ref?.current?.blur?.();
   }
 
   handleKeyDown = evt => {
@@ -195,11 +209,37 @@ export default class FormatSelectionMenuComponent extends React.Component {
     } = this;
 
     // if 'link' is selected we need to let keystrokes pass through to the URL input... messy business
-    // only allow 'enter' and 'esc' through to close the menu
+    // only allow 'enter' and 'esc' through to close the menu and 'left' and 'right' to toggle through
+    // menu items
     if (
       isMenuOpen &&
       selectionModel.get(SELECTION_ACTION_LINK) &&
-      ![KEYCODE_ENTER, KEYCODE_ESC].includes(evt.keyCode)
+      ![
+        KEYCODE_ENTER,
+        KEYCODE_ESC,
+        KEYCODE_LEFT_ARROW,
+        KEYCODE_RIGHT_ARROW
+      ].includes(evt.keyCode)
+    ) {
+      return;
+    }
+    // if the cursor is on the 'link' icon - only move the cursor in the menu if the caret is
+    // at the edge of the input content (beginning for left arrow, end for right arrow)
+    if (
+      isMenuOpen &&
+      currentIdx === this.linkMenuItemIdx &&
+      selectionModel.get(SELECTION_ACTION_LINK) &&
+      evt.keyCode === KEYCODE_LEFT_ARROW &&
+      !caretIsAtBeginningOfInput()
+    ) {
+      return;
+    }
+    if (
+      isMenuOpen &&
+      currentIdx === this.linkMenuItemIdx &&
+      selectionModel.get(SELECTION_ACTION_LINK) &&
+      evt.keyCode === KEYCODE_RIGHT_ARROW &&
+      !caretIsAtEndOfInput()
     ) {
       return;
     }
@@ -222,14 +262,16 @@ export default class FormatSelectionMenuComponent extends React.Component {
         return;
       }
       case KEYCODE_LEFT_ARROW: {
-        const nextIdx = currentIdx === 0 ? 8 : currentIdx - 1;
+        const nextIdx =
+          currentIdx === 0 ? this.sectionTypes.length - 1 : currentIdx - 1;
         this.setState({ currentIdx: nextIdx });
-        break;
+        return;
       }
       case KEYCODE_RIGHT_ARROW: {
-        const nextIdx = currentIdx === 8 ? 0 : currentIdx + 1;
+        const nextIdx =
+          currentIdx === this.sectionTypes.length - 1 ? 0 : currentIdx + 1;
         this.setState({ currentIdx: nextIdx });
-        break;
+        return;
       }
       case KEYCODE_ESC: {
         this.setState({ currentIdx: -1, isMenuOpen: false }, () => {

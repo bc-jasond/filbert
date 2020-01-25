@@ -72,6 +72,7 @@ export default class EditImageForm extends React.Component {
 
   fileInputRef = React.createRef();
 
+  captionInputIdx = 4;
   menuItems = [
     {
       Component: IconImage,
@@ -89,7 +90,7 @@ export default class EditImageForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      currentIdx: 4
+      currentIdx: this.captionInputIdx
     };
   }
 
@@ -110,7 +111,7 @@ export default class EditImageForm extends React.Component {
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
       this.handleKeyDown(windowEvent);
     }
-    if (currentIdx === 4) {
+    if (currentIdx === this.captionInputIdx) {
       this.captionRef?.current?.focus?.();
       return;
     }
@@ -124,23 +125,23 @@ export default class EditImageForm extends React.Component {
 
     if (
       evt.keyCode === KEYCODE_LEFT_ARROW &&
-      (currentIdx < 4 || caretIsAtBeginningOfInput())
+      (currentIdx < this.captionInputIdx || caretIsAtBeginningOfInput())
     ) {
-      const nextIdx = currentIdx === 0 ? 4 : currentIdx - 1;
+      const nextIdx = currentIdx === 0 ? this.captionInputIdx : currentIdx - 1;
       this.setState({ currentIdx: nextIdx });
       stopAndPrevent(evt);
       return;
     }
     if (
       evt.keyCode === KEYCODE_RIGHT_ARROW &&
-      (currentIdx < 4 || caretIsAtEndOfInput())
+      (currentIdx < this.captionInputIdx || caretIsAtEndOfInput())
     ) {
-      const nextIdx = currentIdx === 4 ? 0 : currentIdx + 1;
+      const nextIdx = currentIdx === this.captionInputIdx ? 0 : currentIdx + 1;
       this.setState({ currentIdx: nextIdx });
       stopAndPrevent(evt);
       return;
     }
-    if (evt.keyCode === KEYCODE_SPACE && currentIdx > -1 && currentIdx < 4) {
+    if (evt.keyCode === KEYCODE_SPACE && currentIdx > -1 && currentIdx < this.captionInputIdx) {
       if (currentIdx > -1) {
         this.menuItems[currentIdx]?.onClick?.();
       }
