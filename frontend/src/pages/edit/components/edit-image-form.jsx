@@ -12,6 +12,8 @@ import {
 } from '../../../common/components/shared-styled-components';
 import IconImageSvg from '../../../../assets/icons/image.svg';
 import IconRotateSvg from '../../../../assets/icons/rotate.svg';
+import PlusPxSvg from '../../../../assets/icons/plus-px.svg';
+import MinusPxSvg from '../../../../assets/icons/minus-px.svg';
 
 const fileInputRef = React.createRef();
 
@@ -20,6 +22,16 @@ const IconImage = styled(IconImageSvg)`
 `;
 const IconRotate = styled(IconRotateSvg)`
   ${SvgIconMixin};
+`;
+const PlusPx = styled(PlusPxSvg)`
+  ${SvgIconMixin};
+  height: 28px;
+  width: 28px;
+`;
+const MinusPx = styled(MinusPxSvg)`
+  ${SvgIconMixin};
+  height: 28px;
+  width: 28px;
 `;
 
 const HiddenFileInput = styled.input`
@@ -30,10 +42,10 @@ export const EditImageMenu = styled(LilSassyMenu)`
   align-items: center;
   justify-items: center;
   top: ${p => p.top + 10}px;
-  width: 400px;
+  width: 500px;
   margin: 0 auto;
   left: 50%;
-  margin-left: -200px;
+  margin-left: -250px;
 `;
 export const ImageCaptionInput = styled(DarkInput)`
   margin: 0 8px;
@@ -53,7 +65,12 @@ export default ({
     <IconButton onClick={() => imageRotate(nodeModel.getIn(['meta', 'url']))}>
       <IconRotate />
     </IconButton>
-    <ButtonSeparator />
+    <IconButton>
+      <PlusPx />
+    </IconButton>
+    <IconButton>
+      <MinusPx />
+    </IconButton>
     <ImageCaptionInput
       ref={forwardRef}
       placeholder="Enter Image Caption here..."
