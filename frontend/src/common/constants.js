@@ -95,6 +95,7 @@ export const SESSION_KEY = 'session';
 // DOM
 export const DOM_ELEMENT_NODE_TYPE_ID = 1;
 export const DOM_TEXT_NODE_TYPE_ID = 3;
+export const DOM_INPUT_TAG_NAME = 'INPUT';
 
 // HISTORY - undo / redo
 export const HISTORY_KEY_NODE_UPDATES = 'nodeUpdates';

@@ -222,11 +222,13 @@ export default class FormatSelectionMenuComponent extends React.Component {
         return;
       }
       case KEYCODE_LEFT_ARROW: {
-        this.setState({ currentIdx: Math.max(0, currentIdx - 1) });
+        const nextIdx = currentIdx === 0 ? 8 : currentIdx - 1;
+        this.setState({ currentIdx: nextIdx });
         break;
       }
       case KEYCODE_RIGHT_ARROW: {
-        this.setState({ currentIdx: Math.min(8, currentIdx + 1) });
+        const nextIdx = currentIdx === 8 ? 0 : currentIdx + 1;
+        this.setState({ currentIdx: nextIdx });
         break;
       }
       case KEYCODE_ESC: {

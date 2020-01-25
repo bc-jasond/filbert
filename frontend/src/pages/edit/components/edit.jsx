@@ -763,10 +763,18 @@ export default class EditPost extends React.Component {
       return;
     }
     const {
-      state: { insertMenuNode, formatSelectionNode, formatSelectionModel }
+      state: {
+        insertMenuNode,
+        formatSelectionNode,
+        formatSelectionModel,
+        editSectionNode,
+        shouldShowEditSectionMenu
+      }
     } = this;
     // HANDOFF conditions - should this event be passed down to a child (menu) component?
-    //
+    // TODO: use the register/unregister handlers and callbacks for data instead of this pass-through.
+    //  it will be cleaner.  This menu will just unregister all handlers and pass control to the menu and
+    //  when the menu needs to pass control back it will unregister it's handlers and use a callback for any data
     // insert menu button is displayed (on empty P)
     if (
       insertMenuNode.get('id') &&
@@ -798,6 +806,21 @@ export default class EditPost extends React.Component {
           ].includes(evt.keyCode)))
     ) {
       // pass this event up to the menu to handle
+      this.setState({ windowEventToForward: evt });
+      return;
+    }
+    // edit image menu is open
+    if (
+      shouldShowEditSectionMenu &&
+      editSectionNode.get('id') &&
+      editSectionNode.get('type') === NODE_TYPE_IMAGE &&
+      ![
+        KEYCODE_ESC,
+        KEYCODE_ENTER,
+        KEYCODE_UP_ARROW,
+        KEYCODE_DOWN_ARROW
+      ].includes(evt.keyCode)
+    ) {
       this.setState({ windowEventToForward: evt });
       return;
     }
@@ -1502,13 +1525,13 @@ export default class EditPost extends React.Component {
           {editSectionNode.get('type') === NODE_TYPE_IMAGE &&
             shouldShowEditSectionMenu && (
               <EditImageForm
+                windowEvent={windowEventToForward}
                 offsetTop={editSectionMetaFormTopOffset}
                 nodeModel={editSectionNode}
                 uploadFile={this.replaceImageFile}
                 updateMeta={this.updateEditSectionNodeMeta}
                 imageRotate={this.imageRotate}
                 imageResize={this.imageResize}
-                forwardRef={this.getInputForwardedRef}
               />
             )}
           {editSectionNode.get('type') === NODE_TYPE_QUOTE &&
