@@ -25,62 +25,60 @@ async function handleResponse(res) {
   // TODO: don't use throw for control flow.  Return the whole response and let the client figure it out
   if (res.status < 200 || res.status > 299) {
     Pace.stop();
-    return { error: {...data}};
+    return { error: { ...data } };
   }
   Pace.stop();
-  return data;
+  return { error: null, data };
 }
 
 export async function signinGoogle(googleUser, filbertUsername) {
-  try {
-    Pace.start();
-    const config = getBaseConfig();
-    delete config.headers.Authorization;
-    config.method = 'POST';
-    config.body = JSON.stringify({ googleUser, filbertUsername }); // body data type must match "Content-Type" header
-    const response = await fetch(`${API_URL}/signin-google`, config);
-    const { signupIsIncomplete, token, session } = await handleResponse(
-      response
-    );
-    if (signupIsIncomplete) {
-      return { signupIsIncomplete };
-    }
-    set(AUTH_TOKEN_KEY, token, false);
-    set(SESSION_KEY, session, false);
-    return { signupIsIncomplete: false };
-  } catch (err) {
+  Pace.start();
+  const config = getBaseConfig();
+  delete config.headers.Authorization;
+  config.method = 'POST';
+  config.body = JSON.stringify({ googleUser, filbertUsername }); // body data type must match "Content-Type" header
+  const response = await fetch(`${API_URL}/signin-google`, config);
+  const { error, data } = await handleResponse(response);
+  if (error) {
     Pace.stop();
-    console.error('Google Signin Error: ', err);
-    throw err;
+    console.error('Google Signin Error: ', error);
+    return { error };
   }
+  const { signupIsIncomplete, token, session } = data;
+  if (signupIsIncomplete) {
+    return { signupIsIncomplete };
+  }
+  set(AUTH_TOKEN_KEY, token, false);
+  set(SESSION_KEY, session, false);
+  return { signupIsIncomplete: false };
 }
 
 async function fetchRefresh(url, config) {
-    const res = await fetch(url, config);
-    const data = await handleResponse(res);
-    const {error} = data;
-    if (!error || !error?.error?.includes?.('expired token')) {
-      return data;
-    }
-  
-    console.info('Retrying fetch...');
-    const user = await googleGetLoggedInUser();
-    let signupIsIncomplete;
-    if (user) {
-      ({ signupIsIncomplete } = await signinGoogle(getGoogleUser(user)));
-      // !signupIsIncomplete means the signin succeeded!
-      console.info('SUCCESS: Google Auth refresh');
-    }
-    if (!user || signupIsIncomplete) {
-      window.location.href = `signin?next=${window.location.pathname}`;
-    }
-    // one retry
-    const res2 = await fetch(url, {
-      ...config,
-      // reset Authorization header
-      headers: { Authorization: get(AUTH_TOKEN_KEY) }
-    });
-    return handleResponse(res2);
+  const res = await fetch(url, config);
+  const data = await handleResponse(res);
+  const { error } = data;
+  if (!error || !error?.error?.includes?.('expired token')) {
+    return data;
+  }
+
+  console.info('Retrying fetch...');
+  const user = await googleGetLoggedInUser();
+  let signupIsIncomplete;
+  if (user) {
+    ({ signupIsIncomplete } = await signinGoogle(getGoogleUser(user)));
+    // !signupIsIncomplete means the signin succeeded!
+    console.info('SUCCESS: Google Auth refresh');
+  }
+  if (!user || signupIsIncomplete) {
+    window.location.href = `signin?next=${window.location.pathname}`;
+  }
+  // one retry
+  const res2 = await fetch(url, {
+    ...config,
+    // reset Authorization header
+    headers: { Authorization: get(AUTH_TOKEN_KEY) }
+  });
+  return handleResponse(res2);
 }
 
 async function apiCall(
@@ -90,20 +88,15 @@ async function apiCall(
   abortSignal = null,
   config = getBaseConfig(abortSignal)
 ) {
-  try {
-    Pace.start();
-    const configInternal = { ...config };
-    configInternal.method = method;
-    if (data) {
-      configInternal.body = JSON.stringify(data); // body data type must match "Content-Type" header
-    }
-    return fetchRefresh(`${API_URL}${url}`, configInternal);
-  } catch (err) {
-    console.error(`Fetch ${method} Error: `, err);
-  } finally {
-    Pace.stop();
+  Pace.start();
+  const configInternal = { ...config };
+  configInternal.method = method;
+  if (data) {
+    configInternal.body = JSON.stringify(data); // body data type must match "Content-Type" header
   }
-  return {};
+  const response = await fetchRefresh(`${API_URL}${url}`, configInternal);
+  Pace.stop();
+  return response;
 }
 
 export async function apiGet(url, abortSignal = null) {

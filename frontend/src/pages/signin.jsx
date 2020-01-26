@@ -166,7 +166,10 @@ export default class SignIn extends React.Component {
         // user was already logged in and set in this.state
         currentUser = googleUser;
       }
-      const { signupIsIncomplete } = await signinGoogle(currentUser, username);
+      const { error, signupIsIncomplete } = await signinGoogle(
+        currentUser,
+        username
+      );
       if (signupIsIncomplete) {
         this.setState(
           {
@@ -236,20 +239,21 @@ export default class SignIn extends React.Component {
         return;
       }
       this.checkUsernameTimeout = setTimeout(async () => {
-        try {
-          await apiGet(`/user/${newUsername}?forSignup`);
-          this.setState({
-            error: `${newUsername} is taken`,
-            success: null,
-            loading: false
-          });
-        } catch (err) {
+        const { error } = await apiGet(`/user/${newUsername}?forSignup`);
+        // here a 404 means "not taken"
+        if (error) {
           this.setState({
             success: `"${newUsername}" is available 👍`,
             error: null,
             loading: false
           });
+          return;
         }
+        this.setState({
+          error: `${newUsername} is taken`,
+          success: null,
+          loading: false
+        });
       }, 750);
     });
   };

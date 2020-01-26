@@ -40,19 +40,19 @@ export default class ViewPost extends React.PureComponent {
   }
 
   async loadPost() {
-    try {
-      const { post, contentNodes } = await apiGet(
-        `/post/${this.props?.params?.canonical}`
-      );
-      this.setState({
-        post: fromJS(post),
-        nodesById: fromJS(contentNodes, reviver),
-        shouldShow404: false
-      });
-    } catch (err) {
-      console.error(err);
+    const { error, data: { post, contentNodes } = {} } = await apiGet(
+      `/post/${this.props?.params?.canonical}`
+    );
+    if (error) {
+      console.error(error);
       this.setState({ shouldShow404: true });
+      return;
     }
+    this.setState({
+      post: fromJS(post),
+      nodesById: fromJS(contentNodes, reviver),
+      shouldShow404: false
+    });
   }
 
   render() {

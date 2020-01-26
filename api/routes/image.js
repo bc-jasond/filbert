@@ -5,13 +5,15 @@ const { imageBucketName, objectStorageBaseUrl } = require("../lib/constants");
 
 async function getImageKey(buffer, userId, imgMeta) {
   const checksum = await getChecksum(buffer);
-  return `${process.env.NODE_ENV || 'dev'}_${userId}_${checksum}.${imgMeta.format}`;
+  return `${process.env.NODE_ENV || "dev"}_${userId}_${checksum}.${
+    imgMeta.format
+  }`;
 }
 
 async function uploadImage(req, res, next) {
   try {
     const { body, file } = req;
-  
+
     let fileBuffer = file.buffer;
     const sharpInstance = sharp(file.buffer);
     let imgMeta = await sharpInstance.metadata();
@@ -59,7 +61,7 @@ async function uploadImage(req, res, next) {
         true
       );
     }
-  
+
     res.status(200).send(meta);
   } catch (err) {
     next(err);

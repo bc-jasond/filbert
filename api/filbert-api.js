@@ -83,8 +83,8 @@ async function main() {
     app.use((err, req, res, next) => {
       if (err) {
         console.error(err);
-        if (typeof err !== 'object') {
-          res.status(500).send({ message: err});
+        if (typeof err !== "object") {
+          res.status(500).send({ message: err });
         }
         const { code, sqlMessage } = err;
         // SQL syntax error - probably from bad user input
@@ -92,12 +92,13 @@ async function main() {
           return res.status(400).send({ message: "Bad Request" });
         }
         // user entered a duplicate canonical url
-        if (code === "ER_DUP_ENTRY" && sqlMessage.includes('canonical')) {
-          return res.status(400).send({canonical: `Url '${req.body.canonical}' already taken.`})
+        if (code === "ER_DUP_ENTRY" && sqlMessage.includes("canonical")) {
+          return res
+            .status(400)
+            .send({ canonical: `Url '${req.body.canonical}' already taken.` });
         }
-        
+
         res.status(500).send(err);
-        
       }
     });
     app.listen(3001);

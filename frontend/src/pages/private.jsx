@@ -102,8 +102,8 @@ export default class AllPosts extends React.Component {
       document.title,
       `${window.location.pathname}${queryString}`
     );
-    try {
-      const drafts = await apiGet(`/draft${queryString}`);
+    const { error, data: drafts } = await apiGet(`/draft${queryString}`);
+    if (!error) {
       const postsFormatted = fromJS(
         drafts.map(draft => ({
           ...draft,
@@ -111,19 +111,18 @@ export default class AllPosts extends React.Component {
         }))
       );
       this.setState({ drafts: postsFormatted });
-    } finally {
-      this.setState({ loading: false });
     }
+    this.setState({ loading: false });
   };
 
   deleteDraft = async draft => {
     if (confirm(`Delete draft ${draft.get('title')}?`)) {
-      try {
-        await apiDelete(`/draft/${draft.get('id')}`);
-        await this.loadDrafts();
-      } catch (err) {
-        console.error('Delete draft error:', err);
+      const { error } = await apiDelete(`/draft/${draft.get('id')}`);
+      if (error) {
+        console.error('Delete draft error:', error);
+        return;
       }
+      await this.loadDrafts();
     }
   };
 
@@ -132,24 +131,24 @@ export default class AllPosts extends React.Component {
       state: { shouldShowPublishPostMenu: draft }
     } = this;
     if (confirm(`Publish draft ${draft.get('title')}? This makes it public.`)) {
-      try {
-        await apiPost(`/publish/${draft.get('id')}`);
-        await this.loadDrafts();
-        this.setState(
-          {
-            shouldShowPostSuccess: true,
-            shouldShowPostError: null
-          },
-          () => {
-            setTimeout(
-              () => this.setState({ shouldShowPublishPostMenu: false }),
-              1000
-            );
-          }
-        );
-      } catch (err) {
-        console.error('Publish draft error:', err);
+      const { error } = await apiPost(`/publish/${draft.get('id')}`);
+      if (error) {
+        console.error('Publish draft error:', error);
+        return;
       }
+      await this.loadDrafts();
+      this.setState(
+        {
+          shouldShowPostSuccess: true,
+          shouldShowPostError: null
+        },
+        () => {
+          setTimeout(
+            () => this.setState({ shouldShowPublishPostMenu: false }),
+            1000
+          );
+        }
+      );
     }
   };
 
@@ -165,31 +164,28 @@ export default class AllPosts extends React.Component {
   };
 
   savePost = async () => {
-    try {
-      const {
-        state: { shouldShowPublishPostMenu: draft }
-      } = this;
-      await apiPatch(`/post/${draft.get('id')}`, {
-        title: draft.get('title'),
-        canonical: draft.get('canonical'),
-        abstract: draft.get('abstract')
-      });
-      await this.loadDrafts();
-      this.setState(
-        {
-          shouldShowPostSuccess: true,
-          shouldShowPostError: null
-        },
-        () => {
-          setTimeout(
-            () => this.setState({ shouldShowPostSuccess: null }),
-            1000
-          );
-        }
-      );
-    } catch (err) {
-      this.setState({ shouldShowPostError: true });
+    const {
+      state: { shouldShowPublishPostMenu: draft }
+    } = this;
+    const { error } = await apiPatch(`/post/${draft.get('id')}`, {
+      title: draft.get('title'),
+      canonical: draft.get('canonical'),
+      abstract: draft.get('abstract')
+    });
+    if (error) {
+      this.setState({ shouldShowPostError: error });
+      return;
     }
+    await this.loadDrafts();
+    this.setState(
+      {
+        shouldShowPostSuccess: true,
+        shouldShowPostError: null
+      },
+      () => {
+        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), 1000);
+      }
+    );
   };
 
   openPostMenu = draft => {

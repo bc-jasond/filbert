@@ -75,13 +75,13 @@ export default class Public extends React.Component {
   };
 
   deletePost = async post => {
-    try {
-      await confirmPromise(`Delete post ${post.get('title')}?`);
-      await apiDelete(`/post/${post.get('id')}`);
-      this.loadPosts();
-    } catch (err) {
-      console.error('Delete post error:', err);
+    await confirmPromise(`Delete post ${post.get('title')}?`);
+    const { error } = await apiDelete(`/post/${post.get('id')}`);
+    if (error) {
+      console.error('Delete post error:', error);
+      return;
     }
+    await this.loadPosts();
   };
 
   loadPosts = async () => {
@@ -118,8 +118,8 @@ export default class Public extends React.Component {
       document.title,
       `${window.location.pathname}${queryString}`
     );
-    try {
-      const posts = await apiGet(`/post${queryString}`);
+    const { error, data: posts } = await apiGet(`/post${queryString}`);
+    if (!error) {
       const postsFormatted = fromJS(
         posts.map(post => ({
           ...post,
@@ -128,9 +128,8 @@ export default class Public extends React.Component {
         }))
       );
       this.setState({ posts: postsFormatted });
-    } finally {
-      this.setState({ loading: false });
     }
+    this.setState({ loading: false });
   };
 
   loadPostsDebounce = async () => {

@@ -24,7 +24,7 @@ async function parseAuthorizationHeader(req, res, next) {
       );
       const decryptedToken = JSON.parse(decrypt(authorization));
       const nowInSeconds = Math.floor(Date.now() / 1000);
-      // uncomment below to auto-fail to test expired token redirect to ?next=/some-previous-page flow
+      // uncomment below to auto-fail to test expired token flow
       //decryptedToken.exp = nowInSeconds;
       if (decryptedToken.exp - nowInSeconds <= 5 * 60 /* 5 minutes */) {
         // token expired if within 5 minutes of the 'exp' time

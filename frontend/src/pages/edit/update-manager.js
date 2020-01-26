@@ -197,18 +197,18 @@ export default class UpdateManager {
   }
 
   saveContentBatch = async () => {
-    try {
-      const updated = Object.entries(this.nodeUpdates.toJS());
-      if (updated.length === 0) return;
-      // console.info('Save Batch', updated);
-      const result = await apiPost('/content', updated);
-      // TODO: save these and retry X times
-      this.clearUpdates();
-      console.info('Save Batch result', result);
-    } catch (err) {
+    const updated = Object.entries(this.nodeUpdates.toJS());
+    if (updated.length === 0) return;
+    // console.info('Save Batch', updated);
+    const { error, data: result } = await apiPost('/content', updated);
+    if (error) {
       // TODO: retry, rollback after X times
-      console.error('Content Batch Update Error: ', err);
+      console.error('Content Batch Update Error: ', error);
+      return;
     }
+    // TODO: save these and retry X times
+    this.clearUpdates();
+    console.info('Save Batch result', result);
   };
 
   saveContentBatchDebounce = () => {

@@ -69,7 +69,7 @@ export default class PublishMenu extends React.Component {
         errorMessage
       }
     } = this;
-    
+
     return (
       <PublishPostFormContainer>
         <PublishPostForm>

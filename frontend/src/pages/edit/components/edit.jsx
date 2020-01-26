@@ -112,45 +112,37 @@ export default class EditPost extends React.Component {
 
   async componentDidMount() {
     console.debug('EDIT - didMount');
-    try {
-      this.registerWindowEventHandlers();
-      const {
-        props: {
-          params: { id }
-        }
-      } = this;
-      if (id === NEW_POST_URL_ID) {
-        this.newPost();
-        return;
+    this.registerWindowEventHandlers();
+    const {
+      props: {
+        params: { id }
       }
-      await this.loadPost();
-    } catch (err) {
-      console.error('EDIT - load post error:', err);
+    } = this;
+    if (id === NEW_POST_URL_ID) {
+      this.newPost();
+      return;
     }
+    await this.loadPost();
   }
 
   async componentDidUpdate(prevProps) {
-    try {
-      const params = this.props?.params;
-      const id = params?.id;
-      const prevId = prevProps?.params?.id;
-      if (id === prevId) {
-        return;
-      }
-      console.debug('EDIT - didUpdate');
-      /* eslint-disable-next-line react/no-did-update-set-state */
-      this.setState({
-        shouldRedirect: false,
-        insertMenuNode: Map()
-      });
-      if (id === NEW_POST_URL_ID) {
-        this.newPost();
-        return;
-      }
-      await this.loadPost();
-    } catch (err) {
-      console.error('EDIT - load post error:', err);
+    const params = this.props?.params;
+    const id = params?.id;
+    const prevId = prevProps?.params?.id;
+    if (id === prevId) {
+      return;
     }
+    console.debug('EDIT - didUpdate');
+    /* eslint-disable-next-line react/no-did-update-set-state */
+    this.setState({
+      shouldRedirect: false,
+      insertMenuNode: Map()
+    });
+    if (id === NEW_POST_URL_ID) {
+      this.newPost();
+      return;
+    }
+    await this.loadPost();
   }
 
   async componentWillUnmount() {
@@ -198,7 +190,14 @@ export default class EditPost extends React.Component {
     // get canonical - chop title, add hash
     const canonical = getCanonicalFromTitle(title);
     // POST to /post
-    const { postId } = await apiPost('/post', { title, canonical });
+    const { error, data: { postId } = {} } = await apiPost('/post', {
+      title,
+      canonical
+    });
+    // TODO: handle error?
+    if (error) {
+      return;
+    }
     // update post id for all updates
     this.updateManager.addPostIdToUpdates(postId);
     await this.updateManager.saveContentBatch();
@@ -207,49 +206,50 @@ export default class EditPost extends React.Component {
   };
 
   loadPost = async () => {
-    try {
-      const { post, contentNodes } = await apiGet(
-        `/edit/${this.props?.params?.id}`
-      );
-      this.updateManager.init(post);
-      const firstNodeId = this.documentModel.init(
-        post,
-        this.updateManager,
-        contentNodes
-      );
-      this.setState(
-        {
-          post: this.documentModel.post,
-          nodesById: this.documentModel.nodesById,
-          shouldShow404: false
-        },
-        async () => {
-          let startNodeId = firstNodeId;
-          let caretStart = 0;
-          const queryParams = new URLSearchParams(window.location.search);
-          // all this just to advance the cursor for a new post...
-          if (queryParams.has('shouldFocusLastNode')) {
-            startNodeId = DocumentModel.getLastNode(
-              this.documentModel.nodesById
-            ).get('id');
-            caretStart = -1;
-            queryParams.delete('shouldFocusLastNode');
-            const queryString = queryParams.toString();
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname +
-                (queryString.length > 0 ? `?${queryString}` : '')
-            );
-          }
-          setCaret({ startNodeId, caretStart });
-          await this.manageInsertMenu();
-        }
-      );
-    } catch (err) {
-      console.error(err);
+    const { error, data: { post, contentNodes } = {} } = await apiGet(
+      `/edit/${this.props?.params?.id}`
+    );
+    if (error) {
+      console.error(error);
       this.setState({ nodesById: Map(), shouldShow404: true });
+      return;
     }
+
+    this.updateManager.init(post);
+    const firstNodeId = this.documentModel.init(
+      post,
+      this.updateManager,
+      contentNodes
+    );
+    this.setState(
+      {
+        post: this.documentModel.post,
+        nodesById: this.documentModel.nodesById,
+        shouldShow404: false
+      },
+      async () => {
+        let startNodeId = firstNodeId;
+        let caretStart = 0;
+        const queryParams = new URLSearchParams(window.location.search);
+        // all this just to advance the cursor for a new post...
+        if (queryParams.has('shouldFocusLastNode')) {
+          startNodeId = DocumentModel.getLastNode(
+            this.documentModel.nodesById
+          ).get('id');
+          caretStart = -1;
+          queryParams.delete('shouldFocusLastNode');
+          const queryString = queryParams.toString();
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname +
+              (queryString.length > 0 ? `?${queryString}` : '')
+          );
+        }
+        setCaret({ startNodeId, caretStart });
+        await this.manageInsertMenu();
+      }
+    );
   };
 
   updatePost = (fieldName, value) => {
@@ -267,13 +267,16 @@ export default class EditPost extends React.Component {
     const {
       state: { post }
     } = this;
-    const {error} = await apiPatch(`/post/${post.get('id')}`, {
+    const { error } = await apiPatch(`/post/${post.get('id')}`, {
       title: post.get('title'),
       canonical: post.get('canonical'),
       abstract: post.get('abstract')
     });
     if (error) {
-      this.setState({ shouldShowPostSuccess: null, shouldShowPostError: error });
+      this.setState({
+        shouldShowPostSuccess: null,
+        shouldShowPostError: error
+      });
       return;
     }
     this.setState(
@@ -295,48 +298,57 @@ export default class EditPost extends React.Component {
       state: { post }
     } = this;
 
-    try {
-      await confirmPromise('Publish this post?  This makes it public.');
-      await this.savePost();
-      await apiPost(`/publish/${post.get('id')}`);
-      this.setState(
-        {
-          shouldShowPostSuccess: true,
-          shouldShowPostError: null
-        },
-        () => {
-          setTimeout(
-            () =>
-              this.setState({
-                shouldRedirect: `/p/${post.get('canonical')}`
-              }),
-            POST_ACTION_REDIRECT_TIMEOUT
-          );
-        }
-      );
-    } catch (err) {
-      this.setState({ shouldShowPostError: true });
+    await confirmPromise('Publish this post?  This makes it public.');
+    let error;
+    ({ error } = await this.savePost());
+    if (error) {
+      this.setState({ shouldShowPostError: error });
+      return;
     }
+    ({ error } = await apiPost(`/publish/${post.get('id')}`));
+    if (error) {
+      this.setState({ shouldShowPostError: error });
+      return;
+    }
+    this.setState(
+      {
+        shouldShowPostSuccess: true,
+        shouldShowPostError: null
+      },
+      () => {
+        setTimeout(
+          () =>
+            this.setState({
+              shouldRedirect: `/p/${post.get('canonical')}`
+            }),
+          POST_ACTION_REDIRECT_TIMEOUT
+        );
+      }
+    );
   };
 
   deletePost = async () => {
     const {
       state: { post }
     } = this;
-    try {
-      if (post.get('published')) {
-        await confirmPromise(`Delete post ${post.get('title')}?`);
-        await apiDelete(`/post/${post.get('id')}`);
-        // if editing a published post - assume redirect to published posts list
-        this.setState({ shouldRedirect: '/' });
+    if (post.get('published')) {
+      await confirmPromise(`Delete post ${post.get('title')}?`);
+      const { error } = await apiDelete(`/post/${post.get('id')}`);
+      if (error) {
+        console.error('Delete post error:', error);
         return;
       }
-      await confirmPromise(`Delete draft ${post.get('title')}?`);
-      await apiDelete(`/draft/${post.get('id')}`);
-      this.setState({ shouldRedirect: '/private' });
-    } catch (err) {
-      console.error('Delete post error:', err);
+      // if editing a published post - assume redirect to published posts list
+      this.setState({ shouldRedirect: '/' });
+      return;
     }
+    await confirmPromise(`Delete draft ${post.get('title')}?`);
+    const { error } = await apiDelete(`/draft/${post.get('id')}`);
+    if (error) {
+      console.error('Delete draft error:', error);
+      return;
+    }
+    this.setState({ shouldRedirect: '/private' });
   };
 
   togglePostMenu = () => {

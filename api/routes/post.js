@@ -98,9 +98,8 @@ async function patchPost(req, res, next) {
         id
       });
     res.send({});
-  }
-  catch (err) {
-    next(err)
+  } catch (err) {
+    next(err);
   }
 }
 

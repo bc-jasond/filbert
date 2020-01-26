@@ -73,13 +73,13 @@ export default class UserProfile extends React.Component {
     if (usernameWithoutAt === session.get('username')) {
       this.setState({ userIsMe: true });
     }
-    try {
-      const user = await apiGet(`/user/${usernameWithoutAt}`);
-      this.setState({ user });
-    } catch (err) {
-      console.error('USER PROFILE', err);
+    const { error, data: user } = await apiGet(`/user/${usernameWithoutAt}`);
+    if (error) {
+      console.error('USER PROFILE', error);
       this.setState({ shouldShow404: true });
+      return;
     }
+    this.setState({ user });
   }
 
   updateProfilePublic = async () => {
@@ -89,6 +89,7 @@ export default class UserProfile extends React.Component {
     this.setState(
       { user: { ...user, profileIsPublic: !user?.profileIsPublic } },
       () => {
+        // TODO: rollback on error?
         apiPatch('/profile', { profileIsPublic: !user?.profileIsPublic });
       }
     );
@@ -101,6 +102,7 @@ export default class UserProfile extends React.Component {
     this.setState(
       { user: { ...user, statsArePublic: !user?.statsArePublic } },
       () => {
+        // TODO: rollback on error?
         apiPatch('/profile', { statsArePublic: !user?.statsArePublic });
       }
     );

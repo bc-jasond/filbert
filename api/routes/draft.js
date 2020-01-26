@@ -38,14 +38,14 @@ async function getDrafts(req, res, next) {
       .whereNull("published")
       .andWhere("post.user_id", loggedInUser.id)
       .limit(250);
-  
+
     if (typeof contains === "string") {
       builder = builder.andWhereRaw(
         "MATCH (title,abstract) AGAINST (? IN BOOLEAN MODE)",
         [contains]
       );
     }
-  
+
     if (typeof random === "string") {
       /* TODO: implement random
        1) select all published post ids in the the DB
@@ -53,15 +53,15 @@ async function getDrafts(req, res, next) {
        3) add whereIn() to the builder
        */
     }
-  
+
     builder = builder.orderBy(
       "post.created",
       typeof oldest === "string" ? "asc" : "desc"
     );
-  
+
     res.send(await builder);
   } catch (err) {
-    next(err)
+    next(err);
   }
 }
 /**
