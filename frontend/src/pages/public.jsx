@@ -74,16 +74,6 @@ export default class Public extends React.Component {
     );
   };
 
-  deletePost = async post => {
-    await confirmPromise(`Delete post ${post.get('title')}?`);
-    const { error } = await apiDelete(`/post/${post.get('id')}`);
-    if (error) {
-      console.error('Delete post error:', error);
-      return;
-    }
-    await this.loadPosts();
-  };
-
   loadPosts = async () => {
     const {
       state: {
@@ -316,13 +306,6 @@ export default class Public extends React.Component {
                       <PostActionA href={`/edit/${post.get('id')}`}>
                         edit
                       </PostActionA>
-                    </>
-                  )}
-                  {post.get('canDelete') && (
-                    <>
-                      <PostAction onClick={() => this.deletePost(post)}>
-                        delete
-                      </PostAction>
                     </>
                   )}
                   <AuthorExpand to={`/public?username=${post.get('username')}`}>

@@ -1,7 +1,7 @@
-import { fromJS, List } from 'immutable';
+import { fromJS, List, Map } from 'immutable';
 import React from 'react';
 
-import { apiDelete, apiGet, apiPatch, apiPost } from '../common/fetch';
+import {  apiGet } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
 
 import Header from './header';
@@ -31,9 +31,7 @@ export default class AllPosts extends React.Component {
     super(props);
 
     this.state = {
-      shouldShowPublishPostMenu: false,
-      shouldShowPostError: null,
-      shouldShowPostSuccess: null,
+      currentEditingPost: Map(),
       drafts: List(),
       oldestFilterIsSelected: false,
       containsFilterIsSelected: false,
@@ -114,86 +112,13 @@ export default class AllPosts extends React.Component {
     }
     this.setState({ loading: false });
   };
-
-  deleteDraft = async draft => {
-    if (confirm(`Delete draft ${draft.get('title')}?`)) {
-      const { error } = await apiDelete(`/draft/${draft.get('id')}`);
-      if (error) {
-        console.error('Delete draft error:', error);
-        return;
-      }
-      await this.loadDrafts();
-    }
-  };
-
-  publishDraft = async () => {
-    const {
-      state: { shouldShowPublishPostMenu: draft }
-    } = this;
-    if (confirm(`Publish draft ${draft.get('title')}? This makes it public.`)) {
-      const { error } = await apiPost(`/publish/${draft.get('id')}`);
-      if (error) {
-        console.error('Publish draft error:', error);
-        return;
-      }
-      await this.loadDrafts();
-      this.setState(
-        {
-          shouldShowPostSuccess: true,
-          shouldShowPostError: null
-        },
-        () => {
-          setTimeout(
-            () => this.setState({ shouldShowPublishPostMenu: false }),
-            1000
-          );
-        }
-      );
-    }
-  };
-
-  updatePost = (fieldName, value) => {
-    const {
-      state: { shouldShowPublishPostMenu: draft }
-    } = this;
-    this.setState({
-      shouldShowPublishPostMenu: draft.set(fieldName, value),
-      shouldShowPostError: null,
-      shouldShowPostSuccess: null
-    });
-  };
-
-  savePost = async () => {
-    const {
-      state: { shouldShowPublishPostMenu: draft }
-    } = this;
-    const { error } = await apiPatch(`/post/${draft.get('id')}`, {
-      title: draft.get('title'),
-      canonical: draft.get('canonical'),
-      abstract: draft.get('abstract')
-    });
-    if (error) {
-      this.setState({ shouldShowPostError: error });
-      return;
-    }
-    await this.loadDrafts();
-    this.setState(
-      {
-        shouldShowPostSuccess: true,
-        shouldShowPostError: null
-      },
-      () => {
-        setTimeout(() => this.setState({ shouldShowPostSuccess: null }), 1000);
-      }
-    );
-  };
-
+  
   openPostMenu = draft => {
-    this.setState({ shouldShowPublishPostMenu: draft });
+    this.setState({ currentEditingPost: draft });
   };
 
   closePostMenu = () => {
-    this.setState({ shouldShowPublishPostMenu: false });
+    this.setState({ currentEditingPost: Map() }, this.loadDrafts);
   };
 
   loadDraftsDebounce = async () => {
@@ -274,9 +199,7 @@ export default class AllPosts extends React.Component {
       state: {
         loading,
         drafts,
-        shouldShowPublishPostMenu,
-        shouldShowPostError,
-        shouldShowPostSuccess,
+        currentEditingPost,
         oldestFilterIsSelected,
         containsFilterIsSelected,
         contains,
@@ -290,15 +213,10 @@ export default class AllPosts extends React.Component {
         <Header session={session} setSession={setSession} />
         <Article>
           <>
-            {shouldShowPublishPostMenu && (
+            {currentEditingPost.size > 0 && (
               <PublishPostForm
-                post={shouldShowPublishPostMenu}
-                updatePost={this.updatePost}
-                publishPost={this.publishDraft}
-                savePost={this.savePost}
+                post={currentEditingPost}
                 close={this.closePostMenu}
-                successMessage={shouldShowPostSuccess}
-                errorMessage={shouldShowPostError}
               />
             )}
             <PostRow>
@@ -389,10 +307,7 @@ export default class AllPosts extends React.Component {
                     {draft.get('updated')}
                   </PostMetaContentFirst>
                   <PostAction onClick={() => this.openPostMenu(draft)}>
-                    publish
-                  </PostAction>
-                  <PostAction onClick={() => this.deleteDraft(draft)}>
-                    delete
+                    manage
                   </PostAction>
                 </PostMetaRow>
               </PostRow>

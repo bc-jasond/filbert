@@ -7,12 +7,12 @@ import {
 } from './constants';
 
 export function confirmPromise(msg) {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     if (confirm(msg)) {
-      resolve();
+      resolve(true);
       return;
     }
-    reject();
+    resolve(false);
   });
 }
 

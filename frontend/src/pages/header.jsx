@@ -37,8 +37,7 @@ export default class Header extends React.PureComponent {
         pageName,
         userIsMe,
         post = Map(),
-        togglePostMenu = () => {},
-        deletePost = () => {}
+        togglePostMenu = () => {}
       },
       state: { shouldRedirect }
     } = this;
@@ -46,8 +45,7 @@ export default class Header extends React.PureComponent {
       return <Redirect to="/signout" />;
     }
 
-    const shouldShowPublish = pageName === PAGE_NAME_EDIT && post.get('id');
-    const shouldShowDelete = pageName === PAGE_NAME_EDIT && post.get('id');
+    const shouldShowManagePost = pageName === PAGE_NAME_EDIT && post.get('id');
     const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
     const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
     const shouldShowPublic = pageName !== PAGE_NAME_PUBLIC;
@@ -65,11 +63,8 @@ export default class Header extends React.PureComponent {
             </LogoContainer>
             {session.get('userId') ? (
               <>
-                {shouldShowPublish && (
-                  <NavSpan onClick={togglePostMenu}>publish</NavSpan>
-                )}
-                {shouldShowDelete && (
-                  <NavSpan onClick={deletePost}>delete</NavSpan>
+                {shouldShowManagePost && (
+                  <NavSpan onClick={togglePostMenu}>manage</NavSpan>
                 )}
                 {shouldShowEdit && (
                   <NavLink to={`/edit/${post.get('id')}`}>edit</NavLink>

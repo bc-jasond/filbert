@@ -14,7 +14,7 @@ import {
   darkGrey,
   error,
   grey,
-  lightBlue,
+  lightBlue, lightError,
   lightGrey,
   mediumGrey,
   success
@@ -312,8 +312,10 @@ export const Button = styled.button`
   ${p =>
     p.disabled &&
     css`
+      cursor: not-allowed;
       background: ${mediumGrey};
       &:hover {
+        box-shadow: none;
         background: ${mediumGrey};
       }
     `}
@@ -322,6 +324,12 @@ export const CancelButton = styled(Button)`
   background: ${mediumGrey};
   &:hover {
     background: ${grey};
+  }
+`;
+export const DeleteButton = styled(Button)`
+  background: ${lightError};
+  &:hover {
+    background: ${error};
   }
 `;
 export const ButtonSpan = styled.span`

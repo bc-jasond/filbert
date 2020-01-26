@@ -15,13 +15,11 @@ import Header from '../../header';
 import Footer from '../../footer';
 
 import {
-  confirmPromise,
   getCanonicalFromTitle,
   stopAndPrevent
 } from '../../../common/utils';
 import {
   caretIsOnEdgeOfParagraphText,
-  focusAndScrollSmooth,
   getFirstHeadingContent,
   getHighlightedSelectionOffsets,
   getNodeById,
@@ -104,9 +102,7 @@ export default class EditPost extends React.Component {
       editSectionMetaFormTopOffset: 0,
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
-      shouldShowPublishPostMenu: false,
-      shouldShowPostError: null,
-      shouldShowPostSuccess: null
+      shouldShowPublishPostMenu: false
     };
   }
 
@@ -250,105 +246,6 @@ export default class EditPost extends React.Component {
         await this.manageInsertMenu();
       }
     );
-  };
-
-  updatePost = (fieldName, value) => {
-    const {
-      state: { post }
-    } = this;
-    this.setState({
-      post: post.set(fieldName, value),
-      shouldShowPostError: null,
-      shouldShowPostSuccess: null
-    });
-  };
-
-  savePost = async () => {
-    const {
-      state: { post }
-    } = this;
-    const { error } = await apiPatch(`/post/${post.get('id')}`, {
-      title: post.get('title'),
-      canonical: post.get('canonical'),
-      abstract: post.get('abstract')
-    });
-    if (error) {
-      this.setState({
-        shouldShowPostSuccess: null,
-        shouldShowPostError: error
-      });
-      return;
-    }
-    this.setState(
-      {
-        shouldShowPostSuccess: true,
-        shouldShowPostError: null
-      },
-      () => {
-        setTimeout(
-          () => this.setState({ shouldShowPostSuccess: null }),
-          POST_ACTION_REDIRECT_TIMEOUT
-        );
-      }
-    );
-  };
-
-  publishPost = async () => {
-    const {
-      state: { post }
-    } = this;
-
-    await confirmPromise('Publish this post?  This makes it public.');
-    let error;
-    ({ error } = await this.savePost());
-    if (error) {
-      this.setState({ shouldShowPostError: error });
-      return;
-    }
-    ({ error } = await apiPost(`/publish/${post.get('id')}`));
-    if (error) {
-      this.setState({ shouldShowPostError: error });
-      return;
-    }
-    this.setState(
-      {
-        shouldShowPostSuccess: true,
-        shouldShowPostError: null
-      },
-      () => {
-        setTimeout(
-          () =>
-            this.setState({
-              shouldRedirect: `/p/${post.get('canonical')}`
-            }),
-          POST_ACTION_REDIRECT_TIMEOUT
-        );
-      }
-    );
-  };
-
-  deletePost = async () => {
-    const {
-      state: { post }
-    } = this;
-    if (post.get('published')) {
-      await confirmPromise(`Delete post ${post.get('title')}?`);
-      const { error } = await apiDelete(`/post/${post.get('id')}`);
-      if (error) {
-        console.error('Delete post error:', error);
-        return;
-      }
-      // if editing a published post - assume redirect to published posts list
-      this.setState({ shouldRedirect: '/' });
-      return;
-    }
-    await confirmPromise(`Delete draft ${post.get('title')}?`);
-    const { error } = await apiDelete(`/draft/${post.get('id')}`);
-    if (error) {
-      console.error('Delete draft error:', error);
-      return;
-    }
-    this.setState({ shouldRedirect: '/private' });
   };
 
   togglePostMenu = () => {
@@ -1444,9 +1341,7 @@ export default class EditPost extends React.Component {
         formatSelectionMenuTopOffset,
         formatSelectionMenuLeftOffset,
         formatSelectionModel,
-        shouldShowPublishPostMenu,
-        shouldShowPostError,
-        shouldShowPostSuccess
+        shouldShowPublishPostMenu
       },
       props: { session, setSession }
     } = this;
@@ -1464,7 +1359,6 @@ export default class EditPost extends React.Component {
               pageName={PAGE_NAME_EDIT}
               post={post}
               togglePostMenu={this.togglePostMenu}
-              deletePost={this.deletePost}
             />
             <ArticleStyled>
               <div
@@ -1484,12 +1378,7 @@ export default class EditPost extends React.Component {
           {shouldShowPublishPostMenu && (
             <PublishPostForm
               post={post}
-              updatePost={this.updatePost}
-              publishPost={this.publishPost}
-              savePost={this.savePost}
               close={this.togglePostMenu}
-              successMessage={shouldShowPostSuccess}
-              errorMessage={shouldShowPostError}
             />
           )}
           {insertMenuNode.get('id') && (
