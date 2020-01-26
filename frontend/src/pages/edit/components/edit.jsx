@@ -953,7 +953,11 @@ export default class EditPost extends React.Component {
     } = this;
     let meta = Map();
     if (sectionType === NODE_TYPE_IMAGE) {
-      const imageMeta = await this.uploadFile(firstFile);
+      const { error, data: imageMeta } = await this.uploadFile(firstFile);
+      if (error) {
+        console.error('Image Upload Error: ', error);
+        return;
+      }
       meta = Map(imageMeta);
     }
     const newSectionId = this.documentModel.update(
@@ -1001,7 +1005,11 @@ export default class EditPost extends React.Component {
       // TODO: user hit cancel in the file dialog?
       return;
     }
-    const imageMeta = await this.uploadFile(firstFile);
+    const { error, data: imageMeta } = await this.uploadFile(firstFile);
+    if (error) {
+      console.error('Image Upload Error: ', error);
+      return;
+    }
     const updatedImageSectionNode = editSectionNode
       .delete('meta')
       .set('meta', Map(imageMeta));
