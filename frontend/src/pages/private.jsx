@@ -1,7 +1,7 @@
 import { fromJS, List, Map } from 'immutable';
 import React from 'react';
 
-import {  apiGet } from '../common/fetch';
+import { apiGet } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
 
 import Header from './header';
@@ -112,7 +112,7 @@ export default class AllPosts extends React.Component {
     }
     this.setState({ loading: false });
   };
-  
+
   openPostMenu = draft => {
     this.setState({ currentEditingPost: draft });
   };

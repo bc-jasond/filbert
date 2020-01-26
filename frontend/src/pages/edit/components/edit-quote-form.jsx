@@ -1,6 +1,5 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { Range } from 'immutable';
 
 import {
   Arrow,
@@ -10,8 +9,7 @@ import {
 } from '../../../common/components/shared-styled-components';
 import {
   KEYCODE_LEFT_ARROW,
-  KEYCODE_RIGHT_ARROW,
-  KEYCODE_SPACE
+  KEYCODE_RIGHT_ARROW
 } from '../../../common/constants';
 import {
   caretIsAtBeginningOfInput,
@@ -68,12 +66,11 @@ export default class EditQuoteForm extends React.Component {
     focusAndScrollSmooth(nodeModel.get('id'), focusRef.current);
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     const {
       state: { currentIdx, shouldFocusEnd },
       props: { nodeModel, windowEvent }
     } = this;
-    const { currentIdx: prevIdx } = prevState;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
       this.handleKeyDown(windowEvent);
     }
@@ -102,7 +99,6 @@ export default class EditQuoteForm extends React.Component {
         currentIdx === this.inputRefs.length - 1 ? 0 : currentIdx + 1;
       this.setState({ currentIdx: nextIdx, shouldFocusEnd: false });
       stopAndPrevent(evt);
-      return;
     }
   };
 

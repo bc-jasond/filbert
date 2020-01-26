@@ -22,16 +22,11 @@ global.confirm = jest.fn().mockImplementation(arg => arg);
 
 describe('utils', () => {
   test('confirmPromise', async () => {
-    let caught = false;
-    try {
-      await confirmPromise(true);
-      expect(caught).toBe(false);
-      await confirmPromise(false);
-    } catch (err) {
-      caught = true;
-    }
+    let didConfirm = await confirmPromise(true);
+    expect(didConfirm).toBeTruthy();
+    didConfirm = await confirmPromise(false);
+    expect(didConfirm).toBeFalsy();
     expect(global.confirm).toHaveBeenCalledTimes(2);
-    expect(caught).toBe(true);
   });
   test('formatPostDate', () => {
     expect(formatPostDate('2019-01-04 00:00:00')).toBe(

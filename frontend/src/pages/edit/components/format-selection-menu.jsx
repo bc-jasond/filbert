@@ -116,6 +116,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
   ref = React.createRef();
 
   linkMenuItemIdx = 6;
+
   sectionTypes = [
     {
       type: SELECTION_ACTION_BOLD,
@@ -201,7 +202,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
       focusAndScrollSmooth(
         nodeModel.get('id'),
         this.ref?.current,
-        prevIdx === this.linkMenuItemIdx - 1 ? false : true
+        prevIdx !== this.linkMenuItemIdx - 1
       );
       return;
     }

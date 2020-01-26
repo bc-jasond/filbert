@@ -58,6 +58,7 @@ const PublishPostForm = styled.div`
 
 export default class PublishMenu extends React.Component {
   inputRef = React.createRef();
+
   constructor(props) {
     super(props);
     this.state = {
@@ -65,11 +66,13 @@ export default class PublishMenu extends React.Component {
       error: null,
       successMessage: null,
       redirectUrl: false
-    }
+    };
   }
+
   componentDidMount() {
     focusAndScrollSmooth(null, this.inputRef?.current);
   }
+
   updatePost = (fieldName, value) => {
     const {
       state: { post }
@@ -80,7 +83,7 @@ export default class PublishMenu extends React.Component {
       successMessage: null
     });
   };
-  
+
   savePost = async () => {
     const {
       state: { post }
@@ -93,7 +96,7 @@ export default class PublishMenu extends React.Component {
     if (error) {
       this.setState({
         successMessage: null,
-        error,
+        error
       });
       return { error };
     }
@@ -111,17 +114,19 @@ export default class PublishMenu extends React.Component {
     );
     return {};
   };
-  
+
   publishPost = async () => {
     const {
       state: { post }
     } = this;
-    
-     const didConfirm = await confirmPromise('Publish this post?  This makes it public.');
-     if (!didConfirm) {
-       return;
-     }
-         let error;
+
+    const didConfirm = await confirmPromise(
+      'Publish this post?  This makes it public.'
+    );
+    if (!didConfirm) {
+      return;
+    }
+    let error;
     ({ error } = await this.savePost());
     if (error) {
       this.setState({ error });
@@ -148,13 +153,15 @@ export default class PublishMenu extends React.Component {
       }
     );
   };
-  
+
   deletePost = async () => {
     const {
       state: { post }
     } = this;
     if (post.get('published')) {
-      const didConfim = await confirmPromise(`Delete post ${post.get('title')}?`);
+      const didConfim = await confirmPromise(
+        `Delete post ${post.get('title')}?`
+      );
       if (!didConfim) {
         return;
       }
@@ -167,7 +174,9 @@ export default class PublishMenu extends React.Component {
       this.setState({ redirectUrl: '/' });
       return;
     }
-    const didConfirm = await confirmPromise(`Delete draft ${post.get('title')}?`);
+    const didConfirm = await confirmPromise(
+      `Delete draft ${post.get('title')}?`
+    );
     if (!didConfirm) {
       return;
     }
@@ -178,21 +187,15 @@ export default class PublishMenu extends React.Component {
     }
     this.setState({ redirectUrl: '/private' });
   };
+
   render() {
     const {
-      props: {
-        close
-      },
-      state: {
-        post,
-        redirectUrl,
-        error,
-        successMessage
-      }
+      props: { close },
+      state: { post, redirectUrl, error, successMessage }
     } = this;
 
     if (redirectUrl) {
-      return <Redirect to={redirectUrl} />
+      return <Redirect to={redirectUrl} />;
     }
     return (
       <PublishPostFormContainer>

@@ -163,7 +163,7 @@ export function scrollToCaretIfOutOfView(nodeId) {
 
 export function focusAndScrollSmooth(nodeId, inputElem, setCaretToEnd = true) {
   const { activeElement } = document;
-  if (!inputElem || activeElement == inputElem) {
+  if (!inputElem || activeElement === inputElem) {
     return;
   }
   inputElem.focus({ preventScroll: true });

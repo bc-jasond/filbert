@@ -73,6 +73,7 @@ export default class EditImageForm extends React.Component {
   fileInputRef = React.createRef();
 
   captionInputIdx = 4;
+
   menuItems = [
     {
       Component: IconImage,
@@ -116,7 +117,7 @@ export default class EditImageForm extends React.Component {
       focusAndScrollSmooth(
         nodeModel.get('id'),
         this.captionRef?.current,
-        prevIdx === this.captionInputIdx - 1 ? false : true
+        prevIdx !== this.captionInputIdx - 1
       );
       return;
     }

@@ -147,57 +147,57 @@ export default class SignIn extends React.Component {
   };
 
   doLoginGoogle = async evt => {
-    try {
-      const {
-        state: { googleUser, username }
-      } = this;
-      let currentUser;
-      // evt is a 'submit' event, we don't want the page to reload
+    const {
+      state: { googleUser, username }
+    } = this;
+    let currentUser;
+    // evt is a 'submit' event, we don't want the page to reload
 
-      stopAndPrevent(evt);
+    stopAndPrevent(evt);
 
-      this.setState({ success: null, error: null, loading: true });
+    this.setState({ success: null, error: null, loading: true });
 
-      if (!googleUser?.idToken) {
-        // open google window to let the user select a user to login as, or to grant access
-        const user = await this.GoogleAuth.signIn();
-        currentUser = await this.setGoogleUser(user);
-      } else {
-        // user was already logged in and set in this.state
-        currentUser = googleUser;
-      }
-      const { error, signupIsIncomplete } = await signinGoogle(
-        currentUser,
-        username
-      );
-      if (signupIsIncomplete) {
-        this.setState(
-          {
-            shouldShowUsernameInput: true,
-            error: null,
-            success: null,
-            loading: false
-          },
-          () => {
-            usernameRef.current.focus();
-          }
-        );
-        return;
-      }
-      this.setState({ success: 'All set 👍', error: null });
-      setTimeout(() => {
-        this.setState({ shouldRedirect: true }, () => {
-          // set session on App state on the way out...
-          this.props?.setSession?.(getSession());
-        });
-      }, 400);
-    } catch (error) {
+    if (!googleUser?.idToken) {
+      // open google window to let the user select a user to login as, or to grant access
+      const user = await this.GoogleAuth.signIn();
+      currentUser = await this.setGoogleUser(user);
+    } else {
+      // user was already logged in and set in this.state
+      currentUser = googleUser;
+    }
+    const { error, signupIsIncomplete } = await signinGoogle(
+      currentUser,
+      username
+    );
+    if (error) {
       this.setState({
         success: null,
         error: error?.error || error?.message || 'Error',
         loading: false
       });
+      return;
     }
+    if (signupIsIncomplete) {
+      this.setState(
+        {
+          shouldShowUsernameInput: true,
+          error: null,
+          success: null,
+          loading: false
+        },
+        () => {
+          usernameRef.current.focus();
+        }
+      );
+      return;
+    }
+    this.setState({ success: 'All set 👍', error: null });
+    setTimeout(() => {
+      this.setState({ shouldRedirect: true }, () => {
+        // set session on App state on the way out...
+        this.props?.setSession?.(getSession());
+      });
+    }, 400);
   };
 
   doLogout = async () => {

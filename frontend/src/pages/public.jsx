@@ -11,7 +11,6 @@ import {
   FilterWithInput,
   MetaContent,
   PostAbstractRow,
-  PostAction,
   PostActionA,
   PostMetaContentFirst,
   PostMetaRow,
@@ -22,8 +21,8 @@ import {
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
 import { PAGE_NAME_PUBLIC } from '../common/constants';
-import { apiDelete, apiGet } from '../common/fetch';
-import { confirmPromise, formatPostDate } from '../common/utils';
+import { apiGet } from '../common/fetch';
+import { formatPostDate } from '../common/utils';
 import Footer from './footer';
 import Header from './header';
 

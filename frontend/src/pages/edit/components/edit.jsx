@@ -3,21 +3,12 @@ import styled from 'styled-components';
 import { Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
-import {
-  apiDelete,
-  apiGet,
-  apiPatch,
-  apiPost,
-  uploadImage
-} from '../../../common/fetch';
+import { apiGet, apiPost, uploadImage } from '../../../common/fetch';
 import { Article } from '../../../common/components/layout-styled-components';
 import Header from '../../header';
 import Footer from '../../footer';
 
-import {
-  getCanonicalFromTitle,
-  stopAndPrevent
-} from '../../../common/utils';
+import { getCanonicalFromTitle, stopAndPrevent } from '../../../common/utils';
 import {
   caretIsOnEdgeOfParagraphText,
   getFirstHeadingContent,
@@ -49,7 +40,6 @@ import {
   NODE_TYPE_QUOTE,
   NODE_TYPE_SPACER,
   PAGE_NAME_EDIT,
-  POST_ACTION_REDIRECT_TIMEOUT,
   SELECTION_ACTION_LINK,
   SELECTION_LINK_URL
 } from '../../../common/constants';
@@ -1376,10 +1366,7 @@ export default class EditPost extends React.Component {
             <Footer />
           </div>
           {shouldShowPublishPostMenu && (
-            <PublishPostForm
-              post={post}
-              close={this.togglePostMenu}
-            />
+            <PublishPostForm post={post} close={this.togglePostMenu} />
           )}
           {insertMenuNode.get('id') && (
             <InsertSectionMenu

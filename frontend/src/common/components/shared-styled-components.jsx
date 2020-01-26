@@ -14,7 +14,8 @@ import {
   darkGrey,
   error,
   grey,
-  lightBlue, lightError,
+  lightBlue,
+  lightError,
   lightGrey,
   mediumGrey,
   success
