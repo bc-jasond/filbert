@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { focusAndScrollSmooth } from '../dom';
 import {
   Button,
   ButtonSpan,
@@ -51,78 +52,88 @@ const PublishPostForm = styled.div`
   padding: 0 20px 40px 20px;
 `;
 
-export default ({
-  post,
-  updatePost,
-  publishPost,
-  savePost,
-  close,
-  successMessage,
-  errorMessage,
-  forwardRef
-}) => (
-  <PublishPostFormContainer>
-    <PublishPostForm>
-      <H1Styled>{`${
-        post.get('published') ? 'Post' : 'Draft'
-      }: Details & Publish`}</H1Styled>
-      {publishPostFields.map(
-        ({ fieldName, StyledComponent, disabled }, idx) => {
-          const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
-          return (
-            <InputContainer key={fieldName}>
-              <Label htmlFor={fieldName} error={false /* TODO */}>
-                {fieldName}
-              </Label>
-              <StyledComponent
-                name={fieldName}
-                type="text"
-                value={fieldValue}
-                disabled={disabled(post) && 'disabled'}
-                onChange={e => {
-                  updatePost(fieldName, e.target.value);
-                }}
-                error={false /* TODO */}
-                ref={idx === 0 ? forwardRef : () => {}}
-              />
-            </InputContainer>
-          );
-        }
-      )}
-      <MessageContainer>
-        {errorMessage && (
-          <ErrorMessage>
-            Error{' '}
-            <span role="img" aria-label="woman shrugging">
-              🤷 ‍
-            </span>
-          </ErrorMessage>
-        )}
-        {successMessage && (
-          <SuccessMessage>
-            Saved{' '}
-            <span role="img" aria-label="thumbs up">
-              👍
-            </span>
-          </SuccessMessage>
-        )}
-      </MessageContainer>
-      <Button onClick={savePost}>
-        <ButtonSpan>Save</ButtonSpan>
-      </Button>
-      <Button
-        onClick={publishPost}
-        disabled={post.get('published') && 'disabled'}
-      >
-        <ButtonSpan>{`${
-          post.get('published')
-            ? `Published on ${formatPostDate(post.get('published'))}`
-            : 'Publish'
-        }`}</ButtonSpan>
-      </Button>
-      <CancelButton onClick={close}>
-        <ButtonSpan>Close</ButtonSpan>
-      </CancelButton>
-    </PublishPostForm>
-  </PublishPostFormContainer>
-);
+export default class PublishMenu extends React.Component {
+  inputRef = React.createRef();
+  componentDidMount() {
+    focusAndScrollSmooth(null, this.inputRef?.current);
+  }
+  render() {
+    const {
+      props: {
+        post,
+        updatePost,
+        publishPost,
+        savePost,
+        close,
+        successMessage,
+        errorMessage
+      }
+    } = this;
+    return (
+      <PublishPostFormContainer>
+        <PublishPostForm>
+          <H1Styled>{`${
+            post.get('published') ? 'Post' : 'Draft'
+          }: Details & Publish`}</H1Styled>
+          {publishPostFields.map(
+            ({ fieldName, StyledComponent, disabled }, idx) => {
+              const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
+              return (
+                <InputContainer key={fieldName}>
+                  <Label htmlFor={fieldName} error={false /* TODO */}>
+                    {fieldName}
+                  </Label>
+                  <StyledComponent
+                    name={fieldName}
+                    type="text"
+                    value={fieldValue}
+                    disabled={disabled(post) && 'disabled'}
+                    onChange={e => {
+                      updatePost(fieldName, e.target.value);
+                    }}
+                    error={false /* TODO */}
+                    ref={idx === 0 ? this.inputRef : () => {}}
+                  />
+                </InputContainer>
+              );
+            }
+          )}
+          <MessageContainer>
+            {errorMessage && (
+              <ErrorMessage>
+                Error{' '}
+                <span role="img" aria-label="woman shrugging">
+                  🤷 ‍
+                </span>
+              </ErrorMessage>
+            )}
+            {successMessage && (
+              <SuccessMessage>
+                Saved{' '}
+                <span role="img" aria-label="thumbs up">
+                  👍
+                </span>
+              </SuccessMessage>
+            )}
+          </MessageContainer>
+          <Button onClick={savePost}>
+            <ButtonSpan>Save</ButtonSpan>
+          </Button>
+          <Button
+            onClick={publishPost}
+            disabled={post.get('published') && 'disabled'}
+          >
+            <ButtonSpan>{`${
+              post.get('published')
+                ? `Published on ${formatPostDate(post.get('published'))}`
+                : 'Publish'
+            }`}</ButtonSpan>
+          </Button>
+          <CancelButton onClick={close}>
+            <ButtonSpan>Close</ButtonSpan>
+          </CancelButton>
+        </PublishPostForm>
+      </PublishPostFormContainer>
+    );
+  }
+}

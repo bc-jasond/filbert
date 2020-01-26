@@ -198,11 +198,13 @@ export default class InsertSectionMenuComponent extends React.Component {
         return;
       }
       case KEYCODE_LEFT_ARROW: {
-        this.setState({ currentIdx: Math.max(0, currentIdx - 1) });
+        const nextIdx = currentIdx <= 0 ? 6 : currentIdx - 1;
+        this.setState({ currentIdx: nextIdx });
         break;
       }
       case KEYCODE_RIGHT_ARROW: {
-        this.setState({ currentIdx: Math.min(6, currentIdx + 1) });
+        const nextIdx = currentIdx === 6 ? 0 : currentIdx + 1;
+        this.setState({ currentIdx: nextIdx });
         break;
       }
       case KEYCODE_ESC: {

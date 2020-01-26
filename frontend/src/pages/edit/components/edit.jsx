@@ -86,8 +86,6 @@ export default class EditPost extends React.Component {
 
   updateManager = new UpdateManager();
 
-  inputRef;
-
   selectionOffsets = {};
 
   constructor(props) {
@@ -352,11 +350,7 @@ export default class EditPost extends React.Component {
       // showing menu, unregister to not interfere
       this.unregisterWindowEventHandlers();
     }
-    this.setState({ shouldShowPublishPostMenu: !oldVal }, () => {
-      if (this.inputRef) {
-        this.inputRef.focus();
-      }
-    });
+    this.setState({ shouldShowPublishPostMenu: !oldVal });
   };
 
   closeAllEditContentMenus = async () => {
@@ -724,29 +718,17 @@ export default class EditPost extends React.Component {
   // MAIN "ON" EVENT CALLBACKS
   getSelectionOffsetsOrEditSectionNode = () => {
     const {
-      state: { editSectionNode, insertMenuNode }
+      state: { editSectionNode }
     } = this;
-    if (insertMenuNode.size > 0) {
+
+    if (editSectionNode.size > 0) {
       return {
-        startNodeId: insertMenuNode.get('id'),
+        startNodeId: editSectionNode.get('id'),
         caretStart: 0,
         caretEnd: 0
       };
     }
-    let selectionOffsets = getHighlightedSelectionOffsets();
-    const { startNodeId } = selectionOffsets;
-    if (!startNodeId) {
-      // if there's a MetaNode selected, override DOM selection
-      if (!editSectionNode.get('id')) {
-        return {};
-      }
-      selectionOffsets = {
-        caretStart: 0,
-        caretEnd: 0,
-        startNodeId: editSectionNode.get('id')
-      };
-    }
-    return selectionOffsets;
+    return getHighlightedSelectionOffsets();
   };
 
   handleKeyDown = async evt => {
@@ -809,11 +791,10 @@ export default class EditPost extends React.Component {
       this.setState({ windowEventToForward: evt });
       return;
     }
-    // edit image menu is open
+    // edit image or quote menu is open
     if (
       shouldShowEditSectionMenu &&
       editSectionNode.get('id') &&
-      editSectionNode.get('type') === NODE_TYPE_IMAGE &&
       ![
         KEYCODE_ESC,
         KEYCODE_ENTER,
@@ -1110,20 +1091,7 @@ export default class EditPost extends React.Component {
       editSectionMetaFormTopOffset: sectionDomNode.offsetTop
     };
 
-    await new Promise(resolve => {
-      this.setState(newState, () => {
-        if (this.inputRef) {
-          // allow animations to finish or scroll goes wacko
-          setTimeout(() => focusAndScrollSmooth(sectionId, this.inputRef), 0);
-        }
-        resolve();
-      });
-    });
-  };
-
-  getInputForwardedRef = ref => {
-    if (!ref) return;
-    this.inputRef = ref;
+    await new Promise(resolve => this.setState(newState, resolve));
   };
 
   replaceImageFile = async ([firstFile]) => {
@@ -1510,7 +1478,6 @@ export default class EditPost extends React.Component {
               close={this.togglePostMenu}
               successMessage={shouldShowPostSuccess}
               errorMessage={shouldShowPostError}
-              forwardRef={this.getInputForwardedRef}
             />
           )}
           {insertMenuNode.get('id') && (
@@ -1537,10 +1504,10 @@ export default class EditPost extends React.Component {
           {editSectionNode.get('type') === NODE_TYPE_QUOTE &&
             shouldShowEditSectionMenu && (
               <EditQuoteForm
+                windowEvent={windowEventToForward}
                 offsetTop={editSectionMetaFormTopOffset}
                 nodeModel={editSectionNode}
                 updateMeta={this.updateEditSectionNodeMeta}
-                forwardRef={this.getInputForwardedRef}
               />
             )}
           {formatSelectionNode.get('id') && (

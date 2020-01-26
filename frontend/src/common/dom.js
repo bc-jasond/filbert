@@ -161,8 +161,14 @@ export function scrollToCaretIfOutOfView(nodeId) {
   }
 }
 
-export function focusAndScrollSmooth(nodeId, domElem) {
-  domElem.focus({ preventScroll: true });
+export function focusAndScrollSmooth(nodeId, inputElem, setCaretToEnd = true) {
+  const { activeElement } = document;
+  if (!inputElem || activeElement == inputElem) {
+    return;
+  }
+  inputElem.focus({ preventScroll: true });
+  const caretPosition = setCaretToEnd ? inputElem.value.length : 0;
+  inputElem.setSelectionRange(caretPosition, caretPosition);
   scrollToCaretIfOutOfView(nodeId);
 }
 

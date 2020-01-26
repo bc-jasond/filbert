@@ -42,7 +42,8 @@ import {
 } from '../../../common/constants';
 import {
   caretIsAtBeginningOfInput,
-  caretIsAtEndOfInput
+  caretIsAtEndOfInput,
+  focusAndScrollSmooth
 } from '../../../common/dom';
 import { stopAndPrevent } from '../../../common/utils';
 
@@ -168,7 +169,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
 
     const { selectionModel } = props;
     this.state = {
-      currentIdx: selectionModel?.get(SELECTION_LINK_URL)
+      currentIdx: selectionModel?.get(SELECTION_ACTION_LINK)
         ? this.linkMenuItemIdx
         : -1,
       isMenuOpen: true
@@ -177,18 +178,19 @@ export default class FormatSelectionMenuComponent extends React.Component {
 
   componentDidMount() {
     const {
-      props: { selectionModel }
+      props: { nodeModel, selectionModel }
     } = this;
     if (selectionModel.get(SELECTION_ACTION_LINK) && this.ref) {
-      this.ref?.current?.focus();
+      focusAndScrollSmooth(nodeModel.get('id'), this.ref?.current);
     }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     const {
       state: { currentIdx },
-      props: { selectionModel, windowEvent }
+      props: { nodeModel, selectionModel, windowEvent }
     } = this;
+    const { currentIdx: prevIdx } = prevState;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
       this.handleKeyDown(windowEvent);
     }
@@ -196,7 +198,11 @@ export default class FormatSelectionMenuComponent extends React.Component {
       selectionModel.get(SELECTION_ACTION_LINK) &&
       currentIdx === this.linkMenuItemIdx
     ) {
-      this.ref?.current?.focus?.();
+      focusAndScrollSmooth(
+        nodeModel.get('id'),
+        this.ref?.current,
+        prevIdx === this.linkMenuItemIdx - 1 ? false : true
+      );
       return;
     }
     this.ref?.current?.blur?.();

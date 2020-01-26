@@ -1,5 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components';
+import { Range } from 'immutable';
 
 import {
   Arrow,
@@ -7,6 +8,17 @@ import {
   LilSassyMenu,
   PointClip
 } from '../../../common/components/shared-styled-components';
+import {
+  KEYCODE_LEFT_ARROW,
+  KEYCODE_RIGHT_ARROW,
+  KEYCODE_SPACE
+} from '../../../common/constants';
+import {
+  caretIsAtBeginningOfInput,
+  caretIsAtEndOfInput,
+  focusAndScrollSmooth
+} from '../../../common/dom';
+import { stopAndPrevent } from '../../../common/utils';
 
 const EditQuoteMenu = styled(LilSassyMenu)`
   display: flex;
@@ -28,49 +40,92 @@ const Row = styled.div`
 const QuoteInput = styled(DarkInput)`
   margin: 0 8px;
 `;
-const UrlInput = styled(DarkInput)`
-  margin: 0 8px;
-`;
-const AuthorInput = styled(DarkInput)`
-  margin: 0 8px;
-`;
-const ContextInput = styled(DarkInput)`
-  margin: 0 8px;
-`;
 
-export default ({ offsetTop, nodeModel, updateMeta, forwardRef }) => (
-  <EditQuoteMenu data-is-menu top={offsetTop}>
-    <Row>
-      <QuoteInput
-        ref={forwardRef}
-        placeholder="Enter Quote here..."
-        onChange={e => updateMeta('quote', e.target.value)}
-        value={nodeModel.getIn(['meta', 'quote'], '')}
-      />
-    </Row>
-    <Row>
-      <UrlInput
-        placeholder="Enter Url here..."
-        onChange={e => updateMeta('url', e.target.value)}
-        value={nodeModel.getIn(['meta', 'url'], '')}
-      />
-    </Row>
-    <Row>
-      <AuthorInput
-        placeholder="Enter Author here..."
-        onChange={e => updateMeta('author', e.target.value)}
-        value={nodeModel.getIn(['meta', 'author'], '')}
-      />
-    </Row>
-    <Row>
-      <ContextInput
-        placeholder="Enter Context here..."
-        onChange={e => updateMeta('context', e.target.value)}
-        value={nodeModel.getIn(['meta', 'context'], '')}
-      />
-    </Row>
-    <PointClip>
-      <Arrow />
-    </PointClip>
-  </EditQuoteMenu>
-);
+export default class EditQuoteForm extends React.Component {
+  menuItems = ['quote', 'url', 'author', 'context'];
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      currentIdx: 0,
+      shouldFocusEnd: true
+    };
+    this.inputRefs = Array(4)
+      .fill(null)
+      .map(() => React.createRef());
+  }
+
+  componentDidMount() {
+    const {
+      props: { nodeModel }
+    } = this;
+    // find first empty value - or first value
+    let [focusRef] = this.inputRefs.filter(
+      r => r?.current?.value?.length === 0
+    );
+    focusRef = focusRef || this.inputRefs[0];
+
+    focusAndScrollSmooth(nodeModel.get('id'), focusRef.current);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const {
+      state: { currentIdx, shouldFocusEnd },
+      props: { nodeModel, windowEvent }
+    } = this;
+    const { currentIdx: prevIdx } = prevState;
+    if (windowEvent && windowEvent !== prevProps.windowEvent) {
+      this.handleKeyDown(windowEvent);
+    }
+
+    focusAndScrollSmooth(
+      nodeModel.get('id'),
+      this.inputRefs[currentIdx]?.current,
+      shouldFocusEnd
+    );
+  }
+
+  handleKeyDown = evt => {
+    const {
+      state: { currentIdx }
+    } = this;
+
+    if (evt.keyCode === KEYCODE_LEFT_ARROW && caretIsAtBeginningOfInput()) {
+      const nextIdx =
+        currentIdx === 0 ? this.inputRefs.length - 1 : currentIdx - 1;
+      this.setState({ currentIdx: nextIdx, shouldFocusEnd: true });
+      stopAndPrevent(evt);
+      return;
+    }
+    if (evt.keyCode === KEYCODE_RIGHT_ARROW && caretIsAtEndOfInput()) {
+      const nextIdx =
+        currentIdx === this.inputRefs.length - 1 ? 0 : currentIdx + 1;
+      this.setState({ currentIdx: nextIdx, shouldFocusEnd: false });
+      stopAndPrevent(evt);
+      return;
+    }
+  };
+
+  render() {
+    const {
+      props: { offsetTop, nodeModel, updateMeta }
+    } = this;
+    return (
+      <EditQuoteMenu data-is-menu top={offsetTop}>
+        {this.menuItems.map((metaKey, idx) => (
+          <Row key={metaKey}>
+            <QuoteInput
+              ref={this.inputRefs[idx]}
+              placeholder={`Enter ${metaKey.toLocaleUpperCase()} here...`}
+              onChange={e => updateMeta(metaKey, e.target.value)}
+              value={nodeModel.getIn(['meta', metaKey], '')}
+            />
+          </Row>
+        ))}
+        <PointClip>
+          <Arrow />
+        </PointClip>
+      </EditQuoteMenu>
+    );
+  }
+}

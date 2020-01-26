@@ -99,20 +99,25 @@ export default class EditImageForm extends React.Component {
       props: { nodeModel }
     } = this;
     if (this.captionRef) {
-      focusAndScrollSmooth(nodeModel.get('id'), this.captionRef.current);
+      focusAndScrollSmooth(nodeModel.get('id'), this.captionRef?.current);
     }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     const {
       state: { currentIdx },
-      props: { windowEvent }
+      props: { nodeModel, windowEvent }
     } = this;
+    const { currentIdx: prevIdx } = prevState;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
       this.handleKeyDown(windowEvent);
     }
     if (currentIdx === this.captionInputIdx) {
-      this.captionRef?.current?.focus?.();
+      focusAndScrollSmooth(
+        nodeModel.get('id'),
+        this.captionRef?.current,
+        prevIdx === this.captionInputIdx - 1 ? false : true
+      );
       return;
     }
     this.captionRef?.current?.blur?.();
@@ -141,7 +146,11 @@ export default class EditImageForm extends React.Component {
       stopAndPrevent(evt);
       return;
     }
-    if (evt.keyCode === KEYCODE_SPACE && currentIdx > -1 && currentIdx < this.captionInputIdx) {
+    if (
+      evt.keyCode === KEYCODE_SPACE &&
+      currentIdx > -1 &&
+      currentIdx < this.captionInputIdx
+    ) {
       if (currentIdx > -1) {
         this.menuItems[currentIdx]?.onClick?.();
       }
