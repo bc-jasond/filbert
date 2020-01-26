@@ -78,25 +78,30 @@ async function getPostByCanonical(req, res) {
 /**
  * save post fields - like title, canonical & abstract
  */
-async function patchPost(req, res) {
-  const { id } = req.params;
-  const { title, canonical, abstract } = req.body;
-  const knex = await getKnex();
-  const [post] = await knex("post").where({
-    user_id: req.loggedInUser.id,
-    id
-  });
-  if (!post) {
-    res.status(404).send({});
-    return;
-  }
-  const result = await knex("post")
-    .update({ title, canonical, abstract })
-    .where({
+async function patchPost(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { title, canonical, abstract } = req.body;
+    const knex = await getKnex();
+    const [post] = await knex("post").where({
       user_id: req.loggedInUser.id,
       id
     });
-  res.send({});
+    if (!post) {
+      res.status(404).send({});
+      return;
+    }
+    const result = await knex("post")
+      .update({ title, canonical, abstract })
+      .where({
+        user_id: req.loggedInUser.id,
+        id
+      });
+    res.send({});
+  }
+  catch (err) {
+    next(err)
+  }
 }
 
 /**

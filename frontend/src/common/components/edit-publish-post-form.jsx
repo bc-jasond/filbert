@@ -69,6 +69,7 @@ export default class PublishMenu extends React.Component {
         errorMessage
       }
     } = this;
+    
     return (
       <PublishPostFormContainer>
         <PublishPostForm>
@@ -80,7 +81,7 @@ export default class PublishMenu extends React.Component {
               const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
               return (
                 <InputContainer key={fieldName}>
-                  <Label htmlFor={fieldName} error={false /* TODO */}>
+                  <Label htmlFor={fieldName} error={errorMessage?.[fieldName]}>
                     {fieldName}
                   </Label>
                   <StyledComponent
@@ -91,7 +92,7 @@ export default class PublishMenu extends React.Component {
                     onChange={e => {
                       updatePost(fieldName, e.target.value);
                     }}
-                    error={false /* TODO */}
+                    error={errorMessage?.[fieldName]}
                     ref={idx === 0 ? this.inputRef : () => {}}
                   />
                 </InputContainer>
@@ -101,7 +102,7 @@ export default class PublishMenu extends React.Component {
           <MessageContainer>
             {errorMessage && (
               <ErrorMessage>
-                Error{' '}
+                Error:{` ${Object.values(errorMessage).join('')}`}
                 <span role="img" aria-label="woman shrugging">
                   🤷 ‍
                 </span>

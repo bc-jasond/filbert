@@ -22,10 +22,10 @@ function getBaseConfig(abortSignal = null) {
 
 async function handleResponse(res) {
   const data = res?.status === 204 ? {} : await res.json();
-  // TODO: string parsing for 2XX level status code!
   // TODO: don't use throw for control flow.  Return the whole response and let the client figure it out
-  if (res.status.toString().charAt(0) !== '2') {
-    throw new Error(`${res.status} ${res.statusText}\n${JSON.stringify(data)}`);
+  if (res.status < 200 || res.status > 299) {
+    Pace.stop();
+    return { error: {...data}};
   }
   Pace.stop();
   return data;
@@ -56,15 +56,13 @@ export async function signinGoogle(googleUser, filbertUsername) {
 }
 
 async function fetchRefresh(url, config) {
-  try {
     const res = await fetch(url, config);
     const data = await handleResponse(res);
-    return data;
-  } catch (err) {
-    // retry once for 401 token expired
-    if (!err.message.includes('expired token')) {
-      throw err;
+    const {error} = data;
+    if (!error || !error?.error?.includes?.('expired token')) {
+      return data;
     }
+  
     console.info('Retrying fetch...');
     const user = await googleGetLoggedInUser();
     let signupIsIncomplete;
@@ -83,7 +81,6 @@ async function fetchRefresh(url, config) {
       headers: { Authorization: get(AUTH_TOKEN_KEY) }
     });
     return handleResponse(res2);
-  }
 }
 
 async function apiCall(
@@ -93,7 +90,6 @@ async function apiCall(
   abortSignal = null,
   config = getBaseConfig(abortSignal)
 ) {
-  let result;
   try {
     Pace.start();
     const configInternal = { ...config };
@@ -101,15 +97,13 @@ async function apiCall(
     if (data) {
       configInternal.body = JSON.stringify(data); // body data type must match "Content-Type" header
     }
-    result = fetchRefresh(`${API_URL}${url}`, configInternal);
+    return fetchRefresh(`${API_URL}${url}`, configInternal);
   } catch (err) {
     console.error(`Fetch ${method} Error: `, err);
-    // TODO: don't throw - return error/data object { error: ..., data: ...}
-    throw err;
   } finally {
     Pace.stop();
   }
-  return result;
+  return {};
 }
 
 export async function apiGet(url, abortSignal = null) {

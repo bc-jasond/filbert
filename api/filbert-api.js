@@ -7,7 +7,6 @@ const multer = require("multer");
 const chalk = require("chalk");
 
 const { saneEnvironmentOrExit } = require("./lib/util");
-const { wrapMiddleware } = require("./lib/express-util");
 
 const {
   parseAuthorizationHeader,
@@ -72,21 +71,33 @@ async function main() {
     app.delete("/post/:id", deletePublishedPost);
     app.get("/edit/:id", getPostForEdit);
     app.post("/content", postContentNodes);
-    app.post("/image", upload.single("fileData"), wrapMiddleware(uploadImage));
-    app.get("/draft", wrapMiddleware(getDrafts));
+    app.post("/image", upload.single("fileData"), uploadImage);
+    app.get("/draft", getDrafts);
     app.post("/publish/:id", publishDraft);
     app.delete("/draft/:id", deleteDraftAndContentNodes);
 
     // STARTUP
-    // global error handler - use with wrapMiddleware() to collect all errors here
-    app.use((err, req, res) => {
+    // global error handler to collect all errors here
+    // pass 4 args or it won't be treated as an error handling middleware
+    // https://expressjs.com/en/4x/api.html#app.use
+    app.use((err, req, res, next) => {
       if (err) {
         console.error(err);
+        if (typeof err !== 'object') {
+          res.status(500).send({ message: err});
+        }
+        const { code, sqlMessage } = err;
         // SQL syntax error - probably from bad user input
-        if (err.code && err.code === "ER_PARSE_ERROR") {
+        if (code === "ER_PARSE_ERROR") {
           return res.status(400).send({ message: "Bad Request" });
         }
-        res.status(500).send({});
+        // user entered a duplicate canonical url
+        if (code === "ER_DUP_ENTRY" && sqlMessage.includes('canonical')) {
+          return res.status(400).send({canonical: `Url '${req.body.canonical}' already taken.`})
+        }
+        
+        res.status(500).send(err);
+        
       }
     });
     app.listen(3001);

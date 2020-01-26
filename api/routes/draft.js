@@ -14,51 +14,55 @@ async function postDraft(req, res) {
 /**
  * list drafts for logged in user
  */
-async function getDrafts(req, res) {
-  const {
-    loggedInUser,
-    query: { contains, oldest, random }
-  } = req;
-  const knex = await getKnex();
-  let builder = knex("post")
-    .select(
-      "post.id",
-      "user_id",
-      "canonical",
-      "title",
-      "abstract",
+async function getDrafts(req, res, next) {
+  try {
+    const {
+      loggedInUser,
+      query: { contains, oldest, random }
+    } = req;
+    const knex = await getKnex();
+    let builder = knex("post")
+      .select(
+        "post.id",
+        "user_id",
+        "canonical",
+        "title",
+        "abstract",
+        "post.created",
+        "updated",
+        "published",
+        "post.deleted",
+        "username"
+      )
+      .innerJoin("user", "post.user_id", "user.id")
+      .whereNull("published")
+      .andWhere("post.user_id", loggedInUser.id)
+      .limit(250);
+  
+    if (typeof contains === "string") {
+      builder = builder.andWhereRaw(
+        "MATCH (title,abstract) AGAINST (? IN BOOLEAN MODE)",
+        [contains]
+      );
+    }
+  
+    if (typeof random === "string") {
+      /* TODO: implement random
+       1) select all published post ids in the the DB
+       2) use Fisher Yates to fill up 100 random ids (swap from whole list, break at 100) for a WHERE IN clause
+       3) add whereIn() to the builder
+       */
+    }
+  
+    builder = builder.orderBy(
       "post.created",
-      "updated",
-      "published",
-      "post.deleted",
-      "username"
-    )
-    .innerJoin("user", "post.user_id", "user.id")
-    .whereNull("published")
-    .andWhere("post.user_id", loggedInUser.id)
-    .limit(250);
-
-  if (typeof contains === "string") {
-    builder = builder.andWhereRaw(
-      "MATCH (title,abstract) AGAINST (? IN BOOLEAN MODE)",
-      [contains]
+      typeof oldest === "string" ? "asc" : "desc"
     );
+  
+    res.send(await builder);
+  } catch (err) {
+    next(err)
   }
-
-  if (typeof random === "string") {
-    /* TODO: implement random
-     1) select all published post ids in the the DB
-     2) use Fisher Yates to fill up 100 random ids (swap from whole list, break at 100) for a WHERE IN clause
-     3) add whereIn() to the builder
-     */
-  }
-
-  builder = builder.orderBy(
-    "post.created",
-    typeof oldest === "string" ? "asc" : "desc"
-  );
-
-  res.send(await builder);
 }
 /**
  * publish a draft - this is a one-time operation

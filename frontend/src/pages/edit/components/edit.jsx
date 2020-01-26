@@ -264,30 +264,30 @@ export default class EditPost extends React.Component {
   };
 
   savePost = async () => {
-    try {
-      const {
-        state: { post }
-      } = this;
-      await apiPatch(`/post/${post.get('id')}`, {
-        title: post.get('title'),
-        canonical: post.get('canonical'),
-        abstract: post.get('abstract')
-      });
-      this.setState(
-        {
-          shouldShowPostSuccess: true,
-          shouldShowPostError: null
-        },
-        () => {
-          setTimeout(
-            () => this.setState({ shouldShowPostSuccess: null }),
-            POST_ACTION_REDIRECT_TIMEOUT
-          );
-        }
-      );
-    } catch (err) {
-      this.setState({ shouldShowPostError: true });
+    const {
+      state: { post }
+    } = this;
+    const {error} = await apiPatch(`/post/${post.get('id')}`, {
+      title: post.get('title'),
+      canonical: post.get('canonical'),
+      abstract: post.get('abstract')
+    });
+    if (error) {
+      this.setState({ shouldShowPostSuccess: null, shouldShowPostError: error });
+      return;
     }
+    this.setState(
+      {
+        shouldShowPostSuccess: true,
+        shouldShowPostError: null
+      },
+      () => {
+        setTimeout(
+          () => this.setState({ shouldShowPostSuccess: null }),
+          POST_ACTION_REDIRECT_TIMEOUT
+        );
+      }
+    );
   };
 
   publishPost = async () => {
