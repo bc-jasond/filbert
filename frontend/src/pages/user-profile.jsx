@@ -12,7 +12,7 @@ import {
 } from '../common/components/shared-styled-components';
 
 import { apiGet, apiPatch } from '../common/fetch';
-import { formatPostDate } from '../common/utils';
+import { formatNumber, formatPostDate } from '../common/utils';
 import Page404 from './404';
 import Footer from './footer';
 import Header from './header';
@@ -31,7 +31,6 @@ const ColRight = styled(Col)`
   flex-grow: 2;
   justify-content: center;
 `;
-const PStyled = styled.p``;
 const BiggerImg = styled(ProfileImg)`
   height: 144px;
   width: 144px;
@@ -42,6 +41,16 @@ const FullName = styled(H2Styled)`
 const AuthorContainer = styled.div``;
 const AuthorExpand = styled(Link)`
   ${authorExpandMixin};
+`;
+const Table = styled.div`
+  display: flex;
+  flex-flow: row wrap;
+`;
+const TableCell = styled.div`
+  box-sizing: border-box;
+  flex-grow: 1;
+  width: 50%;
+  overflow: hidden;
 `;
 
 export default class UserProfile extends React.Component {
@@ -55,7 +64,7 @@ export default class UserProfile extends React.Component {
   }
 
   async componentDidMount() {
-    this.getUser();
+    await this.getUser();
   }
 
   async getUser() {
@@ -70,16 +79,28 @@ export default class UserProfile extends React.Component {
       return;
     }
     const usernameWithoutAt = username.slice(1);
-    if (usernameWithoutAt === session.get('username')) {
-      this.setState({ userIsMe: true });
-    }
-    const { error, data: user } = await apiGet(`/user/${usernameWithoutAt}`);
-    if (error) {
-      console.error('USER PROFILE', error);
+    const userIsMe = usernameWithoutAt === session.get('username');
+
+    const { error: userError, data: user } = await apiGet(
+      `/user/${usernameWithoutAt}`
+    );
+    if (userError) {
+      console.error('USER PROFILE Error: ', userError);
       this.setState({ shouldShow404: true });
       return;
     }
-    this.setState({ user });
+    this.setState({ userIsMe, user });
+    if (!(user.statsArePublic || userIsMe)) {
+      return;
+    }
+    const { error: statsError, data: stats } = await apiGet(
+      `/user-stats/${usernameWithoutAt}`
+    );
+    if (statsError) {
+      console.error('USER STATS Error: ', statsError);
+      return;
+    }
+    this.setState({ stats });
   }
 
   updateProfilePublic = async () => {
@@ -110,7 +131,7 @@ export default class UserProfile extends React.Component {
 
   render() {
     const {
-      state: { shouldShow404, user, userIsMe },
+      state: { shouldShow404, user, userIsMe, stats },
       props: { session, setSession }
     } = this;
     if (shouldShow404) return <Page404 session={session} />;
@@ -158,49 +179,66 @@ export default class UserProfile extends React.Component {
                 />
               </ContentSection>
             )}
-            {userIsMe || user?.statsArePublic ? (
+            {stats && (
               <ContentSection>
                 <H2Styled>Stats</H2Styled>
-                <PStyled>
-                  <Code>Member Since:</Code>
-                  {formatPostDate(user?.created)}
-                </PStyled>
-                <PStyled>
-                  <Code>Current Streak:</Code>TODO
-                </PStyled>
-                <PStyled>
-                  <Code>Longest Streak:</Code>TODO
-                </PStyled>
-                <PStyled>
-                  <Code>Favorite Word:</Code>TODO
-                </PStyled>
-                <PStyled>
-                  <Code>Avg Post Length:</Code>TODO words
-                </PStyled>
-                <PStyled>
-                  <Code>Longest Post:</Code>TODO words
-                </PStyled>
-                <PStyled>
-                  <Code># of Posts Total:</Code>TODO
-                </PStyled>
-                <PStyled>
-                  <Code># of Posts Published:</Code>TODO
-                </PStyled>
-                <PStyled>
-                  <Code># of Words Total:</Code>TODO
-                </PStyled>
-                <PStyled>
-                  <Code># of Characters:</Code>TODO
-                </PStyled>
-                <PStyled>
-                  <Code># of Images:</Code>TODO
-                </PStyled>
-                <PStyled>
-                  <Code># of Quotes:</Code>TODO
-                </PStyled>
+                <Table>
+                  <TableCell>
+                    <Code>Member Since:</Code>
+                  </TableCell>
+                  <TableCell>{formatPostDate(user?.created)}</TableCell>
+                  <TableCell>
+                    <Code>Current Streak:</Code>
+                  </TableCell>
+                  <TableCell>TODO days</TableCell>
+                  <TableCell>
+                    <Code>Longest Streak:</Code>
+                  </TableCell>
+                  <TableCell>TODO days</TableCell>
+                  <TableCell>
+                    <Code>Favorite Words:</Code>
+                  </TableCell>
+                  <TableCell>
+                    {stats?.favoriteWords.map(({ word, count }) => (
+                      <div>{`"${word}" used ${formatNumber(count)} times`}</div>
+                    ))}
+                  </TableCell>
+                  <TableCell>
+                    <Code>Avg Post Length:</Code>
+                  </TableCell>
+                  <TableCell>TODO words</TableCell>
+                  <TableCell>
+                    <Code>Longest Post:</Code>
+                  </TableCell>
+                  <TableCell>TODO words</TableCell>
+                  <TableCell>
+                    <Code># of Characters:</Code>
+                  </TableCell>
+                  <TableCell>{formatNumber(stats?.totalCharacters)}</TableCell>
+                  <TableCell>
+                    <Code># of Words Total:</Code>
+                  </TableCell>
+                  <TableCell>{formatNumber(stats?.totalWords)}</TableCell>
+                  <TableCell>
+                    <Code># of Posts Total:</Code>
+                  </TableCell>
+                  <TableCell>{formatNumber(stats?.totalPosts)}</TableCell>
+                  <TableCell>
+                    <Code># of Posts Published:</Code>
+                  </TableCell>
+                  <TableCell>
+                    {formatNumber(stats?.totalPostsPublished)}
+                  </TableCell>
+                  <TableCell>
+                    <Code># of Images:</Code>
+                  </TableCell>
+                  <TableCell>{formatNumber(stats?.totalImages)}</TableCell>
+                  <TableCell>
+                    <Code># of Quotes:</Code>
+                  </TableCell>
+                  <TableCell>{formatNumber(stats?.totalQuotes)}</TableCell>
+                </Table>
               </ContentSection>
-            ) : (
-              undefined
             )}
           </Article>
           <Footer />

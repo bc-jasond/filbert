@@ -1,4 +1,6 @@
+const { performance } = require("perf_hooks");
 const { getKnex } = require("../lib/mysql");
+
 // for "is username taken?" - add ?forSignup
 async function getUser(req, res) {
   const {
@@ -83,7 +85,95 @@ async function patchProfile(req, res) {
   res.send({});
 }
 
+async function getStats(req, res, next) {
+  try {
+    const {
+      params: { username },
+      loggedInUser
+    } = req;
+    const start = performance.now();
+    const knex = await getKnex();
+    let builder = knex("user").where({ username });
+    if (!loggedInUser || username !== loggedInUser.username) {
+      builder = builder.andWhere({ show_stats: 1 });
+    }
+    const [user] = await builder;
+    if (!user) {
+      res.status(404).send({});
+    }
+    const { id: userId } = user;
+    const stats = {};
+    const allPosts = await knex("post").where({ user_id: userId });
+    stats.totalPosts = allPosts.length;
+    stats.totalPostsPublished = allPosts.filter(p => p.published).length;
+    stats.totalWords = 0;
+    stats.totalCharacters = 0;
+    stats.totalImages = 0;
+    stats.totalQuotes = 0;
+  
+    const allWordsSeen = {};
+    const allContentNodes = await knex("content_node")
+      .innerJoin("post", "post.id", "content_node.post_id")
+      .where({ "post.user_id": userId });
+    const splitAndCount = str => {
+      const matched = str.match(/\w+/gi);
+      if (!matched) {
+        return;
+      }
+      matched.forEach(word => {
+        stats.totalWords += 1;
+        const lc = word.toLowerCase();
+        if (lc.length > 2 && !["the", "and"].includes(lc)) {
+          if (!allWordsSeen.hasOwnProperty(lc)) {
+            allWordsSeen[lc] = 0;
+          }
+          allWordsSeen[lc] += 1;
+        }
+      });
+    };
+    const addChars = str => {
+      stats.totalCharacters += str.length;
+    };
+    allContentNodes.forEach(
+      ({
+         type,
+         content,
+         meta: { caption = "", quote = "", author = "", context = "" }
+       }) => {
+        if (["p", "li", "h1", "h2", "pre"].includes(type)) {
+          addChars(content);
+          splitAndCount(content);
+        } else if (type === "image") {
+          stats.totalImages += 1;
+          addChars(content);
+          splitAndCount(caption);
+        } else if (type === "quote") {
+          stats.totalQuotes += 1;
+          addChars(`${quote}${author}${context}`);
+          splitAndCount(`${quote} ${author} ${context}`);
+        }
+      }
+    );
+    let favoriteWords = [];
+    for (const word in allWordsSeen) {
+      favoriteWords.push({ word, count: allWordsSeen[word] });
+    }
+    favoriteWords.sort(({ count }, { count: count2 }) =>
+      count > count2 ? -1 : 1
+    );
+    stats.favoriteWords = favoriteWords.slice(0, 3);
+    console.info(
+      `User Stats for ${username} took ${Math.round(performance.now() - start) /
+      1000} seconds.`
+    );
+    res.send(stats);
+  } catch(err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getUser,
-  patchProfile
+  patchProfile,
+  getStats
 };

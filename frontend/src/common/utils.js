@@ -26,6 +26,10 @@ export function formatPostDate(dateStr) {
   });
 }
 
+export function formatNumber(number) {
+  return new Intl.NumberFormat().format(number);
+}
+
 export function s4() {
   return Math.floor((1 + Math.random()) * 0x10000)
     .toString(16)
