@@ -224,6 +224,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
       ![
         KEYCODE_ENTER,
         KEYCODE_ESC,
+        KEYCODE_SPACE,
         KEYCODE_LEFT_ARROW,
         KEYCODE_RIGHT_ARROW
       ].includes(evt.keyCode)
@@ -232,24 +233,27 @@ export default class FormatSelectionMenuComponent extends React.Component {
     }
     // if the cursor is on the 'link' icon - only move the cursor in the menu if the caret is
     // at the edge of the input content (beginning for left arrow, end for right arrow)
+    // TODO: maybe? let user hold shift and use arrows to resize selection (instead of moving menu cursor)
+    //  ^ this is complicated because of the input focus().  Also, it might override highlighting text in the input
+    //  You'd have to blur() the input, restoreSelection() on the contenteditable text (so you can see the blue highlight again)
+    //  but only while the user is holding shift and hitting arrows.  Sounds pretty messy
     if (
       isMenuOpen &&
       currentIdx === this.linkMenuItemIdx &&
-      selectionModel.get(SELECTION_ACTION_LINK) &&
-      evt.keyCode === KEYCODE_LEFT_ARROW &&
-      !caretIsAtBeginningOfInput()
+      selectionModel.get(SELECTION_ACTION_LINK)
     ) {
-      return;
+      if (
+        // if this gets uncommented, user can't unselect the 'link' menu item.
+        // with it commented, it will unselect 'link' while typing the url if the
+        // user hits 'space', which could be jarring but, seems preferable to being 'stuck'
+        // evt.keyCode === KEYCODE_SPACE ||
+        (evt.keyCode === KEYCODE_LEFT_ARROW && !caretIsAtBeginningOfInput()) ||
+        (evt.keyCode === KEYCODE_RIGHT_ARROW && !caretIsAtEndOfInput())
+      ) {
+        return;
+      }
     }
-    if (
-      isMenuOpen &&
-      currentIdx === this.linkMenuItemIdx &&
-      selectionModel.get(SELECTION_ACTION_LINK) &&
-      evt.keyCode === KEYCODE_RIGHT_ARROW &&
-      !caretIsAtEndOfInput()
-    ) {
-      return;
-    }
+
     // don't let contenteditable take over!
     stopAndPrevent(evt);
 

@@ -9,7 +9,8 @@ import {
 } from '../../../common/components/shared-styled-components';
 import {
   KEYCODE_LEFT_ARROW,
-  KEYCODE_RIGHT_ARROW
+  KEYCODE_RIGHT_ARROW,
+  KEYCODE_TAB
 } from '../../../common/constants';
 import {
   caretIsAtBeginningOfInput,
@@ -86,15 +87,20 @@ export default class EditQuoteForm extends React.Component {
     const {
       state: { currentIdx }
     } = this;
-
-    if (evt.keyCode === KEYCODE_LEFT_ARROW && caretIsAtBeginningOfInput()) {
+    if (
+      (evt.keyCode === KEYCODE_TAB && evt.shiftKey) ||
+      (evt.keyCode === KEYCODE_LEFT_ARROW && caretIsAtBeginningOfInput())
+    ) {
       const nextIdx =
         currentIdx === 0 ? this.inputRefs.length - 1 : currentIdx - 1;
       this.setState({ currentIdx: nextIdx, shouldFocusEnd: true });
       stopAndPrevent(evt);
       return;
     }
-    if (evt.keyCode === KEYCODE_RIGHT_ARROW && caretIsAtEndOfInput()) {
+    if (
+      evt.keyCode === KEYCODE_TAB ||
+      (evt.keyCode === KEYCODE_RIGHT_ARROW && caretIsAtEndOfInput())
+    ) {
       const nextIdx =
         currentIdx === this.inputRefs.length - 1 ? 0 : currentIdx + 1;
       this.setState({ currentIdx: nextIdx, shouldFocusEnd: false });
