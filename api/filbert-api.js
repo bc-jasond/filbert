@@ -13,7 +13,7 @@ const {
   assertLoggedInUser
 } = require("./routes/auth");
 const { postSignin, postSigninGoogle } = require("./routes/signin");
-const { getUser, patchProfile } = require("./routes/user");
+const { getUser, patchProfile, getStats } = require("./routes/user");
 const {
   getPosts,
   getPostByCanonical,
@@ -57,6 +57,7 @@ async function main() {
     app.post("/signin", postSignin);
     app.post("/signin-google", postSigninGoogle);
     app.get("/user/:username", getUser);
+    app.get("/user-stats/:username", getStats);
     app.get("/post", getPosts);
     app.get("/post/:canonical", getPostByCanonical);
 

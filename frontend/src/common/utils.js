@@ -26,6 +26,23 @@ export function formatPostDate(dateStr) {
   });
 }
 
+export function formatStreakDate(dateInt) {
+  const date = new Date();
+  date.setFullYear(parseInt(`${dateInt}`.substring(0, 4), 10));
+  date.setMonth(parseInt(`${dateInt}`.substring(4, 6), 10));
+  date.setDate(parseInt(`${dateInt}`.substring(6), 10));
+  return date.toLocaleDateString('en-us', {
+    weekday: 'long',
+    year: 'numeric',
+    day: 'numeric',
+    month: 'long'
+  });
+}
+
+export function formatNumber(number) {
+  return new Intl.NumberFormat().format(number);
+}
+
 export function s4() {
   return Math.floor((1 + Math.random()) * 0x10000)
     .toString(16)

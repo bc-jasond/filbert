@@ -24,6 +24,8 @@ CREATE TABLE `content_node` (
   `type` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `content` text COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `meta` json NOT NULL,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`post_id`,`id`),
   KEY `type` (`type`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
