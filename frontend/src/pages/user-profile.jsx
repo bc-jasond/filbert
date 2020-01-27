@@ -12,7 +12,11 @@ import {
 } from '../common/components/shared-styled-components';
 
 import { apiGet, apiPatch } from '../common/fetch';
-import { formatNumber, formatPostDate } from '../common/utils';
+import {
+  formatNumber,
+  formatPostDate,
+  formatStreakDate
+} from '../common/utils';
 import Page404 from './404';
 import Footer from './footer';
 import Header from './header';
@@ -190,11 +194,16 @@ export default class UserProfile extends React.Component {
                   <TableCell>
                     <Code>Current Streak:</Code>
                   </TableCell>
-                  <TableCell>TODO days</TableCell>
+                  <TableCell>{`${stats?.currentStreak} days`}</TableCell>
                   <TableCell>
                     <Code>Longest Streak:</Code>
                   </TableCell>
-                  <TableCell>TODO days</TableCell>
+                  <TableCell>
+                    {`${stats?.longestStreak} days`}
+                    <div>{`from ${formatStreakDate(
+                      stats?.longestStreakStart
+                    )} to ${formatStreakDate(stats?.longestStreakEnd)}`}</div>
+                  </TableCell>
                   <TableCell>
                     <Code>Favorite Words:</Code>
                   </TableCell>
@@ -206,11 +215,15 @@ export default class UserProfile extends React.Component {
                   <TableCell>
                     <Code>Avg Post Length:</Code>
                   </TableCell>
-                  <TableCell>TODO words</TableCell>
+                  <TableCell>{`${formatNumber(
+                    stats?.averagePostWordLength
+                  )} words`}</TableCell>
                   <TableCell>
                     <Code>Longest Post:</Code>
                   </TableCell>
-                  <TableCell>TODO words</TableCell>
+                  <TableCell>{`${formatNumber(
+                    stats?.longestPostWords
+                  )} words`}</TableCell>
                   <TableCell>
                     <Code># of Characters:</Code>
                   </TableCell>

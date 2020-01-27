@@ -101,21 +101,22 @@ async function getStats(req, res, next) {
     if (!user) {
       res.status(404).send({});
     }
+    // TODO: this is just quick 'n dirty.  Since historical data doesn't change, this can be calculated and stored
+    //  in a stats table once a day
     const { id: userId } = user;
     const stats = {};
-    const allPosts = await knex("post").where({ user_id: userId });
-    stats.totalPosts = allPosts.length;
-    stats.totalPostsPublished = allPosts.filter(p => p.published).length;
+    stats.totalPostsPublished = 0;
     stats.totalWords = 0;
     stats.totalCharacters = 0;
     stats.totalImages = 0;
     stats.totalQuotes = 0;
-  
+    stats.currentStreak = null;
+    stats.longestStreak = null;
+    stats.longestStreakStart = null;
+    stats.longestStreakEnd = null;
     const allWordsSeen = {};
-    const allContentNodes = await knex("content_node")
-      .innerJoin("post", "post.id", "content_node.post_id")
-      .where({ "post.user_id": userId });
-    const splitAndCount = str => {
+    const countsByPostId = {};
+    const splitAndCount = (str, postId) => {
       const matched = str.match(/\w+/gi);
       if (!matched) {
         return;
@@ -128,33 +129,79 @@ async function getStats(req, res, next) {
             allWordsSeen[lc] = 0;
           }
           allWordsSeen[lc] += 1;
+          if (!countsByPostId.hasOwnProperty(postId)) {
+            countsByPostId[postId] = 0;
+          }
+          countsByPostId[postId] += 1;
         }
       });
     };
     const addChars = str => {
       stats.totalCharacters += str.length;
     };
+    const getFormattedDate = date =>
+      `${date.getFullYear()}${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}${date
+        .getDate()
+        .toString()
+        .padStart(2, "0")}`;
+
+    const seenDays = new Set();
+    const allPosts = await knex("post").where({ user_id: userId });
+    stats.totalPosts = allPosts.length;
+    allPosts.forEach(({ id, created, updated, published, title, abstract }) => {
+      if (published) {
+        stats.totalPostsPublished += 1;
+      }
+      seenDays.add(getFormattedDate(created));
+      seenDays.add(getFormattedDate(updated));
+      if (published) {
+        seenDays.add(getFormattedDate(published));
+      }
+      addChars(`${title}${abstract}`);
+      splitAndCount(`${title} ${abstract}`, id);
+    });
+
+    const allContentNodes = await knex("content_node")
+      .column(
+        "user_id",
+        "post_id",
+        { created: "content_node.created" },
+        { updated: "content_node.updated" },
+        "type",
+        "content",
+        "meta"
+      )
+      .innerJoin("post", "post.id", "content_node.post_id")
+      .where({ "post.user_id": userId });
+
     allContentNodes.forEach(
       ({
-         type,
-         content,
-         meta: { caption = "", quote = "", author = "", context = "" }
-       }) => {
+        post_id,
+        type,
+        content,
+        meta: { caption = "", quote = "", author = "", context = "" },
+        created,
+        updated
+      }) => {
+        seenDays.add(getFormattedDate(created));
+        seenDays.add(getFormattedDate(updated));
         if (["p", "li", "h1", "h2", "pre"].includes(type)) {
           addChars(content);
-          splitAndCount(content);
+          splitAndCount(content, post_id);
         } else if (type === "image") {
           stats.totalImages += 1;
-          addChars(content);
-          splitAndCount(caption);
+          addChars(caption);
+          splitAndCount(caption, post_id);
         } else if (type === "quote") {
           stats.totalQuotes += 1;
           addChars(`${quote}${author}${context}`);
-          splitAndCount(`${quote} ${author} ${context}`);
+          splitAndCount(`${quote} ${author} ${context}`, post_id);
         }
       }
     );
-    let favoriteWords = [];
+    const favoriteWords = [];
     for (const word in allWordsSeen) {
       favoriteWords.push({ word, count: allWordsSeen[word] });
     }
@@ -162,12 +209,51 @@ async function getStats(req, res, next) {
       count > count2 ? -1 : 1
     );
     stats.favoriteWords = favoriteWords.slice(0, 3);
+    stats.averagePostWordLength = Math.floor(
+      stats.totalWords / stats.totalPosts
+    );
+    const postWordCounts = [];
+    for (const postId in countsByPostId) {
+      postWordCounts.push(countsByPostId[postId]);
+    }
+    // sort dates asc
+    postWordCounts.sort((a, b) => (a > b ? -1 : 1));
+    stats.longestPostWords = postWordCounts[0];
+    // streaks
+    const now = new Date();
+    let today = getFormattedDate(now);
+    const dates = [];
+    for (const date of seenDays) {
+      dates.push(parseInt(date, 10));
+    }
+    dates.sort((a, b) => (a > b ? 1 : -1));
+    let [currentStart] = dates;
+    let [currentEnd] = dates;
+    let [longestStart] = dates;
+    let [longestEnd] = dates;
+    dates.forEach(date => {
+      if (date - currentEnd > 1) {
+        if (currentEnd - currentStart >= longestEnd - longestStart) {
+          longestStart = currentStart;
+          longestEnd = currentEnd;
+        }
+        currentStart = date;
+        currentEnd = date;
+      } else {
+        currentEnd = date;
+      }
+    });
+    stats.currentStreak = currentEnd - currentStart + 1;
+    stats.longestStreak = longestEnd - longestStart + 1;
+    stats.longestStreakStart = longestStart;
+    stats.longestStreakEnd = longestEnd;
+
     console.info(
       `User Stats for ${username} took ${Math.round(performance.now() - start) /
-      1000} seconds.`
+        1000} seconds.`
     );
     res.send(stats);
-  } catch(err) {
+  } catch (err) {
     next(err);
   }
 }
