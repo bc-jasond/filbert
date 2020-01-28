@@ -194,7 +194,7 @@ export default class UserProfile extends React.Component {
                   <TableCell>
                     <Code>Current Streak:</Code>
                   </TableCell>
-                  <TableCell>{`${stats?.currentStreak} days`}</TableCell>
+                  <TableCell>{stats?.currentStreak > 0 ? `${stats?.currentStreak} days` : `0 days 👩🏽‍💻 hit that 'new' button!`}</TableCell>
                   <TableCell>
                     <Code>Longest Streak:</Code>
                   </TableCell>
@@ -204,6 +204,12 @@ export default class UserProfile extends React.Component {
                       stats?.longestStreakStart
                     )} to ${formatStreakDate(stats?.longestStreakEnd)}`}</div>
                   </TableCell>
+                  {/*<TableCell>*/}
+                  {/*  <Code>Publishing Cadence:</Code>*/}
+                  {/*</TableCell>*/}
+                  {/*<TableCell>*/}
+                  {/*  every TODO days */}
+                  {/*</TableCell>*/}
                   <TableCell>
                     <Code>Favorite Words:</Code>
                   </TableCell>

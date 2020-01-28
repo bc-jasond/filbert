@@ -140,7 +140,7 @@ async function getStats(req, res, next) {
       stats.totalCharacters += str.length;
     };
     const getFormattedDate = date =>
-      `${date.getFullYear()}${(date.getMonth() + 1)
+      `${date.getFullYear()}${date.getMonth()
         .toString()
         .padStart(2, "0")}${date
         .getDate()
@@ -243,7 +243,11 @@ async function getStats(req, res, next) {
         currentEnd = date;
       }
     });
-    stats.currentStreak = currentEnd - currentStart + 1;
+    if (currentStart !== parseInt(today, 10)) {
+      stats.currentStreak = 0;
+    } else {
+      stats.currentStreak = currentEnd - currentStart + 1;
+    }
     stats.longestStreak = longestEnd - longestStart + 1;
     stats.longestStreakStart = longestStart;
     stats.longestStreakEnd = longestEnd;
