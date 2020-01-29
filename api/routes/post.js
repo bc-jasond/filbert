@@ -17,6 +17,8 @@ async function getPosts(req, res) {
       "updated",
       "published",
       "post.deleted",
+      { pictureUrl: "post.picture_url" },
+      "post.meta",
       "username"
     )
     .innerJoin("user", "post.user_id", "user.id")
@@ -81,7 +83,7 @@ async function getPostByCanonical(req, res) {
 async function patchPost(req, res, next) {
   try {
     const { id } = req.params;
-    const { title, canonical, abstract } = req.body;
+    const { title, canonical, abstract, photoUrl, meta } = req.body;
     const knex = await getKnex();
     const [post] = await knex("post").where({
       user_id: req.loggedInUser.id,
@@ -91,8 +93,24 @@ async function patchPost(req, res, next) {
       res.status(404).send({});
       return;
     }
+    const patchValues = {};
+    if (typeof title !== "undefined") {
+      patchValues.title = title;
+    }
+    if (typeof canonical !== "undefined") {
+      patchValues.canonical = canonical;
+    }
+    if (typeof abstract !== "undefined") {
+      patchValues.abstract = abstract;
+    }
+    if (typeof photoUrl !== "undefined") {
+      patchValues.photo_url = photoUrl;
+    }
+    if (typeof meta !== "undefined") {
+      patchValues.meta = JSON.stringify(meta);
+    }
     const result = await knex("post")
-      .update({ title, canonical, abstract })
+      .update(patchValues)
       .where({
         user_id: req.loggedInUser.id,
         id

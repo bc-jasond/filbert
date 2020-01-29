@@ -140,7 +140,8 @@ async function getStats(req, res, next) {
       stats.totalCharacters += str.length;
     };
     const getFormattedDate = date =>
-      `${date.getFullYear()}${date.getMonth()
+      `${date.getFullYear()}${date
+        .getMonth()
         .toString()
         .padStart(2, "0")}${date
         .getDate()
@@ -171,7 +172,7 @@ async function getStats(req, res, next) {
         { updated: "content_node.updated" },
         "type",
         "content",
-        "meta"
+        { meta: "content_node.meta" }
       )
       .innerJoin("post", "post.id", "content_node.post_id")
       .where({ "post.user_id": userId });
@@ -220,8 +221,6 @@ async function getStats(req, res, next) {
     postWordCounts.sort((a, b) => (a > b ? -1 : 1));
     stats.longestPostWords = postWordCounts[0];
     // streaks
-    const now = new Date();
-    let today = getFormattedDate(now);
     const dates = [];
     for (const date of seenDays) {
       dates.push(parseInt(date, 10));
@@ -243,7 +242,10 @@ async function getStats(req, res, next) {
         currentEnd = date;
       }
     });
-    if (currentStart !== parseInt(today, 10)) {
+
+    const now = new Date();
+    let today = parseInt(getFormattedDate(now), 10);
+    if (currentStart !== today && currentEnd !== today) {
       stats.currentStreak = 0;
     } else {
       stats.currentStreak = currentEnd - currentStart + 1;

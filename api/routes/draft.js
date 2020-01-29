@@ -4,11 +4,11 @@ const { getKnex, getMysqlDatetime } = require("../lib/mysql");
  */
 async function postDraft(req, res) {
   const user_id = req.loggedInUser.id;
-  const { title, canonical } = req.body;
+  const { title, canonical, meta } = req.body;
+  const insertValues = { user_id, title, canonical };
+  insertValues.meta = JSON.stringify(meta || {});
   const knex = await getKnex();
-  const [postId] = await knex
-    .insert({ user_id, title, canonical })
-    .into("post");
+  const [postId] = await knex.insert(insertValues).into("post");
   res.send({ postId });
 }
 /**
@@ -32,6 +32,8 @@ async function getDrafts(req, res, next) {
         "updated",
         "published",
         "post.deleted",
+        { pictureUrl: "post.picture_url" },
+        "post.meta",
         "username"
       )
       .innerJoin("user", "post.user_id", "user.id")

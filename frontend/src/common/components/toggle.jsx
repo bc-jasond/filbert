@@ -49,6 +49,9 @@ const Label = styled.label`
   flex-grow: 2;
 `;
 const HiddenCheckbox = styled.input`
+  position: absolute;
+  height: 0;
+  width: 0;
   opacity: 0;
 `;
 
@@ -76,16 +79,16 @@ export default class extends React.PureComponent {
           isFocused={isFocused}
         >
           <Knob value={value} />
+          <HiddenCheckbox
+            key={`checkbox${value}`}
+            type="checkbox"
+            checked={!!value}
+            disabled={disabled}
+            onFocus={() => this.setState({ isFocused: true })}
+            onBlur={() => this.setState({ isFocused: false })}
+            onChange={onUpdate}
+          />
         </ToggleWrapper>
-        <HiddenCheckbox
-          key={`checkbox${value}`}
-          type="checkbox"
-          checked={!!value}
-          disabled={disabled}
-          onFocus={() => this.setState({ isFocused: true })}
-          onBlur={() => this.setState({ isFocused: false })}
-          onChange={onUpdate}
-        />
       </Wrapper>
     );
   }

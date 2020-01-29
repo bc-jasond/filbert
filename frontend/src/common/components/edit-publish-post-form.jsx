@@ -2,8 +2,10 @@ import React from 'react';
 import { Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { POST_ACTION_REDIRECT_TIMEOUT } from '../constants';
+import { grey } from '../css';
 import { focusAndScrollSmooth } from '../dom';
 import { apiDelete, apiPatch, apiPost } from '../fetch';
+import { monospaced } from '../fonts.css';
 import {
   Button,
   ButtonSpan,
@@ -11,6 +13,7 @@ import {
   DeleteButton,
   ErrorMessage,
   H1Styled,
+  H2Styled,
   Input,
   InputContainer,
   Label,
@@ -18,6 +21,7 @@ import {
   SuccessMessage,
   TextArea
 } from './shared-styled-components';
+import Toggle from './toggle';
 
 import { confirmPromise, formatPostDate } from '../utils';
 
@@ -25,19 +29,22 @@ const publishPostFields = [
   {
     fieldName: 'title',
     StyledComponent: Input,
-    disabled: () => false
+    disabled: post => post.getIn(['meta', 'syncTitleAndAbstract'])
   },
   {
     fieldName: 'canonical',
     StyledComponent: Input,
-    disabled: post => {
-      return post.get('published');
-    }
+    disabled: post => post.get('published')
   },
   {
     fieldName: 'abstract',
     StyledComponent: TextArea,
-    disabled: () => false
+    disabled: post => post.getIn(['meta', 'syncTitleAndAbstract'])
+  },
+  {
+    fieldName: 'photo',
+    StyledComponent: Input,
+    disabled: post => post.getIn(['meta', 'syncTopPhoto'])
   }
 ];
 
@@ -54,6 +61,16 @@ const PublishPostForm = styled.div`
   width: 50%;
   left: 25%;
   padding: 0 20px 40px 20px;
+`;
+const ToggleWrapper = styled.div`
+  padding: 0 16px 8px;
+`;
+const ToggleLabel = styled.span`
+  flex-grow: 2;
+  font-family: ${monospaced}, monospaced;
+  color: ${grey};
+  font-size: 18px;
+  line-height: 24px;
 `;
 
 export default class PublishMenu extends React.Component {
@@ -78,7 +95,7 @@ export default class PublishMenu extends React.Component {
       state: { post }
     } = this;
     this.setState({
-      post: post.set(fieldName, value),
+      post: post.setIn(fieldName, value),
       error: null,
       successMessage: null
     });
@@ -91,7 +108,9 @@ export default class PublishMenu extends React.Component {
     const { error } = await apiPatch(`/post/${post.get('id')}`, {
       title: post.get('title'),
       canonical: post.get('canonical'),
-      abstract: post.get('abstract')
+      abstract: post.get('abstract'),
+      imageUrl: post.get('imageUrl'),
+      meta: post.get('meta')
     });
     if (error) {
       this.setState({
@@ -193,6 +212,11 @@ export default class PublishMenu extends React.Component {
       props: { close },
       state: { post, redirectUrl, error, successMessage }
     } = this;
+    const syncTitleAndAbstract = post.getIn(
+      ['meta', 'syncTitleAndAbstract'],
+      false
+    );
+    const syncTopPhoto = post.getIn(['meta', 'syncTopPhoto'], false);
 
     if (redirectUrl) {
       return <Redirect to={redirectUrl} />;
@@ -200,9 +224,10 @@ export default class PublishMenu extends React.Component {
     return (
       <PublishPostFormContainer>
         <PublishPostForm>
-          <H1Styled>{`${
-            post.get('published') ? 'Post' : 'Draft'
-          }: Details & Publish`}</H1Styled>
+          <H1Styled>
+            Manage{post.get('published') ? ' Post' : ' Draft'}
+          </H1Styled>
+          <H2Styled>Edit Listing Details, Publish & Delete</H2Styled>
           {publishPostFields.map(
             ({ fieldName, StyledComponent, disabled }, idx) => {
               const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
@@ -217,7 +242,7 @@ export default class PublishMenu extends React.Component {
                     value={fieldValue}
                     disabled={disabled(post) && 'disabled'}
                     onChange={e => {
-                      this.updatePost(fieldName, e.target.value);
+                      this.updatePost([fieldName], e.target.value);
                     }}
                     error={error?.[fieldName]}
                     ref={idx === 0 ? this.inputRef : () => {}}
@@ -244,6 +269,31 @@ export default class PublishMenu extends React.Component {
               </SuccessMessage>
             )}
           </MessageContainer>
+          <ToggleWrapper>
+            <Toggle
+              value={syncTitleAndAbstract}
+              onUpdate={() =>
+                this.updatePost(
+                  ['meta', 'syncTitleAndAbstract'],
+                  !syncTitleAndAbstract
+                )
+              }
+            >
+              <ToggleLabel>
+                Sync Title and Abstract from top 2 sections of content?
+              </ToggleLabel>
+            </Toggle>
+          </ToggleWrapper>
+          <ToggleWrapper>
+            <Toggle
+              value={syncTopPhoto}
+              onUpdate={() =>
+                this.updatePost(['meta', 'syncTopPhoto'], !syncTopPhoto)
+              }
+            >
+              <ToggleLabel>Sync top Photo from content?</ToggleLabel>
+            </Toggle>
+          </ToggleWrapper>
           <Button onClick={this.savePost}>
             <ButtonSpan>Save</ButtonSpan>
           </Button>
