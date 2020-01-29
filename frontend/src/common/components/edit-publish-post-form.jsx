@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { POST_ACTION_REDIRECT_TIMEOUT } from '../constants';
 import { grey } from '../css';
 import { focusAndScrollSmooth } from '../dom';
-import { apiDelete, apiPatch, apiPost } from '../fetch';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../fetch';
 import { monospaced } from '../fonts.css';
 import {
   Button,
@@ -42,7 +42,7 @@ const publishPostFields = [
     disabled: post => post.getIn(['meta', 'syncTitleAndAbstract'])
   },
   {
-    fieldName: 'photo',
+    fieldName: 'imageUrl',
     StyledComponent: Input,
     disabled: post => post.getIn(['meta', 'syncTopPhoto'])
   }
@@ -86,7 +86,33 @@ export default class PublishMenu extends React.Component {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
+    let {
+      state: { post }
+    } = this;
+    const syncTitleAndAbstract = post.getIn(
+      ['meta', 'syncTitleAndAbstract'],
+      false
+    );
+    const syncTopPhoto = post.getIn(['meta', 'syncTopPhoto'], false);
+
+    if (syncTitleAndAbstract || syncTopPhoto) {
+      const {
+        error,
+        data: { title, summary, firstPhotoUrl }
+      } = await apiGet(`/post-summary/${post.get('id')}`);
+      if (error) {
+        console.error(error);
+        return;
+      }
+      if (syncTitleAndAbstract) {
+        post = post.set('title', title).set('abstract', summary);
+      }
+      if (syncTopPhoto) {
+        post = post.set('imageUrl', firstPhotoUrl);
+      }
+      this.setState({ post });
+    }
     focusAndScrollSmooth(null, this.inputRef?.current);
   }
 
@@ -269,6 +295,7 @@ export default class PublishMenu extends React.Component {
               </SuccessMessage>
             )}
           </MessageContainer>
+          {/*TODO: make these toggles into buttons...*/}
           <ToggleWrapper>
             <Toggle
               value={syncTitleAndAbstract}
