@@ -102,7 +102,8 @@ export default class UpdateManager {
           updatedNode.get('next_sibling_id') !==
             prevNode.get('next_sibling_id') ||
           // node meta data changed structure
-          updatedNode.get('meta', Map()).size !== prevNode.get('meta').size ||
+          updatedNode.get('meta', Map()).size !==
+            prevNode.get('meta', Map()).size ||
           // node meta,selections changed structure
           updatedNode.getIn(['meta', 'selections'], List()).size !==
             prevNode.getIn(['meta', 'selections'], List()).size

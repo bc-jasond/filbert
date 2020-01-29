@@ -9,6 +9,7 @@ export function doDelete(
   documentModel,
   { caretStart, caretEnd, startNodeId, endNodeId }
 ) {
+  // returns a nodeId for node deleted, false for node updated
   function deleteOrUpdateNode(diffLength, nodeId, startIdx) {
     let node = documentModel.getNode(nodeId);
     const content = node.get('content', '');
@@ -16,8 +17,7 @@ export function doDelete(
       documentModel.isMetaType(nodeId) ||
       (startIdx === 0 && diffLength >= content.length)
     ) {
-      documentModel.delete(nodeId);
-      return true;
+      return documentModel.delete(node);
     }
     // only some of endNode's content has been selected, delete that content
     node = node.set(
@@ -31,8 +31,7 @@ export function doDelete(
       // -1 for "regular" backspace to delete 1 char
       diffLength === 0 ? -1 : -diffLength
     );
-    documentModel.update(node);
-    return false;
+    return documentModel.update(node);
   }
   if (startNodeId === 'null' || !startNodeId) {
     console.warn('doDelete() bad selection, no id ', startNodeId);
@@ -59,8 +58,8 @@ export function doDelete(
   if (endNodeId) {
     const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
     console.info('doDelete() - middle nodes', middle);
-    middle.forEach(nodeId => {
-      documentModel.delete(nodeId);
+    middle.forEach(node => {
+      documentModel.delete(node);
     });
   }
 
@@ -77,11 +76,9 @@ export function doDelete(
     // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
     // end diff length is caretEnd - 0 (implied caretStart for the end node)
     if (caretEnd > 0) {
-      didDeleteEndNode = deleteOrUpdateNode(caretEnd, endNodeId, 0);
+      selectedNodeId = deleteOrUpdateNode(caretEnd, endNodeId, 0);
     }
-    if (!didDeleteEndNode) {
-      selectedNodeId = endNodeId;
-    }
+    didDeleteEndNode = selectedNodeId !== endNodeId;
   }
 
   const startNodeMap = documentModel.getNode(startNodeId);
@@ -93,23 +90,22 @@ export function doDelete(
   if (
     // collapsed caret, user hit backspace anywhere after the beginning - "regular" backspace
     (caretStart > 0 && startNodeContent) ||
-    // higlighted selection
+    // highlighted selection
     startDiffLength > 0
   ) {
     //
     // NOTE: need to distinguish between collapsed caret backspace and highlight 1 char backspace
     //  the former removes a character behind the caret and the latter removes one in front...
-    const prevNodeId = documentModel.getPrevNode(startNodeId).get('id');
-    const didDeleteStartNode = deleteOrUpdateNode(
+    selectedNodeId = deleteOrUpdateNode(
       startDiffLength,
       startNodeId,
       caretStart
     );
-
-    if (didDeleteStartNode) {
+    // if we deleted the first node in the document, use the node that documentModel.delete() returns
+    if (selectedNodeId !== startNodeId) {
       return {
-        startNodeId: didDeleteEndNode ? prevNodeId : endNodeId,
-        caretStart: didDeleteEndNode ? -1 : 0
+        startNodeId: selectedNodeId,
+        caretStart: -1
       };
     }
 
@@ -121,9 +117,13 @@ export function doDelete(
         caretStart: startDiffLength === 0 ? caretStart - 1 : caretStart
       };
     }
+    // if we're here, the end node needs to be merged into the start node
+    selectedNodeId = endNodeId;
   }
 
   /**
+   * MERGING NODES AFTER DELETE...
+   *
    * TODO: make these into sets of atomic commands that are added to a queue,
    *  then make a 'flush' command to process this queue.
    *
@@ -142,7 +142,7 @@ export function doDelete(
     // focus end of previous node
     /* eslint-disable-next-line no-param-reassign */
     caretStart = -1;
-    documentModel.delete(selectedNodeId);
+    documentModel.delete(documentModel.getNode(selectedNodeId));
   } else {
     /* eslint-disable-next-line no-param-reassign */
     ({ startNodeId, caretStart } = handleBackspaceTextType(

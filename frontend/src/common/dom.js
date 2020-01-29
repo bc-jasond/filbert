@@ -172,21 +172,21 @@ export function focusAndScrollSmooth(nodeId, inputElem, setCaretToEnd = true) {
   scrollToCaretIfOutOfView(nodeId);
 }
 
-// TODO: support multi-node
-//  takes a nodeId and a start and end position relative to the node content and sets a new DOM range (selection)
-export function replaceRange({ startNodeId, caretStart, caretEnd }) {
+//  takes a nodeId and a start and end position relative to the node content (container.textContent) and sets a new DOM range (selection)
+export function replaceRange({ startNodeId, endNodeId, caretStart, caretEnd }) {
   const selection = window.getSelection();
   const replacementRange = document.createRange();
-  const node = getNodeById(startNodeId);
+  const startContainer = getNodeById(startNodeId);
   const {
     childNode: startNode,
     childOffset: startOffset
-  } = getChildTextNodeAndOffsetFromParentOffset(node, caretStart);
+  } = getChildTextNodeAndOffsetFromParentOffset(startContainer, caretStart);
   replacementRange.setStart(startNode, startOffset);
+  const endContainer = endNodeId ? getNodeById(endNodeId) : startContainer;
   const {
     childNode: endNode,
     childOffset: endOffset
-  } = getChildTextNodeAndOffsetFromParentOffset(node, caretEnd);
+  } = getChildTextNodeAndOffsetFromParentOffset(endContainer, caretEnd);
   replacementRange.setEnd(endNode, endOffset);
   selection.removeAllRanges();
   selection.addRange(replacementRange);

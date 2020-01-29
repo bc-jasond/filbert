@@ -122,6 +122,7 @@ export default class EditPost extends React.Component {
     /* eslint-disable-next-line react/no-did-update-set-state */
     this.setState({
       shouldRedirect: false,
+      shouldShow404: false,
       insertMenuNode: Map()
     });
     if (id === NEW_POST_URL_ID) {
@@ -178,7 +179,12 @@ export default class EditPost extends React.Component {
     // POST to /post
     const { error, data: { postId } = {} } = await apiPost('/post', {
       title,
-      canonical
+      canonical,
+      // default 'sync post to content' settings ON
+      meta: {
+        syncTitleAndAbstract: true,
+        syncTopPhoto: true
+      }
     });
     // TODO: handle error?
     if (error) {
@@ -238,6 +244,10 @@ export default class EditPost extends React.Component {
     );
   };
 
+  afterDeletePost = () => {
+    this.setState({ shouldRedirect: '/private' });
+  };
+
   togglePostMenu = () => {
     const {
       state: { shouldShowPublishPostMenu: oldVal }
@@ -265,7 +275,7 @@ export default class EditPost extends React.Component {
     });
   };
 
-  undo = (shouldUndo = true) => {
+  undo = async (shouldUndo = true) => {
     const {
       state: { nodesById }
     } = this;
@@ -281,7 +291,7 @@ export default class EditPost extends React.Component {
     console.info(`${shouldUndo ? 'UNDO!' : 'REDO!'}`);
     this.documentModel.nodesById = updatedNodesById;
     // passing undefined as prevSelectionOffsets will skip adding this operation to history again
-    this.commitUpdates(undefined, historyOffsets.toJS());
+    await this.commitUpdates(undefined, historyOffsets.toJS());
   };
 
   commitUpdates = (prevSelectionOffsets, selectionOffsets) => {
@@ -532,7 +542,7 @@ export default class EditPost extends React.Component {
     // clear the selected format node when deleting the highlighted selection
     // NOTE: must wait for state have been set or setCaret will check stale values
     this.closeAllEditContentMenus();
-    this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
   };
 
   /**
@@ -610,8 +620,8 @@ export default class EditPost extends React.Component {
 
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
-    this.closeAllEditContentMenus();
-    this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    await this.closeAllEditContentMenus();
+    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
   };
 
   // MAIN "ON" EVENT CALLBACKS
@@ -922,7 +932,7 @@ export default class EditPost extends React.Component {
 
     if (
       selectedNode &&
-      caretStart === caretEnd &&
+      (!caretEnd || caretStart === caretEnd) &&
       selectedNodeMap.get('type') === NODE_TYPE_P &&
       selectedNodeMap.get('content', '').length === 0
     ) {
@@ -939,6 +949,12 @@ export default class EditPost extends React.Component {
       });
     }
 
+    const {
+      state: { insertMenuNode }
+    } = this;
+    if (insertMenuNode.size === 0) {
+      return Promise.resolve();
+    }
     return new Promise(resolve => {
       this.setState({ insertMenuNode: Map() }, resolve);
     });
@@ -1374,7 +1390,11 @@ export default class EditPost extends React.Component {
             <Footer />
           </div>
           {shouldShowPublishPostMenu && (
-            <PublishPostForm post={post} close={this.togglePostMenu} />
+            <PublishPostForm
+              post={post}
+              close={this.togglePostMenu}
+              afterDelete={this.afterDeletePost}
+            />
           )}
           {insertMenuNode.get('id') && (
             <InsertSectionMenu

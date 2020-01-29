@@ -19,8 +19,9 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
   }
   if (!documentModel.isTextType(prevNodeId)) {
     // delete an empty TextType node
-    if (documentModel.getNode(selectedNodeId).get('content').length === 0) {
-      documentModel.delete(selectedNodeId);
+    const maybeEmptyNode = documentModel.getNode(selectedNodeId);
+    if (maybeEmptyNode.get('content').length === 0) {
+      documentModel.delete(maybeEmptyNode);
     }
     return { startNodeId: prevNodeId };
   }

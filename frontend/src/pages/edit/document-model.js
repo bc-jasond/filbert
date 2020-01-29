@@ -68,15 +68,11 @@ export default class DocumentModel {
     this.updateManager = updateManager;
     if (jsonData) {
       this.nodesById = Immutable.fromJS(jsonData, reviver);
-      return DocumentModel.getFirstNode(this.nodesById).get('id');
+    } else {
+      const newTitle = getMapWithId({ type: NODE_TYPE_H1 });
+      this.nodesById = Map().set(newTitle.get('id'), newTitle);
     }
-    return this.clearNodesAndSetTitlePlaceholder();
-  }
-
-  clearNodesAndSetTitlePlaceholder() {
-    const newTitle = getMapWithId({ type: NODE_TYPE_H1 });
-    this.nodesById = Map().set(newTitle.get('id'), newTitle);
-    return newTitle.get('id');
+    return DocumentModel.getFirstNode(this.nodesById).get('id');
   }
 
   getMapWithId(obj) {
@@ -119,13 +115,13 @@ export default class DocumentModel {
       );
       return [];
     }
-    const middleNodeIds = [];
+    const middleNodes = [];
     let nextNode = this.getNextNode(leftNodeId);
     while (nextNode.get('id') !== rightNodeId) {
-      middleNodeIds.push(nextNode.get('id'));
+      middleNodes.push(nextNode);
       nextNode = this.getNextNode(nextNode.get('id'));
     }
-    return middleNodeIds;
+    return middleNodes;
   }
 
   isFirstOfType(nodeId) {
@@ -183,22 +179,26 @@ export default class DocumentModel {
 
   insert(
     type,
-    neighborNodeId,
+    neighborNodeId = null,
     content = '',
     meta = Map(),
     shouldInsertAfter = true
   ) {
+    const newNode = this.getMapWithId({
+      type,
+      content: cleanText(content),
+      meta
+    });
+    // first node in document
+    if (this.nodesById.size === 0) {
+      return this.update(newNode);
+    }
     const neighbor = this.getNode(neighborNodeId);
     if (!neighbor.get('id')) {
       throw new Error(
         `DocumentModel.insert() - bad neighbor id! ${neighborNodeId}`
       );
     }
-    const newNode = this.getMapWithId({
-      type,
-      content: cleanText(content),
-      meta
-    });
     if (shouldInsertAfter) {
       const oldNeighborNext = this.getNextNode(neighborNodeId);
       this.update(
@@ -207,16 +207,14 @@ export default class DocumentModel {
           : newNode.set('next_sibling_id', oldNeighborNext.get('id'))
       );
       this.update(neighbor.set('next_sibling_id', newNode.get('id')));
+      return newNode.get('id');
     }
     // insert before
-    else {
-      const oldNeighborPrev = this.getPrevNode(neighborNodeId);
-      if (oldNeighborPrev.get('id')) {
-        this.update(oldNeighborPrev.set('next_sibling_id', newNode.get('id')));
-      }
-      this.update(newNode.set('next_sibling_id', neighborNodeId));
+    const oldNeighborPrev = this.getPrevNode(neighborNodeId);
+    if (oldNeighborPrev.get('id')) {
+      this.update(oldNeighborPrev.set('next_sibling_id', newNode.get('id')));
     }
-    return newNode.get('id');
+    return this.update(newNode.set('next_sibling_id', neighborNodeId));
   }
 
   update(node) {
@@ -226,6 +224,7 @@ export default class DocumentModel {
     return nodeId;
   }
 
+  // returns a nodeId to be "focused"
   delete(node) {
     const nodeId = node.get('id');
     this.updateManager.stageNodeDelete(node);
@@ -233,19 +232,19 @@ export default class DocumentModel {
     const nextNode = this.getNextNode(nodeId);
     // delete first, then update pointers
     this.nodesById = this.nodesById.delete(nodeId);
-    // deleting the only node in the document
-    if (!prevNode.get('id') && !nextNode.get('id')) {
-      this.clearNodesAndSetTitlePlaceholder();
+    // deleting the only node in the document - add back a placeholder
+    if (this.nodesById.size === 0) {
+      return this.insert(NODE_TYPE_H1);
     }
     // deleting somewhere in the middle
-    else if (prevNode.get('id') && nextNode.get('id')) {
-      this.update(prevNode.set('next_sibling_id', nextNode.get('id')));
+    if (prevNode.get('id') && nextNode.get('id')) {
+      return this.update(prevNode.set('next_sibling_id', nextNode.get('id')));
     }
     // deleting last node - unset "next" reference
-    else if (!nextNode.get('id')) {
-      this.update(prevNode.delete('next_sibling_id'));
+    if (!nextNode.get('id')) {
+      return this.update(prevNode.delete('next_sibling_id'));
     }
-    // else - deleting first node - noop
-    // TODO: just replace with an empty P?
+    // else - deleting first node - no next_sibling_id update necessary
+    return nextNode.get('id');
   }
 }

@@ -175,7 +175,8 @@ export default class PublishMenu extends React.Component {
 
   deletePost = async () => {
     const {
-      state: { post }
+      state: { post },
+      props: { afterDelete }
     } = this;
     if (post.get('published')) {
       const didConfim = await confirmPromise(
@@ -189,8 +190,7 @@ export default class PublishMenu extends React.Component {
         console.error('Delete post error:', error);
         return;
       }
-      // if editing a published post - assume redirect to published posts list
-      this.setState({ redirectUrl: '/' });
+      afterDelete?.();
       return;
     }
     const didConfirm = await confirmPromise(
@@ -204,7 +204,7 @@ export default class PublishMenu extends React.Component {
       console.error('Delete draft error:', error);
       return;
     }
-    this.setState({ redirectUrl: '/private' });
+    afterDelete?.();
   };
 
   render() {

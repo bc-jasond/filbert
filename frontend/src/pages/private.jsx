@@ -217,6 +217,7 @@ export default class AllPosts extends React.Component {
               <PublishPostForm
                 post={currentEditingPost}
                 close={this.closePostMenu}
+                afterDelete={this.closePostMenu}
               />
             )}
             <PostRow>
