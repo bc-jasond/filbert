@@ -140,18 +140,16 @@ async function getSummaryAndPhotoFromContent(req, res) {
     res.send(responseData);
   }
   const titleLength = 75;
-  const summaryLength = 200;
+  const abstractLength = 200;
   let firstNChars = "";
   const queue = [getFirstNode(contentNodes)];
   while (
     queue.length &&
-    (!responseData.summary ||
-      !responseData.firstPhotoUrl ||
-      !responseData.title)
+    (!responseData.abstract || !responseData.imageUrl || !responseData.title)
   ) {
     const current = queue.shift();
-    if (!responseData.firstPhotoUrl && current.type === "image") {
-      responseData.firstPhotoUrl = current.meta.url;
+    if (!responseData.imageUrl && current.type === "image") {
+      responseData.imageUrl = current.meta.url;
     }
     if (["p", "li", "pre", "h1", "h2"].includes(current.type)) {
       // replace all whitespace chars with a single space
@@ -167,14 +165,14 @@ async function getSummaryAndPhotoFromContent(req, res) {
             responseData.title = firstNChars.substring(0, titleLength);
             firstNChars = "";
           }
-        } else if (!responseData.summary) {
+        } else if (!responseData.abstract) {
           if (!firstNChars) {
             firstNChars = currentContent;
           } else {
             firstNChars = `${firstNChars} ${currentContent}`;
           }
-          if (firstNChars.length > summaryLength) {
-            responseData.summary = firstNChars.substring(0, summaryLength);
+          if (firstNChars.length > abstractLength) {
+            responseData.abstract = firstNChars.substring(0, abstractLength);
           }
         }
       }

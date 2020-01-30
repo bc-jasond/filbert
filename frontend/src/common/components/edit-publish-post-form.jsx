@@ -2,7 +2,7 @@ import React from 'react';
 import { Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { POST_ACTION_REDIRECT_TIMEOUT } from '../constants';
-import { grey } from '../css';
+import { blue, grey, lightBlue } from '../css';
 import { focusAndScrollSmooth } from '../dom';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../fetch';
 import { monospaced } from '../fonts.css';
@@ -21,7 +21,7 @@ import {
   SuccessMessage,
   TextArea
 } from './shared-styled-components';
-import Toggle from './toggle';
+import ButtonSpinner from './button-spinner';
 
 import { confirmPromise, formatPostDate } from '../utils';
 
@@ -29,7 +29,7 @@ const publishPostFields = [
   {
     fieldName: 'title',
     StyledComponent: Input,
-    disabled: post => post.getIn(['meta', 'syncTitleAndAbstract'])
+    disabled: () => false
   },
   {
     fieldName: 'canonical',
@@ -39,12 +39,12 @@ const publishPostFields = [
   {
     fieldName: 'abstract',
     StyledComponent: TextArea,
-    disabled: post => post.getIn(['meta', 'syncTitleAndAbstract'])
+    disabled: () => false
   },
   {
     fieldName: 'imageUrl',
     StyledComponent: Input,
-    disabled: post => post.getIn(['meta', 'syncTopPhoto'])
+    disabled: () => false
   }
 ];
 
@@ -62,15 +62,27 @@ const PublishPostForm = styled.div`
   left: 25%;
   padding: 0 20px 40px 20px;
 `;
-const ToggleWrapper = styled.div`
+const SyncWrapper = styled.div`
+  display: flex;
+  align-items: center;
   padding: 0 16px 8px;
+  margin-bottom: 8px;
 `;
-const ToggleLabel = styled.span`
-  flex-grow: 2;
+const SyncLabel = styled.div`
+  flex-grow: 3;
   font-family: ${monospaced}, monospaced;
   color: ${grey};
   font-size: 18px;
   line-height: 24px;
+`;
+const ButtonSpinnerStyled = styled(ButtonSpinner)`
+  width: unset;
+  color: white;
+  background-color: ${lightBlue};
+  margin-bottom: 0;
+  &:hover {
+    background-color: ${blue};
+  }
 `;
 
 export default class PublishMenu extends React.Component {
@@ -79,6 +91,8 @@ export default class PublishMenu extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      loadingTitleAbstract: false,
+      loadingImage: false,
       post: props.post,
       error: null,
       successMessage: null,
@@ -87,34 +101,55 @@ export default class PublishMenu extends React.Component {
   }
 
   async componentDidMount() {
-    let {
+    focusAndScrollSmooth(null, this.inputRef?.current);
+  }
+
+  getPostSummaryFromContent = async () => {
+    const {
       state: { post }
     } = this;
-    const syncTitleAndAbstract = post.getIn(
-      ['meta', 'syncTitleAndAbstract'],
-      false
-    );
-    const syncTopPhoto = post.getIn(['meta', 'syncTopPhoto'], false);
 
-    if (syncTitleAndAbstract || syncTopPhoto) {
-      const {
-        error,
-        data: { title, summary, firstPhotoUrl }
-      } = await apiGet(`/post-summary/${post.get('id')}`);
+    if (!this.postSummary) {
+      const { error, data } = await apiGet(`/post-summary/${post.get('id')}`);
       if (error) {
         console.error(error);
         return;
       }
-      if (syncTitleAndAbstract) {
-        post = post.set('title', title).set('abstract', summary);
-      }
-      if (syncTopPhoto) {
-        post = post.set('imageUrl', firstPhotoUrl);
-      }
-      this.setState({ post });
+      this.postSummary = data;
     }
-    focusAndScrollSmooth(null, this.inputRef?.current);
-  }
+    await new Promise(resolve => this.setState({ loading: false }, resolve));
+    return this.postSummary;
+  };
+
+  syncFromContent = async (isTitleAndAbstract = true) => {
+    const {
+      state: { post }
+    } = this;
+    await new Promise(resolve =>
+      this.setState(
+        {
+          loadingImage: !isTitleAndAbstract,
+          loadingTitleAbstract: isTitleAndAbstract
+        },
+        resolve
+      )
+    );
+    const {
+      title,
+      abstract,
+      imageUrl
+    } = await this.getPostSummaryFromContent();
+    const newPost = isTitleAndAbstract
+      ? post.set('title', title).set('abstract', abstract)
+      : post.set('imageUrl', imageUrl);
+    this.setState({
+      post: newPost,
+      error: null,
+      successMessage: null,
+      loadingImage: false,
+      loadingTitleAbstract: false
+    });
+  };
 
   updatePost = (fieldName, value) => {
     const {
@@ -236,14 +271,15 @@ export default class PublishMenu extends React.Component {
   render() {
     const {
       props: { close },
-      state: { post, redirectUrl, error, successMessage }
+      state: {
+        loadingImage,
+        loadingTitleAbstract,
+        post,
+        redirectUrl,
+        error,
+        successMessage
+      }
     } = this;
-    const syncTitleAndAbstract = post.getIn(
-      ['meta', 'syncTitleAndAbstract'],
-      false
-    );
-    const syncTopPhoto = post.getIn(['meta', 'syncTopPhoto'], false);
-
     if (redirectUrl) {
       return <Redirect to={redirectUrl} />;
     }
@@ -296,31 +332,24 @@ export default class PublishMenu extends React.Component {
             )}
           </MessageContainer>
           {/*TODO: make these toggles into buttons...*/}
-          <ToggleWrapper>
-            <Toggle
-              value={syncTitleAndAbstract}
-              onUpdate={() =>
-                this.updatePost(
-                  ['meta', 'syncTitleAndAbstract'],
-                  !syncTitleAndAbstract
-                )
-              }
-            >
-              <ToggleLabel>
-                Sync Title and Abstract from top 2 sections of content?
-              </ToggleLabel>
-            </Toggle>
-          </ToggleWrapper>
-          <ToggleWrapper>
-            <Toggle
-              value={syncTopPhoto}
-              onUpdate={() =>
-                this.updatePost(['meta', 'syncTopPhoto'], !syncTopPhoto)
-              }
-            >
-              <ToggleLabel>Sync top Photo from content?</ToggleLabel>
-            </Toggle>
-          </ToggleWrapper>
+          <SyncWrapper>
+            <SyncLabel>
+              Title and Abstract from top 2 sections of content?
+            </SyncLabel>
+            <ButtonSpinnerStyled
+              loading={loadingTitleAbstract}
+              label="Sync"
+              onClick={() => this.syncFromContent()}
+            />
+          </SyncWrapper>
+          <SyncWrapper>
+            <SyncLabel>First Photo from content?</SyncLabel>
+            <ButtonSpinnerStyled
+              loading={loadingImage}
+              label="Sync"
+              onClick={() => this.syncFromContent(false)}
+            />
+          </SyncWrapper>
           <Button onClick={this.savePost}>
             <ButtonSpan>Save</ButtonSpan>
           </Button>
