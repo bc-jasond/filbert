@@ -102,7 +102,7 @@ export default props => {
     <Button
       className={className}
       disabled={loading || disabled ? 'disabled' : ''}
-      onClick={() => !loading && !disabled && onClick()}
+      onClick={() => !loading && !disabled && onClick?.()}
       primary={primary}
       loading={loading ? 'true' : undefined}
     >

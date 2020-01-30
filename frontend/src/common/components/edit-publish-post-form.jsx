@@ -1,8 +1,8 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { POST_ACTION_REDIRECT_TIMEOUT } from '../constants';
-import { blue, grey, lightBlue } from '../css';
+import { ease, grey } from '../css';
 import { focusAndScrollSmooth } from '../dom';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../fetch';
 import { monospaced } from '../fonts.css';
@@ -21,32 +21,9 @@ import {
   SuccessMessage,
   TextArea
 } from './shared-styled-components';
-import ButtonSpinner from './button-spinner';
+import Toggle from './toggle';
 
 import { confirmPromise, formatPostDate } from '../utils';
-
-const publishPostFields = [
-  {
-    fieldName: 'title',
-    StyledComponent: Input,
-    disabled: () => false
-  },
-  {
-    fieldName: 'canonical',
-    StyledComponent: Input,
-    disabled: post => post.get('published')
-  },
-  {
-    fieldName: 'abstract',
-    StyledComponent: TextArea,
-    disabled: () => false
-  },
-  {
-    fieldName: 'imageUrl',
-    StyledComponent: Input,
-    disabled: () => false
-  }
-];
 
 const PublishPostFormContainer = styled.div`
   position: absolute;
@@ -62,27 +39,24 @@ const PublishPostForm = styled.div`
   left: 25%;
   padding: 0 20px 40px 20px;
 `;
-const SyncWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 0 16px 8px;
-  margin-bottom: 8px;
+const InputContainerStyled = styled(InputContainer)`
+  opacity: 1;
+  ${ease('opacity')};
+  ${p =>
+    p.shouldHide &&
+    css`
+      opacity: 0.4;
+    `}
 `;
-const SyncLabel = styled.div`
-  flex-grow: 3;
+const ToggleWrapper = styled.div`
+  padding: 0 16px 8px;
+`;
+const ToggleLabel = styled.span`
+  flex-grow: 2;
   font-family: ${monospaced}, monospaced;
   color: ${grey};
   font-size: 18px;
   line-height: 24px;
-`;
-const ButtonSpinnerStyled = styled(ButtonSpinner)`
-  width: unset;
-  color: white;
-  background-color: ${lightBlue};
-  margin-bottom: 0;
-  &:hover {
-    background-color: ${blue};
-  }
 `;
 
 export default class PublishMenu extends React.Component {
@@ -91,8 +65,6 @@ export default class PublishMenu extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      loadingTitleAbstract: false,
-      loadingImage: false,
       post: props.post,
       error: null,
       successMessage: null,
@@ -101,55 +73,34 @@ export default class PublishMenu extends React.Component {
   }
 
   async componentDidMount() {
-    focusAndScrollSmooth(null, this.inputRef?.current);
-  }
-
-  getPostSummaryFromContent = async () => {
-    const {
+    let {
       state: { post }
     } = this;
+    const syncTitleAndAbstract = post.getIn(
+      ['meta', 'syncTitleAndAbstract'],
+      false
+    );
+    const syncTopPhoto = post.getIn(['meta', 'syncTopPhoto'], false);
 
-    if (!this.postSummary) {
-      const { error, data } = await apiGet(`/post-summary/${post.get('id')}`);
+    if (syncTitleAndAbstract || syncTopPhoto) {
+      const {
+        error,
+        data: { title, abstract, imageUrl }
+      } = await apiGet(`/post-summary/${post.get('id')}`);
       if (error) {
         console.error(error);
         return;
       }
-      this.postSummary = data;
+      if (syncTitleAndAbstract) {
+        post = post.set('title', title).set('abstract', abstract);
+      }
+      if (syncTopPhoto) {
+        post = post.set('imageUrl', imageUrl);
+      }
+      this.setState({ post });
     }
-    await new Promise(resolve => this.setState({ loading: false }, resolve));
-    return this.postSummary;
-  };
-
-  syncFromContent = async (isTitleAndAbstract = true) => {
-    const {
-      state: { post }
-    } = this;
-    await new Promise(resolve =>
-      this.setState(
-        {
-          loadingImage: !isTitleAndAbstract,
-          loadingTitleAbstract: isTitleAndAbstract
-        },
-        resolve
-      )
-    );
-    const {
-      title,
-      abstract,
-      imageUrl
-    } = await this.getPostSummaryFromContent();
-    const newPost = isTitleAndAbstract
-      ? post.set('title', title).set('abstract', abstract)
-      : post.set('imageUrl', imageUrl);
-    this.setState({
-      post: newPost,
-      error: null,
-      successMessage: null,
-      loadingImage: false,
-      loadingTitleAbstract: false
-    });
-  };
+    focusAndScrollSmooth(null, this.inputRef?.current);
+  }
 
   updatePost = (fieldName, value) => {
     const {
@@ -271,15 +222,14 @@ export default class PublishMenu extends React.Component {
   render() {
     const {
       props: { close },
-      state: {
-        loadingImage,
-        loadingTitleAbstract,
-        post,
-        redirectUrl,
-        error,
-        successMessage
-      }
+      state: { post, redirectUrl, error, successMessage }
     } = this;
+    const syncTitleAndAbstract = post.getIn(
+      ['meta', 'syncTitleAndAbstract'],
+      false
+    );
+    const syncTopPhoto = post.getIn(['meta', 'syncTopPhoto'], false);
+
     if (redirectUrl) {
       return <Redirect to={redirectUrl} />;
     }
@@ -290,29 +240,83 @@ export default class PublishMenu extends React.Component {
             Manage{post.get('published') ? ' Post' : ' Draft'}
           </H1Styled>
           <H2Styled>Edit Listing Details, Publish & Delete</H2Styled>
-          {publishPostFields.map(
-            ({ fieldName, StyledComponent, disabled }, idx) => {
-              const fieldValue = post.get(fieldName) || ''; // null doesn't fail the notSetValue check in ImmutableJS
-              return (
-                <InputContainer key={fieldName}>
-                  <Label htmlFor={fieldName} error={error?.[fieldName]}>
-                    {fieldName}
-                  </Label>
-                  <StyledComponent
-                    name={fieldName}
-                    type="text"
-                    value={fieldValue}
-                    disabled={disabled(post) && 'disabled'}
-                    onChange={e => {
-                      this.updatePost([fieldName], e.target.value);
-                    }}
-                    error={error?.[fieldName]}
-                    ref={idx === 0 ? this.inputRef : () => {}}
-                  />
-                </InputContainer>
-              );
-            }
-          )}
+          <InputContainerStyled
+            shouldHide={post.getIn(['meta', 'syncTitleAndAbstract'])}
+            key="title"
+          >
+            <Label htmlFor="title" error={error?.title}>
+              title
+            </Label>
+            <Input
+              name="title"
+              type="text"
+              value={post.get('title')}
+              disabled={
+                post.getIn(['meta', 'syncTitleAndAbstract']) && 'disabled'
+              }
+              onChange={e => {
+                this.updatePost(['title'], e.target.value);
+              }}
+              error={error?.title}
+              ref={this.inputRef}
+            />
+          </InputContainerStyled>
+          <InputContainerStyled
+            shouldHide={post.get('published')}
+            key="canonical"
+          >
+            <Label htmlFor="canonical" error={error?.canonical}>
+              canonical
+            </Label>
+            <Input
+              name="canonical"
+              type="text"
+              value={post.get('canonical')}
+              disabled={post.get('published') && 'disabled'}
+              onChange={e => {
+                this.updatePost(['canonical'], e.target.value);
+              }}
+              error={error?.canonical}
+            />
+          </InputContainerStyled>
+          <InputContainerStyled
+            shouldHide={post.getIn(['meta', 'syncTitleAndAbstract'])}
+            key="abstract"
+          >
+            <Label htmlFor="abstract" error={error?.abstract}>
+              abstract
+            </Label>
+            <TextArea
+              name="abstract"
+              type="text"
+              value={post.get('abstract')}
+              disabled={
+                post.getIn(['meta', 'syncTitleAndAbstract']) && 'disabled'
+              }
+              onChange={e => {
+                this.updatePost(['abstract'], e.target.value);
+              }}
+              error={error?.abstract}
+            />
+          </InputContainerStyled>
+          <InputContainerStyled
+            shouldHide={post.getIn(['meta', 'syncTopPhoto'])}
+            key="imageUrl"
+          >
+            <Label htmlFor="imageUrl" error={error?.imageUrl}>
+              imageUrl
+            </Label>
+            <Input
+              name="imageUrl"
+              type="text"
+              value={post.get('imageUrl')}
+              disabled={post.getIn(['meta', 'syncTopPhoto']) && 'disabled'}
+              onChange={e => {
+                this.updatePost(['imageUrl'], e.target.value);
+              }}
+              error={error?.imageUrl}
+            />
+          </InputContainerStyled>
           <MessageContainer>
             {error && (
               <ErrorMessage>
@@ -331,25 +335,33 @@ export default class PublishMenu extends React.Component {
               </SuccessMessage>
             )}
           </MessageContainer>
-          {/*TODO: make these toggles into buttons...*/}
-          <SyncWrapper>
-            <SyncLabel>
-              Title and Abstract from top 2 sections of content?
-            </SyncLabel>
-            <ButtonSpinnerStyled
-              loading={loadingTitleAbstract}
-              label="Sync"
-              onClick={() => this.syncFromContent()}
-            />
-          </SyncWrapper>
-          <SyncWrapper>
-            <SyncLabel>First Photo from content?</SyncLabel>
-            <ButtonSpinnerStyled
-              loading={loadingImage}
-              label="Sync"
-              onClick={() => this.syncFromContent(false)}
-            />
-          </SyncWrapper>
+          <ToggleWrapper>
+            <Toggle
+              value={syncTitleAndAbstract}
+              onUpdate={() =>
+                this.updatePost(
+                  ['meta', 'syncTitleAndAbstract'],
+                  !syncTitleAndAbstract
+                )
+              }
+            >
+              <ToggleLabel>
+                Keep Title and Abstract in sync with top 2 sections of content?
+              </ToggleLabel>
+            </Toggle>
+          </ToggleWrapper>
+          <ToggleWrapper>
+            <Toggle
+              value={syncTopPhoto}
+              onUpdate={() =>
+                this.updatePost(['meta', 'syncTopPhoto'], !syncTopPhoto)
+              }
+            >
+              <ToggleLabel>
+                Keep Image in sync with first Photo in content?
+              </ToggleLabel>
+            </Toggle>
+          </ToggleWrapper>
           <Button onClick={this.savePost}>
             <ButtonSpan>Save</ButtonSpan>
           </Button>
