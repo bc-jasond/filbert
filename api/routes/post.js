@@ -1,4 +1,5 @@
 const { getKnex, getNodesFlat } = require("../lib/mysql");
+const { getFirstNode } = require("../lib/util");
 
 async function getPosts(req, res) {
   const {
@@ -121,6 +122,69 @@ async function patchPost(req, res, next) {
   }
 }
 
+async function getSummaryAndPhotoFromContent(req, res) {
+  const { id } = req.params;
+  const knex = await getKnex();
+  const [post] = await knex("post").where({
+    user_id: req.loggedInUser.id,
+    id
+  });
+  if (!post) {
+    res.status(404).send({});
+    return;
+  }
+  const responseData = {};
+  const contentNodes = await getNodesFlat(knex, id);
+
+  if (!contentNodes) {
+    res.send(responseData);
+  }
+  const titleLength = 75;
+  const abstractLength = 200;
+  let firstNChars = "";
+  const queue = [getFirstNode(contentNodes)];
+  while (
+    queue.length &&
+    (!responseData.abstract || !responseData.imageUrl || !responseData.title)
+  ) {
+    const current = queue.shift();
+    if (!responseData.imageUrl && current.type === "image") {
+      responseData.imageUrl = current.meta.url;
+    }
+    if (["p", "li", "pre", "h1", "h2"].includes(current.type)) {
+      // replace all whitespace chars with a single space
+      const currentContent = current.content.replace(/\s\s+/g, " ");
+      if (currentContent) {
+        if (!responseData.title) {
+          if (!firstNChars) {
+            firstNChars = currentContent;
+          } else {
+            firstNChars = `${firstNChars} ${currentContent}`;
+          }
+          if (firstNChars.length > titleLength) {
+            responseData.title = firstNChars.substring(0, titleLength);
+            firstNChars = "";
+          }
+        } else if (!responseData.abstract) {
+          if (!firstNChars) {
+            firstNChars = currentContent;
+          } else {
+            firstNChars = `${firstNChars} ${currentContent}`;
+          }
+          if (firstNChars.length > abstractLength) {
+            responseData.abstract = firstNChars.substring(0, abstractLength);
+          }
+        }
+      }
+      const next = contentNodes[current.next_sibling_id];
+      if (next) {
+        queue.push(next);
+      }
+    }
+  }
+  res.send(responseData);
+}
+
 /**
  * delete a PUBLISHED post
  */
@@ -153,5 +217,6 @@ module.exports = {
   getPosts,
   getPostByCanonical,
   patchPost,
-  deletePublishedPost
+  deletePublishedPost,
+  getSummaryAndPhotoFromContent
 };

@@ -9,6 +9,7 @@ const Wrapper = styled.div`
 `;
 const ToggleWrapper = styled.div`
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   position: relative;
   outline: ${p => p.isFocused && outline};

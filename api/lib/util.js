@@ -39,9 +39,31 @@ async function rmFile(filenameAndPath) {
   return wrapExec(`rm ${filenameAndPath}`);
 }
 
+function getFirstNode(nodesById) {
+  const idSeen = new Set();
+  const nextSeen = new Set();
+  for (const nodeId in nodesById) {
+    const node = nodesById[nodeId];
+    idSeen.add(node.id);
+    if (node.next_sibling_id) {
+      nextSeen.add(node.next_sibling_id);
+    }
+  }
+  const difference = new Set([...idSeen].filter(id => !nextSeen.has(id)));
+  if (difference.size !== 1) {
+    console.error(
+      "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",
+      difference
+    );
+  }
+  const [firstId] = [...difference];
+  return nodesById[firstId];
+}
+
 module.exports = {
   saneEnvironmentOrExit,
   wrapExec,
   assertDir,
-  rmFile
+  rmFile,
+  getFirstNode
 };

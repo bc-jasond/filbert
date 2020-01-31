@@ -89,10 +89,20 @@ const Button = styled.button`
 `;
 
 export default props => {
-  const { label, loading, children, primary } = props;
+  const {
+    label,
+    loading,
+    disabled,
+    children,
+    primary,
+    onClick,
+    className
+  } = props;
   return (
     <Button
-      disabled={loading ? 'disabled' : ''}
+      className={className}
+      disabled={loading || disabled ? 'disabled' : ''}
+      onClick={() => !loading && !disabled && onClick?.()}
       primary={primary}
       loading={loading ? 'true' : undefined}
     >
