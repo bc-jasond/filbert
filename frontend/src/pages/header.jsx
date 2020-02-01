@@ -3,22 +3,70 @@ import { Map } from 'immutable';
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 import {
-  HeaderContentContainer,
-  HeaderSpacer,
-  HeaderStyled,
-  LogoLinkStyled,
-  NavLink,
-  NavSpan
+  LinkStyled,
+  LogoLinkStyled
 } from '../common/components/layout-styled-components';
+import { NavButtonMixin } from '../common/components/shared-styled-components';
 import {
   PAGE_NAME_EDIT,
   PAGE_NAME_PUBLIC,
   PAGE_NAME_VIEW
 } from '../common/constants';
+import { viewport7 } from '../common/css';
 import { signout } from '../common/session';
 
+const HeaderStyled = styled.header`
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  z-index: 12;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.97);
+  letter-spacing: 0;
+  font-weight: 400;
+  font-style: normal;
+  top: 0;
+  @media (min-width: ${viewport7}) {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+`;
+const HeaderContentContainer = styled.div`
+  position: relative;
+  min-height: 64px;
+  padding-left: 20px;
+  padding-right: 20px;
+  margin: 0 auto 8px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  @media (min-width: ${viewport7}) {
+    margin: 0;
+  }
+`;
+const HeaderSpacer = styled.div`
+  z-index: 9;
+  position: relative;
+  height: 8rem;
+  @media (min-width: ${viewport7}) {
+    height: 4rem;
+  }
+`;
 const LogoContainer = styled.div`
   flex-grow: 2;
+  flex-shrink: 0;
+  align-self: flex-end;
+  @media (min-width: ${viewport7}) {
+    align-self: center;
+  }
+`;
+const NavSpan = styled.span`
+  ${NavButtonMixin};
+`;
+const NavLink = styled(LinkStyled)`
+  ${NavButtonMixin};
 `;
 
 export default class Header extends React.PureComponent {
@@ -48,7 +96,7 @@ export default class Header extends React.PureComponent {
     const shouldShowManagePost = pageName === PAGE_NAME_EDIT && post.get('id');
     const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
     const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
-    const shouldShowPublic = pageName !== PAGE_NAME_PUBLIC;
+    const shouldShowPublic = true; //pageName !== PAGE_NAME_PUBLIC;
     return (
       <>
         <HeaderStyled>
@@ -61,10 +109,14 @@ export default class Header extends React.PureComponent {
                 filbert
               </LogoLinkStyled>
             </LogoContainer>
+          </HeaderContentContainer>
+          <HeaderContentContainer>
             {session.get('userId') ? (
               <>
                 {shouldShowManagePost && (
-                  <NavSpan onClick={togglePostMenu}>manage</NavSpan>
+                  <NavLink to={`/post-details/${post.get('id')}`}>
+                    details
+                  </NavLink>
                 )}
                 {shouldShowEdit && (
                   <NavLink to={`/edit/${post.get('id')}`}>edit</NavLink>

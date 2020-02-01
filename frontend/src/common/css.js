@@ -15,3 +15,7 @@ export const ease = (property = 'all') =>
   `transition: ${property} 0.125s ease-out`;
 export const boxShadow = '0 2px 4px 0 rgba(0, 0, 0, 0.25);';
 export const outline = '3px solid #67A1F9';
+
+export const viewport7 = '768px';
+export const viewport9 = '992px';
+export const viewport12 = '1200px';

@@ -1,3 +1,4 @@
+import { Redirect } from 'react-router-dom';
 import {
   DOM_ELEMENT_NODE_TYPE_ID,
   DOM_INPUT_TAG_NAME,
@@ -126,7 +127,7 @@ export function scrollToCaretIfOutOfView(nodeId) {
   let node;
   if (!nodeId) {
     const range = getRange();
-    if (!range.collapsed) {
+    if (!range?.collapsed) {
       return;
     }
     node = getFirstAncestorWithId(range.commonAncestorContainer);
@@ -438,4 +439,25 @@ export function loadScript(src) {
     const body = document.getElementsByTagName('body')[0];
     body.appendChild(tag);
   });
+}
+
+export function getCurrentPath() {
+  let path = window.location.pathname;
+  const queryParams = new URLSearchParams(window.location.search);
+  const queryString = queryParams.toString();
+  if (queryString.length > 0) {
+    return `${path}?${queryString}`;
+  }
+  return path;
+}
+
+export function createNextUrl(base) {
+  const queryParams = new URLSearchParams();
+  queryParams.set('next', encodeURIComponent(getCurrentPath()));
+  return `${base}?${queryParams}`;
+}
+export function getNextFromUrl() {
+  const queryParams = new URLSearchParams(window.location.search);
+  if (!queryParams.get('next')) return '';
+  return decodeURIComponent(queryParams.get('next'));
 }

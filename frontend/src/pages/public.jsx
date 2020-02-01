@@ -5,13 +5,14 @@ import styled from 'styled-components';
 import { Article } from '../common/components/layout-styled-components';
 import {
   authorExpandMixin,
+  ColFilter,
   Filter,
   FilterContainer,
   FilterInput,
   FilterWithInput,
   MetaContent,
   PostAbstractRow,
-  PostActionA,
+  PostActionLink,
   PostMetaContentFirst,
   PostMetaRow,
   PostRow,
@@ -20,6 +21,7 @@ import {
   StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
+import { Col, FlexGrid } from '../common/components/shared-styled-components';
 import { PAGE_NAME_PUBLIC } from '../common/constants';
 import { apiGet } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
@@ -236,26 +238,28 @@ export default class Public extends React.Component {
             </PostRow>
             <PostRow loading={loading ? 1 : undefined}>
               <StyledH3>Filter by:</StyledH3>
-              <FilterContainer>
-                <Filter
-                  isOpen={!oldestFilterIsSelected}
-                  onClick={this.toggleOldestFilter}
-                >
-                  newest ⇩
-                </Filter>
-                <Filter
-                  isOpen={oldestFilterIsSelected}
-                  onClick={this.toggleOldestFilter}
-                >
-                  oldest ⇧
-                </Filter>
-                <Filter
-                  isOpen={randomFilterIsSelected}
-                  onClick={this.toggleRandomFilter}
-                >
-                  random ?
-                </Filter>
-                <div>
+              <FlexGrid>
+                <ColFilter>
+                  <Filter
+                    isOpen={!oldestFilterIsSelected}
+                    onClick={this.toggleOldestFilter}
+                  >
+                    newest ⇩
+                  </Filter>
+                  <Filter
+                    isOpen={oldestFilterIsSelected}
+                    onClick={this.toggleOldestFilter}
+                  >
+                    oldest ⇧
+                  </Filter>
+                  <Filter
+                    isOpen={randomFilterIsSelected}
+                    onClick={this.toggleRandomFilter}
+                  >
+                    random ?
+                  </Filter>
+                </ColFilter>
+                <ColFilter>
                   <FilterWithInput
                     isOpen={usernameFilterIsSelected}
                     onClick={this.toggleUsernameFilter}
@@ -273,8 +277,8 @@ export default class Public extends React.Component {
                     minLength="5"
                     maxLength="42"
                   />
-                </div>
-              </FilterContainer>
+                </ColFilter>
+              </FlexGrid>
             </PostRow>
             {posts.size === 0 && (
               <PostRow>
@@ -302,9 +306,12 @@ export default class Public extends React.Component {
                   </PostMetaContentFirst>
                   {post.get('canEdit') && (
                     <>
-                      <PostActionA href={`/edit/${post.get('id')}`}>
+                      <PostActionLink to={`/post-details/${post.get('id')}`}>
+                        details
+                      </PostActionLink>
+                      <PostActionLink to={`/edit/${post.get('id')}`}>
                         edit
-                      </PostActionA>
+                      </PostActionLink>
                     </>
                   )}
                   <AuthorExpand to={`/public?username=${post.get('username')}`}>

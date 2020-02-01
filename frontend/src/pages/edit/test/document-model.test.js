@@ -1,6 +1,7 @@
 import { Map } from 'immutable';
 import { NODE_TYPE_H1 } from '../../../common/constants';
 import { overrideConsole } from '../../../common/test-helpers';
+import { nodeIsValid } from '../../../common/utils';
 
 import * as SelectionHelpers from '../selection-helpers';
 
@@ -31,11 +32,11 @@ describe('DocumentModel', () => {
       documentModel.nodesById
     );
     expect(placeholderTitle.get('type')).toBe(NODE_TYPE_H1);
-    expect(DocumentModel.nodeIsValid(placeholderTitle)).toBe(true);
+    expect(nodeIsValid(placeholderTitle)).toBe(true);
   });
   test('getMapWithId', () => {
     const result = documentModel.getMapWithId({});
-    expect(DocumentModel.nodeIsValid(result)).toBe(true);
+    expect(nodeIsValid(result)).toBe(true);
     expect(result.get('post_id')).toBe(175);
   });
   test('getNode', () => {

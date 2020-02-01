@@ -19,7 +19,7 @@ export function confirmPromise(msg) {
 export function formatPostDate(dateStr) {
   const publishedDate = new Date(dateStr);
   return publishedDate.toLocaleDateString('en-us', {
-    weekday: 'long',
+    //weekday: 'long',
     year: 'numeric',
     day: 'numeric',
     month: 'long'
@@ -32,7 +32,7 @@ export function formatStreakDate(dateInt) {
   date.setMonth(parseInt(`${dateInt}`.substring(4, 6), 10));
   date.setDate(parseInt(`${dateInt}`.substring(6), 10));
   return date.toLocaleDateString('en-us', {
-    weekday: 'long',
+    //weekday: 'long',
     year: 'numeric',
     day: 'numeric',
     month: 'long'
@@ -168,4 +168,8 @@ export function moreThanNCharsAreDifferent(left, right, n) {
 
 export function idIsValid(maybeId) {
   return new RegExp(/[0-9a-f]{4}/).test(maybeId);
+}
+
+export function nodeIsValid(node) {
+  return Map.isMap(node) && idIsValid(node.get('id'));
 }

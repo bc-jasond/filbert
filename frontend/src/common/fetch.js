@@ -1,4 +1,5 @@
 import { API_URL, AUTH_TOKEN_KEY, SESSION_KEY } from './constants';
+import { createNextUrl, getCurrentPath } from './dom';
 import { get, set } from './local-storage';
 import { getGoogleUser, googleGetLoggedInUser } from './google-auth';
 
@@ -70,7 +71,7 @@ async function fetchRefresh(url, config) {
     console.info('SUCCESS: Google Auth refresh');
   }
   if (!user || signupIsIncomplete) {
-    window.location.href = `signin?next=${window.location.pathname}`;
+    window.location.href = createNextUrl('signin');
   }
   // one retry
   const res2 = await fetch(url, {

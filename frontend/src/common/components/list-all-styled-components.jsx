@@ -1,8 +1,10 @@
 import styled, { css } from 'styled-components';
-import { darkGrey, grey, lightBlue } from '../css';
+import { Link } from 'react-router-dom';
+import { darkGrey, grey, lightBlue, viewport7, viewport9 } from '../css';
 import { monospaced, sansSerif } from '../fonts.css';
-import { A, NavSpan } from './layout-styled-components';
+import { A } from './layout-styled-components';
 import {
+  Col,
   H2Styled,
   H3Styled,
   Input,
@@ -20,18 +22,21 @@ export const StyledH3 = styled(H3Styled)`
   color: ${grey};
 `;
 export const PostRow = styled.div`
-  margin: 0 auto;
-  max-width: 768px;
+  margin: 0;
+  max-width: ${viewport7};
   padding: 20px 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   word-wrap: break-word;
   word-break: break-word;
+  &:first-of-type {
+    padding-top: 0;
+  }
   &:last-of-type {
     border: none;
     margin-bottom: 40px;
   }
-  @media (max-width: 768px) {
-    margin: 0;
+  @media (min-width: ${viewport7}) {
+    margin: 0 auto;
   }
   ${p =>
     p.loading &&
@@ -90,42 +95,50 @@ export const authorExpandMixin = css`
     cursor: pointer;
   }
 `;
-export const PostAction = styled.span`
+export const PostActionLink = styled(Link)`
   ${NavButtonMixin};
   ${MetaFont};
   padding: 7px 9px;
 `;
-export const PostActionA = styled(A)`
-  ${NavButtonMixin};
-  ${MetaFont};
-  padding: 7px 9px;
-`;
-export const FilterContainer = styled.div`
+export const ColFilter = styled(Col)`
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-around;
+  padding-bottom: 16px;
+  &:last-of-type {
+    padding-bottom: 0;
+  }
+  @media (min-width: ${viewport9}) {
+    &:last-of-type {
+      padding-bottom: 16px;
+    }
+  }
 `;
-export const Filter = styled(NavSpan)`
+export const Filter = styled.span`
+  ${NavButtonMixin};
+  display: inline-block;
   padding: 9px;
-  margin: 8px;
+  margin-left: 8px;
+  &:first-of-type {
+    margin-left: 0;
+  }
 `;
 export const FilterWithInput = styled(Filter)`
+  flex-grow: 0;
   border: 1px solid transparent;
   border-right: none;
   margin-right: 0;
   ${p =>
     p.isOpen &&
-    `
-    border: 1px solid ${lightBlue};
-    border-right: none;
-    margin-right: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-  `}
+    css`
+      border: 1px solid ${lightBlue};
+      border-right: none;
+      margin-right: 0;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    `}
 `;
 export const FilterInput = styled(Input)`
-  height: 36px;
+  flex: 1;
+  height: 38px;
   margin-right: 8px;
   transition: opacity 0.2s;
   opacity: 1;
@@ -135,7 +148,7 @@ export const FilterInput = styled(Input)`
   border-radius: 0 26px 26px 0;
   ${p =>
     p.shouldHide &&
-    `
-    opacity: 0;
-  `}
+    css`
+      opacity: 0;
+    `}
 `;

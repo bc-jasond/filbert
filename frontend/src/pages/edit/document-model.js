@@ -32,10 +32,6 @@ export default class DocumentModel {
 
   nodesById = Map();
 
-  static nodeIsValid(node) {
-    return Map.isMap(node) && idIsValid(node.get('id'));
-  }
-
   static getFirstNode(nodesById) {
     const idSeen = new Set();
     const nextSeen = new Set();

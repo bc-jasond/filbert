@@ -2,33 +2,9 @@ import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import GitHubSvg from '../../../assets/icons/github-mark.svg';
 import InfoSvg from '../../../assets/icons/info.svg';
-import { darkGrey, grey, lightGrey } from '../css';
+import { darkGrey, grey, lightGrey, viewport7, viewport9 } from '../css';
 import { monospaced, sansSerif } from '../fonts.css';
-import { NavButtonMixin } from './shared-styled-components';
 
-export const HeaderStyled = styled.header`
-  position: fixed;
-  display: block;
-  box-sizing: border-box;
-  z-index: 12;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.97);
-  letter-spacing: 0;
-  font-weight: 400;
-  font-style: normal;
-  top: 0;
-`;
-export const HeaderContentContainer = styled.div`
-  position: relative;
-  min-height: 64px;
-  padding-left: 20px;
-  padding-right: 20px;
-  margin: 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-evenly;
-`;
 export const LinkStyled = styled(Link)`
   font-family: ${monospaced}, monospaced;
   font-size: 24px;
@@ -42,26 +18,15 @@ export const LogoLinkStyled = styled(LinkStyled)`
     font-size: 32px;
   }
 `;
-export const NavSpan = styled.span`
-  ${NavButtonMixin};
-`;
-export const NavLink = styled(LinkStyled)`
-  ${NavButtonMixin};
-`;
-export const HeaderSpacer = styled.div`
-  z-index: 9;
-  position: relative;
-  height: 65px;
-`;
 export const Article = styled.article`
   width: 100%;
   min-height: 80vh;
-  padding: 40px 80px;
+  padding: 16px 24px 48px 24px;
   margin: 0 auto;
   box-sizing: border-box;
   position: relative;
-  @media (max-width: 800px) {
-    padding: 40px 20px;
+  @media (min-width: ${viewport9}) {
+    padding: 48px 80px;
   }
 `;
 export const FooterStyled = styled.footer`

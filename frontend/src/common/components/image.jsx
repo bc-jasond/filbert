@@ -1,8 +1,10 @@
 import { Map } from 'immutable';
 import React from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import DocumentModel from '../../pages/edit/document-model';
 import { NODE_TYPE_IMAGE } from '../constants';
 import { ease } from '../css';
+import { nodeIsValid } from '../utils';
 import {
   ContentSection,
   editSectionBorderMixin,
@@ -15,27 +17,27 @@ export const ImageSection = styled(ContentSection)`
   margin: 0 auto 52px;
 `;
 export const Figure = styled.figure`
-  padding: 5px 0;
   position: relative;
   ${p =>
+    p.heightOverride &&
     !Number.isNaN(p.heightOverride) &&
-    `
-    height: ${p.heightOverride}px;
-  `}
+    css`
+      height: ${p.heightOverride}px;
+    `}
 `;
 export const FigureCaption = styled.figcaption`
   ${miniText};
   text-align: center;
-  margin-top: 5px;
+  margin-top: 10px;
 `;
 export const ImagePlaceholderContainer = styled.div`
   position: relative;
   width: 100%;
   margin: 0 auto;
-  ${p => `
+  ${p => css`
     max-width: ${p.w}px;
     max-height: ${p.h}px;
-  `}
+  `};
 `;
 export const ImagePlaceholderFill = styled.div`
   ${p => `padding-bottom: ${(p.h / p.w) * 100}%;`}
@@ -51,32 +53,35 @@ export const Img = styled.img`
   display: block;
   max-width: 100%;
   ${ease('transform')};
-  ${editSectionBorderMixin};
+  ${p => !p.hideBorder && editSectionBorderMixin};
   ${p =>
     p.rotationDegrees === 90 &&
-    `
-    transform-origin: left;
-    transform: translate(50%, -50%) rotate(90deg) ;
-  `}
+    css`
+      transform-origin: left;
+      transform: translate(50%, -50%) rotate(90deg);
+    `}
   ${p =>
     p.rotationDegrees === 180 &&
-    `
-    transform: scale(1,-1) ;
-  `}
+    css`
+      transform: scale(1, -1);
+    `}
   ${p =>
     p.rotationDegrees === 270 &&
-    `
-    transform-origin: right;
-    transform: translate(-50%, -50%) rotate(-90deg) ;
-  `}
+    css`
+      transform-origin: right;
+      transform: translate(-50%, -50%) rotate(-90deg);
+    `}
 `;
 
 export default class Image extends React.PureComponent {
   render() {
     console.debug('Image RENDER', this);
     const {
-      props: { node, isEditing, setEditNodeId }
+      props: { node, isEditing, setEditNodeId, hideBorder }
     } = this;
+    if (!nodeIsValid(node)) {
+      return null;
+    }
     const id = node.get('id');
     const meta = node.get('meta', Map());
     const w = meta.get('resizeWidth', meta.get('width'));
@@ -99,6 +104,7 @@ export default class Image extends React.PureComponent {
               <Img
                 isEditMode={setEditNodeId}
                 isEditing={isEditing}
+                hideBorder={hideBorder}
                 onClick={() => setEditNodeId && setEditNodeId(id)}
                 rotationDegrees={rotationDegrees}
                 src={url}

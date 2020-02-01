@@ -60,6 +60,7 @@ async function getPosts(req, res) {
   );
 }
 
+// returns both post and content
 async function getPostByCanonical(req, res) {
   const { loggedInUser } = req;
   const { canonical } = req.params;
@@ -76,6 +77,21 @@ async function getPostByCanonical(req, res) {
     post.canPublish = loggedInUser.id === post.user_id;
   }
   res.send({ post, contentNodes });
+}
+
+// returns only post
+async function getPostById(req, res) {
+  const { id } = req.params;
+  const knex = await getKnex();
+  const [post] = await knex("post").where({
+    user_id: req.loggedInUser.id,
+    id
+  });
+  if (!post) {
+    res.status(404).send({});
+    return;
+  }
+  res.send({ post });
 }
 
 /**
@@ -139,17 +155,19 @@ async function getSummaryAndPhotoFromContent(req, res) {
   if (!contentNodes) {
     res.send(responseData);
   }
-  const titleLength = 75;
-  const abstractLength = 200;
+  const titleMinLength = 2;
+  const titleMaxLength = 75;
+  const abstractMinLength = 100;
+  const abstractMaxLength = 200;
   let firstNChars = "";
   const queue = [getFirstNode(contentNodes)];
   while (
     queue.length &&
-    (!responseData.abstract || !responseData.imageUrl || !responseData.title)
+    (!responseData.abstract || !responseData.imageNode || !responseData.title)
   ) {
     const current = queue.shift();
-    if (!responseData.imageUrl && current.type === "image") {
-      responseData.imageUrl = current.meta.url;
+    if (!responseData.imageNode && current.type === "image") {
+      responseData.imageNode = current;
     }
     if (["p", "li", "pre", "h1", "h2"].includes(current.type)) {
       // replace all whitespace chars with a single space
@@ -161,8 +179,8 @@ async function getSummaryAndPhotoFromContent(req, res) {
           } else {
             firstNChars = `${firstNChars} ${currentContent}`;
           }
-          if (firstNChars.length > titleLength) {
-            responseData.title = firstNChars.substring(0, titleLength);
+          if (firstNChars.length > titleMinLength) {
+            responseData.title = firstNChars.substring(0, titleMaxLength);
             firstNChars = "";
           }
         } else if (!responseData.abstract) {
@@ -171,15 +189,15 @@ async function getSummaryAndPhotoFromContent(req, res) {
           } else {
             firstNChars = `${firstNChars} ${currentContent}`;
           }
-          if (firstNChars.length > abstractLength) {
-            responseData.abstract = firstNChars.substring(0, abstractLength);
+          if (firstNChars.length > abstractMinLength) {
+            responseData.abstract = firstNChars.substring(0, abstractMaxLength);
           }
         }
       }
-      const next = contentNodes[current.next_sibling_id];
-      if (next) {
-        queue.push(next);
-      }
+    }
+    const next = contentNodes[current.next_sibling_id];
+    if (next) {
+      queue.push(next);
     }
   }
   res.send(responseData);
@@ -216,6 +234,7 @@ async function deletePublishedPost(req, res) {
 module.exports = {
   getPosts,
   getPostByCanonical,
+  getPostById,
   patchPost,
   deletePublishedPost,
   getSummaryAndPhotoFromContent

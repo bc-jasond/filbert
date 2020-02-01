@@ -6,7 +6,9 @@ async function postDraft(req, res) {
   const user_id = req.loggedInUser.id;
   const { title, canonical, meta } = req.body;
   const insertValues = { user_id, title, canonical };
-  insertValues.meta = JSON.stringify(meta || {});
+  insertValues.meta = JSON.stringify(
+    meta || { syncTitleAndAbstract: true, syncTopPhoto: true }
+  );
   const knex = await getKnex();
   const [postId] = await knex.insert(insertValues).into("post");
   res.send({ postId });

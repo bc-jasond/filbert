@@ -1,5 +1,6 @@
-import { fromJS, List, Map } from 'immutable';
+import { fromJS, List } from 'immutable';
 import React from 'react';
+import { FlexGrid, Col } from '../common/components/shared-styled-components';
 
 import { apiGet } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
@@ -8,12 +9,12 @@ import Header from './header';
 import Footer from './footer';
 import { Article } from '../common/components/layout-styled-components';
 import {
+  ColFilter,
   Filter,
-  FilterContainer,
   FilterInput,
   FilterWithInput,
   PostAbstractRow,
-  PostAction,
+  PostActionLink,
   PostMetaContentFirst,
   PostMetaRow,
   PostRow,
@@ -22,7 +23,6 @@ import {
   StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
-import PublishPostForm from '../common/components/edit-publish-post-form';
 
 export default class AllPosts extends React.Component {
   containsInputRef = React.createRef();
@@ -31,7 +31,6 @@ export default class AllPosts extends React.Component {
     super(props);
 
     this.state = {
-      currentEditingPost: Map(),
       drafts: List(),
       oldestFilterIsSelected: false,
       containsFilterIsSelected: false,
@@ -113,14 +112,6 @@ export default class AllPosts extends React.Component {
     this.setState({ loading: false });
   };
 
-  openPostMenu = draft => {
-    this.setState({ currentEditingPost: draft });
-  };
-
-  closePostMenu = () => {
-    this.setState({ currentEditingPost: Map() }, this.loadDrafts);
-  };
-
   loadDraftsDebounce = async () => {
     if (this.containsTimeout) {
       clearTimeout(this.containsTimeout);
@@ -199,7 +190,6 @@ export default class AllPosts extends React.Component {
       state: {
         loading,
         drafts,
-        currentEditingPost,
         oldestFilterIsSelected,
         containsFilterIsSelected,
         contains,
@@ -213,13 +203,6 @@ export default class AllPosts extends React.Component {
         <Header session={session} setSession={setSession} />
         <Article>
           <>
-            {currentEditingPost.size > 0 && (
-              <PublishPostForm
-                post={currentEditingPost}
-                close={this.closePostMenu}
-                afterDelete={this.closePostMenu}
-              />
-            )}
             <PostRow>
               <StyledH2>My Private Work</StyledH2>
               <StyledH3>
@@ -244,26 +227,28 @@ export default class AllPosts extends React.Component {
             </PostRow>
             <PostRow loading={loading ? 1 : undefined}>
               <StyledH3>Filter by:</StyledH3>
-              <FilterContainer>
-                <Filter
-                  isOpen={!oldestFilterIsSelected}
-                  onClick={this.toggleOldestFilter}
-                >
-                  newest ⇩
-                </Filter>
-                <Filter
-                  isOpen={oldestFilterIsSelected}
-                  onClick={this.toggleOldestFilter}
-                >
-                  oldest ⇧
-                </Filter>
-                <Filter
-                  isOpen={randomFilterIsSelected}
-                  onClick={this.toggleRandomFilter}
-                >
-                  random ?
-                </Filter>
-                <div>
+              <FlexGrid>
+                <ColFilter>
+                  <Filter
+                    isOpen={!oldestFilterIsSelected}
+                    onClick={this.toggleOldestFilter}
+                  >
+                    newest ⇩
+                  </Filter>
+                  <Filter
+                    isOpen={oldestFilterIsSelected}
+                    onClick={this.toggleOldestFilter}
+                  >
+                    oldest ⇧
+                  </Filter>
+                  <Filter
+                    isOpen={randomFilterIsSelected}
+                    onClick={this.toggleRandomFilter}
+                  >
+                    random ?
+                  </Filter>
+                </ColFilter>
+                <ColFilter>
                   <FilterWithInput
                     isOpen={containsFilterIsSelected}
                     onClick={this.toggleContainsFilter}
@@ -279,8 +264,8 @@ export default class AllPosts extends React.Component {
                     onChange={this.updateContains}
                     autoComplete="off"
                   />
-                </div>
-              </FilterContainer>
+                </ColFilter>
+              </FlexGrid>
             </PostRow>
             {drafts.size === 0 && (
               <PostRow>
@@ -307,9 +292,12 @@ export default class AllPosts extends React.Component {
                   <PostMetaContentFirst>
                     {draft.get('updated')}
                   </PostMetaContentFirst>
-                  <PostAction onClick={() => this.openPostMenu(draft)}>
-                    manage
-                  </PostAction>
+                  <PostActionLink to={`/post-details/${draft.get('id')}`}>
+                    details
+                  </PostActionLink>
+                  <PostActionLink to={`/edit/${draft.get('id')}`}>
+                    edit
+                  </PostActionLink>
                 </PostMetaRow>
               </PostRow>
             ))}

@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
+import { viewport7 } from '../../../common/css';
 
 import { apiGet, apiPost, uploadImage } from '../../../common/fetch';
 import { Article } from '../../../common/components/layout-styled-components';
@@ -59,12 +60,11 @@ import InsertSectionMenu from './insert-section-menu';
 import EditImageForm from './edit-image-form';
 import EditQuoteForm from './edit-quote-form';
 import FormatSelectionMenu from './format-selection-menu';
-import PublishPostForm from '../../../common/components/edit-publish-post-form';
 
 import Page404 from '../../404';
 
 const ArticleStyled = styled(Article)`
-  @media (max-width: 800px) {
+  @media (max-width: ${viewport7}) {
     padding: 40px 80px;
   }
 `;
@@ -91,8 +91,7 @@ export default class EditPost extends React.Component {
       shouldShowEditSectionMenu: false,
       editSectionMetaFormTopOffset: 0,
       formatSelectionNode: Map(),
-      formatSelectionModel: Selection(),
-      shouldShowPublishPostMenu: false
+      formatSelectionModel: Selection()
     };
   }
 
@@ -242,24 +241,6 @@ export default class EditPost extends React.Component {
         await this.manageInsertMenu();
       }
     );
-  };
-
-  afterDeletePost = () => {
-    this.setState({ shouldRedirect: '/private' });
-  };
-
-  togglePostMenu = () => {
-    const {
-      state: { shouldShowPublishPostMenu: oldVal }
-    } = this;
-    if (oldVal) {
-      // hiding menu - reregister
-      this.registerWindowEventHandlers();
-    } else {
-      // showing menu, unregister to not interfere
-      this.unregisterWindowEventHandlers();
-    }
-    this.setState({ shouldShowPublishPostMenu: !oldVal });
   };
 
   closeAllEditContentMenus = async () => {
@@ -1354,8 +1335,7 @@ export default class EditPost extends React.Component {
         formatSelectionNode,
         formatSelectionMenuTopOffset,
         formatSelectionMenuLeftOffset,
-        formatSelectionModel,
-        shouldShowPublishPostMenu
+        formatSelectionModel
       },
       props: { session, setSession }
     } = this;
@@ -1372,7 +1352,6 @@ export default class EditPost extends React.Component {
               setSession={setSession}
               pageName={PAGE_NAME_EDIT}
               post={post}
-              togglePostMenu={this.togglePostMenu}
             />
             <ArticleStyled>
               <div
@@ -1389,13 +1368,6 @@ export default class EditPost extends React.Component {
             </ArticleStyled>
             <Footer />
           </div>
-          {shouldShowPublishPostMenu && (
-            <PublishPostForm
-              post={post}
-              close={this.togglePostMenu}
-              afterDelete={this.afterDeletePost}
-            />
-          )}
           {insertMenuNode.get('id') && (
             <InsertSectionMenu
               windowEvent={windowEventToForward}
