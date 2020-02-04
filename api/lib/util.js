@@ -4,16 +4,19 @@ const exec = promisify(execCb);
 
 const chalk = require("chalk");
 
+const error = (...args) => console.error(chalk.red(...args));
+const warn = (...args) => console.warn(chalk.yellow(...args));
+const info = (...args) => console.info(chalk.blue(...args));
+const success = (...args) => console.log(chalk.green(...args));
+
 function saneEnvironmentOrExit(requiredVars) {
   const { env } = process;
   const missingEnvVariables = requiredVars.filter(key => !env[key] && key);
   if (missingEnvVariables.length > 0) {
-    console.error(
-      chalk.red(
-        `❌ process.env not sane!\n\nThe following variables are missing:\n${missingEnvVariables.join(
-          "\n"
-        )}`
-      )
+    error(
+      `❌ process.env not sane!\n\nThe following variables are missing:\n${missingEnvVariables.join(
+        "\n"
+      )}`
     );
     process.exit(1);
   }
@@ -22,12 +25,12 @@ function saneEnvironmentOrExit(requiredVars) {
 async function wrapExec(command) {
   try {
     const { stdout, stderr } = await exec(command);
-    console.log(`exec() command succeeded: ${command}`, stdout);
-    if (stdout) console.log(stdout);
-    if (stderr) console.error(stderr);
+    success(`exec() command succeeded: ${command}`, stdout);
+    if (stdout) success(stdout);
+    if (stderr) error(stderr);
     return { stdout, stderr };
   } catch (err) {
-    console.error(`exec() command failed: ${command}`, err);
+    error(`exec() command failed: ${command}`, err);
   }
 }
 
@@ -51,7 +54,7 @@ function getFirstNode(nodesById) {
   }
   const difference = new Set([...idSeen].filter(id => !nextSeen.has(id)));
   if (difference.size !== 1) {
-    console.error(
+    error(
       "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",
       difference
     );
@@ -61,6 +64,10 @@ function getFirstNode(nodesById) {
 }
 
 module.exports = {
+  error,
+  warn,
+  info,
+  success,
   saneEnvironmentOrExit,
   wrapExec,
   assertDir,
