@@ -54,7 +54,6 @@ export const FlexGrid9 = styled.div`
 export const Col = styled.div`
   padding: 0;
   flex: 1;
-  white-space: nowrap;
   @media (min-width: ${viewport7}) {
     padding-left: 24px;
     &:first-of-type {
@@ -229,8 +228,11 @@ export const Code = styled.code`
 export const SiteInfo = styled.span`
   font-family: ${sansSerif}, sans-serif;
 `;
-export const ItalicText = styled.em`
+export const italicMixin = css`
   font-family: ${italicSerif}, sans-serif;
+`;
+export const ItalicText = styled.em`
+  ${italicMixin};
 `;
 export const StrikeText = styled.span`
   text-decoration: line-through;

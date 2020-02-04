@@ -10,7 +10,8 @@ async function getPosts(req, res) {
   let builder = knex("post")
     .select(
       "post.id",
-      "user_id",
+      { userId: "user.id" },
+      { userProfileIsPublic: "user.is_public" },
       "canonical",
       "title",
       "abstract",
@@ -20,7 +21,10 @@ async function getPosts(req, res) {
       "post.deleted",
       { pictureUrl: "post.picture_url" },
       "post.meta",
-      "username"
+      "username",
+      { profilePictureUrl: "user.picture_url" },
+      { familyName: "family_name" },
+      { givenName: "given_name" }
     )
     .innerJoin("user", "post.user_id", "user.id")
     .whereNotNull("published")
@@ -51,10 +55,18 @@ async function getPosts(req, res) {
   }
 
   res.send(
+    // TODO: add to query above instead of looping here
     posts.map(post => {
-      post.canEdit = loggedInUser.id === post.user_id;
-      post.canDelete = loggedInUser.id === post.user_id;
-      post.canPublish = loggedInUser.id === post.user_id;
+      // keep users info private if they don't want to share it!
+      if (!post.userProfileIsPublic && loggedInUser.id !== post.userId) {
+        delete post.userId;
+        delete post.profilePictureUrl;
+        delete post.familyName;
+        delete post.givenName;
+      }
+      post.canEdit = loggedInUser.id === post.userId;
+      post.canDelete = loggedInUser.id === post.userId;
+      post.canPublish = loggedInUser.id === post.userId;
       return post;
     })
   );
@@ -76,6 +88,7 @@ async function getPostByCanonical(req, res) {
     post.canDelete = loggedInUser.id === post.user_id;
     post.canPublish = loggedInUser.id === post.user_id;
   }
+  delete post.user_id;
   res.send({ post, contentNodes });
 }
 
@@ -91,6 +104,7 @@ async function getPostById(req, res) {
     res.status(404).send({});
     return;
   }
+  delete post.user_id;
   res.send({ post });
 }
 

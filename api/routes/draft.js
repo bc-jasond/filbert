@@ -36,7 +36,15 @@ async function getDrafts(req, res, next) {
         "post.deleted",
         { pictureUrl: "post.picture_url" },
         "post.meta",
-        "username"
+        "username",
+        { profilePictureUrl: "user.picture_url" },
+        { familyName: "family_name" },
+        { givenName: "given_name" },
+        // the following are always true for drafts
+        knex.raw(`1 as 'canEdit'`),
+        knex.raw(`1 as 'canDelete'`),
+        knex.raw(`1 as 'canPublish'`),
+        knex.raw(`1 as 'userProfileIsPublic'`)
       )
       .innerJoin("user", "post.user_id", "user.id")
       .whereNull("published")

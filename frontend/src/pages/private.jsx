@@ -1,6 +1,6 @@
 import { fromJS, List } from 'immutable';
 import React from 'react';
-import { FlexGrid, Col } from '../common/components/shared-styled-components';
+import { FlexGrid } from '../common/components/shared-styled-components';
 
 import { apiGet } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
@@ -9,22 +9,20 @@ import Header from './header';
 import Footer from './footer';
 import { Article } from '../common/components/layout-styled-components';
 import {
+  BaseRow,
   ColFilter,
   Filter,
   FilterInput,
   FilterWithInput,
-  PostAbstractRow,
-  PostActionLink,
-  PostMetaContentFirst,
-  PostMetaRow,
   PostRow,
-  StyledA,
   StyledH2,
   StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
 
-export default class AllPosts extends React.Component {
+import PostListRow from '../common/components/post-list-row';
+
+export default class PrivatePosts extends React.Component {
   containsInputRef = React.createRef();
 
   constructor(props) {
@@ -203,7 +201,7 @@ export default class AllPosts extends React.Component {
         <Header session={session} setSession={setSession} />
         <Article>
           <>
-            <PostRow>
+            <BaseRow>
               <StyledH2>My Private Work</StyledH2>
               <StyledH3>
                 These pieces have{' '}
@@ -214,7 +212,7 @@ export default class AllPosts extends React.Component {
                 <span role="img" aria-label="lock">
                   🔑
                 </span>{' '}
-                and are only viewable
+                and are only viewable{' '}
                 <span role="img" aria-label="eyeballs">
                   👀
                 </span>{' '}
@@ -224,8 +222,8 @@ export default class AllPosts extends React.Component {
                 </span>{' '}
                 filbert
               </StyledH3>
-            </PostRow>
-            <PostRow loading={loading ? 1 : undefined}>
+            </BaseRow>
+            <BaseRow loading={loading ? 1 : undefined}>
               <StyledH3>Filter by:</StyledH3>
               <FlexGrid>
                 <ColFilter>
@@ -266,7 +264,7 @@ export default class AllPosts extends React.Component {
                   />
                 </ColFilter>
               </FlexGrid>
-            </PostRow>
+            </BaseRow>
             {drafts.size === 0 && (
               <PostRow>
                 <StyledHeadingA href="/edit/new">
@@ -279,27 +277,7 @@ export default class AllPosts extends React.Component {
               </PostRow>
             )}
             {drafts.map(draft => (
-              <PostRow key={`${draft.get('id')}${draft.get('canonical')}`}>
-                <StyledHeadingA href={`/edit/${draft.get('id')}`}>
-                  {draft.get('title')}
-                </StyledHeadingA>
-                <PostAbstractRow>
-                  <StyledA href={`/edit/${draft.get('id')}`}>
-                    {draft.get('abstract')}
-                  </StyledA>
-                </PostAbstractRow>
-                <PostMetaRow>
-                  <PostMetaContentFirst>
-                    {draft.get('updated')}
-                  </PostMetaContentFirst>
-                  <PostActionLink to={`/post-details/${draft.get('id')}`}>
-                    details
-                  </PostActionLink>
-                  <PostActionLink to={`/edit/${draft.get('id')}`}>
-                    edit
-                  </PostActionLink>
-                </PostMetaRow>
-              </PostRow>
+              <PostListRow key={draft.get('id')} post={draft} />
             ))}
           </>
         </Article>

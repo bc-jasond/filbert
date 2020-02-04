@@ -77,7 +77,14 @@ export default class Image extends React.PureComponent {
   render() {
     console.debug('Image RENDER', this);
     const {
-      props: { node, isEditing, setEditNodeId, hideBorder }
+      props: {
+        node,
+        isEditing,
+        setEditNodeId,
+        hideBorder,
+        hideCaption,
+        className
+      }
     } = this;
     if (!nodeIsValid(node)) {
       return null;
@@ -96,7 +103,7 @@ export default class Image extends React.PureComponent {
       heightOverride = Math.min(w, 1000);
     }
     return (
-      <ImageSection data-type={NODE_TYPE_IMAGE} name={id}>
+      <ImageSection className={className} data-type={NODE_TYPE_IMAGE} name={id}>
         <Figure heightOverride={heightOverride}>
           <ImagePlaceholderContainer w={w} h={h}>
             <ImagePlaceholderFill w={w} h={h} />
@@ -112,7 +119,7 @@ export default class Image extends React.PureComponent {
             )}
           </ImagePlaceholderContainer>
         </Figure>
-        <FigureCaption>{meta.get('caption')}</FigureCaption>
+        {!hideCaption && <FigureCaption>{meta.get('caption')}</FigureCaption>}
       </ImageSection>
     );
   }

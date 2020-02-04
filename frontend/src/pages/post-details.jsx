@@ -131,7 +131,7 @@ export default class PostDetails extends React.Component {
     post = fromJS(post);
     this.backupTitle = post.get('title', '');
     this.backupAbstract = post.get('abstract', '');
-    this.backupImageNode = post.get('imageNode', Map());
+    this.backupImageNode = post.getIn(['meta', 'imageNode'], Map());
     const postSummary = fromJS(await this.loadPostSummary());
     post = this.syncTitleAndAbstract(post, postSummary);
     post = this.syncImage(post, postSummary);
@@ -153,9 +153,11 @@ export default class PostDetails extends React.Component {
   syncImage(post, postSummary) {
     const current = post.getIn(['meta', 'syncTopPhoto']);
     if (current) {
-      return post.set('imageNode', postSummary.get('imageNode'));
+      return post.setIn(['meta', 'imageNode'], postSummary.get('imageNode'));
     }
-    return post.set('imageNode', this.backupImageNode);
+    return this.backupImageNode.size
+      ? post.setIn(['meta', 'imageNode'], this.backupImageNode)
+      : post;
   }
 
   toggleTitleAndAbstract = () => {
@@ -194,7 +196,6 @@ export default class PostDetails extends React.Component {
       title: post.get('title'),
       canonical: post.get('canonical'),
       abstract: post.get('abstract'),
-      imageNode: post.get('imageNode'),
       meta: post.get('meta')
     });
     if (error) {
@@ -380,8 +381,11 @@ export default class PostDetails extends React.Component {
                   <Label htmlFor="imageNode" error={error?.imageNode}>
                     image
                   </Label>
-                  {post.get('imageNode') && (
-                    <Image node={post.get('imageNode')} hideBorder />
+                  {post.getIn(['meta', 'imageNode']) && (
+                    <Image
+                      node={post.getIn(['meta', 'imageNode'])}
+                      hideBorder
+                    />
                   )}
                 </ImageContainer>
               </Col>
@@ -444,14 +448,14 @@ export default class PostDetails extends React.Component {
                   </Button>
                 </Col9>
                 <Col9>
-                  <CancelButton onClick={() => {}}>
-                    <ButtonSpan>Cancel</ButtonSpan>
-                  </CancelButton>
-                </Col9>
-                <Col9>
                   <DeleteButton onClick={this.deletePost}>
                     <ButtonSpan>Delete</ButtonSpan>
                   </DeleteButton>
+                </Col9>
+                <Col9>
+                  <CancelButton onClick={() => {}}>
+                    <ButtonSpan>Done</ButtonSpan>
+                  </CancelButton>
                 </Col9>
               </FlexGrid9>
             </MiddleWrapper>
