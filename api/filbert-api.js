@@ -17,6 +17,7 @@ const { getUser, patchProfile, getStats } = require("./routes/user");
 const {
   getPosts,
   getPostByCanonical,
+  getPostById,
   patchPost,
   deletePublishedPost,
   getSummaryAndPhotoFromContent
@@ -71,6 +72,7 @@ async function main() {
     app.post("/post", postDraft);
     app.patch("/post/:id", patchPost);
     app.delete("/post/:id", deletePublishedPost);
+    app.get("/publish/:id", getPostById);
     app.get("/post-summary/:id", getSummaryAndPhotoFromContent);
     app.get("/edit/:id", getPostForEdit);
     app.post("/content", postContentNodes);

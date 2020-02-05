@@ -18,6 +18,7 @@ import SignIn from './pages/signin';
 import SignInAdmin from './pages/signin-admin';
 import ViewPost from './pages/view-post';
 import UserProfile from './pages/user-profile';
+import Publish from './pages/publish';
 
 export default class App extends React.Component {
   constructor(props) {
@@ -76,6 +77,7 @@ export default class App extends React.Component {
             <RouteWithSession exact path="/p/:canonical" component={ViewPost} />
             {/* NOTE: this :id is an int like: 34 */}
             <RouteWithSession exact path="/edit/:id" component={EditPost} />
+            <RouteWithSession exact path="/publish/:id" component={Publish} />
             <RouteWithSession exact path="/:username" component={UserProfile} />
 
             <RouteWithSession component={Page404} />

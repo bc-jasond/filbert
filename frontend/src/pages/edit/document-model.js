@@ -14,7 +14,7 @@ import {
   SELECTION_END,
   SELECTION_START
 } from '../../common/constants';
-import { cleanText, getMapWithId, idIsValid } from '../../common/utils';
+import { cleanText, getMapWithId } from '../../common/utils';
 import { concatSelections, Selection } from './selection-helpers';
 
 export function reviver(key, value) {
@@ -31,10 +31,6 @@ export default class DocumentModel {
   updateManager;
 
   nodesById = Map();
-
-  static nodeIsValid(node) {
-    return Map.isMap(node) && idIsValid(node.get('id'));
-  }
 
   static getFirstNode(nodesById) {
     const idSeen = new Set();

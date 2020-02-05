@@ -1,4 +1,5 @@
 const { getKnex, getMysqlDatetime } = require("../lib/mysql");
+const { addFirstPhotoTitleAndAbstractToPosts } = require("../lib/post-util");
 /**
  * creates a new draft for logged in user
  */
@@ -6,7 +7,9 @@ async function postDraft(req, res) {
   const user_id = req.loggedInUser.id;
   const { title, canonical, meta } = req.body;
   const insertValues = { user_id, title, canonical };
-  insertValues.meta = JSON.stringify(meta || {});
+  insertValues.meta = JSON.stringify(
+    meta || { syncTitleAndAbstract: true, syncTopPhoto: true }
+  );
   const knex = await getKnex();
   const [postId] = await knex.insert(insertValues).into("post");
   res.send({ postId });
@@ -32,9 +35,16 @@ async function getDrafts(req, res, next) {
         "updated",
         "published",
         "post.deleted",
-        { pictureUrl: "post.picture_url" },
         "post.meta",
-        "username"
+        "username",
+        { profilePictureUrl: "user.picture_url" },
+        { familyName: "family_name" },
+        { givenName: "given_name" },
+        // the following are always true for drafts
+        knex.raw(`1 as 'canEdit'`),
+        knex.raw(`1 as 'canDelete'`),
+        knex.raw(`1 as 'canPublish'`),
+        knex.raw(`1 as 'userProfileIsPublic'`)
       )
       .innerJoin("user", "post.user_id", "user.id")
       .whereNull("published")
@@ -61,7 +71,9 @@ async function getDrafts(req, res, next) {
       typeof oldest === "string" ? "asc" : "desc"
     );
 
-    res.send(await builder);
+    // TODO: move this calculation to edit.jsx -> sync content to post as user makes edits
+    const drafts = await builder;
+    res.send(await addFirstPhotoTitleAndAbstractToPosts(drafts));
   } catch (err) {
     next(err);
   }

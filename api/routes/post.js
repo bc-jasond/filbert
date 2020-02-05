@@ -1,5 +1,8 @@
 const { getKnex, getNodesFlat } = require("../lib/mysql");
-const { getFirstNode } = require("../lib/util");
+const {
+  getFirstPhotoAndAbstractFromContent,
+  addFirstPhotoTitleAndAbstractToPosts
+} = require("../lib/post-util");
 
 async function getPosts(req, res) {
   const {
@@ -10,7 +13,8 @@ async function getPosts(req, res) {
   let builder = knex("post")
     .select(
       "post.id",
-      "user_id",
+      { userId: "user.id" },
+      { userProfileIsPublic: "user.is_public" },
       "canonical",
       "title",
       "abstract",
@@ -18,9 +22,11 @@ async function getPosts(req, res) {
       "updated",
       "published",
       "post.deleted",
-      { pictureUrl: "post.picture_url" },
       "post.meta",
-      "username"
+      "username",
+      { profilePictureUrl: "user.picture_url" },
+      { familyName: "family_name" },
+      { givenName: "given_name" }
     )
     .innerJoin("user", "post.user_id", "user.id")
     .whereNotNull("published")
@@ -43,7 +49,8 @@ async function getPosts(req, res) {
     typeof oldest === "string" ? "asc" : "desc"
   );
 
-  const posts = await builder;
+  let posts = await builder;
+  posts = await addFirstPhotoTitleAndAbstractToPosts(posts);
 
   if (!loggedInUser) {
     res.send(posts);
@@ -51,15 +58,24 @@ async function getPosts(req, res) {
   }
 
   res.send(
+    // TODO: add to query above instead of looping here
     posts.map(post => {
-      post.canEdit = loggedInUser.id === post.user_id;
-      post.canDelete = loggedInUser.id === post.user_id;
-      post.canPublish = loggedInUser.id === post.user_id;
+      // keep users info private if they don't want to share it!
+      if (!post.userProfileIsPublic && loggedInUser.id !== post.userId) {
+        delete post.userId;
+        delete post.profilePictureUrl;
+        delete post.familyName;
+        delete post.givenName;
+      }
+      post.canEdit = loggedInUser.id === post.userId;
+      post.canDelete = loggedInUser.id === post.userId;
+      post.canPublish = loggedInUser.id === post.userId;
       return post;
     })
   );
 }
 
+// returns both post and content
 async function getPostByCanonical(req, res) {
   const { loggedInUser } = req;
   const { canonical } = req.params;
@@ -75,7 +91,24 @@ async function getPostByCanonical(req, res) {
     post.canDelete = loggedInUser.id === post.user_id;
     post.canPublish = loggedInUser.id === post.user_id;
   }
+  delete post.user_id;
   res.send({ post, contentNodes });
+}
+
+// returns only post
+async function getPostById(req, res) {
+  const { id } = req.params;
+  const knex = await getKnex();
+  const [post] = await knex("post").where({
+    user_id: req.loggedInUser.id,
+    id
+  });
+  if (!post) {
+    res.status(404).send({});
+    return;
+  }
+  delete post.user_id;
+  res.send({ post });
 }
 
 /**
@@ -139,50 +172,7 @@ async function getSummaryAndPhotoFromContent(req, res) {
   if (!contentNodes) {
     res.send(responseData);
   }
-  const titleLength = 75;
-  const abstractLength = 200;
-  let firstNChars = "";
-  const queue = [getFirstNode(contentNodes)];
-  while (
-    queue.length &&
-    (!responseData.abstract || !responseData.imageUrl || !responseData.title)
-  ) {
-    const current = queue.shift();
-    if (!responseData.imageUrl && current.type === "image") {
-      responseData.imageUrl = current.meta.url;
-    }
-    if (["p", "li", "pre", "h1", "h2"].includes(current.type)) {
-      // replace all whitespace chars with a single space
-      const currentContent = current.content.replace(/\s\s+/g, " ");
-      if (currentContent) {
-        if (!responseData.title) {
-          if (!firstNChars) {
-            firstNChars = currentContent;
-          } else {
-            firstNChars = `${firstNChars} ${currentContent}`;
-          }
-          if (firstNChars.length > titleLength) {
-            responseData.title = firstNChars.substring(0, titleLength);
-            firstNChars = "";
-          }
-        } else if (!responseData.abstract) {
-          if (!firstNChars) {
-            firstNChars = currentContent;
-          } else {
-            firstNChars = `${firstNChars} ${currentContent}`;
-          }
-          if (firstNChars.length > abstractLength) {
-            responseData.abstract = firstNChars.substring(0, abstractLength);
-          }
-        }
-      }
-      const next = contentNodes[current.next_sibling_id];
-      if (next) {
-        queue.push(next);
-      }
-    }
-  }
-  res.send(responseData);
+  res.send(getFirstPhotoAndAbstractFromContent(contentNodes));
 }
 
 /**
@@ -216,6 +206,7 @@ async function deletePublishedPost(req, res) {
 module.exports = {
   getPosts,
   getPostByCanonical,
+  getPostById,
   patchPost,
   deletePublishedPost,
   getSummaryAndPhotoFromContent

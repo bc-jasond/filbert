@@ -274,7 +274,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
       }
       case KEYCODE_LEFT_ARROW: {
         const nextIdx =
-          currentIdx === 0 ? this.sectionTypes.length - 1 : currentIdx - 1;
+          currentIdx <= 0 ? this.sectionTypes.length - 1 : currentIdx - 1;
         this.setState({ currentIdx: nextIdx });
         return;
       }

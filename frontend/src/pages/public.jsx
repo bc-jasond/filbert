@@ -1,36 +1,24 @@
 import { fromJS, List } from 'immutable';
 import React from 'react';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components';
 import { Article } from '../common/components/layout-styled-components';
 import {
-  authorExpandMixin,
+  BaseRow,
+  ColFilter,
   Filter,
-  FilterContainer,
   FilterInput,
   FilterWithInput,
-  MetaContent,
-  PostAbstractRow,
-  PostActionA,
-  PostMetaContentFirst,
-  PostMetaRow,
   PostRow,
-  StyledA,
   StyledH2,
   StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
+import { FlexGrid } from '../common/components/shared-styled-components';
 import { PAGE_NAME_PUBLIC } from '../common/constants';
 import { apiGet } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
 import Footer from './footer';
 import Header from './header';
-
-const AuthorExpand = styled(Link)`
-  ${MetaContent};
-  padding-left: 9px;
-  ${authorExpandMixin};
-`;
+import PostListRow from '../common/components/post-list-row';
 
 export default class Public extends React.Component {
   usernameInputRef = React.createRef();
@@ -221,7 +209,7 @@ export default class Public extends React.Component {
         />
         <Article>
           <>
-            <PostRow>
+            <BaseRow>
               <StyledH2>Public Articles</StyledH2>
               <StyledH3>
                 These pieces have been published{' '}
@@ -233,29 +221,31 @@ export default class Public extends React.Component {
                   🌍
                 </span>
               </StyledH3>
-            </PostRow>
-            <PostRow loading={loading ? 1 : undefined}>
+            </BaseRow>
+            <BaseRow loading={loading ? 1 : undefined}>
               <StyledH3>Filter by:</StyledH3>
-              <FilterContainer>
-                <Filter
-                  isOpen={!oldestFilterIsSelected}
-                  onClick={this.toggleOldestFilter}
-                >
-                  newest ⇩
-                </Filter>
-                <Filter
-                  isOpen={oldestFilterIsSelected}
-                  onClick={this.toggleOldestFilter}
-                >
-                  oldest ⇧
-                </Filter>
-                <Filter
-                  isOpen={randomFilterIsSelected}
-                  onClick={this.toggleRandomFilter}
-                >
-                  random ?
-                </Filter>
-                <div>
+              <FlexGrid>
+                <ColFilter>
+                  <Filter
+                    isOpen={!oldestFilterIsSelected}
+                    onClick={this.toggleOldestFilter}
+                  >
+                    newest ⇩
+                  </Filter>
+                  <Filter
+                    isOpen={oldestFilterIsSelected}
+                    onClick={this.toggleOldestFilter}
+                  >
+                    oldest ⇧
+                  </Filter>
+                  <Filter
+                    isOpen={randomFilterIsSelected}
+                    onClick={this.toggleRandomFilter}
+                  >
+                    random ?
+                  </Filter>
+                </ColFilter>
+                <ColFilter>
                   <FilterWithInput
                     isOpen={usernameFilterIsSelected}
                     onClick={this.toggleUsernameFilter}
@@ -273,9 +263,9 @@ export default class Public extends React.Component {
                     minLength="5"
                     maxLength="42"
                   />
-                </div>
-              </FilterContainer>
-            </PostRow>
+                </ColFilter>
+              </FlexGrid>
+            </BaseRow>
             {posts.size === 0 && (
               <PostRow>
                 <StyledHeadingA>
@@ -287,31 +277,7 @@ export default class Public extends React.Component {
               </PostRow>
             )}
             {posts.map(post => (
-              <PostRow key={`${post.get('id')}${post.get('canonical')}`}>
-                <StyledHeadingA href={`/p/${post.get('canonical')}`}>
-                  {post.get('title')}
-                </StyledHeadingA>
-                <PostAbstractRow>
-                  <StyledA href={`/p/${post.get('canonical')}`}>
-                    {post.get('abstract')}
-                  </StyledA>
-                </PostAbstractRow>
-                <PostMetaRow>
-                  <PostMetaContentFirst>
-                    {post.get('published')}
-                  </PostMetaContentFirst>
-                  {post.get('canEdit') && (
-                    <>
-                      <PostActionA href={`/edit/${post.get('id')}`}>
-                        edit
-                      </PostActionA>
-                    </>
-                  )}
-                  <AuthorExpand to={`/public?username=${post.get('username')}`}>
-                    {post.get('username')}
-                  </AuthorExpand>
-                </PostMetaRow>
-              </PostRow>
+              <PostListRow key={post.get('canonical')} post={post} />
             ))}
           </>
         </Article>

@@ -1,5 +1,6 @@
-import { fromJS, List, Map } from 'immutable';
+import { fromJS, List } from 'immutable';
 import React from 'react';
+import { FlexGrid } from '../common/components/shared-styled-components';
 
 import { apiGet } from '../common/fetch';
 import { formatPostDate } from '../common/utils';
@@ -8,30 +9,26 @@ import Header from './header';
 import Footer from './footer';
 import { Article } from '../common/components/layout-styled-components';
 import {
+  BaseRow,
+  ColFilter,
   Filter,
-  FilterContainer,
   FilterInput,
   FilterWithInput,
-  PostAbstractRow,
-  PostAction,
-  PostMetaContentFirst,
-  PostMetaRow,
   PostRow,
-  StyledA,
   StyledH2,
   StyledH3,
   StyledHeadingA
 } from '../common/components/list-all-styled-components';
-import PublishPostForm from '../common/components/edit-publish-post-form';
 
-export default class AllPosts extends React.Component {
+import PostListRow from '../common/components/post-list-row';
+
+export default class PrivatePosts extends React.Component {
   containsInputRef = React.createRef();
 
   constructor(props) {
     super(props);
 
     this.state = {
-      currentEditingPost: Map(),
       drafts: List(),
       oldestFilterIsSelected: false,
       containsFilterIsSelected: false,
@@ -113,14 +110,6 @@ export default class AllPosts extends React.Component {
     this.setState({ loading: false });
   };
 
-  openPostMenu = draft => {
-    this.setState({ currentEditingPost: draft });
-  };
-
-  closePostMenu = () => {
-    this.setState({ currentEditingPost: Map() }, this.loadDrafts);
-  };
-
   loadDraftsDebounce = async () => {
     if (this.containsTimeout) {
       clearTimeout(this.containsTimeout);
@@ -199,7 +188,6 @@ export default class AllPosts extends React.Component {
       state: {
         loading,
         drafts,
-        currentEditingPost,
         oldestFilterIsSelected,
         containsFilterIsSelected,
         contains,
@@ -213,14 +201,7 @@ export default class AllPosts extends React.Component {
         <Header session={session} setSession={setSession} />
         <Article>
           <>
-            {currentEditingPost.size > 0 && (
-              <PublishPostForm
-                post={currentEditingPost}
-                close={this.closePostMenu}
-                afterDelete={this.closePostMenu}
-              />
-            )}
-            <PostRow>
+            <BaseRow>
               <StyledH2>My Private Work</StyledH2>
               <StyledH3>
                 These pieces have{' '}
@@ -231,7 +212,7 @@ export default class AllPosts extends React.Component {
                 <span role="img" aria-label="lock">
                   🔑
                 </span>{' '}
-                and are only viewable
+                and are only viewable{' '}
                 <span role="img" aria-label="eyeballs">
                   👀
                 </span>{' '}
@@ -241,29 +222,31 @@ export default class AllPosts extends React.Component {
                 </span>{' '}
                 filbert
               </StyledH3>
-            </PostRow>
-            <PostRow loading={loading ? 1 : undefined}>
+            </BaseRow>
+            <BaseRow loading={loading ? 1 : undefined}>
               <StyledH3>Filter by:</StyledH3>
-              <FilterContainer>
-                <Filter
-                  isOpen={!oldestFilterIsSelected}
-                  onClick={this.toggleOldestFilter}
-                >
-                  newest ⇩
-                </Filter>
-                <Filter
-                  isOpen={oldestFilterIsSelected}
-                  onClick={this.toggleOldestFilter}
-                >
-                  oldest ⇧
-                </Filter>
-                <Filter
-                  isOpen={randomFilterIsSelected}
-                  onClick={this.toggleRandomFilter}
-                >
-                  random ?
-                </Filter>
-                <div>
+              <FlexGrid>
+                <ColFilter>
+                  <Filter
+                    isOpen={!oldestFilterIsSelected}
+                    onClick={this.toggleOldestFilter}
+                  >
+                    newest ⇩
+                  </Filter>
+                  <Filter
+                    isOpen={oldestFilterIsSelected}
+                    onClick={this.toggleOldestFilter}
+                  >
+                    oldest ⇧
+                  </Filter>
+                  <Filter
+                    isOpen={randomFilterIsSelected}
+                    onClick={this.toggleRandomFilter}
+                  >
+                    random ?
+                  </Filter>
+                </ColFilter>
+                <ColFilter>
                   <FilterWithInput
                     isOpen={containsFilterIsSelected}
                     onClick={this.toggleContainsFilter}
@@ -279,9 +262,9 @@ export default class AllPosts extends React.Component {
                     onChange={this.updateContains}
                     autoComplete="off"
                   />
-                </div>
-              </FilterContainer>
-            </PostRow>
+                </ColFilter>
+              </FlexGrid>
+            </BaseRow>
             {drafts.size === 0 && (
               <PostRow>
                 <StyledHeadingA href="/edit/new">
@@ -294,24 +277,7 @@ export default class AllPosts extends React.Component {
               </PostRow>
             )}
             {drafts.map(draft => (
-              <PostRow key={`${draft.get('id')}${draft.get('canonical')}`}>
-                <StyledHeadingA href={`/edit/${draft.get('id')}`}>
-                  {draft.get('title')}
-                </StyledHeadingA>
-                <PostAbstractRow>
-                  <StyledA href={`/edit/${draft.get('id')}`}>
-                    {draft.get('abstract')}
-                  </StyledA>
-                </PostAbstractRow>
-                <PostMetaRow>
-                  <PostMetaContentFirst>
-                    {draft.get('updated')}
-                  </PostMetaContentFirst>
-                  <PostAction onClick={() => this.openPostMenu(draft)}>
-                    manage
-                  </PostAction>
-                </PostMetaRow>
-              </PostRow>
+              <PostListRow key={draft.get('id')} post={draft} />
             ))}
           </>
         </Article>

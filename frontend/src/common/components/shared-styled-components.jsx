@@ -18,7 +18,9 @@ import {
   lightError,
   lightGrey,
   mediumGrey,
-  success
+  success,
+  viewport7,
+  viewport9
 } from '../css';
 
 const sectionWidthMixin = css`
@@ -36,8 +38,47 @@ export const editSectionBorderMixin = css`
     }
   `}
 `;
+export const FlexGrid = styled.div`
+  display: block;
+  @media (min-width: ${viewport7}) {
+    display: flex;
+  }
+`;
+export const FlexGrid9 = styled.div`
+  display: block;
+  @media (min-width: ${viewport9}) {
+    display: flex;
+  }
+`;
+export const Col = styled.div`
+  padding: 0;
+  flex: 1;
+  @media (min-width: ${viewport7}) {
+    padding-left: 24px;
+    &:first-of-type {
+      padding: 0;
+    }
+  }
+  @media (min-width: ${viewport9}) {
+    padding: 16px;
+    &:first-of-type {
+      padding: 16px;
+    }
+  }
+`;
+export const Col9 = styled.div`
+  padding: 0;
+  flex: 1;
+  white-space: nowrap;
+  @media (min-width: ${viewport9}) {
+    padding-left: 24px;
+    &:first-of-type {
+      padding: 0;
+    }
+  }
+`;
 export const H1Styled = styled.h1`
-  ${sectionWidthMixin}
+  ${sectionWidthMixin};
   font-family: ${titleSerif}, serif;
   font-size: 46px;
   line-height: 1.25;
@@ -53,7 +94,7 @@ export const H1Styled = styled.h1`
   `}
 `;
 export const H2Styled = styled.h2`
-  ${sectionWidthMixin}
+  ${sectionWidthMixin};
   margin-top: 30px;
   margin-bottom: 8px;
   font-weight: 600;
@@ -186,8 +227,11 @@ export const Code = styled.code`
 export const SiteInfo = styled.span`
   font-family: ${sansSerif}, sans-serif;
 `;
-export const ItalicText = styled.em`
+export const italicMixin = css`
   font-family: ${italicSerif}, sans-serif;
+`;
+export const ItalicText = styled.em`
+  ${italicMixin};
 `;
 export const StrikeText = styled.span`
   text-decoration: line-through;
@@ -248,6 +292,7 @@ export const TextArea = styled.textarea`
     `}
 `;
 export const Label = styled.label`
+  display: block;
   margin-bottom: 4px;
   font-family: ${sansSerif};
   ${p =>

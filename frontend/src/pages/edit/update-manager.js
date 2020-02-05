@@ -1,6 +1,6 @@
 import { fromJS, List, Map } from 'immutable';
 
-import DocumentModel, { reviver } from './document-model';
+import { reviver } from './document-model';
 import {
   HISTORY_KEY_NODE_UPDATES,
   HISTORY_KEY_REDO,
@@ -16,7 +16,7 @@ import {
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
-import { moreThanNCharsAreDifferent } from '../../common/utils';
+import { moreThanNCharsAreDifferent, nodeIsValid } from '../../common/utils';
 
 const characterDiffSize = 6;
 
@@ -219,7 +219,7 @@ export default class UpdateManager {
   };
 
   stageNodeDelete(node) {
-    if (!DocumentModel.nodeIsValid(node)) {
+    if (!nodeIsValid(node)) {
       console.error('stageNodeDelete - bad node', node);
       return;
     }
@@ -239,7 +239,7 @@ export default class UpdateManager {
   }
 
   stageNodeUpdate(node) {
-    if (!DocumentModel.nodeIsValid(node)) {
+    if (!nodeIsValid(node)) {
       console.error('stageNodeUpdate - bad node', node);
       return;
     }

@@ -1,0 +1,94 @@
+const { getKnex, getNodesFlat } = require("./mysql");
+const { getFirstNode } = require("./util");
+
+/**
+ * Populates Post Image, Post Title, and Post Abstract from its content
+ *
+ * @param contentNodes - a hash of content nodes keyed by id
+ */
+function getFirstPhotoAndAbstractFromContent(contentNodes) {
+  const responseData = {};
+  const titleMinLength = 2;
+  const titleMaxLength = 75;
+  const abstractMinLength = 100;
+  const abstractMaxLength = 200;
+  const queue = [getFirstNode(contentNodes)];
+  while (
+    queue.length &&
+    (!responseData.abstract || !responseData.imageNode || !responseData.title)
+  ) {
+    const current = queue.shift();
+    if (!responseData.imageNode && current.type === "image") {
+      responseData.imageNode = current;
+    }
+    if (["p", "li", "pre", "h1", "h2"].includes(current.type)) {
+      // replace all whitespace chars with a single space
+      const currentContent = current.content.replace(/\s\s+/g, " ");
+      if (currentContent) {
+        if (!responseData.title || responseData.title.length < titleMinLength) {
+          if (!responseData.title) {
+            responseData.title = currentContent;
+          } else {
+            responseData.title = `${responseData.title} ${currentContent}`;
+          }
+          if (responseData.title.length > titleMinLength) {
+            responseData.title = responseData.title.substring(
+              0,
+              titleMaxLength
+            );
+          }
+        } else if (
+          !responseData.abstract ||
+          responseData.abstract.length < abstractMinLength
+        ) {
+          if (!responseData.abstract) {
+            responseData.abstract = currentContent;
+          } else {
+            responseData.abstract = `${responseData.abstract} ${currentContent}`;
+          }
+          if (responseData.abstract.length > abstractMinLength) {
+            responseData.abstract = responseData.abstract.substring(
+              0,
+              abstractMaxLength
+            );
+          }
+        }
+      }
+    }
+    const next = contentNodes[current.next_sibling_id];
+    if (next) {
+      queue.push(next);
+    }
+  }
+  return responseData;
+}
+
+async function addFirstPhotoTitleAndAbstractToPosts(posts) {
+  const knex = await getKnex();
+  const draftsModified = [];
+  for (let i = 0; i < posts.length; i++) {
+    const draft = posts[i];
+    let title, abstract, imageNode;
+    const { syncTopPhoto, syncTitleAndAbstract } = draft.meta;
+    if (syncTopPhoto || syncTitleAndAbstract) {
+      const contentNodes = await getNodesFlat(knex, draft.id);
+      ({ title, abstract, imageNode } = getFirstPhotoAndAbstractFromContent(
+        contentNodes
+      ));
+    }
+    if (syncTitleAndAbstract) {
+      draft.title = title;
+      draft.abstract = abstract;
+    }
+    if (syncTopPhoto) {
+      draft.meta.imageNode = imageNode;
+    }
+    draftsModified[i] = draft;
+  }
+  return draftsModified;
+}
+
+module.exports = {
+  getFirstPhotoAndAbstractFromContent,
+  addFirstPhotoTitleAndAbstractToPosts
+};
