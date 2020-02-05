@@ -1,4 +1,3 @@
-import { Redirect } from 'react-router-dom';
 import {
   DOM_ELEMENT_NODE_TYPE_ID,
   DOM_INPUT_TAG_NAME,
@@ -442,8 +441,10 @@ export function loadScript(src) {
 }
 
 export function getCurrentPath() {
-  let path = window.location.pathname;
-  const queryParams = new URLSearchParams(window.location.search);
+  const {
+    location: { pathname: path, search }
+  } = window;
+  const queryParams = new URLSearchParams(search);
   const queryString = queryParams.toString();
   if (queryString.length > 0) {
     return `${path}?${queryString}`;

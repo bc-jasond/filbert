@@ -17,11 +17,10 @@ import {
   lightBlue,
   lightError,
   lightGrey,
-  viewport7,
   mediumGrey,
   success,
-  viewport9,
-  viewport12
+  viewport7,
+  viewport9
 } from '../css';
 
 const sectionWidthMixin = css`
@@ -95,7 +94,7 @@ export const H1Styled = styled.h1`
   `}
 `;
 export const H2Styled = styled.h2`
-  ${sectionWidthMixin}
+  ${sectionWidthMixin};
   margin-top: 30px;
   margin-bottom: 8px;
   font-weight: 600;

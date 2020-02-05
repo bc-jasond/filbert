@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import GitHubSvg from '../../../assets/icons/github-mark.svg';
 import InfoSvg from '../../../assets/icons/info.svg';
-import { darkGrey, grey, lightGrey, viewport7, viewport9 } from '../css';
+import { darkGrey, grey, lightGrey, viewport9 } from '../css';
 import { monospaced, sansSerif } from '../fonts.css';
 
 export const LinkStyled = styled(Link)`

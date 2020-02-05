@@ -1,6 +1,6 @@
 import { fromJS, List, Map } from 'immutable';
 
-import DocumentModel, { reviver } from './document-model';
+import { reviver } from './document-model';
 import {
   HISTORY_KEY_NODE_UPDATES,
   HISTORY_KEY_REDO,

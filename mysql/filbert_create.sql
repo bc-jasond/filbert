@@ -39,6 +39,7 @@ CREATE TABLE `post` (
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `published` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
+  `meta` json NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `canonical_UNIQUE` (`canonical`),
   KEY `user_id_fk_idx` (`user_id`),
@@ -46,4 +47,4 @@ CREATE TABLE `post` (
   KEY `deleted` (`deleted`),
   FULLTEXT KEY `title_abstract` (`title`,`abstract`),
   CONSTRAINT `user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=206 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=216 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;

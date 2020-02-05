@@ -1,5 +1,5 @@
 import { API_URL, AUTH_TOKEN_KEY, SESSION_KEY } from './constants';
-import { createNextUrl, getCurrentPath } from './dom';
+import { createNextUrl } from './dom';
 import { get, set } from './local-storage';
 import { getGoogleUser, googleGetLoggedInUser } from './google-auth';
 

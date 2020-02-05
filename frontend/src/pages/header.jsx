@@ -7,12 +7,9 @@ import {
   LogoLinkStyled
 } from '../common/components/layout-styled-components';
 import { NavButtonMixin } from '../common/components/shared-styled-components';
-import {
-  PAGE_NAME_EDIT,
-  PAGE_NAME_PUBLIC,
-  PAGE_NAME_VIEW
-} from '../common/constants';
+import { PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../common/constants';
 import { viewport7 } from '../common/css';
+import { createNextUrl } from '../common/dom';
 import { signout } from '../common/session';
 
 const HeaderStyled = styled.header`
@@ -84,8 +81,7 @@ export default class Header extends React.PureComponent {
         setSession = () => {},
         pageName,
         userIsMe,
-        post = Map(),
-        togglePostMenu = () => {}
+        post = Map()
       },
       state: { shouldRedirect }
     } = this;
@@ -96,7 +92,7 @@ export default class Header extends React.PureComponent {
     const shouldShowManagePost = pageName === PAGE_NAME_EDIT && post.get('id');
     const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
     const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
-    const shouldShowPublic = true; //pageName !== PAGE_NAME_PUBLIC;
+    const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
     return (
       <>
         <HeaderStyled>
@@ -114,7 +110,7 @@ export default class Header extends React.PureComponent {
             {session.get('userId') ? (
               <>
                 {shouldShowManagePost && (
-                  <NavLink to={`/post-details/${post.get('id')}`}>
+                  <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>
                     details
                   </NavLink>
                 )}

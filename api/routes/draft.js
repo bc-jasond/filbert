@@ -1,4 +1,5 @@
 const { getKnex, getMysqlDatetime } = require("../lib/mysql");
+const { addFirstPhotoTitleAndAbstractToPosts } = require("../lib/post-util");
 /**
  * creates a new draft for logged in user
  */
@@ -34,7 +35,6 @@ async function getDrafts(req, res, next) {
         "updated",
         "published",
         "post.deleted",
-        { pictureUrl: "post.picture_url" },
         "post.meta",
         "username",
         { profilePictureUrl: "user.picture_url" },
@@ -71,7 +71,9 @@ async function getDrafts(req, res, next) {
       typeof oldest === "string" ? "asc" : "desc"
     );
 
-    res.send(await builder);
+    // TODO: move this calculation to edit.jsx -> sync content to post as user makes edits
+    const drafts = await builder;
+    res.send(await addFirstPhotoTitleAndAbstractToPosts(drafts));
   } catch (err) {
     next(err);
   }

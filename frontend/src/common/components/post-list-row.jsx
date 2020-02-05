@@ -1,14 +1,15 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
+import { viewport7 } from '../css';
+import { createNextUrl } from '../dom';
 import Image from './image';
 import {
   AuthorExpand,
-  AuthorExpandContainer,
   DetailsCol,
   ImageCol,
   ListAvatar,
   ListAvatarContent,
-  ListAvatarContentRow,
   ListAvatarContentRowDarker,
   ListAvatarContentRowItalic,
   ListAvatarImg,
@@ -24,6 +25,11 @@ import {
 const ImageStyled = styled(Image)`
   margin: 0 auto;
   max-width: 300px;
+  max-height: 300px;
+  @media (min-width: ${viewport7}) {
+    max-width: 150px;
+    max-height: 150px;
+  }
 `;
 
 export default ({ post }) => {
@@ -40,11 +46,23 @@ export default ({ post }) => {
         </ImageCol>
       )}
       <DetailsCol>
-        <StyledHeadingA href={`/edit/${post.get('id')}`}>
+        <StyledHeadingA
+          href={
+            postIsPrivate
+              ? `/edit/${post.get('id')}`
+              : `/p/${post.get('canonical')}`
+          }
+        >
           {post.get('title')}
         </StyledHeadingA>
         <PostAbstractRow>
-          <StyledA href={`/edit/${post.get('id')}`}>
+          <StyledA
+            href={
+              postIsPrivate
+                ? `/edit/${post.get('id')}`
+                : `/p/${post.get('canonical')}`
+            }
+          >
             {post.get('abstract')}
           </StyledA>
         </PostAbstractRow>
@@ -52,7 +70,9 @@ export default ({ post }) => {
           <PostActionContainer>
             <ListAvatar>
               {(post.get('userProfileIsPublic') || postIsPrivate) && (
-                <ListAvatarImg src={post.get('profilePictureUrl')} />
+                <Link to={`/@${post.get('username')}`}>
+                  <ListAvatarImg src={post.get('profilePictureUrl')} />
+                </Link>
               )}
               <ListAvatarContent>
                 {(post.get('userProfileIsPublic') || postIsPrivate) && (
@@ -67,18 +87,18 @@ export default ({ post }) => {
             </ListAvatar>
           </PostActionContainer>
           {post.get('canEdit') && (
-            <>
-              <PostActionContainer>
-                <PostActionLink to={`/post-details/${post.get('id')}`}>
-                  details
-                </PostActionLink>
-              </PostActionContainer>
-              <PostActionContainer noPadding>
-                <PostActionLink to={`/edit/${post.get('id')}`}>
-                  edit
-                </PostActionLink>
-              </PostActionContainer>
-            </>
+            <PostActionContainer>
+              <PostActionLink to={createNextUrl(`/publish/${post.get('id')}`)}>
+                publish
+              </PostActionLink>
+            </PostActionContainer>
+          )}
+          {!postIsPrivate && post.get('canEdit') && (
+            <PostActionContainer noPadding>
+              <PostActionLink to={`/edit/${post.get('id')}`}>
+                edit
+              </PostActionLink>
+            </PostActionContainer>
           )}
           <PostActionContainer>
             <AuthorExpand to={`/public?username=${post.get('username')}`}>

@@ -1,5 +1,8 @@
 const { getKnex, getNodesFlat } = require("../lib/mysql");
-const { getFirstNode } = require("../lib/util");
+const {
+  getFirstPhotoAndAbstractFromContent,
+  addFirstPhotoTitleAndAbstractToPosts
+} = require("../lib/post-util");
 
 async function getPosts(req, res) {
   const {
@@ -19,7 +22,6 @@ async function getPosts(req, res) {
       "updated",
       "published",
       "post.deleted",
-      { pictureUrl: "post.picture_url" },
       "post.meta",
       "username",
       { profilePictureUrl: "user.picture_url" },
@@ -47,7 +49,8 @@ async function getPosts(req, res) {
     typeof oldest === "string" ? "asc" : "desc"
   );
 
-  const posts = await builder;
+  let posts = await builder;
+  posts = await addFirstPhotoTitleAndAbstractToPosts(posts);
 
   if (!loggedInUser) {
     res.send(posts);
@@ -169,52 +172,7 @@ async function getSummaryAndPhotoFromContent(req, res) {
   if (!contentNodes) {
     res.send(responseData);
   }
-  const titleMinLength = 2;
-  const titleMaxLength = 75;
-  const abstractMinLength = 100;
-  const abstractMaxLength = 200;
-  let firstNChars = "";
-  const queue = [getFirstNode(contentNodes)];
-  while (
-    queue.length &&
-    (!responseData.abstract || !responseData.imageNode || !responseData.title)
-  ) {
-    const current = queue.shift();
-    if (!responseData.imageNode && current.type === "image") {
-      responseData.imageNode = current;
-    }
-    if (["p", "li", "pre", "h1", "h2"].includes(current.type)) {
-      // replace all whitespace chars with a single space
-      const currentContent = current.content.replace(/\s\s+/g, " ");
-      if (currentContent) {
-        if (!responseData.title) {
-          if (!firstNChars) {
-            firstNChars = currentContent;
-          } else {
-            firstNChars = `${firstNChars} ${currentContent}`;
-          }
-          if (firstNChars.length > titleMinLength) {
-            responseData.title = firstNChars.substring(0, titleMaxLength);
-            firstNChars = "";
-          }
-        } else if (!responseData.abstract) {
-          if (!firstNChars) {
-            firstNChars = currentContent;
-          } else {
-            firstNChars = `${firstNChars} ${currentContent}`;
-          }
-          if (firstNChars.length > abstractMinLength) {
-            responseData.abstract = firstNChars.substring(0, abstractMaxLength);
-          }
-        }
-      }
-    }
-    const next = contentNodes[current.next_sibling_id];
-    if (next) {
-      queue.push(next);
-    }
-  }
-  res.send(responseData);
+  res.send(getFirstPhotoAndAbstractFromContent(contentNodes));
 }
 
 /**

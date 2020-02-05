@@ -9,8 +9,8 @@ import {
   PAGE_NAME_VIEW,
   POST_ACTION_REDIRECT_TIMEOUT
 } from '../common/constants';
-import { ease, grey, viewport12, viewport7, viewport9 } from '../common/css';
-import { focusAndScrollSmooth } from '../common/dom';
+import { ease, grey, viewport12, viewport7 } from '../common/css';
+import { focusAndScrollSmooth, getNextFromUrl } from '../common/dom';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../common/fetch';
 import { monospaced } from '../common/fonts.css';
 import {
@@ -75,10 +75,13 @@ const ToggleLabel = styled.span`
   line-height: 24px;
 `;
 
-export default class PostDetails extends React.Component {
+export default class Publish extends React.Component {
   inputRef = React.createRef();
+
   backupTitle;
+
   backupAbstract;
+
   backupImageNode;
 
   constructor(props) {
@@ -108,20 +111,22 @@ export default class PostDetails extends React.Component {
     await this.loadPostAndSummary();
   }
 
+  // eslint-disable-next-line react/sort-comp
   async loadPostSummary() {
-    let { error, data: postSummary } = await apiGet(
+    const { error, data: postSummary } = await apiGet(
       `/post-summary/${this.props?.params?.id}`
     );
     if (error) {
       console.error(error);
-      postSummary = {};
+      return {};
     }
     return postSummary;
   }
 
   async loadPostAndSummary() {
+    // eslint-disable-next-line prefer-const
     let { errorPost, data: { post } = {} } = await apiGet(
-      `/post-details/${this.props?.params?.id}`
+      `/publish/${this.props?.params?.id}`
     );
     if (errorPost) {
       console.error(errorPost);
@@ -314,7 +319,7 @@ export default class PostDetails extends React.Component {
           />
           <Article>
             <H1Styled>
-              {post.get('published') ? 'Post ' : 'Draft '}Details
+              Publish{post.get('published') ? ' Post' : ' Draft'}
             </H1Styled>
             <H2Styled>Edit Listing Details, Publish & Delete</H2Styled>
             <FlexGrid>
@@ -453,7 +458,11 @@ export default class PostDetails extends React.Component {
                   </DeleteButton>
                 </Col9>
                 <Col9>
-                  <CancelButton onClick={() => {}}>
+                  <CancelButton
+                    onClick={() => {
+                      this.setState({ redirectUrl: getNextFromUrl() });
+                    }}
+                  >
                     <ButtonSpan>Done</ButtonSpan>
                   </CancelButton>
                 </Col9>
