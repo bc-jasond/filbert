@@ -61,14 +61,14 @@ async function uploadImageToBucket(
   key,
   buffer,
   metadata,
-  public = false
+  isPublic = false
 ) {
   return upload({
     Bucket: bucket,
     Body: buffer,
     Key: key,
     Metadata: metadata,
-    ACL: public ? objectStorageACLPublic : objectStorageACLPrivate
+    ACL: isPublic ? objectStorageACLPublic : objectStorageACLPrivate
   });
 }
 
