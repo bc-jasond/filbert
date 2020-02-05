@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { Article } from '../common/components/layout-styled-components';
-import { authorExpandMixin } from '../common/components/list-all-styled-components';
 import {
   Code,
   ContentSection,
@@ -10,6 +9,7 @@ import {
   H2Styled,
   ProfileImg
 } from '../common/components/shared-styled-components';
+import { authorExpandMixin } from '../common/components/shared-styled-components-mixins';
 
 import { apiGet, apiPatch } from '../common/fetch';
 import {

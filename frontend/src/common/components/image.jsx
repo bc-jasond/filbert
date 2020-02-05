@@ -4,11 +4,11 @@ import styled, { css } from 'styled-components';
 import { NODE_TYPE_IMAGE } from '../constants';
 import { ease } from '../css';
 import { nodeIsValid } from '../utils';
+import { ContentSection } from './shared-styled-components';
 import {
-  ContentSection,
   editSectionBorderMixin,
-  miniText
-} from './shared-styled-components';
+  miniTextMixin
+} from './shared-styled-components-mixins';
 
 export const ImageSection = styled(ContentSection)`
   overflow: hidden;
@@ -25,7 +25,7 @@ export const Figure = styled.figure`
     `}
 `;
 export const FigureCaption = styled.figcaption`
-  ${miniText};
+  ${miniTextMixin};
   text-align: center;
   margin-top: 10px;
 `;
@@ -42,6 +42,7 @@ export const ImagePlaceholderFill = styled.div`
   ${p => `padding-bottom: ${(p.h / p.w) * 100}%;`}
 `;
 export const Img = styled.img`
+  object-fit: cover;
   position: absolute;
   box-sizing: border-box;
   top: 0;

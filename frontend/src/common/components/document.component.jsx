@@ -6,14 +6,12 @@ import {
   NODE_TYPE_IMAGE,
   NODE_TYPE_LI,
   NODE_TYPE_P,
-  NODE_TYPE_POSTLINK,
   NODE_TYPE_PRE,
   NODE_TYPE_QUOTE,
   NODE_TYPE_ROOT,
   NODE_TYPE_SPACER
 } from '../constants';
 import { CodeSection, ContentSection, Ol } from './shared-styled-components';
-import PostLink from './postlink';
 import Quote from './quote';
 import Image from './image';
 import Spacer from './spacer';
@@ -145,12 +143,6 @@ export default class Document extends React.PureComponent {
             isEditing={currentEditNode.get('id') === this.current.get('id')}
             setEditNodeId={setEditNodeId}
           />
-        );
-      }
-      // TODO: remove this, add post-to-post linking part of a 'smart' A tag, hard-code the next/prev post into the layout?
-      else if (currentType === NODE_TYPE_POSTLINK) {
-        children.push(
-          <PostLink key={this.current.get('id')} node={this.current} />
         );
       } else {
         console.error('Error: Unknown type! ', this.current.get('type'));

@@ -1,16 +1,17 @@
 import { fromJS, List } from 'immutable';
 import React from 'react';
-import { Article } from '../common/components/layout-styled-components';
+import {
+  Article,
+  StyledHeadingA
+} from '../common/components/layout-styled-components';
 import {
   BaseRow,
   ColFilter,
   Filter,
   FilterInput,
   FilterWithInput,
-  PostRow,
   StyledH2,
-  StyledH3,
-  StyledHeadingA
+  StyledH3
 } from '../common/components/list-all-styled-components';
 import { FlexGrid } from '../common/components/shared-styled-components';
 import { PAGE_NAME_PUBLIC } from '../common/constants';
@@ -267,14 +268,14 @@ export default class Public extends React.Component {
               </FlexGrid>
             </BaseRow>
             {posts.size === 0 && (
-              <PostRow>
+              <BaseRow>
                 <StyledHeadingA>
                   <span role="img" aria-label="crying face">
                     😢
                   </span>{' '}
                   Nada. 没有. Rien. ничего. Nothing. ナッシング...
                 </StyledHeadingA>
-              </PostRow>
+              </BaseRow>
             )}
             {posts.map(post => (
               <PostListRow key={post.get('canonical')} post={post} />

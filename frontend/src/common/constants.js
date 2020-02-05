@@ -4,6 +4,8 @@ export const NODE_TYPE_ROOT = 'root';
 export const PAGE_NAME_VIEW = 'view';
 export const PAGE_NAME_EDIT = 'edit';
 export const PAGE_NAME_PUBLIC = 'public';
+export const PAGE_NAME_PRIVATE = 'private';
+export const PAGE_NAME_PUBLISH = 'publish';
 
 // sections that can have text content
 export const NODE_TYPE_H1 = 'h1';
@@ -16,7 +18,6 @@ export const NODE_TYPE_LI = 'li';
 export const NODE_TYPE_SPACER = 'spacer';
 export const NODE_TYPE_IMAGE = 'image';
 export const NODE_TYPE_QUOTE = 'quote';
-export const NODE_TYPE_POSTLINK = 'postlink';
 
 // EDITOR
 // TODO: this is a placeholder to be able to set the caret in an empty tag

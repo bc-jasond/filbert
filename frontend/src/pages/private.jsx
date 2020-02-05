@@ -7,17 +7,18 @@ import { formatPostDate } from '../common/utils';
 
 import Header from './header';
 import Footer from './footer';
-import { Article } from '../common/components/layout-styled-components';
+import {
+  Article,
+  StyledHeadingA
+} from '../common/components/layout-styled-components';
 import {
   BaseRow,
   ColFilter,
   Filter,
   FilterInput,
   FilterWithInput,
-  PostRow,
   StyledH2,
-  StyledH3,
-  StyledHeadingA
+  StyledH3
 } from '../common/components/list-all-styled-components';
 
 import PostListRow from '../common/components/post-list-row';
@@ -266,7 +267,7 @@ export default class PrivatePosts extends React.Component {
               </FlexGrid>
             </BaseRow>
             {drafts.size === 0 && (
-              <PostRow>
+              <BaseRow>
                 <StyledHeadingA href="/edit/new">
                   <span role="img" aria-label="magnifying glass">
                     🔍
@@ -274,7 +275,7 @@ export default class PrivatePosts extends React.Component {
                   Clear Filters or Click Here or the &quot;new&quot; menu button
                   above to start a new Private piece
                 </StyledHeadingA>
-              </PostRow>
+              </BaseRow>
             )}
             {drafts.map(draft => (
               <PostListRow key={draft.get('id')} post={draft} />

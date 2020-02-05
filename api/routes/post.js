@@ -1,4 +1,8 @@
-const { getKnex, getNodesFlat } = require("../lib/mysql");
+const {
+  getKnex,
+  getNodesFlat,
+  getPostByCanonicalHelper
+} = require("../lib/mysql");
 const {
   getFirstPhotoAndAbstractFromContent,
   addFirstPhotoTitleAndAbstractToPosts
@@ -79,20 +83,48 @@ async function getPosts(req, res) {
 async function getPostByCanonical(req, res) {
   const { loggedInUser } = req;
   const { canonical } = req.params;
-  const knex = await getKnex();
-  const [post] = await knex("post").where({ canonical });
+
+  const post = await getPostByCanonicalHelper(canonical, loggedInUser);
   if (!post) {
     res.status(404).send({});
     return;
   }
-  const contentNodes = await getNodesFlat(knex, post.id);
-  if (loggedInUser) {
-    post.canEdit = loggedInUser.id === post.user_id;
-    post.canDelete = loggedInUser.id === post.user_id;
-    post.canPublish = loggedInUser.id === post.user_id;
+
+  const postCanonical = canonical;
+  const knex = await getKnex();
+  const allPosts = await knex("post")
+    .select("canonical")
+    .innerJoin("user", "post.user_id", "user.id")
+    .whereNotNull("published")
+    .andWhere({ username: post.username })
+    .orderBy("published", "asc")
+    .map(({ canonical }) => canonical);
+
+  let postIdx;
+  for (let i = 0; i < allPosts.length; i++) {
+    if (postCanonical === allPosts[i]) {
+      postIdx = i;
+      break;
+    }
   }
-  delete post.user_id;
-  res.send({ post, contentNodes });
+  if (typeof postIdx === "undefined") {
+    // WTF?
+  }
+  const prevPostCanonical =
+    postIdx === 0 ? allPosts[allPosts.length - 1] : allPosts[postIdx - 1];
+  const prevPost = await getPostByCanonicalHelper(
+    prevPostCanonical,
+    loggedInUser
+  );
+  const nextPostCanonical =
+    postIdx === allPosts.length - 1 ? allPosts[0] : allPosts[postIdx + 1];
+  const nextPost = await getPostByCanonicalHelper(
+    nextPostCanonical,
+    loggedInUser
+  );
+  const contentNodes = await getNodesFlat(knex, post.id);
+
+  res.send({ prevPost, nextPost, post, contentNodes });
 }
 
 // returns only post

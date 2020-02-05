@@ -7,7 +7,6 @@ import {
   NODE_TYPE_IMAGE,
   NODE_TYPE_LI,
   NODE_TYPE_P,
-  NODE_TYPE_POSTLINK,
   NODE_TYPE_PRE,
   NODE_TYPE_QUOTE,
   NODE_TYPE_SPACER,
@@ -147,12 +146,9 @@ export default class DocumentModel {
   }
 
   isMetaType(nodeId) {
-    return [
-      NODE_TYPE_SPACER,
-      NODE_TYPE_POSTLINK,
-      NODE_TYPE_QUOTE,
-      NODE_TYPE_IMAGE
-    ].includes(this.getNode(nodeId).get('type'));
+    return [NODE_TYPE_SPACER, NODE_TYPE_QUOTE, NODE_TYPE_IMAGE].includes(
+      this.getNode(nodeId).get('type')
+    );
   }
 
   mergeParagraphs(leftId, rightId) {

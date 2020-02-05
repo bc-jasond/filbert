@@ -1,20 +1,11 @@
-import styled, { css, keyframes } from 'styled-components';
 import { Link } from 'react-router-dom';
-import {
-  contentSerif,
-  italicSerif,
-  monospaced,
-  sansSerif,
-  titleSerif
-} from '../fonts.css';
+import styled, { css, keyframes } from 'styled-components';
 import {
   blue,
-  boxShadow,
   darkBlue,
   darkGrey,
   error,
   grey,
-  lightBlue,
   lightError,
   lightGrey,
   mediumGrey,
@@ -22,22 +13,18 @@ import {
   viewport7,
   viewport9
 } from '../css';
+import { contentSerif, monospaced, sansSerif, titleSerif } from '../fonts.css';
+import {
+  authorExpandMixin,
+  editSectionBorderMixin,
+  italicMixin,
+  linkMixin,
+  metaContentMixin,
+  miniTextMixin,
+  navButtonMixin,
+  sectionWidthMixin
+} from './shared-styled-components-mixins';
 
-const sectionWidthMixin = css`
-  max-width: 740px;
-  margin: 0 auto;
-`;
-export const editSectionBorderMixin = css`
-  border: 4px solid ${p => (p.isEditing ? blue : 'transparent')};
-  ${p =>
-    p.isEditMode &&
-    `
-    &:hover {
-      cursor: pointer;
-      border: 4px solid ${p.isEditing ? blue : lightBlue};
-    }
-  `}
-`;
 export const FlexGrid = styled.div`
   display: block;
   @media (min-width: ${viewport7}) {
@@ -192,25 +179,6 @@ export const LiStyled = styled.li`
     text-align: right;
   }
 `;
-const linkMixin = css`
-  cursor: pointer;
-  font: inherit;
-  text-decoration: none;
-  background-repeat: repeat-x;
-  background-image: linear-gradient(
-    to right,
-    ${darkGrey} 100%,
-    rgba(0, 0, 0, 0) 0
-  );
-  background-image: linear-gradient(
-    to right,
-    currentColor 100%,
-    currentColor 0
-  );
-  background-size: 1px 1px;
-  background-position: 0 1.05em;
-  background-position: 0 calc(1em + 1px);
-`;
 export const A = styled.a`
   ${linkMixin}
 `;
@@ -227,9 +195,6 @@ export const Code = styled.code`
 export const SiteInfo = styled.span`
   font-family: ${sansSerif}, sans-serif;
 `;
-export const italicMixin = css`
-  font-family: ${italicSerif}, sans-serif;
-`;
 export const ItalicText = styled.em`
   ${italicMixin};
 `;
@@ -240,19 +205,9 @@ export const StrikeText = styled.span`
 export const BoldText = styled.strong`
   font-weight: 700;
 `;
-export const miniText = css`
-  font-family: ${sansSerif}, sans-serif;
-  font-weight: 300;
-  font-style: normal;
-  font-size: 16px;
-  line-height: 1.4;
-  color: rgba(0, 0, 0, 0.68);
-  letter-spacing: 0;
-`;
 export const MiniText = styled.span`
-  ${miniText}
+  ${miniTextMixin}
 `;
-
 // FORMS
 export const InputContainer = styled.div`
   display: flex;
@@ -318,35 +273,8 @@ export const MessageContainer = styled.div`
   align-items: center;
   justify-content: center;
 `;
-export const NavButtonMixin = css`
-  font-family: ${monospaced}, monospaced;
-  color: ${grey};
-  cursor: pointer;
-  text-decoration: none;
-  font-size: 18px;
-  line-height: 24px;
-  padding: 14px 18px;
-  border-radius: 26px;
-  border: 1px solid transparent;
-  transition: background-color 0.125s, color 0.125s;
-  flex-grow: 0;
-  -webkit-appearance: none;
-  -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-  &:hover {
-    color: white;
-    background-color: ${lightBlue};
-    box-shadow: ${boxShadow};
-  }
-  ${p =>
-    p.isOpen &&
-    `
-    color: white;
-    background-color: ${lightBlue};
-  `}
-`;
 export const Button = styled.button`
-  ${NavButtonMixin};
+  ${navButtonMixin};
   display: block;
   width: 100%;
   margin-bottom: 16px;
@@ -411,23 +339,6 @@ export const Cursor = styled.div`
   animation: 1s ${blink} step-end infinite;
 }
 `;
-export const SvgIconMixin = css`
-  fill: #fff;
-  position: relative;
-  top: -1px;
-  vertical-align: middle;
-  height: 21px;
-  width: 21px;
-  border-bottom: 2px solid transparent;
-  &:hover {
-    fill: ${blue};
-  }
-  ${p =>
-    p.checked &&
-    `
-    fill: ${darkBlue};
-  `}
-`;
 export const IconButton = styled.button`
   position: relative;
   background: rgba(0, 0, 0, 0);
@@ -488,4 +399,8 @@ export const ProfileImg = styled.img`
   height: 72px;
   width: 72px;
   z-index: 0;
+`;
+export const AuthorExpand = styled(Link)`
+  ${metaContentMixin};
+  ${authorExpandMixin};
 `;

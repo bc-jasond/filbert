@@ -145,10 +145,46 @@ export async function makeMysqlDump(now, stagingDirectory) {
     .padStart(2, "0")}.sql`;
   const currentFileAndPath = `${stagingDirectory}/${currentBackupFilename}`;
   // TODO: use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf
-  //  but, the percona docker doesn't create a /home/mysql dir, so need to investigate
+  //  but, the percona docker doesn't create a /home/mysql dir, so need to create a Dockerfile
+  //  to customise percona.
   // https://dev.mysql.com/doc/refman/5.6/en/mysql-config-editor.html
   await wrapExec(
     `docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" --verbose 2>>/var/log/mysqldump.log > ${currentFileAndPath}`
   );
   return { filenameWithAbsolutePath: currentFileAndPath };
+}
+
+export async function getPostByCanonicalHelper(canonical, loggedInUser) {
+  const knex = await getKnex();
+  const [post] = await knex("post")
+    .select(
+      "post.id",
+      { userId: "user.id" },
+      { userProfileIsPublic: "user.is_public" },
+      "canonical",
+      "title",
+      "abstract",
+      "published",
+      "post.meta",
+      "username",
+      { profilePictureUrl: "user.picture_url" },
+      { familyName: "family_name" },
+      { givenName: "given_name" }
+    )
+    .innerJoin("user", "post.user_id", "user.id")
+    .whereNotNull("published")
+    .andWhere({ canonical });
+
+  if (loggedInUser) {
+    post.canEdit = loggedInUser.id === post.userId;
+    post.canDelete = loggedInUser.id === post.userId;
+    post.canPublish = loggedInUser.id === post.userId;
+  }
+  if (!post.userProfileIsPublic && loggedInUser.id !== post.userId) {
+    delete post.profilePictureUrl;
+    delete post.familyName;
+    delete post.givenName;
+  }
+  delete post.userId;
+  return post;
 }

@@ -1,12 +1,9 @@
-import styled from 'styled-components';
 import { Map } from 'immutable';
 import React from 'react';
-import { Redirect } from 'react-router-dom';
-import {
-  LinkStyled,
-  LogoLinkStyled
-} from '../common/components/layout-styled-components';
-import { NavButtonMixin } from '../common/components/shared-styled-components';
+import { Link, Redirect } from 'react-router-dom';
+import styled from 'styled-components';
+import { LogoLinkStyled } from '../common/components/layout-styled-components';
+import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
 import { PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../common/constants';
 import { viewport7 } from '../common/css';
 import { createNextUrl } from '../common/dom';
@@ -60,12 +57,11 @@ const LogoContainer = styled.div`
   }
 `;
 const NavSpan = styled.span`
-  ${NavButtonMixin};
+  ${navButtonMixin};
 `;
-const NavLink = styled(LinkStyled)`
-  ${NavButtonMixin};
+const NavLink = styled(Link)`
+  ${navButtonMixin};
 `;
-
 export default class Header extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -111,7 +107,7 @@ export default class Header extends React.PureComponent {
               <>
                 {shouldShowManagePost && (
                   <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>
-                    details
+                    publish
                   </NavLink>
                 )}
                 {shouldShowEdit && (

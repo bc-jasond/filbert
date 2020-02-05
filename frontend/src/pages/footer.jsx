@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {
-  A,
+  ALayout,
   FooterStyled,
   GitHubStyled,
   InfoStyled,
@@ -28,9 +28,9 @@ export default () => (
     </span>{' '}
     1/4/2019
     <SocialLinksContainer>
-      <A href="https://github.com/bc-jasond/filbert">
+      <ALayout href="https://github.com/bc-jasond/filbert">
         <GitHubStyled />
-      </A>
+      </ALayout>
       <HelpLink to="/help">
         <InfoStyled />
       </HelpLink>

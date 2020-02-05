@@ -29,9 +29,7 @@ describe('utils', () => {
     expect(global.confirm).toHaveBeenCalledTimes(2);
   });
   test('formatPostDate', () => {
-    expect(formatPostDate('2019-01-04 00:00:00')).toBe(
-      'Friday, January 4, 2019'
-    );
+    expect(formatPostDate('2019-01-04 00:00:00')).toBe('January 4, 2019');
   });
   test('s4', () => {
     expect(idIsValid(s4())).toBe(true);
