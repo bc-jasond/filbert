@@ -1,7 +1,7 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
 import { sansSerif } from '../fonts.css';
-import { NavButtonMixin } from './shared-styled-components';
+import { navButtonMixin } from './shared-styled-components-mixins';
 
 import Spinner from './spinner';
 import { bezier, darkGrey, mediumGrey } from '../css';
@@ -47,7 +47,7 @@ const ButtonLabel = styled.div`
     `}
 `;
 const Button = styled.button`
-  ${NavButtonMixin};
+  ${navButtonMixin};
   display: flex;
   justify-content: center;
   overflow: hidden;

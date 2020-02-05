@@ -17,9 +17,9 @@ import {
   DarkInput,
   IconButton,
   LilSassyMenu,
-  PointClip,
-  SvgIconMixin
+  PointClip
 } from '../../../common/components/shared-styled-components';
+import { svgIconMixin } from '../../../common/components/shared-styled-components-mixins';
 import {
   KEYCODE_CTRL,
   KEYCODE_ENTER,
@@ -48,31 +48,31 @@ import {
 import { stopAndPrevent } from '../../../common/utils';
 
 const IconBold = styled(IconBoldSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconItalic = styled(IconItalicSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconCode = styled(IconCodeSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconSiteinfo = styled(IconInfoSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconStrikethrough = styled(IconStrikethroughSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconLink = styled(IconLinkSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconH1 = styled(IconH1Svg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconH2 = styled(IconH2Svg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconMini = styled(IconMiniSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 
 const FormatSelectionMenu = styled(LilSassyMenu)`

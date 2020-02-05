@@ -7,13 +7,13 @@ import {
   DarkInput,
   IconButton,
   LilSassyMenu,
-  PointClip,
-  SvgIconMixin
+  PointClip
 } from '../../../common/components/shared-styled-components';
 import IconImageSvg from '../../../../assets/icons/image.svg';
 import IconRotateSvg from '../../../../assets/icons/rotate.svg';
 import PlusPxSvg from '../../../../assets/icons/plus-px.svg';
 import MinusPxSvg from '../../../../assets/icons/minus-px.svg';
+import { svgIconMixin } from '../../../common/components/shared-styled-components-mixins';
 import {
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
@@ -27,18 +27,18 @@ import {
 } from '../../../common/dom';
 
 const IconImage = styled(IconImageSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const IconRotate = styled(IconRotateSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
 `;
 const PlusPx = styled(PlusPxSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
   height: 28px;
   width: 28px;
 `;
 const MinusPx = styled(MinusPxSvg)`
-  ${SvgIconMixin};
+  ${svgIconMixin};
   height: 28px;
   width: 28px;
 `;

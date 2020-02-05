@@ -1,50 +1,8 @@
 import styled, { css } from 'styled-components';
-import { Link } from 'react-router-dom';
-import {
-  boxShadow,
-  darkGrey,
-  grey,
-  lightBlue,
-  viewport7,
-  viewport9
-} from '../css';
-import { monospaced, sansSerif } from '../fonts.css';
-import { A } from './layout-styled-components';
-import {
-  Col,
-  FlexGrid,
-  H2Styled,
-  H3Styled,
-  Input,
-  italicMixin,
-  NavButtonMixin,
-  ProfileImg
-} from './shared-styled-components';
+import { grey, lightBlue, viewport7, viewport9 } from '../css';
+import { Col, H2Styled, H3Styled, Input } from './shared-styled-components';
+import { navButtonMixin } from './shared-styled-components-mixins';
 
-export const metaFontMixin = css`
-  letter-spacing: 0px;
-  font-size: 16px;
-  line-height: 18px;
-  font-style: normal;
-`;
-export const metaContentMixin = css`
-  ${metaFontMixin};
-  color: ${grey};
-  font-family: ${sansSerif};
-`;
-export const authorExpandMixin = css`
-  position: absolute;
-  font-family: ${monospaced}, monospaced;
-  color: ${grey};
-  cursor: pointer;
-  text-decoration: none;
-  transition: letter-spacing 0.125s, color 0.125s;
-  &:hover {
-    letter-spacing: 8px;
-    color: ${darkGrey};
-    cursor: pointer;
-  }
-`;
 export const StyledH2 = styled(H2Styled)`
   margin-left: 0;
   margin-right: 0;
@@ -77,96 +35,6 @@ export const BaseRow = styled.div`
       opacity: 0.3;
     `}
 `;
-export const PostRow = styled(FlexGrid)`
-  max-width: ${viewport7};
-  padding: 16px 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  align-items: center;
-  &:last-of-type {
-    margin-bottom: 42px;
-  }
-  @media (min-width: ${viewport7}) {
-    margin: 0 auto;
-  }
-`;
-export const ImageCol = styled.div`
-  padding: 0;
-  flex: 1;
-  margin-bottom: 16px;
-  @media (min-width: ${viewport7}) {
-    margin-bottom: 0;
-    margin-right: 16px;
-  }
-`;
-export const DetailsCol = styled.div`
-  padding: 0;
-  flex: 4;
-`;
-export const ListAvatar = styled.div`
-  display: flex;
-  align-items: center;
-`;
-export const ListAvatarImg = styled(ProfileImg)`
-  height: 36px;
-  width: 36px;
-  &:hover {
-    cursor: pointer;
-    box-shadow: ${boxShadow};
-  }
-`;
-export const ListAvatarContent = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-export const ListAvatarContentRow = styled.div`
-  ${metaContentMixin};
-`;
-export const ListAvatarContentRowItalic = styled(ListAvatarContentRow)`
-  ${italicMixin};
-`;
-export const ListAvatarContentRowDarker = styled(ListAvatarContentRow)`
-  color: ${darkGrey};
-`;
-export const AuthorExpand = styled(Link)`
-  ${metaContentMixin};
-  ${authorExpandMixin};
-`;
-export const PostAbstractRow = styled.div`
-  margin-top: 4px;
-`;
-export const StyledHeadingA = styled(A)`
-  max-height: 56px;
-  letter-spacing: -0.5px;
-  font-size: 25px;
-  line-height: 28px;
-  font-weight: 600;
-`;
-export const StyledA = styled(A)`
-  max-height: 48px;
-  font-size: 19px;
-  line-height: 24px;
-  color: ${grey};
-  letter-spacing: 0px;
-`;
-export const PostMetaRow = styled.div`
-  display: flex;
-  align-items: center;
-  margin-top: 8px;
-`;
-export const PostActionContainer = styled.div`
-  position: relative;
-  min-height: 18px;
-  display: inline-block;
-  padding-left: ${p => (p.noPadding ? '0' : '8px')};
-  &:first-of-type {
-    padding-left: 0;
-  }
-`;
-export const PostActionLink = styled(Link)`
-  ${NavButtonMixin};
-  ${metaFontMixin};
-  padding: 6px 8px;
-`;
 export const ColFilter = styled(Col)`
   display: flex;
   padding-bottom: 16px;
@@ -181,7 +49,7 @@ export const ColFilter = styled(Col)`
   }
 `;
 export const Filter = styled.span`
-  ${NavButtonMixin};
+  ${navButtonMixin};
   display: inline-block;
   padding: 9px;
   margin-left: 8px;

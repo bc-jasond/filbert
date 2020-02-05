@@ -40,7 +40,7 @@ export const SocialLinksContainer = styled.div`
   display: flex;
   justify-content: center;
 `;
-export const A = styled.a`
+export const ALayout = styled.a`
   text-decoration: none;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -79,4 +79,18 @@ export const H1Center = styled.h1`
   margin: 0 auto;
   text-align: center;
   font-size: 72px;
+`;
+export const StyledHeadingA = styled(ALayout)`
+  max-height: 56px;
+  letter-spacing: -0.5px;
+  font-size: 25px;
+  line-height: 28px;
+  font-weight: 600;
+`;
+export const AbstractLink = styled(ALayout)`
+  max-height: 48px;
+  font-size: 19px;
+  line-height: 24px;
+  color: ${grey};
+  letter-spacing: 0px;
 `;

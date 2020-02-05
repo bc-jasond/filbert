@@ -1,5 +1,6 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
+import { navButtonMixin } from '../../../common/components/shared-styled-components-mixins';
 import {
   KEYCODE_CTRL,
   KEYCODE_ENTER,
@@ -17,7 +18,6 @@ import {
 } from '../../../common/constants';
 
 import { grey } from '../../../common/css';
-import { NavButtonMixin } from '../../../common/components/shared-styled-components';
 import { removeAllRanges, setCaret } from '../../../common/dom';
 import { stopAndPrevent } from '../../../common/utils';
 
@@ -88,7 +88,7 @@ const InsertSectionMenuItemsContainer = styled.div`
   `}
 `;
 const InsertSectionItem = styled.span`
-  ${NavButtonMixin};
+  ${navButtonMixin};
 `;
 
 export default class InsertSectionMenuComponent extends React.Component {
