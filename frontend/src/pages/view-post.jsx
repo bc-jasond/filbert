@@ -68,7 +68,7 @@ const SiteInfoStyled = styled(SiteInfo)`
   display: block;
   font-size: 32px;
   text-align: center;
-  margin-bottom: 32px;
+  margin: 48px 0 32px 0;
 `;
 
 function NextPostNav({ post, isPrevious }) {

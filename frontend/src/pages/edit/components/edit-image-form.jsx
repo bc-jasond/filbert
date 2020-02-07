@@ -1,3 +1,4 @@
+import { Map } from 'immutable';
 import * as React from 'react';
 import styled from 'styled-components';
 
@@ -19,11 +20,13 @@ import {
   KEYCODE_RIGHT_ARROW,
   KEYCODE_SPACE
 } from '../../../common/constants';
+import { uploadImage } from '../../../common/fetch';
 import { stopAndPrevent } from '../../../common/utils';
 import {
   caretIsAtBeginningOfInput,
   caretIsAtEndOfInput,
-  focusAndScrollSmooth
+  focusAndScrollSmooth,
+  getImageFileFormData
 } from '../../../common/dom';
 
 const IconImage = styled(IconImageSvg)`
@@ -81,11 +84,10 @@ export default class EditImageForm extends React.Component {
     },
     {
       Component: IconRotate,
-      onClick: () =>
-        this.props?.imageRotate(this.props?.nodeModel?.getIn?.(['meta', 'url']))
+      onClick: this.imageRotate
     },
-    { Component: PlusPx, onClick: () => this.props?.imageResize?.(true) },
-    { Component: MinusPx, onClick: () => this.props?.imageResize?.(false) }
+    { Component: PlusPx, onClick: () => this.imageResize(true) },
+    { Component: MinusPx, onClick: () => this.imageResize(false) }
   ];
 
   constructor(props) {
@@ -124,6 +126,100 @@ export default class EditImageForm extends React.Component {
     this.captionRef?.current?.blur?.();
   }
 
+  replaceImageFile = async ([firstFile]) => {
+    const {
+      props: { post, nodeModel, update }
+    } = this;
+    if (!firstFile) {
+      // TODO: user hit cancel in the file dialog?
+      return;
+    }
+    const { error, data: imageMeta } = await uploadImage(
+      getImageFileFormData(firstFile, post)
+    );
+    if (error) {
+      console.error('Image Upload Error: ', error);
+      return;
+    }
+    const updatedNodeModel = nodeModel
+      .delete('meta')
+      .set('meta', Map(imageMeta));
+    update?.(updatedNodeModel);
+  };
+
+  imageRotate = () => {
+    const {
+      props: { nodeModel, update }
+    } = this;
+    const currentRotationDegrees = nodeModel.getIn(
+      ['meta', 'rotationDegrees'],
+      0
+    );
+    const updatedRotationDegrees =
+      currentRotationDegrees === 270 ? 0 : currentRotationDegrees + 90;
+    const updatedNodeModel = nodeModel.setIn(
+      ['meta', 'rotationDegrees'],
+      updatedRotationDegrees
+    );
+    update?.(updatedNodeModel);
+  };
+
+  imageResize = shouldGetBigger => {
+    const {
+      props: { nodeModel, update }
+    } = this;
+    const maxAllowed = 1000;
+    const resizeAmount = 0.1; // +/- by 10% at a time
+    // plus/minus buttons resize the image by a fixed amount
+    const originalWidth = nodeModel.getIn(['meta', 'width']);
+    const currentResizeWidth = nodeModel.getIn(
+      ['meta', 'resizeWidth'],
+      originalWidth
+    );
+    const originalHeight = nodeModel.getIn(['meta', 'height']);
+    const currentResizeHeight = nodeModel.getIn(
+      ['meta', 'resizeHeight'],
+      originalHeight
+    );
+    const resizeAmountWidth = resizeAmount * originalWidth;
+    const resizeAmountHeight = resizeAmount * originalHeight;
+    // no-op because image is already biggest/smallest allowed?
+    if (
+      // user clicked plus but image is already max size
+      (shouldGetBigger &&
+        (currentResizeHeight + resizeAmountHeight > maxAllowed ||
+          currentResizeWidth + resizeAmountWidth > maxAllowed)) ||
+      // user clicked minus but image is already min size
+      (!shouldGetBigger &&
+        (currentResizeHeight - resizeAmountHeight < resizeAmountHeight ||
+          currentResizeWidth - resizeAmountWidth < resizeAmountWidth))
+    ) {
+      return;
+    }
+
+    const updatedNodeModel = nodeModel
+      .setIn(
+        ['meta', 'resizeWidth'],
+        shouldGetBigger
+          ? currentResizeWidth + resizeAmountWidth
+          : currentResizeWidth - resizeAmountWidth
+      )
+      .setIn(
+        ['meta', 'resizeHeight'],
+        shouldGetBigger
+          ? currentResizeHeight + resizeAmountHeight
+          : currentResizeHeight - resizeAmountHeight
+      );
+    update?.(updatedNodeModel);
+  };
+
+  updateCaption = evt => {
+    const {
+      props: { nodeModel, update }
+    } = this;
+    update?.(nodeModel.setIn(['meta', 'caption'], evt.target.value));
+  };
+
   handleKeyDown = evt => {
     const {
       state: { currentIdx }
@@ -161,7 +257,7 @@ export default class EditImageForm extends React.Component {
 
   render() {
     const {
-      props: { offsetTop, nodeModel, uploadFile, updateMeta },
+      props: { offsetTop, nodeModel },
       state: { currentIdx }
     } = this;
 
@@ -179,7 +275,7 @@ export default class EditImageForm extends React.Component {
           id="image-caption-input"
           ref={this.captionRef}
           placeholder="Enter Image Caption here..."
-          onChange={e => updateMeta('caption', e.target.value)}
+          onChange={this.updateCaption}
           value={nodeModel.getIn(['meta', 'caption'], '')}
         />
         <PointClip>
@@ -189,7 +285,7 @@ export default class EditImageForm extends React.Component {
           name="hidden-image-upload-file-input"
           type="file"
           onChange={e => {
-            uploadFile(e.target.files);
+            this.replaceImageFile(e.target.files);
           }}
           accept="image/*"
           ref={this.fileInputRef}

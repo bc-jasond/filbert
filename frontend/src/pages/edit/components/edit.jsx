@@ -14,6 +14,7 @@ import {
   caretIsOnEdgeOfParagraphText,
   getFirstHeadingContent,
   getHighlightedSelectionOffsets,
+  getImageFileFormData,
   getNodeById,
   getRange,
   isControlKey,
@@ -946,11 +947,13 @@ export default class EditPost extends React.Component {
    */
   insertSection = async (sectionType, [firstFile] = []) => {
     const {
-      state: { insertMenuNode }
+      state: { insertMenuNode, post }
     } = this;
     let meta = Map();
     if (sectionType === NODE_TYPE_IMAGE) {
-      const { error, data: imageMeta } = await this.uploadFile(firstFile);
+      const { error, data: imageMeta } = await uploadImage(
+        getImageFileFormData(firstFile, post)
+      );
       if (error) {
         console.error('Image Upload Error: ', error);
         return;
@@ -994,137 +997,11 @@ export default class EditPost extends React.Component {
     await new Promise(resolve => this.setState(newState, resolve));
   };
 
-  replaceImageFile = async ([firstFile]) => {
-    const {
-      state: { editSectionNode }
-    } = this;
-    if (!firstFile) {
-      // TODO: user hit cancel in the file dialog?
-      return;
-    }
-    const { error, data: imageMeta } = await this.uploadFile(firstFile);
-    if (error) {
-      console.error('Image Upload Error: ', error);
-      return;
-    }
-    const updatedImageSectionNode = editSectionNode
-      .delete('meta')
-      .set('meta', Map(imageMeta));
-    this.documentModel.update(updatedImageSectionNode);
+  updateEditSectionNode = updatedNode => {
+    this.documentModel.update(updatedNode);
     this.setState(
       {
-        editSectionNode: updatedImageSectionNode
-      },
-      async () => {
-        await this.commitUpdates(
-          this.getSelectionOffsetsOrEditSectionNode(),
-          this.getSelectionOffsetsOrEditSectionNode()
-        );
-      }
-    );
-  };
-
-  imageRotate = () => {
-    const {
-      state: { editSectionNode }
-    } = this;
-    const currentRotationDegrees = editSectionNode.getIn(
-      ['meta', 'rotationDegrees'],
-      0
-    );
-    const updatedRotationDegrees =
-      currentRotationDegrees === 270 ? 0 : currentRotationDegrees + 90;
-    const updatedImageSectionNode = editSectionNode.setIn(
-      ['meta', 'rotationDegrees'],
-      updatedRotationDegrees
-    );
-    this.documentModel.update(updatedImageSectionNode);
-    this.setState(
-      {
-        editSectionNode: updatedImageSectionNode
-      },
-      async () => {
-        await this.commitUpdates(
-          this.getSelectionOffsetsOrEditSectionNode(),
-          this.getSelectionOffsetsOrEditSectionNode()
-        );
-      }
-    );
-  };
-
-  imageResize = shouldGetBigger => {
-    const {
-      state: { editSectionNode }
-    } = this;
-    const maxAllowed = 1000;
-    const resizeAmount = 0.1; // +/- by 10% at a time
-    // plus/minus buttons resize the image by a fixed amount
-    const originalWidth = editSectionNode.getIn(['meta', 'width']);
-    const currentResizeWidth = editSectionNode.getIn(
-      ['meta', 'resizeWidth'],
-      originalWidth
-    );
-    const originalHeight = editSectionNode.getIn(['meta', 'height']);
-    const currentResizeHeight = editSectionNode.getIn(
-      ['meta', 'resizeHeight'],
-      originalHeight
-    );
-    const resizeAmountWidth = resizeAmount * originalWidth;
-    const resizeAmountHeight = resizeAmount * originalHeight;
-    // no-op because image is already biggest/smallest allowed?
-    if (
-      // user clicked plus but image is already max size
-      (shouldGetBigger &&
-        (currentResizeHeight + resizeAmountHeight > maxAllowed ||
-          currentResizeWidth + resizeAmountWidth > maxAllowed)) ||
-      // user clicked minus but image is already min size
-      (!shouldGetBigger &&
-        (currentResizeHeight - resizeAmountHeight < resizeAmountHeight ||
-          currentResizeWidth - resizeAmountWidth < resizeAmountWidth))
-    ) {
-      return;
-    }
-
-    const updatedImageSectionNode = editSectionNode
-      .setIn(
-        ['meta', 'resizeWidth'],
-        shouldGetBigger
-          ? currentResizeWidth + resizeAmountWidth
-          : currentResizeWidth - resizeAmountWidth
-      )
-      .setIn(
-        ['meta', 'resizeHeight'],
-        shouldGetBigger
-          ? currentResizeHeight + resizeAmountHeight
-          : currentResizeHeight - resizeAmountHeight
-      );
-
-    this.documentModel.update(updatedImageSectionNode);
-    this.setState(
-      {
-        editSectionNode: updatedImageSectionNode
-      },
-      async () => {
-        await this.commitUpdates(
-          this.getSelectionOffsetsOrEditSectionNode(),
-          this.getSelectionOffsetsOrEditSectionNode()
-        );
-      }
-    );
-  };
-
-  updateEditSectionNodeMeta = (metaKey, value) => {
-    const {
-      state: { editSectionNode }
-    } = this;
-    const updatedQuoteSectionNode = editSectionNode.setIn(
-      ['meta', metaKey],
-      value
-    );
-    this.documentModel.update(updatedQuoteSectionNode);
-    this.setState(
-      {
-        editSectionNode: updatedQuoteSectionNode
+        editSectionNode: updatedNode
       },
       async () => {
         await this.commitUpdates(
@@ -1306,18 +1183,6 @@ export default class EditPost extends React.Component {
     );
   };
 
-  async uploadFile(file) {
-    const {
-      state: { post }
-    } = this;
-    // TODO: allow multiple files
-    const formData = new FormData();
-    formData.append('postId', post.get('id'));
-    formData.append('userId', post.get('user_id'));
-    formData.append('fileData', file);
-    return uploadImage(formData);
-  }
-
   render() {
     const {
       state: {
@@ -1383,10 +1248,7 @@ export default class EditPost extends React.Component {
                 windowEvent={windowEventToForward}
                 offsetTop={editSectionMetaFormTopOffset}
                 nodeModel={editSectionNode}
-                uploadFile={this.replaceImageFile}
-                updateMeta={this.updateEditSectionNodeMeta}
-                imageRotate={this.imageRotate}
-                imageResize={this.imageResize}
+                update={this.updateEditSectionNode}
               />
             )}
           {editSectionNode.get('type') === NODE_TYPE_QUOTE &&
@@ -1395,7 +1257,7 @@ export default class EditPost extends React.Component {
                 windowEvent={windowEventToForward}
                 offsetTop={editSectionMetaFormTopOffset}
                 nodeModel={editSectionNode}
-                updateMeta={this.updateEditSectionNodeMeta}
+                update={this.updateEditSectionNode}
               />
             )}
           {formatSelectionNode.get('id') && (

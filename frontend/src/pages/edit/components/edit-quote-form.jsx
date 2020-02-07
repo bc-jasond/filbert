@@ -108,9 +108,16 @@ export default class EditQuoteForm extends React.Component {
     }
   };
 
+  updateMeta = (key, value) => {
+    const {
+      props: { nodeModel, update }
+    } = this;
+    update?.(nodeModel.setIn(['meta', key], value));
+  };
+
   render() {
     const {
-      props: { offsetTop, nodeModel, updateMeta }
+      props: { offsetTop, nodeModel }
     } = this;
     return (
       <EditQuoteMenu data-is-menu top={offsetTop}>
@@ -119,7 +126,7 @@ export default class EditQuoteForm extends React.Component {
             <QuoteInput
               ref={this.inputRefs[idx]}
               placeholder={`Enter ${metaKey.toLocaleUpperCase()} here...`}
-              onChange={e => updateMeta(metaKey, e.target.value)}
+              onChange={e => this.updateMeta(metaKey, e.target.value)}
               value={nodeModel.getIn(['meta', metaKey], '')}
             />
           </Row>

@@ -462,3 +462,12 @@ export function getNextFromUrl() {
   if (!queryParams.get('next')) return '';
   return decodeURIComponent(queryParams.get('next'));
 }
+
+export function getImageFileFormData(file, post) {
+  // TODO: allow multiple files
+  const formData = new FormData();
+  formData.append('postId', post.get('id'));
+  formData.append('userId', post.get('user_id'));
+  formData.append('fileData', file);
+  return formData;
+}
