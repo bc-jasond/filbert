@@ -18,6 +18,7 @@ import {
 } from '../common/components/shared-styled-components';
 
 import { signin } from '../common/fetch';
+import { getSession } from '../common/session';
 
 const Container = styled.div`
   display: flex;
@@ -68,7 +69,7 @@ export default class SignInAdmin extends React.Component {
       const {
         state: { username, password }
       } = this;
-      const { session } = await signin(username, password);
+      await signin(username, password);
       this.setState({
         error: null,
         success: 'All set 👍'
@@ -76,7 +77,7 @@ export default class SignInAdmin extends React.Component {
       setTimeout(() => {
         this.setState({ shouldRedirect: true }, () => {
           // set session on App state on the way out...
-          this.props?.setSession?.(session);
+          this.props?.setSession?.(getSession());
         });
       }, 500);
     } catch (error) {

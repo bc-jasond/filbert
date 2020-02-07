@@ -127,8 +127,15 @@ export async function uploadImage(formData, abortSignal = null) {
 }
 
 export async function signin(username, password) {
-  const { token, session } = await apiPost('/signin', { username, password });
+  const {
+    error,
+    data: { session, token }
+  } = await apiPost('/signin', { username, password });
+  if (error) {
+    console.error('Admin Signin Error: ', error);
+    return { error };
+  }
   set(AUTH_TOKEN_KEY, token, false);
   set(SESSION_KEY, session, false);
-  return { token, session };
+  return {};
 }
