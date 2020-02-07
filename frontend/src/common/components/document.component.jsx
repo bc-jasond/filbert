@@ -1,4 +1,5 @@
 import React from 'react';
+import styled from 'styled-components';
 import { Map } from 'immutable';
 import {
   NODE_TYPE_H1,
@@ -22,6 +23,10 @@ import P from './p';
 import Li from './li';
 import { cleanText } from '../utils';
 import DocumentModel from '../../pages/edit/document-model';
+
+const Root = styled.div`
+  margin-bottom: 96px;
+`;
 
 function getChildIds(children) {
   return children.reduce((acc, c) => `${acc}${c.key}`, '');
@@ -151,7 +156,7 @@ export default class Document extends React.PureComponent {
         this.next();
       }
     }
-    return <div data-type={NODE_TYPE_ROOT}>{children}</div>;
+    return <Root data-type={NODE_TYPE_ROOT}>{children}</Root>;
   }
 }
 
