@@ -197,7 +197,7 @@ export default class UserProfile extends React.Component {
                   <TableCell>
                     {stats?.currentStreak > 0
                       ? `${stats?.currentStreak} days`
-                      : `0 days 👩🏽‍💻 hit that 'new' button!`}
+                      : `0 days 👩🏽‍💻 smash that 'new' button!`}
                   </TableCell>
                   <TableCell>
                     <Code>Longest Streak:</Code>

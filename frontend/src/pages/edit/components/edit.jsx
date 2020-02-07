@@ -1247,6 +1247,7 @@ export default class EditPost extends React.Component {
               <EditImageForm
                 windowEvent={windowEventToForward}
                 offsetTop={editSectionMetaFormTopOffset}
+                post={post}
                 nodeModel={editSectionNode}
                 update={this.updateEditSectionNode}
               />

@@ -6,22 +6,13 @@ import Image from '../common/components/image';
 
 import { Article } from '../common/components/layout-styled-components';
 import {
+  NODE_TYPE_IMAGE,
   PAGE_NAME_VIEW,
   POST_ACTION_REDIRECT_TIMEOUT
 } from '../common/constants';
 import { ease, grey, viewport12, viewport7 } from '../common/css';
-import {
-  focusAndScrollSmooth,
-  getImageFileFormData,
-  getNextFromUrl
-} from '../common/dom';
-import {
-  apiDelete,
-  apiGet,
-  apiPatch,
-  apiPost,
-  uploadImage
-} from '../common/fetch';
+import { focusAndScrollSmooth, getNextFromUrl } from '../common/dom';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../common/fetch';
 import { monospaced } from '../common/fonts.css';
 import {
   Button,
@@ -45,7 +36,12 @@ import {
 import Toggle from '../common/components/toggle';
 import EditImageForm from './edit/components/edit-image-form';
 
-import { confirmPromise, formatPostDate } from '../common/utils';
+import {
+  confirmPromise,
+  formatPostDate,
+  getMapWithId,
+  nodeIsValid
+} from '../common/utils';
 import Page404 from './404';
 import Footer from './footer';
 import Header from './header';
@@ -75,6 +71,10 @@ const InputContainerStyled = styled(InputContainer)`
 const ImageContainer = styled(InputContainerStyled)`
   display: block;
 `;
+const ImageStyled = styled(Image)`
+  margin: 0;
+  max-height: 378px;
+`;
 const ToggleWrapper = styled.div`
   padding: 0 16px 8px;
 `;
@@ -95,11 +95,13 @@ export default class Publish extends React.Component {
 
   backupImageNode;
 
+  imageContainerId = 'publish-post-image-container';
+
   constructor(props) {
     super(props);
     this.state = {
       post: Map(),
-      postSummary: {},
+      postSummary: Map(),
       error: null,
       successMessage: null,
       shouldShow404: false,
@@ -109,17 +111,30 @@ export default class Publish extends React.Component {
 
   async componentDidMount() {
     await this.loadPostAndSummary();
+    this.positionImageMenu();
+    window.addEventListener('resize', this.positionImageMenu);
     focusAndScrollSmooth(null, this.inputRef?.current);
   }
 
   async componentDidUpdate(prevProps) {
+    const {
+      state: { post }
+    } = this;
     const params = this.props?.params;
     const id = params?.id;
     const prevId = prevProps?.params?.id;
-    if (id === prevId) {
+    if (post.size > 0 && id === prevId) {
       return;
     }
     await this.loadPostAndSummary();
+  }
+
+  async componentWillUnmount() {
+    this.state = {
+      post: Map(),
+      postSummary: {}
+    };
+    window.removeEventListener('resize', this.positionImageMenu);
   }
 
   // eslint-disable-next-line react/sort-comp
@@ -142,7 +157,7 @@ export default class Publish extends React.Component {
     if (errorPost) {
       console.error(errorPost);
       this.setState({ shouldShow404: true });
-      return;
+      return Promise.resolve();
     }
     post = fromJS(post);
     this.backupTitle = post.get('title', '');
@@ -151,7 +166,9 @@ export default class Publish extends React.Component {
     const postSummary = fromJS(await this.loadPostSummary());
     post = this.syncTitleAndAbstract(post, postSummary);
     post = this.syncImage(post, postSummary);
-    this.setState({ post, postSummary, shouldShow404: false });
+    return new Promise(resolve =>
+      this.setState({ post, postSummary, shouldShow404: false }, resolve)
+    );
   }
 
   syncTitleAndAbstract(post, postSummary) {
@@ -175,6 +192,13 @@ export default class Publish extends React.Component {
       ? post.setIn(['meta', 'imageNode'], this.backupImageNode)
       : post;
   }
+
+  positionImageMenu = () => {
+    const elem = document.getElementById(this.imageContainerId);
+    const imageMenuOffsetTop = elem?.offsetTop - 60;
+    const imageMenuOffsetLeft = elem?.offsetLeft - 8 + elem?.offsetWidth / 2;
+    this.setState({ imageMenuOffsetTop, imageMenuOffsetLeft });
+  };
 
   toggleTitleAndAbstract = () => {
     const {
@@ -308,11 +332,35 @@ export default class Publish extends React.Component {
     this.setState({ redirectUrl: '/' });
   };
 
+  updateImage = imageNode => {
+    const {
+      state: { post }
+    } = this;
+    let imageNodeUpdated = imageNode;
+    if (!nodeIsValid(imageNode)) {
+      imageNodeUpdated = imageNode.merge(
+        getMapWithId({ type: NODE_TYPE_IMAGE })
+      );
+    }
+    this.setState({
+      post: post.setIn(['meta', 'imageNode'], imageNodeUpdated)
+    });
+  };
+
   render() {
     const {
       props: { session, setSession },
-      state: { post, redirectUrl, error, successMessage, shouldShow404 }
+      state: {
+        post,
+        redirectUrl,
+        error,
+        successMessage,
+        shouldShow404,
+        imageMenuOffsetTop,
+        imageMenuOffsetLeft
+      }
     } = this;
+    const imageNode = post.getIn(['meta', 'imageNode']) || Map();
     const syncTitleAndAbstract = post.getIn(['meta', 'syncTitleAndAbstract']);
     const syncTopPhoto = post.getIn(['meta', 'syncTopPhoto']);
 
@@ -392,16 +440,14 @@ export default class Publish extends React.Component {
               </Col>
               <Col>
                 <ImageContainer
+                  id={this.imageContainerId}
                   shouldHide={post.getIn(['meta', 'syncTopPhoto'])}
                 >
                   <Label htmlFor="imageNode" error={error?.imageNode}>
                     image
                   </Label>
-                  {post.getIn(['meta', 'imageNode']) && (
-                    <Image
-                      node={post.getIn(['meta', 'imageNode'])}
-                      hideBorder
-                    />
+                  {imageNode.size > 0 && (
+                    <ImageStyled node={imageNode} hideBorder hideCaption />
                   )}
                 </ImageContainer>
               </Col>
@@ -479,6 +525,17 @@ export default class Publish extends React.Component {
                 </Col9>
               </FlexGrid9>
             </MiddleWrapper>
+            {!syncTopPhoto && (
+              <EditImageForm
+                windowEvent={null}
+                shouldHideCaption
+                offsetTop={imageMenuOffsetTop}
+                offsetLeft={imageMenuOffsetLeft}
+                post={post}
+                nodeModel={imageNode}
+                update={this.updateImage}
+              />
+            )}
           </Article>
           <Footer />
         </>

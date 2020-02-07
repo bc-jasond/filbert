@@ -54,10 +54,10 @@ export const EditImageMenu = styled(LilSassyMenu)`
   align-items: center;
   justify-items: center;
   top: ${p => p.top + 10}px;
-  width: 500px;
+  width: ${p => (p.shouldHideCaption ? '162px' : '500px')};
   margin: 0 auto;
-  left: 50%;
-  margin-left: -250px;
+  left: ${p => (p.left ? `${p.left}px` : '50%')};
+  margin-left: ${p => (p.shouldHideCaption ? '-81px' : '-250px')};
 `;
 export const ImageCaptionInput = styled(DarkInput)`
   margin: 0 8px;
@@ -84,7 +84,7 @@ export default class EditImageForm extends React.Component {
     },
     {
       Component: IconRotate,
-      onClick: this.imageRotate
+      onClick: () => this.imageRotate()
     },
     { Component: PlusPx, onClick: () => this.imageResize(true) },
     { Component: MinusPx, onClick: () => this.imageResize(false) }
@@ -257,12 +257,17 @@ export default class EditImageForm extends React.Component {
 
   render() {
     const {
-      props: { offsetTop, nodeModel },
+      props: { offsetTop, offsetLeft, nodeModel, shouldHideCaption },
       state: { currentIdx }
     } = this;
 
     return (
-      <EditImageMenu data-is-menu top={offsetTop}>
+      <EditImageMenu
+        data-is-menu
+        top={offsetTop}
+        left={offsetLeft}
+        shouldHideCaption={shouldHideCaption}
+      >
         {this.menuItems.map(({ Component, onClick }, idx) => (
           <MenuItem
             key={Component.displayName}
@@ -271,13 +276,15 @@ export default class EditImageForm extends React.Component {
             isSelected={currentIdx === idx}
           />
         ))}
-        <ImageCaptionInput
-          id="image-caption-input"
-          ref={this.captionRef}
-          placeholder="Enter Image Caption here..."
-          onChange={this.updateCaption}
-          value={nodeModel.getIn(['meta', 'caption'], '')}
-        />
+        {!shouldHideCaption && (
+          <ImageCaptionInput
+            id="image-caption-input"
+            ref={this.captionRef}
+            placeholder="Enter Image Caption here..."
+            onChange={this.updateCaption}
+            value={nodeModel.getIn(['meta', 'caption'], '')}
+          />
+        )}
         <PointClip>
           <Arrow />
         </PointClip>
