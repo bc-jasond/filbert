@@ -4,12 +4,13 @@ const exec = promisify(execCb);
 
 const chalk = require("chalk");
 
-const error = (...args) => console.error(chalk.red(...args));
-const warn = (...args) => console.warn(chalk.yellow(...args));
-const info = (...args) => console.info(chalk.blue(...args));
-const success = (...args) => console.log(chalk.green(...args));
+export const log = (...args) => console.log(chalk.white(...args));
+export const error = (...args) => console.error(chalk.red(...args));
+export const warn = (...args) => console.warn(chalk.yellow(...args));
+export const info = (...args) => console.info(chalk.cyan(...args));
+export const success = (...args) => console.log(chalk.green(...args));
 
-function saneEnvironmentOrExit(requiredVars) {
+export function saneEnvironmentOrExit(requiredVars) {
   const { env } = process;
   const missingEnvVariables = requiredVars.filter(key => !env[key] && key);
   if (missingEnvVariables.length > 0) {
@@ -22,7 +23,7 @@ function saneEnvironmentOrExit(requiredVars) {
   }
 }
 
-async function wrapExec(command) {
+export async function wrapExec(command) {
   try {
     const { stdout, stderr } = await exec(command);
     success(`exec() command succeeded: ${command}`, stdout);
@@ -34,15 +35,15 @@ async function wrapExec(command) {
   }
 }
 
-async function assertDir(dirname) {
+export async function assertDir(dirname) {
   return wrapExec(`mkdir -p ${dirname}`);
 }
 
-async function rmFile(filenameAndPath) {
+export async function rmFile(filenameAndPath) {
   return wrapExec(`rm ${filenameAndPath}`);
 }
 
-function getFirstNode(nodesById) {
+export function getFirstNode(nodesById) {
   const idSeen = new Set();
   const nextSeen = new Set();
   for (const nodeId in nodesById) {
@@ -62,15 +63,3 @@ function getFirstNode(nodesById) {
   const [firstId] = [...difference];
   return nodesById[firstId];
 }
-
-module.exports = {
-  error,
-  warn,
-  info,
-  success,
-  saneEnvironmentOrExit,
-  wrapExec,
-  assertDir,
-  rmFile,
-  getFirstNode
-};

@@ -25,9 +25,11 @@
     "bcrypt": "^3.0.6",
     "chalk": "^3.0.0",
     "cors": "^2.8.5",
+    "cowsay": "^1.4.0",
     "esm": "^3.2.25",
     "express": "^4.16.4",
     "figlet": "^1.2.4",
+    "fortune-teller": "^0.1.2",
     "google-auth-library": "^5.7.0",
     "immutable": "^4.0.0-rc.12",
     "inquirer": "^7.0.4",
@@ -35,6 +37,8 @@
     "multer": "^1.4.2",
     "mysql2": "^1.6.5",
     "node-cron": "^2.0.3",
-    "sharp": "^0.23.1"
+    "ora": "^4.0.3",
+    "sharp": "^0.23.1",
+    "terminal-image": "^0.2.0"
   }
 }
