@@ -9,19 +9,21 @@ const {
   success,
   saneEnvironmentOrExit
 } = require("./lib/util");
+const path = require("path");
 const { fortune } = require("fortune-teller");
 const { say: cowsay } = require("cowsay");
 const { textSync } = require("figlet");
 const chalk = require("chalk");
 const ora = require("ora");
-const terminalImage = require("terminal-image");
+const termImg = require("term-img");
 
 const { listBuckets, listKeysForBucket } = require("./lib/s3");
+const { filbertMysqldumpToS3Adhoc } = require("./lib/mysqldump-adhoc");
 
 async function main() {
   let spinner = new ora();
   try {
-    console.log(await terminalImage.file("./beyonce.jpg"));
+    termImg(path.join(__dirname, "quest-for-glory-ii-trial-by-fire_6.png"));
     info("\n", textSync("filbert MySQL restore"));
     warn("\n\nStarting the ✍️  filbert MySQL restore tool\n");
     success("$ fortune | cowsay ;");
@@ -64,12 +66,54 @@ async function main() {
       }
     ]);
     success("You're the best.  Let's do a quick review of your selections.");
-    success(cowsay({ text: "KTHXBYE", f: "dragon-and-cow" }));
+    warn(textSync("Review"));
+    warn(
+      "--------------------------------------------------------------------------"
+    );
+    const { pullTheTrigger } = await inquirer.prompt([
+      {
+        name: "pullTheTrigger",
+        type: "confirm",
+        message: `Restore MySQL from bucket ${chalk.greenBright.bold(
+          bucketName
+        )} file ${chalk.magentaBright.bold(
+          backupFileName
+        )} and make a backup beforehand ${
+          shouldDumpBeforeRestore
+            ? chalk.cyan.bold("Yes")
+            : chalk.redBright.bold("No")
+        }`,
+        default: false
+      }
+    ]);
+    if (!pullTheTrigger) {
+      termImg(path.join(__dirname, "ejection-seat.jpg"));
+      process.exit(0);
+    }
+    if (shouldDumpBeforeRestore) {
+      spinner.text = "Making backup";
+      spinner.start();
+      await filbertMysqldumpToS3Adhoc();
+      spinner.stop();
+    }
+    spinner.text = `Downloading SQL file ${chalk.cyan(backupFileName)} from S3`;
+    spinner.start();
+    //await downloadFile();
+    spinner.stop();
+    spinner.text = `Restoring MySQL from ${chalk.cyan(backupFileName)}`;
+    spinner.start();
+    // await restoreMysql();
+    spinner.stop();
+    await termImg(path.join(__dirname, "saurus.png"));
+    success(
+      cowsay({ text: textSync("Success, KTHXBYE"), n: true, f: "stegosaurus" })
+    );
 
     // TODO: summarize selections here with a last (y/N) prompt
   } catch (err) {
     error(err);
     spinner.fail("error");
+    process.exitCode = 1;
   }
 }
 
