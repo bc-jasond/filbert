@@ -2,6 +2,15 @@
 // ESM - remove after ECMAScript Module support is past Experimental node v14 ?
 require = require("esm")(module /*, options*/);
 const inquirer = require("inquirer");
+const path = require("path");
+const { fortune } = require("fortune-teller");
+const { say: cowsay } = require("cowsay");
+const { textSync } = require("figlet");
+const chalk = require("chalk");
+const ora = require("ora");
+const terminalImage = require("terminal-image");
+const termImg = require("term-img");
+
 const {
   error,
   info,
@@ -9,21 +18,28 @@ const {
   success,
   saneEnvironmentOrExit
 } = require("./lib/util");
-const path = require("path");
-const { fortune } = require("fortune-teller");
-const { say: cowsay } = require("cowsay");
-const { textSync } = require("figlet");
-const chalk = require("chalk");
-const ora = require("ora");
-const termImg = require("term-img");
-
-const { listBuckets, listKeysForBucket } = require("./lib/s3");
+const {
+  listBuckets,
+  listKeysForBucket,
+  downloadFileFromBucket
+} = require("./lib/s3");
+const { restoreMysqlFromFile } = require("./lib/mysql");
 const { filbertMysqldumpToS3Adhoc } = require("./lib/mysqldump-adhoc");
+
+function terminalImageWithFallback(filename) {
+  const filepath = path.join(__dirname, filename);
+  termImg(filepath, {
+    fallback: async () => {
+      const image = await terminalImage.file(filepath);
+      console.log(image);
+    }
+  });
+}
 
 async function main() {
   let spinner = new ora();
   try {
-    termImg(path.join(__dirname, "quest-for-glory-ii-trial-by-fire_6.png"));
+    terminalImageWithFallback("quest-for-glory-ii-trial-by-fire_6.png");
     info("\n", textSync("filbert MySQL restore"));
     warn("\n\nStarting the ✍️  filbert MySQL restore tool\n");
     success("$ fortune | cowsay ;");
@@ -87,29 +103,34 @@ async function main() {
       }
     ]);
     if (!pullTheTrigger) {
-      termImg(path.join(__dirname, "ejection-seat.jpg"));
+      error(cowsay({ text: textSync("Aborted") }));
+      terminalImageWithFallback("ejection-seat.jpg");
       process.exit(0);
     }
     if (shouldDumpBeforeRestore) {
       spinner.text = "Making backup";
       spinner.start();
       await filbertMysqldumpToS3Adhoc();
-      spinner.stop();
+      spinner.succeed();
     }
     spinner.text = `Downloading SQL file ${chalk.cyan(backupFileName)} from S3`;
     spinner.start();
-    //await downloadFile();
-    spinner.stop();
-    spinner.text = `Restoring MySQL from ${chalk.cyan(backupFileName)}`;
+    const tempFilenameAndPath = await downloadFileFromBucket(
+      bucketName,
+      backupFileName
+    );
+    spinner.succeed();
+    spinner.text = `Restoring MySQL from ${chalk.cyan(backupFileName)}\n`;
     spinner.start();
-    // await restoreMysql();
-    spinner.stop();
-    await termImg(path.join(__dirname, "saurus.png"));
+    const { stderr } = await restoreMysqlFromFile(tempFilenameAndPath);
+    if (stderr) {
+      throw stderr;
+    }
+    spinner.succeed();
+    terminalImageWithFallback("saurus.png");
     success(
       cowsay({ text: textSync("Success, KTHXBYE"), n: true, f: "stegosaurus" })
     );
-
-    // TODO: summarize selections here with a last (y/N) prompt
   } catch (err) {
     error(err);
     spinner.fail("error");

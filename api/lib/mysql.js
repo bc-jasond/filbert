@@ -155,10 +155,20 @@ export async function makeMysqlDump(now, stagingDirectory) {
   return { filenameWithAbsolutePath: currentFileAndPath };
 }
 
-export function restoreMysqlFromFile(fileAndPath) {
-  return wrapExec(
+export async function restoreMysqlFromFile(fileAndPath) {
+  const { stderr } = await wrapExec(
     `docker exec -i $PERCONA_CONTAINER_NAME /usr/bin/mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < ${fileAndPath}`
   );
+  // TODO: same as above .mylogin.cnf
+  if (
+    stderr &&
+    !stderr.includes(
+      "[Warning] Using a password on the command line interface can be insecure"
+    )
+  ) {
+    return { stderr };
+  }
+  return {};
 }
 
 export async function getPostByCanonicalHelper(canonical, loggedInUser) {

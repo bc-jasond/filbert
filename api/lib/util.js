@@ -32,6 +32,7 @@ export async function wrapExec(command) {
     return { stdout, stderr };
   } catch (err) {
     error(`exec() command failed: ${command}`, err);
+    return { stderr: err };
   }
 }
 
