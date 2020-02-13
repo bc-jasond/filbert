@@ -7,7 +7,8 @@ const {
   objectStorageApiVersion,
   objectStorageBaseUrl,
   objectStorageACLPublic,
-  objectStorageACLPrivate
+  objectStorageACLPrivate,
+  fileUploadStagingDirectory
 } = require("./constants");
 
 const s3Client = new AWS.S3({
@@ -25,6 +26,7 @@ const headBucket = promisify(s3Client.headBucket).bind(s3Client);
 const createBucket = promisify(s3Client.createBucket).bind(s3Client);
 const upload = promisify(s3Client.upload).bind(s3Client);
 const listObjects = promisify(s3Client.listObjectsV2).bind(s3Client);
+const getObject = promisify(s3Client.getObject).bind(s3Client);
 const headObject = promisify(s3Client.headObject).bind(s3Client);
 const deleteObjects = promisify(s3Client.deleteObjects).bind(s3Client);
 const copyObject = promisify(s3Client.copyObject).bind(s3Client);
@@ -41,6 +43,19 @@ async function assertBucket(name) {
   }
   // bucket doesn't exist - create it
   return createBucket({ Bucket: name });
+}
+
+async function downloadFileFromBucket(bucket, filename) {
+  const { Body } = await getObject({ Bucket: bucket, Key: filename });
+  return new Promise((resolve, reject) =>
+    fs.writeFile(path.join(fileUploadStagingDirectory, filename), Body, err => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(path.join(fileUploadStagingDirectory, filename));
+    })
+  );
 }
 
 async function uploadFileToBucket(bucket, fileNameWithAbsolutePath) {
@@ -61,14 +76,14 @@ async function uploadImageToBucket(
   key,
   buffer,
   metadata,
-  public = false
+  isPublic = false
 ) {
   return upload({
     Bucket: bucket,
     Body: buffer,
     Key: key,
     Metadata: metadata,
-    ACL: public ? objectStorageACLPublic : objectStorageACLPrivate
+    ACL: isPublic ? objectStorageACLPublic : objectStorageACLPrivate
   });
 }
 
@@ -123,6 +138,7 @@ module.exports = {
   assertBucket,
   uploadImageToBucket,
   uploadFileToBucket,
+  downloadFileFromBucket,
   listKeysForBucket,
   bucketHasKey,
   copyKeyFromBucketToBucket,

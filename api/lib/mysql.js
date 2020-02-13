@@ -144,7 +144,8 @@ export async function makeMysqlDump(now, stagingDirectory) {
     .toString()
     .padStart(2, "0")}.sql`;
   const currentFileAndPath = `${stagingDirectory}/${currentBackupFilename}`;
-  // TODO: use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf
+  // TODO: anyone that can run a `ps -A` can see this password... 🤦‍♀️
+  //  use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf
   //  but, the percona docker doesn't create a /home/mysql dir, so need to create a Dockerfile
   //  to customise percona.
   // https://dev.mysql.com/doc/refman/5.6/en/mysql-config-editor.html
@@ -152,6 +153,22 @@ export async function makeMysqlDump(now, stagingDirectory) {
     `docker exec $PERCONA_CONTAINER_NAME /usr/bin/mysqldump --hex-blob --default-character-set=utf8mb4 --databases filbert -uroot -p"$MYSQL_ROOT_PASSWORD" --verbose 2>>/var/log/mysqldump.log > ${currentFileAndPath}`
   );
   return { filenameWithAbsolutePath: currentFileAndPath };
+}
+
+export async function restoreMysqlFromFile(fileAndPath) {
+  const { stderr } = await wrapExec(
+    `docker exec -i $PERCONA_CONTAINER_NAME /usr/bin/mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < ${fileAndPath}`
+  );
+  // TODO: same as above .mylogin.cnf
+  if (
+    stderr &&
+    !stderr.includes(
+      "[Warning] Using a password on the command line interface can be insecure"
+    )
+  ) {
+    return { stderr };
+  }
+  return {};
 }
 
 export async function getPostByCanonicalHelper(canonical, loggedInUser) {
