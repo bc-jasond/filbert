@@ -8,15 +8,16 @@ import {
   SELECTION_ACTION_MINI,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_END,
   SELECTION_LINK_URL,
-  SELECTION_START
+  SELECTION_NEXT,
+  SELECTION_LENGTH
 } from '../../common/constants';
 import { cleanTextOrZeroLengthPlaceholder } from '../../common/utils';
+import { reviver } from './document-model';
 
 export const Selection = Record({
-  [SELECTION_START]: 0,
-  [SELECTION_END]: -1,
+  [SELECTION_NEXT]: undefined,
+  [SELECTION_LENGTH]: -1,
   [SELECTION_ACTION_BOLD]: false,
   [SELECTION_ACTION_ITALIC]: false,
   [SELECTION_ACTION_CODE]: false,
@@ -38,25 +39,37 @@ const selectionTypesInOrder = [
   SELECTION_LINK_URL
 ];
 
-export function formatSelections(s) {
-  if (!List.isList(s)) {
-    return '';
+export function formatSelections(head) {
+  let current = head;
+  let output = 'head: ';
+  while (current) {
+    output = `${output}${current.get(SELECTION_LENGTH)}, ${current.get(
+      SELECTION_NEXT
+    )} | `;
+    current = current.get(SELECTION_NEXT);
   }
-  return `${s.reduce(
-    (acc, v) =>
-      `${acc} | start: ${v.get(SELECTION_START)}, end: ${v.get(SELECTION_END)}`,
-    ''
-  )} |`;
+  return output;
 }
 
 /**
  * PRIVATE HELPERS
  */
+// returns "head" or first selection
 function getSelections(nodeModel) {
-  return nodeModel.getIn(['meta', 'selections'], List());
+  return nodeModel.getIn(['meta', 'selections'], Selection());
 }
 function setSelections(nodeModel, value) {
   return nodeModel.setIn(['meta', 'selections'], value);
+}
+function getLastSelection(selections) {
+  const queue = [selections];
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current.get(SELECTION_NEXT)) {
+      return current;
+    }
+  }
+  throw new Error('getLastSelection - cycle!');
 }
 
 function selectionsHaveDifferentFormats(left, right) {
@@ -67,86 +80,40 @@ function selectionsHaveDifferentFormats(left, right) {
 }
 
 /**
- * make sure that all characters in the paragraph are in a selection
- * @param selections
- */
-function fillEnds(nodeModel) {
-  const selections = getSelections(nodeModel);
-  if (selections.size === 0) {
-    return nodeModel;
-  }
-  const { length: contentLength } = nodeModel.get('content', '');
-  let newSelections = selections;
-  let minStart = contentLength;
-  let maxEnd = 0;
-  selections.forEach(s => {
-    minStart = Math.min(minStart, s.get(SELECTION_START));
-    maxEnd = Math.max(maxEnd, s.get(SELECTION_END));
-  });
-  if (minStart > 0) {
-    newSelections = newSelections.insert(
-      0,
-      Selection({ [SELECTION_START]: 0, [SELECTION_END]: minStart })
-    );
-  }
-  if (maxEnd < contentLength) {
-    newSelections = newSelections.push(
-      Selection({ [SELECTION_START]: maxEnd, [SELECTION_END]: contentLength })
-    );
-  }
-  if (!selections.equals(newSelections)) {
-    console.info('FILL ENDS      ', formatSelections(newSelections));
-    return setSelections(nodeModel, newSelections);
-  }
-  return nodeModel;
-}
-
-/**
- * current = first selection
- * for each selection
- *   next = getNextSelection
- *   (current)
- *   if current formats === next formats
- *     merged
- *     current = merged
- *     continue
- *
- *   current = next
+ * if any neighboring selections have the exact same formats - merge them
  */
 function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
-  let newSelections = List();
-  const selections = getSelections(nodeModel);
-  if (selections.size === 0) {
-    return nodeModel;
-  }
-  let current = selections.first();
-  for (let i = 1; i < selections.size; i++) {
-    const next = selections.get(i, Selection());
-    if (
-      current === selections.last() ||
-      selectionsHaveDifferentFormats(current, next)
-    ) {
-      newSelections = newSelections.push(current);
+  const firstSelection = getSelections(nodeModel);
+  // convert to JS to avoid having to refresh all references to "next" on every change
+  let current = firstSelection.toJS();
+  // "head" of list
+  let head = current;
+  let didMerge = false;
+  while (current) {
+    const next = current[SELECTION_NEXT];
+    if (!next) {
+      break;
+    }
+    if (selectionsHaveDifferentFormats(current, next)) {
+      current[SELECTION_NEXT] = next;
       current = next;
     } else {
       // if the formats are the same, just extend the current selection
-      current = current.set(SELECTION_END, next.get(SELECTION_END));
+      didMerge = true;
+      if (next[SELECTION_LENGTH] === -1) {
+        current[SELECTION_NEXT] = undefined;
+        current[SELECTION_LENGTH] = -1;
+        break;
+      }
+      current[SELECTION_NEXT] = next[SELECTION_NEXT];
+      current[SELECTION_LENGTH] += next[SELECTION_LENGTH];
     }
   }
-  newSelections = newSelections.push(current);
-  // SUPER PERFORMANCE OPTIMIZATION: if there's only one Selection and it's empty - unset 'selections'
-  if (
-    newSelections.size === 1 &&
-    !selectionsHaveDifferentFormats(newSelections.get(0), Selection())
-  ) {
-    return nodeModel.deleteIn(['meta', 'selections']);
+  if (!didMerge) {
+    return nodeModel;
   }
-  if (!selections.equals(newSelections)) {
-    console.info('MERGE ADJACENT ', formatSelections(newSelections));
-    return setSelections(nodeModel, newSelections);
-  }
-  // no-op
-  return nodeModel;
+  console.info('MERGE ADJACENT ', formatSelections(head));
+  return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
 }
 
 /**
@@ -165,134 +132,101 @@ export function adjustSelectionOffsetsAndCleanup(
   start = 0,
   count = 0
 ) {
-  const diffRangeStart = Math.min(start, start + count);
-  const diffRangeEnd = Math.max(start, start + count);
   const doesRemoveCharacters = count < 0;
   // compare beforeContent length for delete operations, nodeMode.get('content') for add operations
   const contentLength = Math.max(
     nodeModel.get('content', '').length,
     beforeContent.length
   );
+  // no-op?
+  if (start === 0 && count === 0) {
+    return nodeModel;
+  }
   // validate input
   if (
-    // don't test for no-op case
-    !(start === 0 && count === 0) &&
     // can't start before 0
-    (start < 0 ||
-      // can't start beyond contentLength
-      start > contentLength ||
-      // trying to delete too far left (past 0)
-      start + count < 0 ||
-      // trying to add too far right (past contentLength)
-      start + count > contentLength)
+    start < 0 ||
+    // trying to delete too far left (past 0)
+    start + count < 0
   ) {
     throw new Error(
-      `adjustSelectionOffsetsAndCleanup out of bounds!\n${JSON.stringify(
+      `adjustSelectionOffsetsAndCleanup negative out of bounds!\n${JSON.stringify(
         nodeModel.toJS()
       )}\n${start}\n${count}`
     );
   }
-  const selections = getSelections(nodeModel);
-  if (selections.size === 0) {
-    return nodeModel.deleteIn(['meta', 'selections']);
-  }
-  let newSelections = List();
-  // TODO: refactor to remove continue statements?
-  /* eslint-disable no-continue */
-  for (let i = 0; i < selections.size; i++) {
-    let current = selections.get(i);
-    // const currentJS = current.toJS();
-    if (doesRemoveCharacters) {
-      // selection completely enveloped by diff - skip
-      if (
-        current.get(SELECTION_START) >= diffRangeStart &&
-        current.get(SELECTION_END) <= diffRangeEnd
-      ) {
-        continue;
-      }
-      // selection comes before diff - push as is
-      if (current.get(SELECTION_END) <= diffRangeStart) {
-        newSelections = newSelections.push(current);
-        continue;
-      }
-      // selection overlaps diff to the left - set end to diffRangeStart
-      if (
-        current.get(SELECTION_START) < diffRangeStart &&
-        current.get(SELECTION_END) <= diffRangeEnd
-      ) {
-        newSelections = newSelections.push(
-          current.set(SELECTION_END, diffRangeStart)
-        );
-        continue;
-      }
-      // diff completely inside selection - add "count" to end
-      if (
-        current.get(SELECTION_START) <= diffRangeStart &&
-        current.get(SELECTION_END) > diffRangeEnd
-      ) {
-        newSelections = newSelections.push(
-          current.set(SELECTION_END, current.get(SELECTION_END) + count)
-        );
-        continue;
-      }
-      // selection overlaps diff to the right - set start to diffRangeStart, add "count" to end
-      if (
-        current.get(SELECTION_START) < diffRangeEnd &&
-        current.get(SELECTION_END) > diffRangeEnd
-      ) {
-        newSelections = newSelections.push(
-          current
-            .set(SELECTION_START, diffRangeStart)
-            .set(SELECTION_END, current.get(SELECTION_END) + count)
-        );
-        continue;
-      }
-      // selection comes after diff - add "count" to start, add "count" to end
-      if (
-        current.get(SELECTION_START) >= diffRangeEnd &&
-        current.get(SELECTION_END) > diffRangeEnd
-      ) {
-        newSelections = newSelections.push(
-          current
-            .set(SELECTION_START, current.get(SELECTION_START) + count)
-            .set(SELECTION_END, current.get(SELECTION_END) + count)
-        );
-      }
-    } else {
-      // ADDING characters
-      if (current.get(SELECTION_START) >= start) {
-        current = current.set(
-          SELECTION_START,
-          current.get(SELECTION_START) + count
-        );
-      }
-      if (current.get(SELECTION_END) >= start) {
-        current = current.set(
-          SELECTION_END,
-          current.get(SELECTION_END) + count
-        );
-      }
-      newSelections = newSelections.push(current);
-    }
-  }
-  /* eslint-enable no-continue */
 
-  let newModel = nodeModel;
-  if (!selections.equals(newSelections)) {
-    console.info(
-      'ADJUST         ',
-      formatSelections(newSelections),
-      ' -- offset: ',
-      start,
-      ' count: ',
-      count,
-      ' content length: ',
-      contentLength
-    );
-    newModel = setSelections(nodeModel, newSelections);
+  const firstSelection = getSelections(nodeModel);
+  console.info(
+    'ADJUST         ',
+    formatSelections(firstSelection),
+    ' -- offset: ',
+    start,
+    ' count: ',
+    count,
+    ' content length: ',
+    contentLength
+  );
+  // if there's only 1 selection, no-op
+  if (!firstSelection.get(SELECTION_NEXT)) {
+    return nodeModel;
   }
-  newModel = fillEnds(newModel);
-  return mergeAdjacentSelectionsWithSameFormats(newModel);
+  let head = firstSelection.toJS();
+  let current = head;
+  let caretPosition = 0;
+  // if we're adding content
+  if (!doesRemoveCharacters) {
+    // find the selection
+    while (start > caretPosition + current[SELECTION_LENGTH]) {
+      caretPosition += current[SELECTION_LENGTH];
+      current = current[SELECTION_NEXT];
+    }
+    // and increase it's length if it's not at the end
+    if (current[SELECTION_NEXT]) {
+      current[SELECTION_LENGTH] += count;
+      return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
+    }
+    return nodeModel;
+  }
+  // if we're deleting content:
+  // find the start selection
+  while (start > caretPosition + current[SELECTION_LENGTH]) {
+    caretPosition += current[SELECTION_LENGTH];
+    current = current[SELECTION_NEXT];
+  }
+  // adjust the start selection length
+  // deleted only inside this selection?
+  if (start + count - caretPosition <= current[SELECTION_LENGTH]) {
+    // decrease it's length
+    current[SELECTION_LENGTH] -= count;
+    return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
+  }
+  const deleteStartSelection = current;
+  // find the end selection
+  while (start + count > caretPosition + current[SELECTION_LENGTH]) {
+    caretPosition += current[SELECTION_LENGTH];
+    current = current[SELECTION_NEXT];
+  }
+  // deleted through the end?
+  if (!current) {
+    delete deleteStartSelection[SELECTION_LENGTH];
+    delete deleteStartSelection[SELECTION_NEXT];
+    return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
+  }
+
+  // adjust start selection length and next
+  deleteStartSelection[SELECTION_LENGTH] = start - caretPosition;
+  deleteStartSelection[SELECTION_NEXT] = current;
+
+  // adjust end selection length
+  current[SELECTION_LENGTH] -= count - caretPosition;
+
+  // deleted head?
+  if (start === 0 && current !== head) {
+    head = current;
+  }
+
+  return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
 }
 
 /**
@@ -303,7 +237,7 @@ export function adjustSelectionOffsetsAndCleanup(
  * @returns {Selection}
  */
 export function getSelection(nodeModel, start, end) {
-  const selections = getSelections(nodeModel);
+  const firstSelection = getSelections(nodeModel);
   let newSelection = selections.find(
     s => s.get(SELECTION_START) === start && s.get(SELECTION_END) === end,
     null,
@@ -356,7 +290,7 @@ export function getSelection(nodeModel, start, end) {
             return oldVal;
           }
           // NOTE: for "union" of all formats use ||, for "intersection" of all formats use &&
-          return newVal && oldVal;
+          return newVal || oldVal;
         }, selection),
       newSelection
     );
@@ -425,7 +359,8 @@ export function upsertSelection(nodeModelArg, newSelection) {
   }
 
   nodeModel = setSelections(nodeModel, newSelections);
-  return adjustSelectionOffsetsAndCleanup(nodeModel);
+  nodeModel = adjustSelectionOffsetsAndCleanup(nodeModel);
+  return mergeAdjacentSelectionsWithSameFormats(nodeModel);
 }
 
 /**
@@ -469,8 +404,10 @@ export function splitSelectionsAtCaretOffset(
   }
   leftNode = setSelections(leftNode, left);
   leftNode = adjustSelectionOffsetsAndCleanup(leftNode);
+  leftNode = mergeAdjacentSelectionsWithSameFormats(leftNode);
   rightNode = setSelections(rightNode, right);
   rightNode = adjustSelectionOffsetsAndCleanup(rightNode);
+  rightNode = mergeAdjacentSelectionsWithSameFormats(rightNode);
   return { leftNode, rightNode };
 }
 
@@ -499,7 +436,8 @@ export function concatSelections(leftModelArg, rightModelArg) {
     );
   }
   leftModel = setSelections(leftModel, newSelections);
-  return adjustSelectionOffsetsAndCleanup(leftModel);
+  leftModel = adjustSelectionOffsetsAndCleanup(leftModel);
+  return mergeAdjacentSelectionsWithSameFormats(leftModel);
 }
 
 export function getContentForSelection(node, selection) {

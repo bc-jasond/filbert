@@ -31,6 +31,7 @@ export function doDelete(
       // -1 for "regular" backspace to delete 1 char
       diffLength === 0 ? -1 : -diffLength
     );
+    node = mergeAdjacentSelectionsWithSameFormats(node);
     return documentModel.update(node);
   }
   if (startNodeId === 'null' || !startNodeId) {
