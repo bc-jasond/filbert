@@ -1067,25 +1067,15 @@ export default class EditPost extends React.Component {
     } = this;
     const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
     if (
-      formatSelectionNode.size === 0 &&
       // no node
-      (!startNodeId ||
-        !caretEnd ||
-        // collapsed caret
-        caretStart === caretEnd)
+      !startNodeId ||
+      !caretEnd ||
+      // collapsed caret
+      caretStart === caretEnd
     ) {
-      return;
-    }
-
-    if (
-      formatSelectionNode.size > 0 &&
-      // no node
-      (!startNodeId ||
-        !caretEnd ||
-        // collapsed caret
-        caretStart === caretEnd)
-    ) {
-      await this.closeFormatSelectionMenu();
+      if (formatSelectionNode.size > 0) {
+        await this.closeFormatSelectionMenu();
+      }
       return;
     }
 

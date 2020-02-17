@@ -96,46 +96,29 @@ Immutable.Map {
   "position": 1,
   "content": "paragraph for good measure?",
   "meta": Immutable.Map {
-    "selections": Immutable.List [
-      Immutable.Record {
-        "start": 0,
-        "end": 9,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 9,
-        "end": 14,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 14,
-        "end": 18,
-        "selection-bold": true,
-        "selection-italic": true,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 18,
-        "end": 27,
+    "selections": Immutable.Record {
+      "next": Immutable.Record {
+        "next": Immutable.Record {
+          "next": Immutable.Map {
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-strikethrough": false,
+            "selection-siteinfo": false,
+            "selection-link": false,
+            "linkUrl": "",
+          },
+          "length": 4,
+          "selection-bold": true,
+          "selection-italic": true,
+          "selection-code": false,
+          "selection-siteinfo": false,
+          "selection-mini": false,
+          "selection-strikethrough": false,
+          "selection-link": false,
+          "linkUrl": "",
+        },
+        "length": 5,
         "selection-bold": false,
         "selection-italic": false,
         "selection-code": false,
@@ -145,7 +128,16 @@ Immutable.Map {
         "selection-link": false,
         "linkUrl": "",
       },
-    ],
+      "length": 9,
+      "selection-bold": false,
+      "selection-italic": false,
+      "selection-code": true,
+      "selection-siteinfo": false,
+      "selection-mini": false,
+      "selection-strikethrough": false,
+      "selection-link": false,
+      "linkUrl": "",
+    },
   },
   "id": "ce7b",
   "post_id": 166,
@@ -159,22 +151,10 @@ Immutable.Map {
   "position": 1,
   "content": "graph because",
   "meta": Immutable.Map {
-    "selections": Immutable.List [
-      Immutable.Record {
-        "start": 0,
-        "end": 5,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 5,
-        "end": 13,
+    "selections": Immutable.Record {
+      "next": Immutable.Record {
+        "next": undefined,
+        "length": -1,
         "selection-bold": false,
         "selection-italic": false,
         "selection-code": false,
@@ -184,7 +164,16 @@ Immutable.Map {
         "selection-link": false,
         "linkUrl": "",
       },
-    ],
+      "length": 5,
+      "selection-bold": false,
+      "selection-italic": false,
+      "selection-code": true,
+      "selection-siteinfo": false,
+      "selection-mini": false,
+      "selection-strikethrough": false,
+      "selection-link": false,
+      "linkUrl": "",
+    },
   },
   "id": "6eda",
   "post_id": 166,
@@ -737,8 +726,6 @@ Immutable.Map {
 }
 `;
 
-exports[`getContentForSelection nominal case: "paragraph" 1`] = `"paragraph"`;
-
 exports[`getSelection applies formats of outer selection if selection is made within one selection 1`] = `
 Immutable.Record {
   "start": 16,
@@ -814,10 +801,10 @@ Immutable.Record {
 }
 `;
 
-exports[`selectionReviver return Selection when JS object has 'start' and 'end' keys 1`] = `
+exports[`selectionReviver return Selection when JS object has 'next' and 'length' keys 1`] = `
 Immutable.Record {
-  "start": 3,
-  "end": 8,
+  "next": null,
+  "length": -1,
   "selection-bold": false,
   "selection-italic": false,
   "selection-code": false,

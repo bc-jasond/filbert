@@ -135,7 +135,6 @@ export function handlePasteTextType(
       caretPosition,
       diffLength
     );
-    selectedNode = mergeAdjacentSelectionsWithSameFormats(selectedNode);
     documentModel.update(selectedNode);
     return {
       startNodeId: selectedNodeId,
@@ -186,14 +185,12 @@ export function handlePasteTextType(
     caretPosition,
     firstLine.length
   );
-  leftNode = mergeAdjacentSelectionsWithSameFormats(leftNode);
   rightNode = adjustSelectionOffsetsAndCleanup(
     rightNode,
     contentRight, // before content!
     0,
     lastLine.length
   );
-  rightNode = mergeAdjacentSelectionsWithSameFormats(rightNode);
   documentModel.update(leftNode);
   documentModel.update(rightNode);
 

@@ -41,7 +41,6 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
     caretStart,
     newChar.length
   );
-  selectedNodeMap = mergeAdjacentSelectionsWithSameFormats(selectedNodeMap);
   documentModel.update(selectedNodeMap);
 
   return {
@@ -91,7 +90,6 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
     preUpdateStart,
     emoji.length
   );
-  selectedNodeMap = mergeAdjacentSelectionsWithSameFormats(selectedNodeMap);
   documentModel.update(selectedNodeMap);
 
   // return original caretStart for correct setCaret() positioning

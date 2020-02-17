@@ -10,14 +10,14 @@ import {
   NODE_TYPE_PRE,
   NODE_TYPE_QUOTE,
   NODE_TYPE_SPACER,
-  SELECTION_END,
-  SELECTION_START
+  SELECTION_LENGTH,
+  SELECTION_NEXT
 } from '../../common/constants';
 import { cleanText, getMapWithId } from '../../common/utils';
 import { concatSelections, Selection } from './selection-helpers';
 
 export function reviver(key, value) {
-  if (value.has(SELECTION_START) && value.has(SELECTION_END)) {
+  if (value.has(SELECTION_NEXT) && value.has(SELECTION_LENGTH)) {
     return new Selection(value);
   }
   // ImmutableJS default behavior

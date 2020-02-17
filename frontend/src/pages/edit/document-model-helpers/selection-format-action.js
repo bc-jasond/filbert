@@ -23,6 +23,7 @@ export function selectionFormatAction(
   console.info('HANDLE SELECTION ACTION: ', action, selection.toJS());
 
   let node = nodeArg;
+  // these first 2 actions change the node type
   if (action === SELECTION_ACTION_H1) {
     node = node
       .set(
@@ -38,6 +39,7 @@ export function selectionFormatAction(
       )
       .deleteIn(['meta', 'selections']);
   }
+  // if we changed the node back to an H1 or H2 or back to a P - we're done
   if (!node.equals(nodeArg)) {
     documentModel.update(node);
     return {

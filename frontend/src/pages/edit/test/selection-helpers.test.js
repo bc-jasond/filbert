@@ -4,9 +4,9 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
-  SELECTION_END,
   SELECTION_LINK_URL,
-  SELECTION_START
+  SELECTION_LENGTH,
+  SELECTION_NEXT
 } from '../../../common/constants';
 
 const { fromJS } = require('immutable');
@@ -19,8 +19,7 @@ const {
   upsertSelection,
   splitSelectionsAtCaretOffset,
   concatSelections,
-  getContentForSelection,
-  getSelectionKey
+  getContentForSelection
 } = require('../selection-helpers');
 
 const testContent = 'And a second paragraph because';
@@ -29,76 +28,69 @@ const nodeModelWithSelections = fromJS(
     type: 'p',
     parent_id: '39fb',
     position: 1,
-    content: '',
+    content: testContent,
     meta: {
-      selections: [
-        {
-          start: 0,
-          end: 3,
-          'selection-bold': false,
-          'selection-italic': false,
-          'selection-code': false,
-          'selection-strikethrough': false,
-          'selection-siteinfo': true,
-          'selection-link': false,
-          linkUrl: ''
-        },
-        {
-          start: 3,
-          end: 6,
+      selections: {
+        'selection-bold': false,
+        'selection-italic': false,
+        'selection-code': false,
+        'selection-strikethrough': false,
+        'selection-siteinfo': true,
+        'selection-link': false,
+        linkUrl: '',
+        length: 3,
+        next: {
           'selection-bold': false,
           'selection-italic': false,
           'selection-code': false,
           'selection-strikethrough': false,
           'selection-siteinfo': false,
           'selection-link': false,
-          linkUrl: ''
-        },
-        {
-          start: 6,
-          end: 12,
-          'selection-bold': false,
-          'selection-italic': true,
-          'selection-code': false,
-          'selection-strikethrough': false,
-          'selection-siteinfo': false,
-          'selection-link': false,
-          linkUrl: ''
-        },
-        {
-          start: 12,
-          end: 13,
-          'selection-bold': false,
-          'selection-italic': false,
-          'selection-code': false,
-          'selection-strikethrough': false,
-          'selection-siteinfo': false,
-          'selection-link': false,
-          linkUrl: ''
-        },
-        {
-          start: 13,
-          end: 22,
-          'selection-bold': false,
-          'selection-italic': false,
-          'selection-code': true,
-          'selection-strikethrough': false,
-          'selection-siteinfo': false,
-          'selection-link': false,
-          linkUrl: ''
-        },
-        {
-          start: 22,
-          end: 30,
-          'selection-bold': false,
-          'selection-italic': false,
-          'selection-code': false,
-          'selection-strikethrough': false,
-          'selection-siteinfo': false,
-          'selection-link': false,
-          linkUrl: ''
+          linkUrl: '',
+          length: 3,
+          next: {
+            'selection-bold': false,
+            'selection-italic': true,
+            'selection-code': false,
+            'selection-strikethrough': false,
+            'selection-siteinfo': false,
+            'selection-link': false,
+            linkUrl: '',
+            length: 6,
+            next: {
+              'selection-bold': false,
+              'selection-italic': false,
+              'selection-code': false,
+              'selection-strikethrough': false,
+              'selection-siteinfo': false,
+              'selection-link': false,
+              linkUrl: '',
+              length: 1,
+              next: {
+                'selection-bold': false,
+                'selection-italic': false,
+                'selection-code': true,
+                'selection-strikethrough': false,
+                'selection-siteinfo': false,
+                'selection-link': false,
+                linkUrl: '',
+                length: 9,
+                next: {
+                  'selection-bold': false,
+                  'selection-italic': false,
+                  'selection-code': false,
+                  'selection-strikethrough': false,
+                  'selection-siteinfo': false,
+                  'selection-link': false,
+                  linkUrl: '',
+                  length: -1,
+                  next: undefined
+                }
+              }
+            }
+          }
         }
-      ]
+      }
     },
     id: '6eda',
     post_id: 166
@@ -113,44 +105,37 @@ beforeAll(() => {
 });
 
 describe('selectionReviver', () => {
-  test(`return Selection when JS object has '${SELECTION_START}' and '${SELECTION_END}' keys`, () => {
-    const expectedSelection = Selection({
-      [SELECTION_START]: 3,
-      [SELECTION_END]: 8
-    });
+  test(`return Selection when JS object has '${SELECTION_NEXT}' and '${SELECTION_LENGTH}' keys`, () => {
     expect(
-      fromJS({ [SELECTION_START]: 3, [SELECTION_END]: 8 }, reviver)
-    ).toMatchSnapshot();
+      fromJS({ [SELECTION_NEXT]: undefined, [SELECTION_LENGTH]: -1 }, reviver)
+    ).toEqual(Selection());
   });
 });
 
 describe('adjustSelectionOffsetsAndCleanup', () => {
   test('delete all highlighted characters up to caret (when "end" in handleBackspace)', () => {
     const expectedSelections = fromJS(
-      [
-        {
-          start: 0,
-          end: 5,
-          'selection-bold': false,
-          'selection-italic': false,
-          'selection-code': true,
-          'selection-strikethrough': false,
-          'selection-siteinfo': false,
-          'selection-link': false,
-          linkUrl: ''
-        },
-        {
-          start: 5,
-          end: 13,
+      {
+        'selection-bold': false,
+        'selection-italic': false,
+        'selection-code': true,
+        'selection-strikethrough': false,
+        'selection-siteinfo': false,
+        'selection-link': false,
+        linkUrl: '',
+        length: 5,
+        next: {
           'selection-bold': false,
           'selection-italic': false,
           'selection-code': false,
           'selection-strikethrough': false,
           'selection-siteinfo': false,
           'selection-link': false,
-          linkUrl: ''
+          linkUrl: '',
+          length: -1,
+          next: undefined
         }
-      ],
+      },
       reviver
     );
 
@@ -178,63 +163,55 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
         position: 1,
         content: 'paragraph for good measure?',
         meta: {
-          selections: [
-            {
-              start: 0,
-              end: 9,
-              'selection-bold': false,
-              'selection-italic': false,
-              'selection-code': false,
-              'selection-strikethrough': false,
-              'selection-siteinfo': false,
-              'selection-link': false,
-              linkUrl: ''
-            },
-            {
-              start: 9,
-              end: 18,
+          selections: {
+            'selection-bold': false,
+            'selection-italic': false,
+            'selection-code': false,
+            'selection-strikethrough': false,
+            'selection-siteinfo': false,
+            'selection-link': false,
+            linkUrl: '',
+            length: 9,
+            next: {
               'selection-bold': false,
               'selection-italic': false,
               'selection-code': true,
               'selection-strikethrough': false,
               'selection-siteinfo': false,
               'selection-link': false,
-              linkUrl: ''
-            },
-            {
-              start: 18,
-              end: 23,
-              'selection-bold': false,
-              'selection-italic': false,
-              'selection-code': false,
-              'selection-strikethrough': false,
-              'selection-siteinfo': false,
-              'selection-link': false,
-              linkUrl: ''
-            },
-            {
-              start: 23,
-              end: 27,
-              'selection-bold': true,
-              'selection-italic': true,
-              'selection-code': false,
-              'selection-strikethrough': false,
-              'selection-siteinfo': false,
-              'selection-link': false,
-              linkUrl: ''
-            },
-            {
-              start: 27,
-              end: 36,
-              'selection-bold': false,
-              'selection-italic': false,
-              'selection-code': false,
-              'selection-strikethrough': false,
-              'selection-siteinfo': false,
-              'selection-link': false,
-              linkUrl: ''
+              linkUrl: '',
+              length: 9,
+              next: {
+                'selection-bold': false,
+                'selection-italic': false,
+                'selection-code': false,
+                'selection-strikethrough': false,
+                'selection-siteinfo': false,
+                'selection-link': false,
+                linkUrl: '',
+                length: 5,
+                next: {
+                  'selection-bold': true,
+                  'selection-italic': true,
+                  'selection-code': false,
+                  'selection-strikethrough': false,
+                  'selection-siteinfo': false,
+                  'selection-link': false,
+                  linkUrl: '',
+                  length: 4,
+                  next: {
+                    'selection-bold': false,
+                    'selection-italic': false,
+                    'selection-code': false,
+                    'selection-strikethrough': false,
+                    'selection-siteinfo': false,
+                    'selection-link': false,
+                    linkUrl: ''
+                  }
+                }
+              }
             }
-          ]
+          }
         },
         id: 'ce7b',
         post_id: 166
@@ -244,8 +221,8 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     const updatedModel = adjustSelectionOffsetsAndCleanup(
       testModel,
       prevContent,
-      9,
-      -9
+      27,
+      -4
     );
     expect(updatedModel).toMatchSnapshot();
   });
@@ -954,26 +931,6 @@ describe('getContentForSelection', () => {
     expect(() => {
       getContentForSelection(testModel, selection);
     }).toThrow();
-  });
-});
-
-describe('getSelectionKey', () => {
-  test('get key for Selection', () => {
-    const testSelection = fromJS(
-      {
-        start: 12,
-        end: 115,
-        'selection-bold': true,
-        'selection-italic': false,
-        'selection-code': true,
-        'selection-strikethrough': false,
-        'selection-siteinfo': false,
-        'selection-link': false,
-        linkUrl: ''
-      },
-      reviver
-    );
-    expect(getSelectionKey(testSelection)).toBe('12-115-1-0-1-0-0-0-0-0');
   });
 });
 
