@@ -58,28 +58,27 @@ export function formatSelections(head) {
  * PRIVATE HELPERS
  */
 // returns "head" or first selection
+// convert to JS to avoid having to refresh all references to "next" on every change
 function getSelections(nodeModel) {
-  return nodeModel.getIn(['meta', 'selections'], Selection());
+  return nodeModel.getIn(['meta', 'selections'], Selection()).toJS();
 }
 function setSelections(nodeModel, value) {
-  return nodeModel.setIn(['meta', 'selections'], value);
-}
-function getLastSelection(selections) {
-  const queue = [selections];
-  while (queue.length) {
-    const current = queue.shift();
-    if (!current.get(SELECTION_NEXT)) {
-      return current;
-    }
-  }
-  throw new Error('getLastSelection - cycle!');
+  return nodeModel.setIn(
+    ['meta', 'selections'],
+    value ? fromJS(value, reviver) : Selection()
+  );
 }
 
-function selectionsHaveDifferentFormats(left, right) {
-  return selectionTypesInOrder.reduce(
-    (acc, key) => acc || left[key] !== right[key],
-    false
-  );
+function selectionsHaveIdenticalFormats(left, right) {
+  // remove non-formatting related fields
+  const leftCompare = Selection(left)
+    .delete(SELECTION_LENGTH)
+    .delete(SELECTION_NEXT);
+  const rightCompare = Selection(right)
+    .delete(SELECTION_LENGTH)
+    .delete(SELECTION_NEXT);
+  // use built-in equals()
+  return leftCompare.equals(rightCompare);
 }
 
 /**
@@ -145,29 +144,32 @@ export function adjustSelectionOffsetsAndCleanup(
     // can't start before 0
     start < 0 ||
     // trying to delete too far left (past 0)
-    start + count < 0
+    start + count < 0 ||
+    // trying to delete from too far right
+    (doesRemoveCharacters && start > beforeContent.length) ||
+    // trying to add too many characters
+    (!doesRemoveCharacters && start + count > nodeModel.get('content')?.length)
   ) {
     throw new Error(
-      `adjustSelectionOffsetsAndCleanup negative out of bounds!\n${JSON.stringify(
+      `adjustSelectionOffsetsAndCleanup out of bounds!\n${JSON.stringify(
         nodeModel.toJS()
       )}\n${start}\n${count}`
     );
   }
 
-  const firstSelection = getSelections(nodeModel);
+  let head = getSelections(nodeModel);
   console.info(
     'ADJUST         ',
-    formatSelections(firstSelection),
+    formatSelections(head),
     ' -- offset: ',
     start,
     ' count: ',
     count
   );
   // if there's only 1 selection, no-op
-  if (!firstSelection.get(SELECTION_NEXT)) {
+  if (!head[SELECTION_NEXT]) {
     return nodeModel;
   }
-  let head = firstSelection.toJS();
   let current = head;
   let prev;
   let caretPosition = 0;
@@ -181,166 +183,219 @@ export function adjustSelectionOffsetsAndCleanup(
     // and increase it's length if it's not at the end
     if (current[SELECTION_NEXT]) {
       current[SELECTION_LENGTH] += count;
-      return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
+      return setSelections(nodeModel, head);
     }
     return nodeModel;
   }
   //
   // if we're DELETING content:
   //
-  let deleteCaretStart = start + count; // count is negative
-  const didDeleteThroughBeginning = deleteCaretStart === 0;
-  const didDeleteThroughEnd = start === beforeContent.length;
-  // deleted through the beginning?  set start to end
-  if (didDeleteThroughBeginning) {
-    deleteCaretStart = start;
+  // did we delete all content for the node? - count is negative
+  if (beforeContent.length + count === 0) {
+    return setSelections(nodeModel);
   }
-  // find the start selection
-  while (deleteCaretStart >= caretPosition + current[SELECTION_LENGTH]) {
+  const deleteCaretStart = start + count; // count is negative
+  if (deleteCaretStart === 0) {
+    // unset head if we deleted through the beginning
+    head = undefined;
+  }
+  // loop through all selections
+  let didSkip = false;
+  let didDelete = false;
+  while (current) {
+    // capture this value before we mutate it - give last selection a length for comparison (it will be -1)
+    const currentLength =
+      current[SELECTION_LENGTH] === -1
+        ? beforeContent.length - caretPosition
+        : current[SELECTION_LENGTH];
+    if (
+      caretPosition >= deleteCaretStart &&
+      caretPosition + currentLength <= start
+    ) {
+      // whole selection was deleted
+      didSkip = true;
+    } else {
+      // selection completely overlaps?
+      if (
+        caretPosition <= deleteCaretStart &&
+        caretPosition + currentLength >= start
+      ) {
+        const newLength = currentLength + count;
+        if (newLength === 0) {
+          // deleted the selection
+          didDelete = true;
+        }
+        current[SELECTION_LENGTH] = currentLength + count; // count is negative
+      }
+      // selection overlaps to the left?
+      else if (
+        caretPosition < deleteCaretStart &&
+        caretPosition + currentLength > deleteCaretStart
+      ) {
+        current[SELECTION_LENGTH] = deleteCaretStart - caretPosition;
+      }
+      // selection overlaps to the right?
+      else if (
+        current[SELECTION_NEXT] &&
+        caretPosition < start &&
+        caretPosition + currentLength > start
+      ) {
+        current[SELECTION_LENGTH] = caretPosition + currentLength - start;
+      }
+      if (!head) {
+        didSkip = false;
+        head = current;
+      } else if (didSkip) {
+        didSkip = false;
+        if (!selectionsHaveIdenticalFormats(prev, current)) {
+          prev[SELECTION_NEXT] = current;
+        } else if (current[SELECTION_NEXT]) {
+          // merge new neighbors with same formats here
+          prev[SELECTION_LENGTH] += current[SELECTION_LENGTH];
+          prev[SELECTION_NEXT] = current[SELECTION_NEXT];
+        } else {
+          // the last selection has same formats as prev and needs to be "merged" - just delete
+          didDelete = true;
+        }
+      }
+      if (didDelete) {
+        // mark as skipped to link prev & current[next] on next loop
+        didSkip = true;
+        didDelete = false;
+      } else {
+        prev = current;
+      }
+    }
+    // advance cursor and selection pointer
+    caretPosition += currentLength;
+    current = current[SELECTION_NEXT];
+  }
+  // prev should be last node
+  prev[SELECTION_LENGTH] = -1;
+  prev[SELECTION_NEXT] = undefined;
+
+  return setSelections(nodeModel, head);
+}
+
+/**
+ * Takes a highlight range in paragraph content and maps it to a Selection.
+ * finds index of existing selection, or replaces into the selections linked list a new placeholder selection
+ * removing existing overlapping selections
+ * TODO: don't merge here, let upsertSelection() handle that
+ */
+export function getSelection(nodeModel, start, end) {
+  // TODO: validation of start & end against nodeModel.get('content')?.length
+  const length = end - start;
+  // first see if the exact Selection already exists?
+  let head = getSelections(nodeModel);
+  let current = head;
+  let prev;
+  let caretPosition = 0;
+  let idx = 0;
+  while (current && caretPosition + current[SELECTION_LENGTH] <= start) {
+    if (caretPosition === start && current[SELECTION_LENGTH] === length) {
+      // found exact match in existing selections
+      return { selections: fromJS(head, reviver), idx };
+    }
     caretPosition += current[SELECTION_LENGTH];
+    idx += 1;
     prev = current;
     current = current[SELECTION_NEXT];
   }
-  // deleted only inside one selection OR through beginning OR through end?
-  if (
-    didDeleteThroughBeginning ||
-    didDeleteThroughEnd ||
-    start - caretPosition <= current[SELECTION_LENGTH]
-  ) {
-    // update (decrease or remove) it's length
-    if (didDeleteThroughEnd) {
-      delete current[SELECTION_LENGTH];
-      delete current[SELECTION_NEXT];
-    } else {
-      current[SELECTION_LENGTH] -= start - caretPosition;
-      // if we deleted this node, advance the pointer
-      if (current[SELECTION_LENGTH] === 0) {
-        prev[SELECTION_NEXT] = current[SELECTION_NEXT];
-      }
-    }
-    // deleted through beginning?
-    head = didDeleteThroughBeginning ? current : head;
-    return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
-  }
-  // user deleted somewhere in the middle across more than one selection...
-  const deleteStartSelection = current;
-  // find the end selection
-  while (deleteCaretStart >= caretPosition + current[SELECTION_LENGTH]) {
-    caretPosition += current[SELECTION_LENGTH];
-    current = current[SELECTION_NEXT];
-  }
-  // deleted through the end?
-  if (!current) {
-    delete deleteStartSelection[SELECTION_LENGTH];
-    delete deleteStartSelection[SELECTION_NEXT];
-    return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
-  }
-
-  // adjust start selection length and next
-  deleteStartSelection[SELECTION_LENGTH] = start - caretPosition;
-  deleteStartSelection[SELECTION_NEXT] = current;
-
-  // adjust end selection length
-  current[SELECTION_LENGTH] -= count - caretPosition;
-
-  // deleted head?
-  if (start === 0 && current !== head) {
-    head = current;
-  }
-
-  return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
-}
-
-/**
- * NOTE: returns Selection for the format selection menu
- * @param nodeModel
- * @param start
- * @param end
- * @returns {Selection}
- */
-export function getSelection(nodeModel, start, end) {
-  const firstSelection = getSelections(nodeModel);
-  const length = end - start;
-  // first see if the exact Selection already exists?
-  let head = firstSelection.toJS();
-  let current = head;
-  let caretPosition = 0;
-  while (current && caretPosition <= start) {
-    if (caretPosition === start && current[SELECTION_LENGTH] === length) {
-      return fromJS(current, reviver);
-    }
-    caretPosition += current[SELECTION_LENGTH];
-    current = current[SELECTION_NEXT];
-  }
   // if we're here, we didn't find an exact match in existing selections
+  let newSelection = {
+    [SELECTION_LENGTH]: length,
+    [SELECTION_NEXT]: undefined
+  };
+  // capture current length before mutation
+  const prevCurrentLength = current[SELECTION_LENGTH];
+  // adjust "left" length
+  current[SELECTION_LENGTH] = start - caretPosition;
+  // merge newSelection with current ("left")?
+  if (selectionsHaveIdenticalFormats(current, newSelection)) {
+    // since we're not applying all overlapping formats, merging just means adding length
+    newSelection[SELECTION_LENGTH] += current[SELECTION_LENGTH];
+    if (!prev) {
+      // head was replaced
+      head = newSelection;
+    } else {
+      prev[SELECTION_NEXT] = newSelection;
+    }
+  } else {
+    // no merge, set left[next] to new selection
+    current[SELECTION_NEXT] = newSelection;
+  }
+  // add original "left" length to caretPosition to preserve original selection lengths for further comparison
+  caretPosition += prevCurrentLength;
+  // skip any completely overlapped selections
+  while (current && caretPosition <= end) {
+    // note: order is different - reassign current then increment caretPosition
+    current = current[SELECTION_NEXT];
+    caretPosition += current[SELECTION_LENGTH];
+  }
+  // merge newSelection with current ("right")?
+  if (selectionsHaveIdenticalFormats(current, newSelection)) {
+    if (!current[SELECTION_NEXT]) {
+      // new selection is the end selection
+      newSelection[SELECTION_LENGTH] = -1;
+      newSelection[SELECTION_NEXT] = undefined;
+    } else {
+      // adjust length and next
+      newSelection[SELECTION_LENGTH] += current[SELECTION_LENGTH];
+      newSelection[SELECTION_NEXT] = current[SELECTION_NEXT];
+    }
+  } else {
+    // adjust "right" length (if not -1)
+    current[SELECTION_LENGTH] = caretPosition - end;
+    // attach new selection to "right"
+    newSelection[SELECTION_NEXT] = current;
+  }
+
+  // insert a new selection over top of any existing selections
+  // - create a new selection with length: length
+  // -  (?),
+  // - skip any completely overlapped selections
+  // - adjust "right" length (if not -1), set new[next] to right
+  // - return {}
+  // edge cases:
+  // - replaced head?
+  // - new selection completely within existing selection - need to split
+  // - replaced all selections?
   // TODO: apply overlapping formats?
-  return Selection();
+  return { selections: fromJS(head, reviver), idx };
+}
+
+export function getSelectionAtIdx(nodeModel, idx) {
+  let selection = nodeModel.getIn(['meta', 'selections']);
+  let i = 0;
+  while (selection && i < idx) {
+    selection = selection.get(SELECTION_NEXT);
+    i += 1;
+  }
+  if (!selection) {
+    console.error('Bad selection index: ', idx, nodeModel);
+  }
+  return selection;
 }
 
 /**
- * creating a selection:
- * if first selection in paragraph:
- * 1) create one selection the total length of textContent
- *    OR two selections starting at position 0 or ending at textContent.length - 1
- *    OR 3 selections, an empty one in beginning, one in the middle and another empty one at the end
- *
- * An unformatted paragraph can have no selections but, if it has 1 or more, it can't have any gaps
- *
- * 1) add attributes from overlapping selections if they have formats (might be empty)
- * 2) merge overlapping selections - adjust start or end positions of overlapping selections,
- * guarantee no overlaps at rest
+ * insert a new formatted selection
+ * TODO: merge adjacent selections with identical formats
  */
-export function upsertSelection(nodeModelArg, newSelection) {
-  let didPushNewSelection = false;
-  let newSelections = List();
+export function upsertSelection(nodeModelArg, newSelection, idx) {
   let nodeModel = nodeModelArg;
-  const selections = getSelections(nodeModel);
-  if (selections.size === 0) {
-    newSelections = newSelections.push(newSelection);
-  }
-  for (let i = 0; i < selections.size; i++) {
-    const current = selections.get(i);
-    // current selection IS newSelection
-    if (
-      current.get(SELECTION_START) === newSelection.get(SELECTION_START) &&
-      current.get(SELECTION_END) === newSelection.get(SELECTION_END)
-    ) {
-      newSelections = newSelections.push(newSelection);
-      didPushNewSelection = true;
-    }
-    // current selection doesn't overlap - push it
-    else if (
-      current.get(SELECTION_END) <= newSelection.get(SELECTION_START) ||
-      current.get(SELECTION_START) >= newSelection.get(SELECTION_END)
-    ) {
-      newSelections = newSelections.push(current);
-    } else {
-      // current selection overlaps to the left
-      if (current.get(SELECTION_START) < newSelection.get(SELECTION_START)) {
-        newSelections = newSelections.push(
-          current.set(SELECTION_END, newSelection.get(SELECTION_START))
-        );
-      }
-      // push new selection
-      if (!didPushNewSelection) {
-        newSelections = newSelections.push(newSelection);
-        didPushNewSelection = true;
-      }
-      // current selection overlaps to the right
-      if (current.get(SELECTION_END) > newSelection.get(SELECTION_END)) {
-        newSelections = newSelections.push(
-          current.set(SELECTION_START, newSelection.get(SELECTION_END))
-        );
-      }
-      // current selection falls completely within newSelection - skip since it's styles have already been merged with `applyFormatsOfOverlappingSelections` (noop)
-      // if (current.get(SELECTION_START) >= newSelection.get(SELECTION_START) && current.get(SELECTION_END) <= newSelection.get(SELECTION_END)) {
-      //   continue;
-      // }
-    }
+  let head = getSelections(nodeModel);
+  let current = getSelectionAtIdx(nodeModelArg, idx).toJS();
+  let updated = newSelection.toJS();
+  updated[SELECTION_NEXT] = current[SELECTION_NEXT];
+  if (idx === 0) {
+    head = updated;
+  } else {
+    let prev = getSelectionAtIdx(nodeModelArg, idx - 1).toJS();
+    prev[SELECTION_NEXT] = updated;
   }
 
-  nodeModel = setSelections(nodeModel, newSelections);
-  return adjustSelectionOffsetsAndCleanup(nodeModel);
+  return setSelections(nodeModel, head);
 }
 
 /**
@@ -358,7 +413,7 @@ export function splitSelectionsAtCaretOffset(
 ) {
   let leftNode = leftNodeModelArg;
   let rightNode = rightNodeModelArg;
-  const head = getSelections(leftNode).toJS();
+  const head = getSelections(leftNode);
   let current = head;
   let caretPosition = 0;
   while (caretStart > caretPosition + current[SELECTION_LENGTH]) {
@@ -369,11 +424,11 @@ export function splitSelectionsAtCaretOffset(
     ...current,
     [SELECTION_LENGTH]: caretStart - caretPosition
   };
-  delete current[SELECTION_LENGTH];
-  delete current[SELECTION_NEXT];
+  current[SELECTION_LENGTH] = -1;
+  current[SELECTION_NEXT] = undefined;
   return {
-    leftNode: setSelections(leftNode, fromJS(head, reviver)),
-    rightNode: setSelections(rightNode, fromJS(headRight, reviver))
+    leftNode: setSelections(leftNode, head),
+    rightNode: setSelections(rightNode, headRight)
   };
 }
 
@@ -382,8 +437,8 @@ export function concatSelections(leftModelArg, rightModelArg) {
   // the left last selection length will be -1, figure out it's new length
   let leftLastSelectionLength = leftModel.get('content');
   const rightModel = rightModelArg;
-  let head = getSelections(leftModel).toJS();
-  let headRight = getSelections(rightModel).toJS();
+  let head = getSelections(leftModel);
+  let headRight = getSelections(rightModel);
   let current = head;
   while (current[SELECTION_NEXT]) {
     leftLastSelectionLength -= current[SELECTION_LENGTH];
@@ -394,42 +449,44 @@ export function concatSelections(leftModelArg, rightModelArg) {
   // attach right selections
   current[SELECTION_NEXT] = headRight;
   // same formats? merge
-  if (!selectionsHaveDifferentFormats(current, headRight)) {
+  if (selectionsHaveIdenticalFormats(current, headRight)) {
     if (!headRight[SELECTION_NEXT]) {
-      delete current[SELECTION_LENGTH];
-      delete current[SELECTION_NEXT];
+      current[SELECTION_LENGTH] = -1;
+      current[SELECTION_NEXT] = undefined;
     } else {
       current[SELECTION_LENGTH] += headRight[SELECTION_LENGTH];
       current[SELECTION_NEXT] = headRight[SELECTION_NEXT];
     }
   }
-  return setSelections(leftModel, fromJS(head, reviver));
+  return setSelections(leftModel, head);
 }
 
-export function getContentForSelection(node, selection) {
+/**
+ * get an array of content sliced-up by selection lengths
+ */
+export function getContentBySelections(node) {
   let content = node.get('content');
   if (content === undefined || content === null) {
     content = '';
   }
-  if (!Record.isRecord(selection)) {
-    return cleanTextOrZeroLengthPlaceholder(content);
+  const head = getSelections(node);
+  // if there's no selection or just one, return the whole string
+  if (!head[SELECTION_NEXT]) {
+    return [cleanTextOrZeroLengthPlaceholder(content)];
   }
-  const startOffset = selection.get(SELECTION_START, -1);
-  const endOffset = selection.get(SELECTION_END, Number.MAX_SAFE_INTEGER);
-  if (
-    startOffset > content.length ||
-    startOffset < 0 ||
-    endOffset > content.length ||
-    endOffset < 0
-  ) {
-    throw new Error(
-      `getContentForSelection - Selection offsets are out of bounds!\nContent: ${content}\nSelection: ${JSON.stringify(
-        selection.toJS()
-      )}`
-    );
+  const pieces = [];
+  let caretPosition = 0;
+  let current = head;
+  while (current) {
+    const end =
+      current[SELECTION_LENGTH] > -1
+        ? caretPosition + current[SELECTION_LENGTH]
+        : undefined;
+    // NOTE: content.substring(undefined, undefined) works like: content.substring(0, content.length)
+    const piece = content.substring(caretPosition, end);
+    pieces.push(cleanTextOrZeroLengthPlaceholder(piece));
+    caretPosition += current[SELECTION_LENGTH];
+    current = current[SELECTION_NEXT];
   }
-  // NOTE: content.substring(undefined, undefined) works like: content.substring(0, content.length)
-  return cleanTextOrZeroLengthPlaceholder(
-    content.substring(startOffset, endOffset)
-  );
+  return pieces;
 }

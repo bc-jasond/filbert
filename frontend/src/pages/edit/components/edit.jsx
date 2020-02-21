@@ -55,7 +55,12 @@ import { selectionFormatAction } from '../document-model-helpers/selection-forma
 import { doSplit } from '../document-model-helpers/split';
 import UpdateManager from '../update-manager';
 
-import { getSelection, Selection, upsertSelection } from '../selection-helpers';
+import {
+  getSelection,
+  getSelectionAtIdx,
+  Selection,
+  upsertSelection
+} from '../selection-helpers';
 
 import InsertSectionMenu from './insert-section-menu';
 import EditImageForm from './edit-image-form';
@@ -1036,21 +1041,23 @@ export default class EditPost extends React.Component {
 
   updateLinkUrl = value => {
     const {
-      state: { formatSelectionNode, formatSelectionModel }
+      state: { formatSelectionNode, formatSelectionCurrentIdx }
     } = this;
-    const updatedSelectionModel = formatSelectionModel.set(
-      SELECTION_LINK_URL,
-      value
+
+    const selection = getSelectionAtIdx(
+      formatSelectionNode,
+      formatSelectionCurrentIdx
     );
+    const updatedSelectionModel = selection.set(SELECTION_LINK_URL, value);
     const updatedNode = upsertSelection(
       formatSelectionNode,
-      updatedSelectionModel
+      updatedSelectionModel,
+      formatSelectionCurrentIdx
     );
     this.documentModel.update(updatedNode);
     this.setState(
       {
-        formatSelectionNode: updatedNode,
-        formatSelectionModel: updatedSelectionModel
+        formatSelectionNode: updatedNode
       },
       async () => {
         await this.commitUpdates(

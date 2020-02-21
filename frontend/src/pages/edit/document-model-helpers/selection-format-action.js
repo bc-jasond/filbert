@@ -15,7 +15,7 @@ import { Selection, upsertSelection } from '../selection-helpers';
 export function selectionFormatAction(
   documentModel,
   nodeArg,
-  selection,
+  selectionIdx,
   action
 ) {
   const previousActionValue = selection.get(action);
@@ -74,7 +74,11 @@ export function selectionFormatAction(
   ) {
     updatedSelectionModel = updatedSelectionModel.remove(SELECTION_LINK_URL);
   }
-  const updatedNode = upsertSelection(node, updatedSelectionModel);
+  const updatedNode = upsertSelection(
+    node,
+    updatedSelectionModel,
+    selectionIdx
+  );
   documentModel.update(updatedNode);
   return { updatedNode, updatedSelection: updatedSelectionModel };
 }
