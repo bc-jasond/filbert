@@ -9,7 +9,7 @@ import {
   SELECTION_NEXT
 } from '../../../common/constants';
 
-const { fromJS } = require('immutable');
+const { fromJS, Map } = require('immutable');
 const { reviver } = require('../document-model');
 const {
   Selection,
@@ -22,42 +22,48 @@ const {
   getContentBySelections
 } = require('../selection-helpers');
 
-const testContent = 'And a second paragraph because';
-const nodeModelWithSelections = fromJS(
-  {
-    type: 'p',
-    parent_id: '39fb',
-    position: 1,
-    content: testContent,
-    meta: {
-      selections: {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: -1,
-                  [SELECTION_NEXT]: undefined
-                }
-              }
-            }
-          }
-        }
+function makeSelections(values) {
+  const head = {};
+  let current = head;
+  let prev;
+  do {
+    let [currentLength, ...currentValues] = values.shift();
+    current[SELECTION_LENGTH] = currentLength;
+    currentValues.forEach(v => {
+      if (typeof v === 'object') {
+        current[v.key] = v.value;
+      } else {
+        current[v] = true;
       }
-    },
-    id: '6eda',
-    post_id: 166
-  },
-  reviver
-);
+    });
+    if (prev) {
+      prev[SELECTION_NEXT] = current;
+    }
+    prev = current;
+    current = {};
+  } while (values.length);
+  prev[SELECTION_NEXT] = undefined; //important for the reviver()
+  prev[SELECTION_LENGTH] = -1;
+  return fromJS(head, reviver);
+}
+
+const testContent = 'And a second paragraph because';
+const testSelections = makeSelections([
+  [3, SELECTION_ACTION_SITEINFO],
+  [3],
+  [6, SELECTION_ACTION_ITALIC],
+  [1],
+  [9, SELECTION_ACTION_CODE],
+  []
+]);
+const nodeModelWithSelections = Map({
+  type: 'p',
+  parent_id: '39fb',
+  position: 1,
+  content: testContent,
+  id: '6eda',
+  post_id: 166
+}).setIn(['meta', 'selections'], testSelections);
 
 beforeAll(() => {
   console.debug = () => {};
@@ -75,18 +81,7 @@ describe('selectionReviver', () => {
 
 describe('adjustSelectionOffsetsAndCleanup', () => {
   test('delete all highlighted characters up to caret (when "end" in handleBackspace)', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_CODE]: true,
-        [SELECTION_LENGTH]: 5,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: -1,
-          [SELECTION_NEXT]: undefined
-        }
-      },
-      reviver
-    );
-
+    const expectedSelections = makeSelections([[5, SELECTION_ACTION_CODE], []]);
     const testModel = nodeModelWithSelections.set(
       'content',
       testContent.substring(17)
@@ -104,38 +99,18 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
   });
   test('delete all highlighted characters up to caret (up to edge of a selection)', () => {
     const prevContent = 'and some paragraph for good measure?';
-    const testModel = fromJS(
-      {
-        type: 'p',
-        parent_id: '39fb',
-        position: 1,
-        content: 'paragraph for good measure?',
-        meta: {
-          selections: {
-            [SELECTION_LENGTH]: 9,
-            [SELECTION_NEXT]: {
-              [SELECTION_ACTION_CODE]: true,
-              [SELECTION_LENGTH]: 9,
-              [SELECTION_NEXT]: {
-                [SELECTION_LENGTH]: 5,
-                [SELECTION_NEXT]: {
-                  'selection-bold': true,
-                  [SELECTION_ACTION_ITALIC]: true,
-                  [SELECTION_LENGTH]: 4,
-                  [SELECTION_NEXT]: {
-                    [SELECTION_LENGTH]: -1,
-                    [SELECTION_NEXT]: undefined
-                  }
-                }
-              }
-            }
-          }
-        },
-        id: 'ce7b',
-        post_id: 166
-      },
-      reviver
-    );
+    const testModel = nodeModelWithSelections
+      .set('content', 'paragraph for good measure?')
+      .setIn(
+        ['meta', 'selections'],
+        makeSelections([
+          [9],
+          [9, SELECTION_ACTION_CODE],
+          [5],
+          [4, SELECTION_ACTION_BOLD, SELECTION_ACTION_ITALIC],
+          []
+        ])
+      );
     const updatedModel = adjustSelectionOffsetsAndCleanup(
       testModel,
       prevContent,
@@ -145,29 +120,13 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(updatedModel).toMatchSnapshot();
   });
   test('delete all highlighted characters from caret through the end (when "start" with multiple nodes in handleBackspace)', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: -1,
-                [SELECTION_NEXT]: undefined
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
-
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [, SELECTION_ACTION_CODE]
+    ]);
     const testModel = nodeModelWithSelections.set(
       'content',
       testContent.substring(0, 17)
@@ -184,24 +143,12 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete highlighted characters from middle, deletes a selection, adjusts overlapping selections', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 1,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_CODE]: true,
-            [SELECTION_LENGTH]: 5,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: -1,
-              [SELECTION_NEXT]: undefined
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [1],
+      [5, SELECTION_ACTION_CODE],
+      []
+    ]);
     const testModel = nodeModelWithSelections.set(
       'content',
       `${testContent.substring(0, 4)}${testContent.substring(17)}`
@@ -218,31 +165,14 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete highlighted characters from middle of one selection', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 3,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: -1,
-                  [SELECTION_NEXT]: undefined
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [3, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
     const testModel = nodeModelWithSelections.set(
       'content',
       `${testContent.substring(0, 8)}${testContent.substring(11)}`
@@ -281,24 +211,12 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete - will merge if neighboring selections have the same formats', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_CODE]: true,
-            [SELECTION_LENGTH]: 9,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: -1,
-              [SELECTION_NEXT]: undefined
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
     const testModel = nodeModelWithSelections.set(
       'content',
       `${testContent.substring(0, 5)}${testContent.substring(12)}`
@@ -315,17 +233,10 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete - will merge with last selection if same formats', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: -1,
-          [SELECTION_NEXT]: undefined
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      []
+    ]);
     const testModel = nodeModelWithSelections.set(
       'content',
       `${testContent.substring(0, 6)}${testContent.substring(23)}`
@@ -342,31 +253,14 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(modelAdjusted).toMatchSnapshot();
   });
   test('paste a word with collapsed caret (similar to adding one character on keypress)', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 7,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: -1,
-                  [SELECTION_NEXT]: undefined
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [7],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
     const testModel = nodeModelWithSelections.set(
       'content',
       `${testContent.substring(0, 5)}pple${testContent.substring(5)}`
@@ -383,31 +277,14 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(modelAdjusted).toMatchSnapshot();
   });
   test('delete one highlighted character at left boundary of two selections', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 5,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: -1,
-                  [SELECTION_NEXT]: undefined
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [5, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
     const testModel = nodeModelWithSelections.set(
       'content',
       `${testContent.substring(0, 6)}${testContent.substring(7)}`
@@ -424,31 +301,14 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     expect(updatedModel).toMatchSnapshot();
   });
   test('delete one character at the right boundary of two selections', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 5,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: -1,
-                  [SELECTION_NEXT]: undefined
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [5, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
     const testModel = nodeModelWithSelections.set(
       'content',
       `${testContent.substring(0, 11)}${testContent.substring(12)}`
@@ -472,20 +332,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       )
       .setIn(
         ['meta', 'selections'],
-        fromJS(
-          {
-            [SELECTION_LENGTH]: 13,
-            [SELECTION_NEXT]: {
-              [SELECTION_ACTION_CODE]: true,
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_LENGTH]: -1,
-                [SELECTION_NEXT]: undefined
-              }
-            }
-          },
-          reviver
-        )
+        makeSelections([[13], [1, SELECTION_ACTION_CODE], []])
       );
     const updatedModel = adjustSelectionOffsetsAndCleanup(
       testModel,
@@ -534,32 +381,18 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
 
 describe('getSelection', () => {
   test('finds existing selection, preserves existing formats', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_LINK]: true,
-                [SELECTION_LINK_URL]: 'http://foo.bar',
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: -1,
-                  [SELECTION_NEXT]: undefined
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [
+        9,
+        SELECTION_ACTION_LINK,
+        { key: SELECTION_LINK_URL, value: 'http://foo.bar' }
+      ],
+      []
+    ]);
     const testModel = nodeModelWithSelections.setIn(
       ['meta', 'selections'],
       expectedSelections
@@ -569,32 +402,18 @@ describe('getSelection', () => {
     expect(idx).toEqual(4);
   });
   test('finds existing selection, last selection', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_LINK]: true,
-                [SELECTION_LINK_URL]: 'http://foo.bar',
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: -1,
-                  [SELECTION_NEXT]: undefined
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [
+        9,
+        SELECTION_ACTION_LINK,
+        { key: SELECTION_LINK_URL, value: 'http://foo.bar' }
+      ],
+      []
+    ]);
     const testModel = nodeModelWithSelections.setIn(
       ['meta', 'selections'],
       expectedSelections
@@ -604,231 +423,103 @@ describe('getSelection', () => {
     expect(idx).toEqual(5);
   });
   test('creates new selection somewhere in the middle, replacing other selections', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 2,
-          [SELECTION_NEXT]: {
-            [SELECTION_LENGTH]: 11,
-            [SELECTION_NEXT]: {
-              [SELECTION_ACTION_CODE]: true,
-              [SELECTION_LENGTH]: 6,
-              [SELECTION_NEXT]: {
-                [SELECTION_LENGTH]: -1,
-                [SELECTION_NEXT]: undefined
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [2],
+      [11],
+      [6, SELECTION_ACTION_CODE],
+      []
+    ]);
     const { selections, idx } = getSelection(nodeModelWithSelections, 5, 16);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(2);
   });
   test('creates new selection - replaces first (head) selection', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_LENGTH]: 8,
-        [SELECTION_NEXT]: {
-          [SELECTION_ACTION_ITALIC]: true,
-          [SELECTION_LENGTH]: 4,
-          [SELECTION_NEXT]: {
-            [SELECTION_LENGTH]: 1,
-            [SELECTION_NEXT]: {
-              [SELECTION_ACTION_CODE]: true,
-              [SELECTION_LENGTH]: 9,
-              [SELECTION_NEXT]: {
-                [SELECTION_LENGTH]: -1,
-                [SELECTION_NEXT]: undefined
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [8],
+      [4, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
     const { selections, idx } = getSelection(nodeModelWithSelections, 0, 8);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(0);
   });
   test('creates new selection - middle through replaces last selection', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: -1,
-              [SELECTION_NEXT]: undefined
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      []
+    ]);
     const { selections, idx } = getSelection(nodeModelWithSelections, 12, 30);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(3);
   });
   test('creates new selection - replaces 2nd half of last selection', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: 3,
-                  [SELECTION_NEXT]: {
-                    [SELECTION_LENGTH]: -1,
-                    [SELECTION_NEXT]: undefined
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      [3],
+      []
+    ]);
     const { selections, idx } = getSelection(nodeModelWithSelections, 25, 30);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(6);
   });
   test('creates new selection - replaces up to last selection', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 16,
-              [SELECTION_NEXT]: {
-                [SELECTION_LENGTH]: -1,
-                [SELECTION_NEXT]: undefined
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [16],
+      []
+    ]);
     const { selections, idx } = getSelection(nodeModelWithSelections, 12, 28);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(3);
   });
   test('creates new selection - completely within existing selection', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: 3,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: 3,
-                  [SELECTION_NEXT]: {
-                    [SELECTION_ACTION_CODE]: true,
-                    [SELECTION_LENGTH]: 3,
-                    [SELECTION_NEXT]: {
-                      [SELECTION_LENGTH]: -1,
-                      [SELECTION_NEXT]: undefined
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [3, SELECTION_ACTION_CODE],
+      [3],
+      [3, SELECTION_ACTION_CODE],
+      []
+    ]);
     const { selections, idx } = getSelection(nodeModelWithSelections, 16, 19);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(5);
   });
   test('creates new selection - completely within last selection', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 3,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_ITALIC]: true,
-            [SELECTION_LENGTH]: 6,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: 1,
-              [SELECTION_NEXT]: {
-                [SELECTION_ACTION_CODE]: true,
-                [SELECTION_LENGTH]: 9,
-                [SELECTION_NEXT]: {
-                  [SELECTION_LENGTH]: 3,
-                  [SELECTION_NEXT]: {
-                    [SELECTION_LENGTH]: 3,
-                    [SELECTION_NEXT]: {
-                      [SELECTION_LENGTH]: -1,
-                      [SELECTION_NEXT]: undefined
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      [3],
+      [3],
+      []
+    ]);
     const { selections, idx } = getSelection(nodeModelWithSelections, 25, 28);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(6);
   });
   test('creates new selection - replaces more than one selection evenly', () => {
-    const expectedSelections = fromJS(
-      {
-        [SELECTION_ACTION_SITEINFO]: true,
-        [SELECTION_LENGTH]: 3,
-        [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 10,
-          [SELECTION_NEXT]: {
-            [SELECTION_ACTION_CODE]: true,
-            [SELECTION_LENGTH]: 9,
-            [SELECTION_NEXT]: {
-              [SELECTION_LENGTH]: -1,
-              [SELECTION_NEXT]: undefined
-            }
-          }
-        }
-      },
-      reviver
-    );
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [10],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
     const { selections, idx } = getSelection(nodeModelWithSelections, 3, 13);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(1);
@@ -919,17 +610,149 @@ describe('upsertSelection', () => {
 
 describe('splitSelectionsAtCaretOffset', () => {
   test('split in middle of selection', () => {
-    const leftModel = nodeModelWithSelections.set('content', '');
-    const rightModel = nodeModelWithSelections.set('content', '');
+    const expectedSelectionsLeft = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [, SELECTION_ACTION_CODE]
+    ]);
+    const expectedSelectionsRight = makeSelections([
+      [5, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const leftModel = nodeModelWithSelections.set(
+      'content',
+      testContent.substring(0, 17)
+    );
+    const rightModel = nodeModelWithSelections.set(
+      'content',
+      testContent.substring(17)
+    );
     const { leftNode, rightNode } = splitSelectionsAtCaretOffset(
       leftModel,
       rightModel,
       17
     );
-    expect(leftNode).toMatchSnapshot();
-    expect(rightNode).toMatchSnapshot();
+    expect(leftNode.getIn(['meta', 'selections'])).toEqual(
+      expectedSelectionsLeft
+    );
+    expect(rightNode.getIn(['meta', 'selections'])).toEqual(
+      expectedSelectionsRight
+    );
   });
-  test.todo('split at the edge of 2 Selections');
+  test('split at the edge of 2 Selections', () => {
+    const expectedSelectionsLeft = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      []
+    ]);
+    const expectedSelectionsRight = makeSelections([
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const leftModel = nodeModelWithSelections.set(
+      'content',
+      testContent.substring(0, 13)
+    );
+    const rightModel = nodeModelWithSelections.set(
+      'content',
+      testContent.substring(13)
+    );
+    const { leftNode, rightNode } = splitSelectionsAtCaretOffset(
+      leftModel,
+      rightModel,
+      13
+    );
+    expect(leftNode.getIn(['meta', 'selections'])).toEqual(
+      expectedSelectionsLeft
+    );
+    expect(rightNode.getIn(['meta', 'selections'])).toEqual(
+      expectedSelectionsRight
+    );
+  });
+  test('split at the edge of last Selection', () => {
+    const expectedSelectionsLeft = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [, SELECTION_ACTION_CODE]
+    ]);
+    const leftModel = nodeModelWithSelections.set(
+      'content',
+      testContent.substring(0, 22)
+    );
+    const rightModel = nodeModelWithSelections.set(
+      'content',
+      testContent.substring(22)
+    );
+    const { leftNode, rightNode } = splitSelectionsAtCaretOffset(
+      leftModel,
+      rightModel,
+      22
+    );
+    expect(leftNode.getIn(['meta', 'selections'])).toEqual(
+      expectedSelectionsLeft
+    );
+    expect(rightNode.getIn(['meta', 'selections'])).toEqual(Selection());
+  });
+  test('split in the middle of last Selection', () => {
+    const expectedSelectionsLeft = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const leftModel = nodeModelWithSelections.set(
+      'content',
+      testContent.substring(0, 24)
+    );
+    const rightModel = nodeModelWithSelections.set(
+      'content',
+      testContent.substring(24)
+    );
+    const { leftNode, rightNode } = splitSelectionsAtCaretOffset(
+      leftModel,
+      rightModel,
+      24
+    );
+    expect(leftNode.getIn(['meta', 'selections'])).toEqual(
+      expectedSelectionsLeft
+    );
+    expect(rightNode.getIn(['meta', 'selections'])).toEqual(Selection());
+  });
+  test('split in the beginning', () => {
+    const expectedSelectionsLeft = makeSelections([
+      // NOTE: this is kind of strange but, it makes sense.  splitSelectionsAtCaretOffset() won't be called this way
+      // but, if it were to be... then this should be the expected behavior instead of the default Selection()
+      [, SELECTION_ACTION_SITEINFO]
+    ]);
+    const expectedSelectionsRight = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const leftModel = nodeModelWithSelections.set('content', '');
+    const rightModel = nodeModelWithSelections.set('content', testContent);
+    const { leftNode, rightNode } = splitSelectionsAtCaretOffset(
+      leftModel,
+      rightModel,
+      0
+    );
+    expect(leftNode.getIn(['meta', 'selections'])).toEqual(
+      expectedSelectionsLeft
+    );
+    expect(rightNode.getIn(['meta', 'selections'])).toEqual(
+      expectedSelectionsRight
+    );
+  });
   test('split with selections on left and none on right', () => {
     const testModelLeft = fromJS(
       {
@@ -1003,33 +826,104 @@ describe('splitSelectionsAtCaretOffset', () => {
 
 describe('concatSelections', () => {
   test('neither left nor right model have selections', () => {
-    const leftModel = nodeModelWithSelections.deleteIn(['meta', 'selections']);
-    const rightModel = nodeModelWithSelections.deleteIn(['meta', 'selections']);
-    const updatedModel = concatSelections(leftModel, rightModel);
-    expect(updatedModel.getIn(['meta', 'selections'])).toBeUndefined();
+    let leftModel = nodeModelWithSelections.deleteIn(['meta', 'selections']);
+    let rightModel = nodeModelWithSelections.deleteIn(['meta', 'selections']);
+    let updatedModel = concatSelections(leftModel, rightModel);
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(Selection());
+    leftModel = leftModel.setIn(['meta', 'selections'], Selection());
+    rightModel = rightModel.setIn(['meta', 'selections'], Selection());
+    updatedModel = concatSelections(leftModel, rightModel);
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(Selection());
   });
   test('left last selection has same formats as right first selection (merge)', () => {
-    const firstSelection = nodeModelWithSelections
-      .getIn(['meta', 'selections'])
-      .get(0)
-      .remove(SELECTION_ACTION_SITEINFO);
-    const testSelections = nodeModelWithSelections
-      .getIn(['meta', 'selections'])
-      .shift()
-      .unshift(firstSelection);
+    const leftSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const rightSelections = makeSelections([
+      [6],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      [14],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
     const leftModel = nodeModelWithSelections.setIn(
       ['meta', 'selections'],
-      testSelections
+      leftSelections
     );
     const rightModel = nodeModelWithSelections.setIn(
       ['meta', 'selections'],
-      testSelections
+      rightSelections
     );
     const updatedModel = concatSelections(leftModel, rightModel);
-    expect(updatedModel).toMatchSnapshot();
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
   });
-  test.todo('left has no selections, right has selections');
-  test.todo('left has selections, right nas no selections');
+  test('left has no selections, right has selections', () => {
+    const rightSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const expectedSelections = makeSelections([
+      [30],
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const leftModel = nodeModelWithSelections.deleteIn(['meta', 'selections']);
+    const rightModel = nodeModelWithSelections.setIn(
+      ['meta', 'selections'],
+      rightSelections
+    );
+    const updatedModel = concatSelections(leftModel, rightModel);
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
+  test('left has selections, right nas no selections', () => {
+    const leftSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const leftModel = nodeModelWithSelections.setIn(
+      ['meta', 'selections'],
+      leftSelections
+    );
+    const rightModel = nodeModelWithSelections.setIn(
+      ['meta', 'selections'],
+      Selection()
+    );
+    const updatedModel = concatSelections(leftModel, rightModel);
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(leftSelections);
+  });
 });
 
 describe('getContentBySelections', () => {

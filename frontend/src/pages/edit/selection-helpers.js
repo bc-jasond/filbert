@@ -325,7 +325,7 @@ export function getSelection(nodeModel, start, end) {
     // users selection lines up with end of last selection
     prev[SELECTION_NEXT] = newSelection;
   } else if (
-    !originalNext ||
+    (!originalNext && !doesReplaceLastSelection) ||
     originalLength - (start - caretPosition) > length
   ) {
     // newSelection is completely inside of current
@@ -408,14 +408,6 @@ export function upsertSelection(nodeModelArg, newSelection, idx) {
   return setSelections(nodeModel, head);
 }
 
-/**
- * NOTE: this function returns an object of Left & Right selections List()s NOT a document nodeModel
- * the reason is because we don't have a Right model (don't have an id) yet.  I could make this so but, it seems reach-outy
- *
- * @param nodeModel
- * @param caretStart
- * @returns {leftNode: Map(), rightNode: Map()}
- */
 export function splitSelectionsAtCaretOffset(
   leftNodeModelArg,
   rightNodeModelArg,
@@ -426,14 +418,30 @@ export function splitSelectionsAtCaretOffset(
   const head = getSelections(leftNode);
   let current = head;
   let caretPosition = 0;
-  while (caretStart > caretPosition + current[SELECTION_LENGTH]) {
+  while (
+    current[SELECTION_NEXT] &&
+    caretStart > caretPosition + current[SELECTION_LENGTH]
+  ) {
     caretPosition += current[SELECTION_LENGTH];
     current = current[SELECTION_NEXT];
   }
-  let headRight = {
-    ...current,
-    [SELECTION_LENGTH]: caretStart - caretPosition
-  };
+  const headRightLength = current[SELECTION_NEXT]
+    ? current[SELECTION_LENGTH] - (caretStart - caretPosition)
+    : -1;
+  let headRight;
+  if (headRightLength === -1) {
+    // split in the middle of last selection
+    headRight = current;
+  } else if (headRightLength === 0) {
+    // split on the edge of 2 selections
+    headRight = current[SELECTION_NEXT];
+  } else {
+    // splits in middle of a selection
+    headRight = {
+      ...current,
+      [SELECTION_LENGTH]: headRightLength
+    };
+  }
   current[SELECTION_LENGTH] = -1;
   current[SELECTION_NEXT] = undefined;
   return {
@@ -445,7 +453,7 @@ export function splitSelectionsAtCaretOffset(
 export function concatSelections(leftModelArg, rightModelArg) {
   let leftModel = leftModelArg;
   // the left last selection length will be -1, figure out it's new length
-  let leftLastSelectionLength = leftModel.get('content');
+  let leftLastSelectionLength = leftModel.get('content').length;
   const rightModel = rightModelArg;
   let head = getSelections(leftModel);
   let headRight = getSelections(rightModel);

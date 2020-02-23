@@ -6,6 +6,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "And a paragraph because",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -53,8 +55,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
@@ -64,6 +64,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "And a because",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -89,8 +91,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
@@ -100,6 +100,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": undefined,
@@ -114,8 +116,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
@@ -125,6 +125,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "And a second para",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -183,8 +185,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
@@ -194,23 +194,14 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "paragraph for good measure?",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
         "next": Immutable.Record {
-          "next": Immutable.Record {
-            "next": undefined,
-            "length": -1,
-            "selection-bold": false,
-            "selection-italic": false,
-            "selection-code": false,
-            "selection-siteinfo": false,
-            "selection-mini": false,
-            "selection-strikethrough": false,
-            "selection-link": false,
-            "linkUrl": "",
-          },
-          "length": 5,
+          "next": undefined,
+          "length": -1,
           "selection-bold": false,
           "selection-italic": false,
           "selection-code": false,
@@ -241,8 +232,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "ce7b",
-  "post_id": 166,
 }
 `;
 
@@ -252,6 +241,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "graph because",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -277,8 +268,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
@@ -288,6 +277,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "And a sed paragraph because",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -357,8 +348,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
@@ -368,6 +357,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "And graph because",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -415,20 +406,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
-}
-`;
-
-exports[`adjustSelectionOffsetsAndCleanup delete last character (caret collapsed) of last selection with formats, model should have 'selections' unset 1`] = `
-Immutable.Map {
-  "type": "p",
-  "parent_id": "39fb",
-  "position": 1,
-  "content": "And a second aragraph because",
-  "meta": Immutable.Map {},
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
@@ -438,6 +415,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "And a second aragraph because",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": undefined,
@@ -452,104 +431,17 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
-exports[`adjustSelectionOffsetsAndCleanup delete one character (caret collapsed) at the boundary of two selections 1`] = `
+exports[`adjustSelectionOffsetsAndCleanup delete one character at the right boundary of two selections 1`] = `
 Immutable.Map {
   "type": "p",
   "parent_id": "39fb",
   "position": 1,
   "content": "And a secon paragraph because",
-  "meta": Immutable.Map {
-    "selections": Immutable.List [
-      Immutable.Record {
-        "start": 0,
-        "end": 3,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": true,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 3,
-        "end": 6,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 6,
-        "end": 11,
-        "selection-bold": false,
-        "selection-italic": true,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 11,
-        "end": 12,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 12,
-        "end": 21,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 21,
-        "end": 29,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-    ],
-  },
   "id": "6eda",
   "post_id": 166,
-}
-`;
-
-exports[`adjustSelectionOffsetsAndCleanup delete one highlighted character at left boundary of two selections 1`] = `
-Immutable.Map {
-  "type": "p",
-  "parent_id": "39fb",
-  "position": 1,
-  "content": "And a econd paragraph because",
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -619,8 +511,86 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
+}
+`;
+
+exports[`adjustSelectionOffsetsAndCleanup delete one highlighted character at left boundary of two selections 1`] = `
+Immutable.Map {
+  "type": "p",
+  "parent_id": "39fb",
+  "position": 1,
+  "content": "And a econd paragraph because",
   "id": "6eda",
   "post_id": 166,
+  "meta": Immutable.Map {
+    "selections": Immutable.Record {
+      "next": Immutable.Record {
+        "next": Immutable.Record {
+          "next": Immutable.Record {
+            "next": Immutable.Record {
+              "next": Immutable.Record {
+                "next": undefined,
+                "length": -1,
+                "selection-bold": false,
+                "selection-italic": false,
+                "selection-code": false,
+                "selection-siteinfo": false,
+                "selection-mini": false,
+                "selection-strikethrough": false,
+                "selection-link": false,
+                "linkUrl": "",
+              },
+              "length": 9,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": true,
+              "selection-siteinfo": false,
+              "selection-mini": false,
+              "selection-strikethrough": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            "length": 1,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-siteinfo": false,
+            "selection-mini": false,
+            "selection-strikethrough": false,
+            "selection-link": false,
+            "linkUrl": "",
+          },
+          "length": 5,
+          "selection-bold": false,
+          "selection-italic": true,
+          "selection-code": false,
+          "selection-siteinfo": false,
+          "selection-mini": false,
+          "selection-strikethrough": false,
+          "selection-link": false,
+          "linkUrl": "",
+        },
+        "length": 3,
+        "selection-bold": false,
+        "selection-italic": false,
+        "selection-code": false,
+        "selection-siteinfo": false,
+        "selection-mini": false,
+        "selection-strikethrough": false,
+        "selection-link": false,
+        "linkUrl": "",
+      },
+      "length": 3,
+      "selection-bold": false,
+      "selection-italic": false,
+      "selection-code": false,
+      "selection-siteinfo": true,
+      "selection-mini": false,
+      "selection-strikethrough": false,
+      "selection-link": false,
+      "linkUrl": "",
+    },
+  },
 }
 `;
 
@@ -630,6 +600,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "And a second paragraph because",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -699,8 +671,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
@@ -710,6 +680,8 @@ Immutable.Map {
   "parent_id": "39fb",
   "position": 1,
   "content": "And apple second paragraph because",
+  "id": "6eda",
+  "post_id": 166,
   "meta": Immutable.Map {
     "selections": Immutable.Record {
       "next": Immutable.Record {
@@ -779,335 +751,6 @@ Immutable.Map {
       "linkUrl": "",
     },
   },
-  "id": "6eda",
-  "post_id": 166,
-}
-`;
-
-exports[`concatSelections left last selection has same formats as right first selection (merge) 1`] = `
-Immutable.Map {
-  "type": "p",
-  "parent_id": "39fb",
-  "position": 1,
-  "content": "",
-  "meta": Immutable.Map {
-    "selections": Immutable.List [
-      Immutable.Record {
-        "start": 0,
-        "end": 6,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 6,
-        "end": 12,
-        "selection-bold": false,
-        "selection-italic": true,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 12,
-        "end": 13,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 13,
-        "end": 22,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 22,
-        "end": 36,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 36,
-        "end": 42,
-        "selection-bold": false,
-        "selection-italic": true,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 42,
-        "end": 43,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 43,
-        "end": 52,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 52,
-        "end": 60,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-    ],
-  },
-  "id": "6eda",
-  "post_id": 166,
-}
-`;
-
-exports[`getSelection applies formats of outer selection if selection is made within one selection 1`] = `
-Immutable.Record {
-  "start": 16,
-  "end": 20,
-  "selection-bold": false,
-  "selection-italic": false,
-  "selection-code": true,
-  "selection-siteinfo": false,
-  "selection-mini": false,
-  "selection-strikethrough": false,
-  "selection-link": false,
-  "linkUrl": "",
-}
-`;
-
-exports[`getSelection creates new selection on paragraph with no selections 1`] = `
-Immutable.Record {
-  "start": 10,
-  "end": 15,
-  "selection-bold": false,
-  "selection-italic": false,
-  "selection-code": false,
-  "selection-siteinfo": false,
-  "selection-mini": false,
-  "selection-strikethrough": false,
-  "selection-link": false,
-  "linkUrl": "",
-}
-`;
-
-exports[`getSelection creates new selection with intersection of overlapping Selection formats applied (no formats) 1`] = `
-Immutable.Record {
-  "start": 2,
-  "end": 22,
-  "selection-bold": false,
-  "selection-italic": false,
-  "selection-code": false,
-  "selection-siteinfo": false,
-  "selection-mini": false,
-  "selection-strikethrough": false,
-  "selection-link": false,
-  "linkUrl": "",
-}
-`;
-
-exports[`getSelection creates new selection with intersection of overlapping Selection formats applied 1`] = `
-Immutable.Record {
-  "start": 10,
-  "end": 20,
-  "selection-bold": false,
-  "selection-italic": false,
-  "selection-code": true,
-  "selection-siteinfo": false,
-  "selection-mini": false,
-  "selection-strikethrough": false,
-  "selection-link": false,
-  "linkUrl": "",
-}
-`;
-
-exports[`getSelection finds existing Selection, preserves existing formats 1`] = `
-Immutable.Record {
-  "start": 13,
-  "end": 22,
-  "selection-bold": false,
-  "selection-italic": false,
-  "selection-code": true,
-  "selection-siteinfo": false,
-  "selection-mini": false,
-  "selection-strikethrough": false,
-  "selection-link": true,
-  "linkUrl": "http://foo.bar",
-}
-`;
-
-exports[`selectionReviver return Selection when JS object has 'next' and 'length' keys 1`] = `
-Immutable.Record {
-  "next": null,
-  "length": -1,
-  "selection-bold": false,
-  "selection-italic": false,
-  "selection-code": false,
-  "selection-siteinfo": false,
-  "selection-mini": false,
-  "selection-strikethrough": false,
-  "selection-link": false,
-  "linkUrl": "",
-}
-`;
-
-exports[`splitSelectionsAtCaretOffset split in middle of selection 1`] = `
-Immutable.Map {
-  "type": "p",
-  "parent_id": "39fb",
-  "position": 1,
-  "content": "",
-  "meta": Immutable.Map {
-    "selections": Immutable.List [
-      Immutable.Record {
-        "start": 0,
-        "end": 3,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": true,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 3,
-        "end": 6,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 6,
-        "end": 12,
-        "selection-bold": false,
-        "selection-italic": true,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 12,
-        "end": 13,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 13,
-        "end": 17,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-    ],
-  },
-  "id": "6eda",
-  "post_id": 166,
-}
-`;
-
-exports[`splitSelectionsAtCaretOffset split in middle of selection 2`] = `
-Immutable.Map {
-  "type": "p",
-  "parent_id": "39fb",
-  "position": 1,
-  "content": "",
-  "meta": Immutable.Map {
-    "selections": Immutable.List [
-      Immutable.Record {
-        "start": 0,
-        "end": 5,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": true,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-      Immutable.Record {
-        "start": 5,
-        "end": 13,
-        "selection-bold": false,
-        "selection-italic": false,
-        "selection-code": false,
-        "selection-siteinfo": false,
-        "selection-mini": false,
-        "selection-strikethrough": false,
-        "selection-link": false,
-        "linkUrl": "",
-      },
-    ],
-  },
-  "id": "6eda",
-  "post_id": 166,
 }
 `;
 
