@@ -280,87 +280,97 @@ export function adjustSelectionOffsetsAndCleanup(
 /**
  * Takes a highlight range in paragraph content and maps it to a Selection.
  * finds index of existing selection, or replaces into the selections linked list a new placeholder selection
- * removing existing overlapping selections
- * TODO: don't merge here, let upsertSelection() handle that
+ * adjusting/removing existing overlapping selections in place
+ * NOTE: doesn't merge neighboring selections with identical formats
  */
 export function getSelection(nodeModel, start, end) {
   // TODO: validation of start & end against nodeModel.get('content')?.length
   const length = end - start;
+  const doesReplaceLastSelection = end === nodeModel.get('content', '').length;
   // first see if the exact Selection already exists?
   let head = getSelections(nodeModel);
   let current = head;
   let prev;
   let caretPosition = 0;
   let idx = 0;
-  while (current && caretPosition + current[SELECTION_LENGTH] <= start) {
-    if (caretPosition === start && current[SELECTION_LENGTH] === length) {
-      // found exact match in existing selections
-      return { selections: fromJS(head, reviver), idx };
-    }
+  while (
+    current[SELECTION_NEXT] &&
+    caretPosition + current[SELECTION_LENGTH] <= start
+  ) {
     caretPosition += current[SELECTION_LENGTH];
     idx += 1;
     prev = current;
     current = current[SELECTION_NEXT];
   }
+  // found exact match in existing selections ?
+  if (
+    caretPosition === start &&
+    (current[SELECTION_LENGTH] === length ||
+      (doesReplaceLastSelection && !current[SELECTION_NEXT]))
+  ) {
+    return { selections: fromJS(head, reviver), idx };
+  }
   // if we're here, we didn't find an exact match in existing selections
   let newSelection = {
-    [SELECTION_LENGTH]: length,
+    [SELECTION_LENGTH]: doesReplaceLastSelection ? -1 : length,
     [SELECTION_NEXT]: undefined
   };
   // capture current length before mutation
-  const prevCurrentLength = current[SELECTION_LENGTH];
-  // adjust "left" length
-  current[SELECTION_LENGTH] = start - caretPosition;
-  // merge newSelection with current ("left")?
-  if (selectionsHaveIdenticalFormats(current, newSelection)) {
-    // since we're not applying all overlapping formats, merging just means adding length
-    newSelection[SELECTION_LENGTH] += current[SELECTION_LENGTH];
-    if (!prev) {
-      // head was replaced
-      head = newSelection;
-    } else {
-      prev[SELECTION_NEXT] = newSelection;
-    }
-  } else {
-    // no merge, set left[next] to new selection
+  const originalLength = current[SELECTION_LENGTH];
+  const originalNext = current[SELECTION_NEXT];
+  // replace head?
+  if (start === 0) {
+    head = newSelection;
+  } else if (start - caretPosition === 0) {
+    // users selection lines up with end of last selection
+    prev[SELECTION_NEXT] = newSelection;
+  } else if (
+    !originalNext ||
+    originalLength - (start - caretPosition) > length
+  ) {
+    // newSelection is completely inside of current
+    const currentCopy = { ...current };
+    current[SELECTION_LENGTH] = start - caretPosition;
     current[SELECTION_NEXT] = newSelection;
+    idx += 1;
+    newSelection[SELECTION_NEXT] = currentCopy;
+    currentCopy[SELECTION_LENGTH] = !originalNext
+      ? -1
+      : originalLength - current[SELECTION_LENGTH] - length;
+    return { selections: fromJS(head, reviver), idx };
+  } else {
+    // adjust "left" length
+    current[SELECTION_LENGTH] = start - caretPosition;
+    // no merge (happens on update), set left[next] to new selection
+    current[SELECTION_NEXT] = newSelection;
+    // move index pointer only if head didn't change
+    idx += 1;
+  }
+  if (doesReplaceLastSelection) {
+    return { selections: fromJS(head, reviver), idx };
   }
   // add original "left" length to caretPosition to preserve original selection lengths for further comparison
-  caretPosition += prevCurrentLength;
+  caretPosition += originalLength;
+  // advance pointer to continue through original list
+  current = originalNext;
   // skip any completely overlapped selections
-  while (current && caretPosition <= end) {
-    // note: order is different - reassign current then increment caretPosition
-    current = current[SELECTION_NEXT];
+  while (current && caretPosition + current[SELECTION_LENGTH] <= end) {
     caretPosition += current[SELECTION_LENGTH];
+    prev = current;
+    current = current[SELECTION_NEXT];
   }
-  // merge newSelection with current ("right")?
-  if (selectionsHaveIdenticalFormats(current, newSelection)) {
-    if (!current[SELECTION_NEXT]) {
-      // new selection is the end selection
-      newSelection[SELECTION_LENGTH] = -1;
-      newSelection[SELECTION_NEXT] = undefined;
-    } else {
-      // adjust length and next
-      newSelection[SELECTION_LENGTH] += current[SELECTION_LENGTH];
-      newSelection[SELECTION_NEXT] = current[SELECTION_NEXT];
-    }
-  } else {
+  if (!current) {
+    // newSelection is new 2nd to last, prev is last Selection
+    newSelection[SELECTION_NEXT] = prev;
+    return { selections: fromJS(head, reviver), idx };
+  }
+  if (current[SELECTION_NEXT]) {
     // adjust "right" length (if not -1)
-    current[SELECTION_LENGTH] = caretPosition - end;
-    // attach new selection to "right"
-    newSelection[SELECTION_NEXT] = current;
+    current[SELECTION_LENGTH] = caretPosition + current[SELECTION_LENGTH] - end;
   }
+  // attach new selection to "right"
+  newSelection[SELECTION_NEXT] = current;
 
-  // insert a new selection over top of any existing selections
-  // - create a new selection with length: length
-  // -  (?),
-  // - skip any completely overlapped selections
-  // - adjust "right" length (if not -1), set new[next] to right
-  // - return {}
-  // edge cases:
-  // - replaced head?
-  // - new selection completely within existing selection - need to split
-  // - replaced all selections?
   // TODO: apply overlapping formats?
   return { selections: fromJS(head, reviver), idx };
 }

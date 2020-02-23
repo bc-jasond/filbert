@@ -533,7 +533,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
 });
 
 describe('getSelection', () => {
-  test('finds existing Selection, preserves existing formats', () => {
+  test('finds existing selection, preserves existing formats', () => {
     const expectedSelections = fromJS(
       {
         [SELECTION_ACTION_SITEINFO]: true,
@@ -568,15 +568,102 @@ describe('getSelection', () => {
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(4);
   });
+  test('finds existing selection, last selection', () => {
+    const expectedSelections = fromJS(
+      {
+        [SELECTION_ACTION_SITEINFO]: true,
+        [SELECTION_LENGTH]: 3,
+        [SELECTION_NEXT]: {
+          [SELECTION_LENGTH]: 3,
+          [SELECTION_NEXT]: {
+            [SELECTION_ACTION_ITALIC]: true,
+            [SELECTION_LENGTH]: 6,
+            [SELECTION_NEXT]: {
+              [SELECTION_LENGTH]: 1,
+              [SELECTION_NEXT]: {
+                [SELECTION_ACTION_LINK]: true,
+                [SELECTION_LINK_URL]: 'http://foo.bar',
+                [SELECTION_LENGTH]: 9,
+                [SELECTION_NEXT]: {
+                  [SELECTION_LENGTH]: -1,
+                  [SELECTION_NEXT]: undefined
+                }
+              }
+            }
+          }
+        }
+      },
+      reviver
+    );
+    const testModel = nodeModelWithSelections.setIn(
+      ['meta', 'selections'],
+      expectedSelections
+    );
+    const { selections, idx } = getSelection(testModel, 22, 30);
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(5);
+  });
   test('creates new selection somewhere in the middle, replacing other selections', () => {
     const expectedSelections = fromJS(
       {
         [SELECTION_ACTION_SITEINFO]: true,
         [SELECTION_LENGTH]: 3,
         [SELECTION_NEXT]: {
-          [SELECTION_LENGTH]: 13,
+          [SELECTION_LENGTH]: 2,
           [SELECTION_NEXT]: {
-            [SELECTION_ACTION_CODE]: true,
+            [SELECTION_LENGTH]: 11,
+            [SELECTION_NEXT]: {
+              [SELECTION_ACTION_CODE]: true,
+              [SELECTION_LENGTH]: 6,
+              [SELECTION_NEXT]: {
+                [SELECTION_LENGTH]: -1,
+                [SELECTION_NEXT]: undefined
+              }
+            }
+          }
+        }
+      },
+      reviver
+    );
+    const { selections, idx } = getSelection(nodeModelWithSelections, 5, 16);
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(2);
+  });
+  test('creates new selection - replaces first (head) selection', () => {
+    const expectedSelections = fromJS(
+      {
+        [SELECTION_LENGTH]: 8,
+        [SELECTION_NEXT]: {
+          [SELECTION_ACTION_ITALIC]: true,
+          [SELECTION_LENGTH]: 4,
+          [SELECTION_NEXT]: {
+            [SELECTION_LENGTH]: 1,
+            [SELECTION_NEXT]: {
+              [SELECTION_ACTION_CODE]: true,
+              [SELECTION_LENGTH]: 9,
+              [SELECTION_NEXT]: {
+                [SELECTION_LENGTH]: -1,
+                [SELECTION_NEXT]: undefined
+              }
+            }
+          }
+        }
+      },
+      reviver
+    );
+    const { selections, idx } = getSelection(nodeModelWithSelections, 0, 8);
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(0);
+  });
+  test('creates new selection - middle through replaces last selection', () => {
+    const expectedSelections = fromJS(
+      {
+        [SELECTION_ACTION_SITEINFO]: true,
+        [SELECTION_LENGTH]: 3,
+        [SELECTION_NEXT]: {
+          [SELECTION_LENGTH]: 3,
+          [SELECTION_NEXT]: {
+            [SELECTION_ACTION_ITALIC]: true,
             [SELECTION_LENGTH]: 6,
             [SELECTION_NEXT]: {
               [SELECTION_LENGTH]: -1,
@@ -587,61 +674,164 @@ describe('getSelection', () => {
       },
       reviver
     );
-    const { selections, idx } = getSelection(nodeModelWithSelections, 5, 16);
+    const { selections, idx } = getSelection(nodeModelWithSelections, 12, 30);
     expect(selections).toEqual(expectedSelections);
-    expect(idx).toEqual(1);
+    expect(idx).toEqual(3);
   });
-  test.todo('creates new selection - replaces first (head) selection');
-  test.todo('creates new selection - replaces last selection');
-  test.todo('creates new selection - merges with first');
-  test('creates new selection - merges with first and last selection to become default selection', () => {
-    const testSelections = fromJS(
+  test('creates new selection - replaces 2nd half of last selection', () => {
+    const expectedSelections = fromJS(
       {
-        [SELECTION_LENGTH]: 10,
+        [SELECTION_ACTION_SITEINFO]: true,
+        [SELECTION_LENGTH]: 3,
         [SELECTION_NEXT]: {
-          [SELECTION_ACTION_CODE]: true,
-          [SELECTION_LENGTH]: 10,
+          [SELECTION_LENGTH]: 3,
           [SELECTION_NEXT]: {
-            [SELECTION_LENGTH]: -1,
-            [SELECTION_NEXT]: undefined
+            [SELECTION_ACTION_ITALIC]: true,
+            [SELECTION_LENGTH]: 6,
+            [SELECTION_NEXT]: {
+              [SELECTION_LENGTH]: 1,
+              [SELECTION_NEXT]: {
+                [SELECTION_ACTION_CODE]: true,
+                [SELECTION_LENGTH]: 9,
+                [SELECTION_NEXT]: {
+                  [SELECTION_LENGTH]: 3,
+                  [SELECTION_NEXT]: {
+                    [SELECTION_LENGTH]: -1,
+                    [SELECTION_NEXT]: undefined
+                  }
+                }
+              }
+            }
           }
         }
       },
       reviver
     );
-    const testModel = nodeModelWithSelections.setIn(
-      ['meta', 'selections'],
-      testSelections
+    const { selections, idx } = getSelection(nodeModelWithSelections, 25, 30);
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(6);
+  });
+  test('creates new selection - replaces up to last selection', () => {
+    const expectedSelections = fromJS(
+      {
+        [SELECTION_ACTION_SITEINFO]: true,
+        [SELECTION_LENGTH]: 3,
+        [SELECTION_NEXT]: {
+          [SELECTION_LENGTH]: 3,
+          [SELECTION_NEXT]: {
+            [SELECTION_ACTION_ITALIC]: true,
+            [SELECTION_LENGTH]: 6,
+            [SELECTION_NEXT]: {
+              [SELECTION_LENGTH]: 16,
+              [SELECTION_NEXT]: {
+                [SELECTION_LENGTH]: -1,
+                [SELECTION_NEXT]: undefined
+              }
+            }
+          }
+        }
+      },
+      reviver
     );
-    const { selections, idx } = getSelection(testModel, 8, 22);
+    const { selections, idx } = getSelection(nodeModelWithSelections, 12, 28);
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(3);
   });
-  test('creates new selection on paragraph with no selections', () => {
-    const testModel = nodeModelWithSelections
-      .set('content', testContent)
-      .deleteIn(['meta', 'selections']);
-    const testSelection = getSelection(testModel, 10, 15);
-    // testModel.getIn(["meta", "selections"]).get(4)
-    expect(testSelection).toMatchSnapshot();
+  test('creates new selection - completely within existing selection', () => {
+    const expectedSelections = fromJS(
+      {
+        [SELECTION_ACTION_SITEINFO]: true,
+        [SELECTION_LENGTH]: 3,
+        [SELECTION_NEXT]: {
+          [SELECTION_LENGTH]: 3,
+          [SELECTION_NEXT]: {
+            [SELECTION_ACTION_ITALIC]: true,
+            [SELECTION_LENGTH]: 6,
+            [SELECTION_NEXT]: {
+              [SELECTION_LENGTH]: 1,
+              [SELECTION_NEXT]: {
+                [SELECTION_ACTION_CODE]: true,
+                [SELECTION_LENGTH]: 3,
+                [SELECTION_NEXT]: {
+                  [SELECTION_LENGTH]: 3,
+                  [SELECTION_NEXT]: {
+                    [SELECTION_ACTION_CODE]: true,
+                    [SELECTION_LENGTH]: 3,
+                    [SELECTION_NEXT]: {
+                      [SELECTION_LENGTH]: -1,
+                      [SELECTION_NEXT]: undefined
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      reviver
+    );
+    const { selections, idx } = getSelection(nodeModelWithSelections, 16, 19);
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(5);
   });
-  test('creates new selection with intersection of overlapping Selection formats applied', () => {
-    const selections = nodeModelWithSelections.getIn(['meta', 'selections']);
-    // will now contain 3 Selections in a row that have SELECTION_ACTION_CODE formats
-    const testModel = nodeModelWithSelections
-      .set('content', testContent)
-      .setIn(
-        ['meta', 'selections'],
-        selections
-          .set(2, selections.get(2).set(SELECTION_ACTION_CODE, true))
-          .set(3, selections.get(3).set(SELECTION_ACTION_CODE, true))
-      );
-    const testSelection = getSelection(testModel, 10, 20);
-    expect(testSelection).toMatchSnapshot();
+  test('creates new selection - completely within last selection', () => {
+    const expectedSelections = fromJS(
+      {
+        [SELECTION_ACTION_SITEINFO]: true,
+        [SELECTION_LENGTH]: 3,
+        [SELECTION_NEXT]: {
+          [SELECTION_LENGTH]: 3,
+          [SELECTION_NEXT]: {
+            [SELECTION_ACTION_ITALIC]: true,
+            [SELECTION_LENGTH]: 6,
+            [SELECTION_NEXT]: {
+              [SELECTION_LENGTH]: 1,
+              [SELECTION_NEXT]: {
+                [SELECTION_ACTION_CODE]: true,
+                [SELECTION_LENGTH]: 9,
+                [SELECTION_NEXT]: {
+                  [SELECTION_LENGTH]: 3,
+                  [SELECTION_NEXT]: {
+                    [SELECTION_LENGTH]: 3,
+                    [SELECTION_NEXT]: {
+                      [SELECTION_LENGTH]: -1,
+                      [SELECTION_NEXT]: undefined
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      reviver
+    );
+    const { selections, idx } = getSelection(nodeModelWithSelections, 25, 28);
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(6);
   });
-  test('applies formats of outer selection if selection is made within one selection', () => {
-    const testModel = nodeModelWithSelections.set('content', testContent);
-    const testSelection = getSelection(testModel, 16, 20);
-    // testModel.getIn(["meta", "selections"]).get(4)
-    expect(testSelection).toMatchSnapshot();
+  test('creates new selection - replaces more than one selection evenly', () => {
+    const expectedSelections = fromJS(
+      {
+        [SELECTION_ACTION_SITEINFO]: true,
+        [SELECTION_LENGTH]: 3,
+        [SELECTION_NEXT]: {
+          [SELECTION_LENGTH]: 10,
+          [SELECTION_NEXT]: {
+            [SELECTION_ACTION_CODE]: true,
+            [SELECTION_LENGTH]: 9,
+            [SELECTION_NEXT]: {
+              [SELECTION_LENGTH]: -1,
+              [SELECTION_NEXT]: undefined
+            }
+          }
+        }
+      },
+      reviver
+    );
+    const { selections, idx } = getSelection(nodeModelWithSelections, 3, 13);
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(1);
   });
 });
 
