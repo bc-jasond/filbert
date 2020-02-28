@@ -10,7 +10,7 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_LINK_URL
 } from '../../../common/constants';
-import { Selection, upsertSelection } from '../selection-helpers';
+import { Selection, replaceSelection } from '../selection-helpers';
 
 export function selectionFormatAction(
   documentModel,
@@ -74,7 +74,7 @@ export function selectionFormatAction(
   ) {
     updatedSelectionModel = updatedSelectionModel.remove(SELECTION_LINK_URL);
   }
-  const updatedNode = upsertSelection(
+  const updatedNode = replaceSelection(
     node,
     updatedSelectionModel,
     selectionIdx

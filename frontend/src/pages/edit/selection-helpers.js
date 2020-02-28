@@ -81,6 +81,21 @@ function selectionsHaveIdenticalFormats(left, right) {
   return leftCompare.equals(rightCompare);
 }
 
+function maybeMergeNodes(left, right) {
+  if (!selectionsHaveIdenticalFormats(left, right)) {
+    return false;
+  }
+  // if we're past the end or on the last node
+  if (!right || !right[SELECTION_NEXT]) {
+    left[SELECTION_LENGTH] = -1;
+    left[SELECTION_NEXT] = undefined;
+  } else {
+    left[SELECTION_LENGTH] += right[SELECTION_LENGTH];
+    left[SELECTION_NEXT] = right[SELECTION_NEXT];
+  }
+  return true;
+}
+
 /**
  * if any neighboring selections have the exact same formats - merge them
  */
@@ -281,9 +296,9 @@ export function adjustSelectionOffsetsAndCleanup(
  * Takes a highlight range in paragraph content and maps it to a Selection.
  * finds index of existing selection, or replaces into the selections linked list a new placeholder selection
  * adjusting/removing existing overlapping selections in place
- * NOTE: doesn't merge neighboring selections with identical formats
+ * NOTE: doesn't merge neighboring selections with identical formats, this happens on update
  */
-export function getSelection(nodeModel, start, end) {
+export function getSelectionByContentOffset(nodeModel, start, end) {
   // TODO: validation of start & end against nodeModel.get('content')?.length
   const length = end - start;
   const doesReplaceLastSelection = end === nodeModel.get('content', '').length;
@@ -375,6 +390,19 @@ export function getSelection(nodeModel, start, end) {
   return { selections: fromJS(head, reviver), idx };
 }
 
+function internalGetSelectionAtIndex(head, idx) {
+  let selection = head;
+  let i = 0;
+  while (selection && i < idx) {
+    selection = selection[SELECTION_NEXT];
+    i += 1;
+  }
+  if (!selection) {
+    console.error('Bad selection index: ', idx, head);
+  }
+  return selection;
+}
+
 export function getSelectionAtIdx(nodeModel, idx) {
   let selection = nodeModel.getIn(['meta', 'selections']);
   let i = 0;
@@ -390,19 +418,24 @@ export function getSelectionAtIdx(nodeModel, idx) {
 
 /**
  * insert a new formatted selection
- * TODO: merge adjacent selections with identical formats
+ * NOTE: getSelectionByContentOffset() does the hard work of carving out a new selection
+ *  this function just puts it back BUT, also merges neighboring selections
+ *  with identical formats
  */
-export function upsertSelection(nodeModelArg, newSelection, idx) {
+export function replaceSelection(nodeModelArg, newSelection, idx) {
   let nodeModel = nodeModelArg;
   let head = getSelections(nodeModel);
-  let current = getSelectionAtIdx(nodeModelArg, idx).toJS();
+  let current = internalGetSelectionAtIndex(head, idx);
   let updated = newSelection.toJS();
   updated[SELECTION_NEXT] = current[SELECTION_NEXT];
   if (idx === 0) {
     head = updated;
+    maybeMergeNodes(head, head[SELECTION_NEXT]);
   } else {
-    let prev = getSelectionAtIdx(nodeModelArg, idx - 1).toJS();
+    let prev = internalGetSelectionAtIndex(head, idx - 1);
     prev[SELECTION_NEXT] = updated;
+    maybeMergeNodes(updated, updated[SELECTION_NEXT]);
+    maybeMergeNodes(prev, updated);
   }
 
   return setSelections(nodeModel, head);

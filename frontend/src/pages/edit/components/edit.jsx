@@ -56,10 +56,10 @@ import { doSplit } from '../document-model-helpers/split';
 import UpdateManager from '../update-manager';
 
 import {
-  getSelection,
+  getSelectionByContentOffset,
   getSelectionAtIdx,
   Selection,
-  upsertSelection
+  replaceSelection
 } from '../selection-helpers';
 
 import InsertSectionMenu from './insert-section-menu';
@@ -1049,7 +1049,7 @@ export default class EditPost extends React.Component {
       formatSelectionCurrentIdx
     );
     const updatedSelectionModel = selection.set(SELECTION_LINK_URL, value);
-    const updatedNode = upsertSelection(
+    const updatedNode = replaceSelection(
       formatSelectionNode,
       updatedSelectionModel,
       formatSelectionCurrentIdx
@@ -1121,7 +1121,7 @@ export default class EditPost extends React.Component {
       this.setState(
         {
           formatSelectionNode: selectedNodeModel,
-          formatSelectionModel: getSelection(
+          formatSelectionModel: getSelectionByContentOffset(
             selectedNodeModel,
             caretStart,
             caretEnd

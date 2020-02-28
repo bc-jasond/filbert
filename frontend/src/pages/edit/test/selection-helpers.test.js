@@ -6,7 +6,8 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_LINK_URL,
   SELECTION_LENGTH,
-  SELECTION_NEXT
+  SELECTION_NEXT,
+  SELECTION_ACTION_MINI
 } from '../../../common/constants';
 
 const { fromJS, Map } = require('immutable');
@@ -15,8 +16,8 @@ const {
   Selection,
   formatSelections,
   adjustSelectionOffsetsAndCleanup,
-  getSelection,
-  upsertSelection,
+  getSelectionByContentOffset,
+  replaceSelection,
   splitSelectionsAtCaretOffset,
   concatSelections,
   getContentBySelections
@@ -379,7 +380,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
   });
 });
 
-describe('getSelection', () => {
+describe('getSelectionByContentOffset', () => {
   test('finds existing selection, preserves existing formats', () => {
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
@@ -397,7 +398,7 @@ describe('getSelection', () => {
       ['meta', 'selections'],
       expectedSelections
     );
-    const { selections, idx } = getSelection(testModel, 13, 22);
+    const { selections, idx } = getSelectionByContentOffset(testModel, 13, 22);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(4);
   });
@@ -418,7 +419,7 @@ describe('getSelection', () => {
       ['meta', 'selections'],
       expectedSelections
     );
-    const { selections, idx } = getSelection(testModel, 22, 30);
+    const { selections, idx } = getSelectionByContentOffset(testModel, 22, 30);
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(5);
   });
@@ -430,7 +431,11 @@ describe('getSelection', () => {
       [6, SELECTION_ACTION_CODE],
       []
     ]);
-    const { selections, idx } = getSelection(nodeModelWithSelections, 5, 16);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      5,
+      16
+    );
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(2);
   });
@@ -442,7 +447,11 @@ describe('getSelection', () => {
       [9, SELECTION_ACTION_CODE],
       []
     ]);
-    const { selections, idx } = getSelection(nodeModelWithSelections, 0, 8);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      0,
+      8
+    );
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(0);
   });
@@ -453,7 +462,11 @@ describe('getSelection', () => {
       [6, SELECTION_ACTION_ITALIC],
       []
     ]);
-    const { selections, idx } = getSelection(nodeModelWithSelections, 12, 30);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      12,
+      30
+    );
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(3);
   });
@@ -467,7 +480,11 @@ describe('getSelection', () => {
       [3],
       []
     ]);
-    const { selections, idx } = getSelection(nodeModelWithSelections, 25, 30);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      25,
+      30
+    );
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(6);
   });
@@ -479,7 +496,11 @@ describe('getSelection', () => {
       [16],
       []
     ]);
-    const { selections, idx } = getSelection(nodeModelWithSelections, 12, 28);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      12,
+      28
+    );
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(3);
   });
@@ -494,7 +515,11 @@ describe('getSelection', () => {
       [3, SELECTION_ACTION_CODE],
       []
     ]);
-    const { selections, idx } = getSelection(nodeModelWithSelections, 16, 19);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      16,
+      19
+    );
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(5);
   });
@@ -509,7 +534,11 @@ describe('getSelection', () => {
       [3],
       []
     ]);
-    const { selections, idx } = getSelection(nodeModelWithSelections, 25, 28);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      25,
+      28
+    );
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(6);
   });
@@ -520,92 +549,102 @@ describe('getSelection', () => {
       [9, SELECTION_ACTION_CODE],
       []
     ]);
-    const { selections, idx } = getSelection(nodeModelWithSelections, 3, 13);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      3,
+      13
+    );
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(1);
   });
 });
 
-describe('upsertSelection', () => {
-  test('insert first Selection', () => {
-    const testModel = nodeModelWithSelections.setIn(
-      ['meta', 'selections'],
-      Selection()
-    );
+describe('replaceSelection', () => {
+  test('replaces (updates) a "matched" Selection in the middle', () => {
+    // simulates an "update" of an existing selection
     const newSelection = Selection({
-      [SELECTION_START]: 6,
-      [SELECTION_END]: 12,
-      [SELECTION_ACTION_ITALIC]: true
+      [SELECTION_LENGTH]: 6,
+      [SELECTION_ACTION_ITALIC]: true,
+      [SELECTION_ACTION_SITEINFO]: true
     });
-    const expectedSelections = fromJS(
-      [
-        {
-          start: 0,
-          end: 6,
-          'selection-bold': false,
-          [SELECTION_ACTION_ITALIC]: false,
-          [SELECTION_ACTION_CODE]: false,
-          'selection-strikethrough': false,
-          [SELECTION_ACTION_SITEINFO]: false,
-          'selection-link': false,
-          linkUrl: ''
-        },
-        {
-          start: 6,
-          end: 12,
-          'selection-bold': false,
-          [SELECTION_ACTION_ITALIC]: true,
-          [SELECTION_ACTION_CODE]: false,
-          'selection-strikethrough': false,
-          [SELECTION_ACTION_SITEINFO]: false,
-          'selection-link': false,
-          linkUrl: ''
-        },
-        {
-          start: 12,
-          end: 30,
-          'selection-bold': false,
-          [SELECTION_ACTION_ITALIC]: false,
-          [SELECTION_ACTION_CODE]: false,
-          'selection-strikethrough': false,
-          [SELECTION_ACTION_SITEINFO]: false,
-          'selection-link': false,
-          linkUrl: ''
-        }
-      ],
-      reviver
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC, SELECTION_ACTION_SITEINFO],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const updatedModel = replaceSelection(
+      nodeModelWithSelections,
+      newSelection,
+      2
     );
-    const updatedModel = upsertSelection(testModel, newSelection);
-    expect(
-      updatedModel.getIn(['meta', 'selections']).equals(expectedSelections)
-    ).toBe(true);
-    expect(updatedModel).toMatchSnapshot();
-  });
-  test('new Selection matches existing Selection', () => {
-    const testModel = nodeModelWithSelections.set('content', testContent);
-    const updatedModel = upsertSelection(
-      testModel,
-      testModel
-        .getIn(['meta', 'selections'])
-        .get(4)
-        .set(SELECTION_ACTION_BOLD, true)
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
     );
-    expect(updatedModel).toMatchSnapshot();
   });
-  test('new Selection overlaps existing Selections', () => {
-    const testModel = nodeModelWithSelections.set('content', testContent);
-    const newSelection = testModel
-      .getIn(['meta', 'selections', 2])
-      .set(SELECTION_ACTION_LINK, true)
-      .set(SELECTION_LINK_URL, 'http://hot.flakes')
-      .set(SELECTION_ACTION_BOLD, true)
-      .set(SELECTION_START, 10)
-      .set(SELECTION_END, 20);
-    const updatedModel = upsertSelection(testModel, newSelection);
-    expect(updatedModel).toMatchSnapshot();
+  test('replaces and merges Selections - in the middle', () => {
+    const newSelection = Selection({
+      [SELECTION_LENGTH]: 6
+    });
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [10],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const updatedModel = replaceSelection(
+      nodeModelWithSelections,
+      newSelection,
+      2
+    );
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
   });
-  test.todo('new Selection is inside existing Selection');
-  test.todo("unset last Selection, should remove 'selections' key from 'meta'");
+  test('replaces a Selection - first (head) selection', () => {
+    const newSelection = Selection({
+      [SELECTION_LENGTH]: 3,
+      [SELECTION_ACTION_MINI]: true
+    });
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_MINI],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const updatedModel = replaceSelection(
+      nodeModelWithSelections,
+      newSelection,
+      0
+    );
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
+  test('replaces and merges Selection - first (head) selection', () => {
+    const newSelection = Selection({
+      [SELECTION_LENGTH]: 3
+    });
+    const expectedSelections = makeSelections([
+      [6],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const updatedModel = replaceSelection(
+      nodeModelWithSelections,
+      newSelection,
+      0
+    );
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
 });
 
 describe('splitSelectionsAtCaretOffset', () => {
@@ -752,75 +791,6 @@ describe('splitSelectionsAtCaretOffset', () => {
     expect(rightNode.getIn(['meta', 'selections'])).toEqual(
       expectedSelectionsRight
     );
-  });
-  test('split with selections on left and none on right', () => {
-    const testModelLeft = fromJS(
-      {
-        post_id: 166,
-        id: '21ba',
-        parent_id: '39fb',
-        position: 0,
-        type: 'p',
-        content: "Here's a first para",
-        meta: {
-          selections: [
-            {
-              start: 0,
-              end: 9,
-              'selection-bold': false,
-              [SELECTION_ACTION_ITALIC]: false,
-              [SELECTION_ACTION_CODE]: false,
-              'selection-strikethrough': false,
-              [SELECTION_ACTION_SITEINFO]: false,
-              'selection-link': false,
-              linkUrl: ''
-            },
-            {
-              start: 9,
-              end: 11,
-              'selection-bold': false,
-              [SELECTION_ACTION_ITALIC]: true,
-              [SELECTION_ACTION_CODE]: true,
-              'selection-strikethrough': false,
-              [SELECTION_ACTION_SITEINFO]: false,
-              'selection-link': false,
-              linkUrl: ''
-            },
-            {
-              start: 11,
-              end: 32,
-              'selection-bold': false,
-              [SELECTION_ACTION_ITALIC]: false,
-              [SELECTION_ACTION_CODE]: false,
-              'selection-strikethrough': false,
-              [SELECTION_ACTION_SITEINFO]: false,
-              'selection-link': false,
-              linkUrl: ''
-            }
-          ]
-        }
-      },
-      reviver
-    );
-    const testModelRight = fromJS(
-      {
-        post_id: 166,
-        id: '21bc',
-        parent_id: '39fb',
-        position: 1,
-        type: 'p',
-        content: 'graph because',
-        meta: {}
-      },
-      reviver
-    );
-    const { leftNode, rightNode } = splitSelectionsAtCaretOffset(
-      testModelLeft,
-      testModelRight,
-      19
-    );
-    expect(leftNode).toMatchSnapshot();
-    expect(rightNode).toMatchSnapshot();
   });
 });
 
