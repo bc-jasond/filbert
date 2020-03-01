@@ -158,13 +158,14 @@ export default class DocumentModel {
     }
     let left = this.getNode(leftId);
     const right = this.getNode(rightId);
+    // do selections before concatenating content!
+    if (this.canHaveSelections(leftId)) {
+      left = concatSelections(left, right);
+    }
     left = left.set(
       'content',
       `${left.get('content', '')}${right.get('content', '')}`
     );
-    if (this.canHaveSelections(leftId)) {
-      left = concatSelections(left, right);
-    }
     this.update(left);
     this.delete(right);
   }

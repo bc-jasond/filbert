@@ -201,16 +201,6 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     ).toBe(true);
     expect(modelAdjusted).toMatchSnapshot();
   });
-  test('noop - default arguments', () => {
-    const testModel = nodeModelWithSelections.set('content', testContent);
-    const modelAdjusted = adjustSelectionOffsetsAndCleanup(testModel);
-    expect(
-      modelAdjusted
-        .getIn(['meta', 'selections'])
-        .equals(testModel.getIn(['meta', 'selections']))
-    ).toBe(true);
-    expect(modelAdjusted).toMatchSnapshot();
-  });
   test('delete - will merge if neighboring selections have the same formats', () => {
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
@@ -247,30 +237,6 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       testContent,
       23,
       -17
-    );
-    expect(
-      modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
-    ).toBe(true);
-    expect(modelAdjusted).toMatchSnapshot();
-  });
-  test('paste a word with collapsed caret (similar to adding one character on keypress)', () => {
-    const expectedSelections = makeSelections([
-      [3, SELECTION_ACTION_SITEINFO],
-      [7],
-      [6, SELECTION_ACTION_ITALIC],
-      [1],
-      [9, SELECTION_ACTION_CODE],
-      []
-    ]);
-    const testModel = nodeModelWithSelections.set(
-      'content',
-      `${testContent.substring(0, 5)}pple${testContent.substring(5)}`
-    );
-    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
-      testModel,
-      testContent,
-      5,
-      4
     );
     expect(
       modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
@@ -343,6 +309,82 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     );
     expect(updatedModel.getIn(['meta', 'selections'])).toEqual(Selection());
     expect(updatedModel).toMatchSnapshot();
+  });
+  test('paste a word with collapsed caret (similar to adding one character on keypress)', () => {
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [7],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const testModel = nodeModelWithSelections.set(
+      'content',
+      `${testContent.substring(0, 5)}pple${testContent.substring(5)}`
+    );
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      5,
+      4
+    );
+    expect(modelAdjusted.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
+  test('paste a word at edge of last selection (noop)', () => {
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const testModel = nodeModelWithSelections.set(
+      'content',
+      `${testContent.substring(0, 22)} just${testContent.substring(22)}`
+    );
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      22,
+      5
+    );
+    expect(modelAdjusted.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
+  test('add a letter to the end of content (noop)', () => {
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const testModel = nodeModelWithSelections.set('content', `${testContent}X`);
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      30,
+      1
+    );
+    expect(modelAdjusted.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
+  test('noop - default arguments', () => {
+    const testModel = nodeModelWithSelections.set('content', testContent);
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(testModel);
+    expect(
+      modelAdjusted
+        .getIn(['meta', 'selections'])
+        .equals(testModel.getIn(['meta', 'selections']))
+    ).toBe(true);
+    expect(modelAdjusted).toMatchSnapshot();
   });
   test('start or end out of bounds should throw', () => {
     expect(() => {

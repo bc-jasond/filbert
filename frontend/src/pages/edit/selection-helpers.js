@@ -96,41 +96,18 @@ function maybeMergeNodes(left, right) {
   return true;
 }
 
-/**
- * if any neighboring selections have the exact same formats - merge them
- */
-function mergeAdjacentSelectionsWithSameFormats(nodeModel) {
-  const firstSelection = getSelections(nodeModel);
-  // convert to JS to avoid having to refresh all references to "next" on every change
-  let current = firstSelection.toJS();
-  // "head" of list
-  let head = current;
-  let didMerge = false;
-  while (current) {
-    const next = current[SELECTION_NEXT];
-    if (!next) {
-      break;
-    }
-    if (selectionsHaveDifferentFormats(current, next)) {
-      current[SELECTION_NEXT] = next;
-      current = next;
-    } else {
-      // if the formats are the same, just extend the current selection
-      didMerge = true;
-      if (next[SELECTION_LENGTH] === -1) {
-        current[SELECTION_NEXT] = undefined;
-        current[SELECTION_LENGTH] = -1;
-        break;
-      }
-      current[SELECTION_NEXT] = next[SELECTION_NEXT];
-      current[SELECTION_LENGTH] += next[SELECTION_LENGTH];
-    }
+// uses vanilla JS instead of Immutable
+function internalGetSelectionAtIndex(head, idx) {
+  let selection = head;
+  let i = 0;
+  while (selection && i < idx) {
+    selection = selection[SELECTION_NEXT];
+    i += 1;
   }
-  if (!didMerge) {
-    return nodeModel;
+  if (!selection) {
+    console.error('Bad selection index: ', idx, head);
   }
-  console.info('MERGE ADJACENT ', formatSelections(head));
-  return nodeModel.setIn(['meta', 'selections'], fromJS(head, reviver));
+  return selection;
 }
 
 /**
@@ -191,7 +168,10 @@ export function adjustSelectionOffsetsAndCleanup(
   // if we're ADDING content
   if (!doesRemoveCharacters) {
     // find the selection
-    while (start > caretPosition + current[SELECTION_LENGTH]) {
+    while (
+      current[SELECTION_NEXT] &&
+      start >= caretPosition + current[SELECTION_LENGTH]
+    ) {
       caretPosition += current[SELECTION_LENGTH];
       current = current[SELECTION_NEXT];
     }
@@ -390,28 +370,15 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
   return { selections: fromJS(head, reviver), idx };
 }
 
-function internalGetSelectionAtIndex(head, idx) {
+export function getSelectionAtIdx(head, idx) {
   let selection = head;
-  let i = 0;
-  while (selection && i < idx) {
-    selection = selection[SELECTION_NEXT];
-    i += 1;
-  }
-  if (!selection) {
-    console.error('Bad selection index: ', idx, head);
-  }
-  return selection;
-}
-
-export function getSelectionAtIdx(nodeModel, idx) {
-  let selection = nodeModel.getIn(['meta', 'selections']);
   let i = 0;
   while (selection && i < idx) {
     selection = selection.get(SELECTION_NEXT);
     i += 1;
   }
   if (!selection) {
-    console.error('Bad selection index: ', idx, nodeModel);
+    console.error('Bad selection index: ', idx, head);
   }
   return selection;
 }
@@ -540,4 +507,15 @@ export function getContentBySelections(node) {
     current = current[SELECTION_NEXT];
   }
   return pieces;
+}
+
+export function getSelectionsLength(node) {
+  const head = node.getIn(['meta', 'selections']);
+  let i = 0;
+  let current = head;
+  while (current) {
+    i += 1;
+    current = current.get(SELECTION_NEXT);
+  }
+  return i;
 }

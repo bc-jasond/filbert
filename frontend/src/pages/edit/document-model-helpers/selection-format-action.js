@@ -15,6 +15,7 @@ import { Selection, replaceSelection } from '../selection-helpers';
 export function selectionFormatAction(
   documentModel,
   nodeArg,
+  selection,
   selectionIdx,
   action
 ) {

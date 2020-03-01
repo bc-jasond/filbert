@@ -97,7 +97,8 @@ export default class EditPost extends React.Component {
       shouldShowEditSectionMenu: false,
       editSectionMetaFormTopOffset: 0,
       formatSelectionNode: Map(),
-      formatSelectionModel: Selection()
+      formatSelectionModel: Selection(),
+      formatSelectionModelIdx: -1
     };
   }
 
@@ -993,6 +994,7 @@ export default class EditPost extends React.Component {
       // format selection menu
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
+      formatSelectionModelIdx: -1,
       // hide edit section menu by default
       editSectionNode: section,
       shouldShowEditSectionMenu: section.get('type') !== NODE_TYPE_SPACER,
@@ -1028,6 +1030,7 @@ export default class EditPost extends React.Component {
           {
             formatSelectionNode: Map(),
             formatSelectionModel: Selection(),
+            formatSelectionModelIdx: -1,
             formatSelectionMenuTopOffset: 0,
             formatSelectionMenuLeftOffset: 0
           },
@@ -1041,23 +1044,27 @@ export default class EditPost extends React.Component {
 
   updateLinkUrl = value => {
     const {
-      state: { formatSelectionNode, formatSelectionCurrentIdx }
+      state: {
+        formatSelectionNode,
+        formatSelectionModel,
+        formatSelectionModelIdx
+      }
     } = this;
 
-    const selection = getSelectionAtIdx(
-      formatSelectionNode,
-      formatSelectionCurrentIdx
+    const updatedSelectionModel = formatSelectionModel.set(
+      SELECTION_LINK_URL,
+      value
     );
-    const updatedSelectionModel = selection.set(SELECTION_LINK_URL, value);
     const updatedNode = replaceSelection(
       formatSelectionNode,
       updatedSelectionModel,
-      formatSelectionCurrentIdx
+      formatSelectionModelIdx
     );
     this.documentModel.update(updatedNode);
     this.setState(
       {
-        formatSelectionNode: updatedNode
+        formatSelectionNode: updatedNode,
+        formatSelectionModel: updatedSelectionModel
       },
       async () => {
         await this.commitUpdates(
@@ -1117,15 +1124,20 @@ export default class EditPost extends React.Component {
     // save range offsets because if the selection is marked as a "link" the url input will be focused
     // and the range will be lost
     this.selectionOffsets = selectionOffsets;
+    const { selections, idx } = getSelectionByContentOffset(
+      selectedNodeModel,
+      caretStart,
+      caretEnd
+    );
     await new Promise(resolve =>
       this.setState(
         {
-          formatSelectionNode: selectedNodeModel,
-          formatSelectionModel: getSelectionByContentOffset(
-            selectedNodeModel,
-            caretStart,
-            caretEnd
+          formatSelectionNode: selectedNodeModel.setIn(
+            ['meta', 'selections'],
+            selections
           ),
+          formatSelectionModel: getSelectionAtIdx(selections, idx),
+          formatSelectionModelIdx: idx,
           // NOTE: need to add current vertical scroll position of the window to the
           // rect position to get offset relative to the whole document
           formatSelectionMenuTopOffset: rect.top + window.scrollY,
@@ -1138,13 +1150,18 @@ export default class EditPost extends React.Component {
 
   handleSelectionAction = async (action, shouldCloseMenu = false) => {
     const {
-      state: { formatSelectionModel, formatSelectionNode },
+      state: {
+        formatSelectionModel,
+        formatSelectionModelIdx,
+        formatSelectionNode
+      },
       selectionOffsets
     } = this;
     const { updatedNode, updatedSelection } = selectionFormatAction(
       this.documentModel,
       formatSelectionNode,
       formatSelectionModel,
+      formatSelectionModelIdx,
       action
     );
     if (shouldCloseMenu) {

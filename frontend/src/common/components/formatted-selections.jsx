@@ -1,7 +1,9 @@
 /* eslint-disable import/prefer-default-export */
-import { List } from 'immutable';
 import React from 'react';
-import { getContentBySelections } from '../../pages/edit/selection-helpers';
+import {
+  Selection,
+  getContentBySelections
+} from '../../pages/edit/selection-helpers';
 import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,
