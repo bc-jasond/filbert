@@ -1,4 +1,4 @@
-import { fromJS, List, Map, Record } from 'immutable';
+import { fromJS, Map, Record } from 'immutable';
 
 import {
   SELECTION_ACTION_BOLD,
