@@ -11,9 +11,8 @@ import {
 } from '../../../common/constants';
 
 const { fromJS, Map } = require('immutable');
-const { reviver } = require('../document-model');
+const { reviver, Selection } = require('../../../common/utils');
 const {
-  Selection,
   formatSelections,
   adjustSelectionOffsetsAndCleanup,
   getSelectionByContentOffset,
