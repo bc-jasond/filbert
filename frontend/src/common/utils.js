@@ -1,8 +1,18 @@
-import { Map } from 'immutable';
+import { isKeyed, Map, Record } from 'immutable';
 
 import {
   KEYCODE_SPACE,
   KEYCODE_SPACE_NBSP,
+  SELECTION_ACTION_BOLD,
+  SELECTION_ACTION_CODE,
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_LINK,
+  SELECTION_ACTION_MINI,
+  SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_STRIKETHROUGH,
+  SELECTION_LENGTH,
+  SELECTION_LINK_URL,
+  SELECTION_NEXT,
   ZERO_LENGTH_CHAR
 } from './constants';
 
@@ -172,4 +182,25 @@ export function idIsValid(maybeId) {
 
 export function nodeIsValid(node) {
   return Map.isMap(node) && idIsValid(node.get('id'));
+}
+
+export const Selection = Record({
+  [SELECTION_NEXT]: undefined,
+  [SELECTION_LENGTH]: -1,
+  [SELECTION_ACTION_BOLD]: false,
+  [SELECTION_ACTION_ITALIC]: false,
+  [SELECTION_ACTION_CODE]: false,
+  [SELECTION_ACTION_SITEINFO]: false,
+  [SELECTION_ACTION_MINI]: false,
+  [SELECTION_ACTION_STRIKETHROUGH]: false,
+  [SELECTION_ACTION_LINK]: false,
+  [SELECTION_LINK_URL]: ''
+});
+
+export function reviver(key, value) {
+  if (value.has(SELECTION_NEXT) && value.has(SELECTION_LENGTH)) {
+    return new Selection(value);
+  }
+  // ImmutableJS default behavior
+  return isKeyed(value) ? value.toMap() : value.toList();
 }

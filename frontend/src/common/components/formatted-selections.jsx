@@ -1,7 +1,6 @@
 /* eslint-disable import/prefer-default-export */
-import { List } from 'immutable';
 import React from 'react';
-import { getContentForSelection } from '../../pages/edit/selection-helpers';
+import { getContentBySelections } from '../../pages/edit/selection-helpers';
 import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,
@@ -9,9 +8,10 @@ import {
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_MINI,
   SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_STRIKETHROUGH
+  SELECTION_ACTION_STRIKETHROUGH,
+  SELECTION_NEXT
 } from '../constants';
-import { cleanTextOrZeroLengthPlaceholder } from '../utils';
+import { cleanTextOrZeroLengthPlaceholder, Selection } from '../utils';
 import {
   A,
   BoldText,
@@ -30,12 +30,15 @@ export default class FormattedSelections extends React.PureComponent {
     } = this;
     let children = [];
     let didError = false;
-    const selections = node.getIn(['meta', 'selections'], List());
+    let selection = node.getIn(['meta', 'selections'], Selection());
+    const contentPiecesBySelectionLength = getContentBySelections(node);
+    let idx = 0;
     try {
-      selections.forEach(selection => {
+      while (selection) {
         // re-render all selections if any one changes
         const key = selection.hashCode();
-        let selectionJsx = getContentForSelection(node, selection);
+        // eslint-disable-next-line prefer-destructuring
+        let selectionJsx = contentPiecesBySelectionLength[idx];
 
         if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
           selectionJsx = <StrikeText key={key}>{selectionJsx}</StrikeText>;
@@ -63,13 +66,16 @@ export default class FormattedSelections extends React.PureComponent {
           );
         }
         children.push(selectionJsx);
-      });
+        selection = selection.get(SELECTION_NEXT);
+        idx += 1;
+      }
     } catch (err) {
       console.warn(err);
       // selections got corrupt, just display unformatted text
       didError = true;
     }
-    if (selections.size === 0 || didError) {
+    // if there's an error, show unformatted content
+    if (didError) {
       children = [cleanTextOrZeroLengthPlaceholder(node.get('content'))];
     }
     return <>{children}</>;

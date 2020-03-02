@@ -69,6 +69,8 @@ export const NODE_ACTION_INSERT = 'insert';
 export const NODE_ACTION_UPDATE = 'update';
 export const NODE_ACTION_DELETE = 'delete';
 // selection actions
+export const SELECTION_NEXT = 'next';
+export const SELECTION_LENGTH = 'length';
 export const SELECTION_ACTION_BOLD = 'selection-bold';
 export const SELECTION_ACTION_ITALIC = 'selection-italic';
 export const SELECTION_ACTION_CODE = 'selection-code';
@@ -79,8 +81,6 @@ export const SELECTION_ACTION_LINK = 'selection-link';
 export const SELECTION_ACTION_H1 = 'selection-h1';
 export const SELECTION_ACTION_H2 = 'selection-h2';
 export const SELECTION_LINK_URL = 'linkUrl';
-export const SELECTION_START = 'start';
-export const SELECTION_END = 'end';
 // post level edits
 export const POST_ACTION_REDIRECT_TIMEOUT = 1000;
 

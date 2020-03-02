@@ -7,8 +7,7 @@ import { PAGE_NAME_VIEW } from '../common/constants';
 import { grey, viewport7 } from '../common/css';
 import { apiGet } from '../common/fetch';
 import { monospaced } from '../common/fonts.css';
-import { formatPostDate } from '../common/utils';
-import { reviver } from './edit/document-model';
+import { formatPostDate, reviver } from '../common/utils';
 
 import Header from './header';
 import Footer from './footer';

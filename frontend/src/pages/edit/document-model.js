@@ -1,4 +1,4 @@
-import Immutable, { isKeyed, Map } from 'immutable';
+import Immutable, { Map } from 'immutable';
 
 import {
   NEW_POST_URL_ID,
@@ -9,20 +9,10 @@ import {
   NODE_TYPE_P,
   NODE_TYPE_PRE,
   NODE_TYPE_QUOTE,
-  NODE_TYPE_SPACER,
-  SELECTION_END,
-  SELECTION_START
+  NODE_TYPE_SPACER
 } from '../../common/constants';
-import { cleanText, getMapWithId } from '../../common/utils';
-import { concatSelections, Selection } from './selection-helpers';
-
-export function reviver(key, value) {
-  if (value.has(SELECTION_START) && value.has(SELECTION_END)) {
-    return new Selection(value);
-  }
-  // ImmutableJS default behavior
-  return isKeyed(value) ? value.toMap() : value.toList();
-}
+import { cleanText, getMapWithId, reviver } from '../../common/utils';
+import { concatSelections } from './selection-helpers';
 
 export default class DocumentModel {
   post;
@@ -158,13 +148,14 @@ export default class DocumentModel {
     }
     let left = this.getNode(leftId);
     const right = this.getNode(rightId);
+    // do selections before concatenating content!
+    if (this.canHaveSelections(leftId)) {
+      left = concatSelections(left, right);
+    }
     left = left.set(
       'content',
       `${left.get('content', '')}${right.get('content', '')}`
     );
-    if (this.canHaveSelections(leftId)) {
-      left = concatSelections(left, right);
-    }
     this.update(left);
     this.delete(right);
   }

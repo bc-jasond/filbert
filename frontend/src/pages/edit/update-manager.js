@@ -1,6 +1,5 @@
 import { fromJS, List, Map } from 'immutable';
 
-import { reviver } from './document-model';
 import {
   HISTORY_KEY_NODE_UPDATES,
   HISTORY_KEY_REDO,
@@ -12,11 +11,18 @@ import {
   NEW_POST_URL_ID,
   NODE_ACTION_DELETE,
   NODE_ACTION_UPDATE,
-  SELECTION_LINK_URL
+  SELECTION_LINK_URL,
+  SELECTION_NEXT
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
-import { moreThanNCharsAreDifferent, nodeIsValid } from '../../common/utils';
+import {
+  moreThanNCharsAreDifferent,
+  nodeIsValid,
+  reviver,
+  Selection
+} from '../../common/utils';
+import { getSelectionAtIdx, getSelectionsLength } from './selection-helpers';
 
 const characterDiffSize = 6;
 
@@ -105,8 +111,7 @@ export default class UpdateManager {
           updatedNode.get('meta', Map()).size !==
             prevNode.get('meta', Map()).size ||
           // node meta,selections changed structure
-          updatedNode.getIn(['meta', 'selections'], List()).size !==
-            prevNode.getIn(['meta', 'selections'], List()).size
+          getSelectionsLength(updatedNode) !== getSelectionsLength(prevNode)
         ) {
           return update.set('node', prevNode);
         }
@@ -136,19 +141,34 @@ export default class UpdateManager {
             )
             .first() ||
           // linkUrl in a selection changed enough
-          updatedNode
-            .getIn(['meta', 'selections'], List())
-            .filter((updatedSelection, idx) =>
-              moreThanNCharsAreDifferent(
-                updatedSelection.get(SELECTION_LINK_URL, ''),
+          (() => {
+            let current = updatedNode.getIn(
+              ['meta', 'selections'],
+              Selection()
+            );
+            let currentIdx = 0;
+            while (current) {
+              const compare = getSelectionAtIdx(
                 this.lastUndoHistoryNode.getIn(
-                  ['meta', 'selections', idx, SELECTION_LINK_URL],
-                  ''
+                  ['meta', 'selections'],
+                  Selection()
                 ),
-                characterDiffSize
-              )
-            )
-            .first()
+                currentIdx
+              );
+              if (
+                moreThanNCharsAreDifferent(
+                  current.get(SELECTION_LINK_URL, ''),
+                  compare.get(SELECTION_LINK_URL, ''),
+                  characterDiffSize
+                )
+              ) {
+                return true;
+              }
+              current = current.get(SELECTION_NEXT);
+              currentIdx += 1;
+            }
+            return false;
+          })()
         ) {
           const updateWithNewNode = update.set(
             'node',
