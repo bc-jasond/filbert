@@ -1,3 +1,13 @@
+import {
+  SELECTION_ACTION_BOLD,
+  SELECTION_ACTION_CODE,
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_LINK,
+  SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_STRIKETHROUGH
+} from '../../../common/constants';
+import { makeSelections } from '../../../common/test-helpers';
+
 export const testPostWithAllTypesJS = {
   post: {
     id: 175,
@@ -88,74 +98,18 @@ export const testPostWithAllTypesJS = {
       type: 'p',
       content: 'Second paragraph with some formats',
       meta: {
-        selections: [
-          {
-            start: 0,
-            end: 17,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 17,
-            end: 21,
-            'selection-bold': true,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 21,
-            end: 22,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 22,
-            end: 26,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': true,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 26,
-            end: 27,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 27,
-            end: 34,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': true,
-            linkUrl: 'http://some.site'
-          }
-        ]
+        selections: makeSelections([
+          [17],
+          [4, SELECTION_ACTION_BOLD],
+          [1],
+          [4, SELECTION_ACTION_CODE],
+          [1],
+          [
+            ,
+            SELECTION_ACTION_LINK,
+            { key: 'linkUrl', value: 'http://some.site' }
+          ]
+        ]).toJS()
       }
     },
     '151c': {
@@ -165,140 +119,20 @@ export const testPostWithAllTypesJS = {
       type: 'li',
       content: 'One with a bunch of formats and stuff',
       meta: {
-        selections: [
-          {
-            start: 0,
-            end: 4,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 4,
-            end: 8,
-            'selection-bold': true,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 8,
-            end: 9,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 9,
-            end: 10,
-            'selection-bold': false,
-            'selection-italic': true,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 10,
-            end: 11,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 11,
-            end: 16,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': true,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 16,
-            end: 17,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 17,
-            end: 19,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': true,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 19,
-            end: 20,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 20,
-            end: 27,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': true,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 27,
-            end: 32,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': false,
-            linkUrl: ''
-          },
-          {
-            start: 32,
-            end: 37,
-            'selection-bold': false,
-            'selection-italic': false,
-            'selection-code': false,
-            'selection-strikethrough': false,
-            'selection-siteinfo': false,
-            'selection-link': true,
-            linkUrl: 'http://yep.com'
-          }
-        ]
+        selections: makeSelections([
+          [4],
+          [4, SELECTION_ACTION_BOLD],
+          [1],
+          [1, SELECTION_ACTION_ITALIC],
+          [1],
+          [5, SELECTION_ACTION_CODE],
+          [1],
+          [2, SELECTION_ACTION_SITEINFO],
+          [1],
+          [7, SELECTION_ACTION_STRIKETHROUGH],
+          [5],
+          [, SELECTION_ACTION_LINK, { key: 'linkUrl', value: 'http://yep.com' }]
+        ]).toJS()
       }
     },
     db70: {

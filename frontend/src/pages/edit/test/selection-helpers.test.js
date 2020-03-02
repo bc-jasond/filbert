@@ -3,12 +3,13 @@ import {
   SELECTION_ACTION_CODE,
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
+  SELECTION_ACTION_MINI,
   SELECTION_ACTION_SITEINFO,
-  SELECTION_LINK_URL,
   SELECTION_LENGTH,
-  SELECTION_NEXT,
-  SELECTION_ACTION_MINI
+  SELECTION_LINK_URL,
+  SELECTION_NEXT
 } from '../../../common/constants';
+import { makeSelections } from '../../../common/test-helpers';
 
 const { fromJS, Map } = require('immutable');
 const { reviver, Selection } = require('../../../common/utils');
@@ -21,31 +22,6 @@ const {
   concatSelections,
   getContentBySelections
 } = require('../selection-helpers');
-
-function makeSelections(values) {
-  const head = {};
-  let current = head;
-  let prev;
-  do {
-    let [currentLength, ...currentValues] = values.shift();
-    current[SELECTION_LENGTH] = currentLength;
-    currentValues.forEach(v => {
-      if (typeof v === 'object') {
-        current[v.key] = v.value;
-      } else {
-        current[v] = true;
-      }
-    });
-    if (prev) {
-      prev[SELECTION_NEXT] = current;
-    }
-    prev = current;
-    current = {};
-  } while (values.length);
-  prev[SELECTION_NEXT] = undefined; //important for the reviver()
-  prev[SELECTION_LENGTH] = -1;
-  return fromJS(head, reviver);
-}
 
 const testContent = 'And a second paragraph because';
 const testSelections = makeSelections([
