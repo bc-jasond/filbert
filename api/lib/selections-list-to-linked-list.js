@@ -5,10 +5,8 @@ const { Map, List } = require("immutable");
 const figlet = require("figlet");
 
 const { getKnex, bulkContentNodeUpsert } = require("./mysql");
-const {
-  SELECTION_LENGTH,
-  SELECTION_NEXT
-} = require("../../frontend/src/common/constants");
+const SELECTION_LENGTH = "length";
+const SELECTION_NEXT = "next";
 
 async function main() {
   try {
