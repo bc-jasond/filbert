@@ -10,7 +10,8 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_LINK_URL
 } from '../../../common/constants';
-import { Selection, replaceSelection } from '../selection-helpers';
+import { Selection } from '../../../common/utils';
+import { replaceSelection } from '../selection-helpers';
 
 export function selectionFormatAction(
   documentModel,

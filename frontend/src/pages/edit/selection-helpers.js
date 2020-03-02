@@ -1,43 +1,11 @@
-import { fromJS, Map, Record } from 'immutable';
+import { fromJS, Map } from 'immutable';
 
+import { SELECTION_LENGTH, SELECTION_NEXT } from '../../common/constants';
 import {
-  SELECTION_ACTION_BOLD,
-  SELECTION_ACTION_CODE,
-  SELECTION_ACTION_ITALIC,
-  SELECTION_ACTION_LINK,
-  SELECTION_ACTION_MINI,
-  SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_LINK_URL,
-  SELECTION_NEXT,
-  SELECTION_LENGTH
-} from '../../common/constants';
-import { cleanTextOrZeroLengthPlaceholder } from '../../common/utils';
-import { reviver } from './document-model';
-
-export const Selection = Record({
-  [SELECTION_NEXT]: undefined,
-  [SELECTION_LENGTH]: -1,
-  [SELECTION_ACTION_BOLD]: false,
-  [SELECTION_ACTION_ITALIC]: false,
-  [SELECTION_ACTION_CODE]: false,
-  [SELECTION_ACTION_SITEINFO]: false,
-  [SELECTION_ACTION_MINI]: false,
-  [SELECTION_ACTION_STRIKETHROUGH]: false,
-  [SELECTION_ACTION_LINK]: false,
-  [SELECTION_LINK_URL]: ''
-});
-
-const selectionTypesInOrder = [
-  SELECTION_ACTION_BOLD,
-  SELECTION_ACTION_ITALIC,
-  SELECTION_ACTION_CODE,
-  SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_MINI,
-  SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_ACTION_LINK,
-  SELECTION_LINK_URL
-];
+  cleanTextOrZeroLengthPlaceholder,
+  reviver,
+  Selection
+} from '../../common/utils';
 
 export function formatSelections(head) {
   if (!Map.isMap(head)) {
@@ -80,7 +48,7 @@ function selectionsHaveIdenticalFormats(left, right) {
   // use built-in equals()
   return leftCompare.equals(rightCompare);
 }
-
+/* eslint-disable no-param-reassign, prefer-destructuring */
 function maybeMergeNodes(left, right) {
   if (!selectionsHaveIdenticalFormats(left, right)) {
     return false;
@@ -95,12 +63,14 @@ function maybeMergeNodes(left, right) {
   }
   return true;
 }
+/* eslint-enable no-param-reassign, prefer-destructuring */
 
 // uses vanilla JS instead of Immutable
 function internalGetSelectionAtIndex(head, idx) {
   let selection = head;
   let i = 0;
   while (selection && i < idx) {
+    // eslint-disable-next-line prefer-destructuring
     selection = selection[SELECTION_NEXT];
     i += 1;
   }
@@ -173,6 +143,7 @@ export function adjustSelectionOffsetsAndCleanup(
       start >= caretPosition + current[SELECTION_LENGTH]
     ) {
       caretPosition += current[SELECTION_LENGTH];
+      // eslint-disable-next-line prefer-destructuring
       current = current[SELECTION_NEXT];
     }
     // and increase it's length if it's not at the end
@@ -247,6 +218,7 @@ export function adjustSelectionOffsetsAndCleanup(
         } else if (current[SELECTION_NEXT]) {
           // merge new neighbors with same formats here
           prev[SELECTION_LENGTH] += current[SELECTION_LENGTH];
+          // eslint-disable-next-line prefer-destructuring
           prev[SELECTION_NEXT] = current[SELECTION_NEXT];
         } else {
           // the last selection has same formats as prev and needs to be "merged" - just delete
@@ -263,6 +235,7 @@ export function adjustSelectionOffsetsAndCleanup(
     }
     // advance cursor and selection pointer
     caretPosition += currentLength;
+    // eslint-disable-next-line prefer-destructuring
     current = current[SELECTION_NEXT];
   }
   // prev should be last node
@@ -295,6 +268,7 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
     caretPosition += current[SELECTION_LENGTH];
     idx += 1;
     prev = current;
+    // eslint-disable-next-line prefer-destructuring
     current = current[SELECTION_NEXT];
   }
   // found exact match in existing selections ?
@@ -306,12 +280,14 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
     return { selections: fromJS(head, reviver), idx };
   }
   // if we're here, we didn't find an exact match in existing selections
-  let newSelection = {
+  const newSelection = {
     [SELECTION_LENGTH]: doesReplaceLastSelection ? -1 : length,
     [SELECTION_NEXT]: undefined
   };
   // capture current length before mutation
+  // eslint-disable-next-line prefer-destructuring
   const originalLength = current[SELECTION_LENGTH];
+  // eslint-disable-next-line prefer-destructuring
   const originalNext = current[SELECTION_NEXT];
   // replace head?
   if (start === 0) {
@@ -352,6 +328,7 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
   while (current && caretPosition + current[SELECTION_LENGTH] <= end) {
     caretPosition += current[SELECTION_LENGTH];
     prev = current;
+    // eslint-disable-next-line prefer-destructuring
     current = current[SELECTION_NEXT];
   }
   if (!current) {
@@ -390,16 +367,17 @@ export function getSelectionAtIdx(head, idx) {
  *  with identical formats
  */
 export function replaceSelection(nodeModelArg, newSelection, idx) {
-  let nodeModel = nodeModelArg;
+  const nodeModel = nodeModelArg;
   let head = getSelections(nodeModel);
-  let current = internalGetSelectionAtIndex(head, idx);
-  let updated = newSelection.toJS();
+  const current = internalGetSelectionAtIndex(head, idx);
+  const updated = newSelection.toJS();
+  // eslint-disable-next-line prefer-destructuring
   updated[SELECTION_NEXT] = current[SELECTION_NEXT];
   if (idx === 0) {
     head = updated;
     maybeMergeNodes(head, head[SELECTION_NEXT]);
   } else {
-    let prev = internalGetSelectionAtIndex(head, idx - 1);
+    const prev = internalGetSelectionAtIndex(head, idx - 1);
     prev[SELECTION_NEXT] = updated;
     maybeMergeNodes(updated, updated[SELECTION_NEXT]);
     maybeMergeNodes(prev, updated);
@@ -413,8 +391,8 @@ export function splitSelectionsAtCaretOffset(
   rightNodeModelArg,
   caretStart
 ) {
-  let leftNode = leftNodeModelArg;
-  let rightNode = rightNodeModelArg;
+  const leftNode = leftNodeModelArg;
+  const rightNode = rightNodeModelArg;
   const head = getSelections(leftNode);
   let current = head;
   let caretPosition = 0;
@@ -423,6 +401,7 @@ export function splitSelectionsAtCaretOffset(
     caretStart > caretPosition + current[SELECTION_LENGTH]
   ) {
     caretPosition += current[SELECTION_LENGTH];
+    // eslint-disable-next-line prefer-destructuring
     current = current[SELECTION_NEXT];
   }
   const headRightLength = current[SELECTION_NEXT]
@@ -434,6 +413,7 @@ export function splitSelectionsAtCaretOffset(
     headRight = current;
   } else if (headRightLength === 0) {
     // split on the edge of 2 selections
+    // eslint-disable-next-line prefer-destructuring
     headRight = current[SELECTION_NEXT];
   } else {
     // splits in middle of a selection
@@ -451,15 +431,16 @@ export function splitSelectionsAtCaretOffset(
 }
 
 export function concatSelections(leftModelArg, rightModelArg) {
-  let leftModel = leftModelArg;
+  const leftModel = leftModelArg;
   // the left last selection length will be -1, figure out it's new length
-  let leftLastSelectionLength = leftModel.get('content').length;
+  let { length: leftLastSelectionLength } = leftModel.get('content');
   const rightModel = rightModelArg;
-  let head = getSelections(leftModel);
-  let headRight = getSelections(rightModel);
+  const head = getSelections(leftModel);
+  const headRight = getSelections(rightModel);
   let current = head;
   while (current[SELECTION_NEXT]) {
     leftLastSelectionLength -= current[SELECTION_LENGTH];
+    // eslint-disable-next-line prefer-destructuring
     current = current[SELECTION_NEXT];
   }
   // current is now the last left selection
@@ -473,6 +454,7 @@ export function concatSelections(leftModelArg, rightModelArg) {
       current[SELECTION_NEXT] = undefined;
     } else {
       current[SELECTION_LENGTH] += headRight[SELECTION_LENGTH];
+      // eslint-disable-next-line prefer-destructuring
       current[SELECTION_NEXT] = headRight[SELECTION_NEXT];
     }
   }
@@ -504,6 +486,7 @@ export function getContentBySelections(node) {
     const piece = content.substring(caretPosition, end);
     pieces.push(cleanTextOrZeroLengthPlaceholder(piece));
     caretPosition += current[SELECTION_LENGTH];
+    // eslint-disable-next-line prefer-destructuring
     current = current[SELECTION_NEXT];
   }
   return pieces;

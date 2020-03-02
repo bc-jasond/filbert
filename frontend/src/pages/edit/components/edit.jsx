@@ -9,7 +9,11 @@ import { Article } from '../../../common/components/layout-styled-components';
 import Header from '../../header';
 import Footer from '../../footer';
 
-import { getCanonicalFromTitle, stopAndPrevent } from '../../../common/utils';
+import {
+  getCanonicalFromTitle,
+  Selection,
+  stopAndPrevent
+} from '../../../common/utils';
 import {
   caretIsOnEdgeOfParagraphText,
   getFirstHeadingContent,
@@ -56,9 +60,8 @@ import { doSplit } from '../document-model-helpers/split';
 import UpdateManager from '../update-manager';
 
 import {
-  getSelectionByContentOffset,
   getSelectionAtIdx,
-  Selection,
+  getSelectionByContentOffset,
   replaceSelection
 } from '../selection-helpers';
 

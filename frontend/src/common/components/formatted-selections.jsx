@@ -1,9 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import React from 'react';
-import {
-  Selection,
-  getContentBySelections
-} from '../../pages/edit/selection-helpers';
+import { getContentBySelections } from '../../pages/edit/selection-helpers';
 import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,
@@ -14,7 +11,7 @@ import {
   SELECTION_ACTION_STRIKETHROUGH,
   SELECTION_NEXT
 } from '../constants';
-import { cleanTextOrZeroLengthPlaceholder } from '../utils';
+import { cleanTextOrZeroLengthPlaceholder, Selection } from '../utils';
 import {
   A,
   BoldText,
@@ -40,6 +37,7 @@ export default class FormattedSelections extends React.PureComponent {
       while (selection) {
         // re-render all selections if any one changes
         const key = selection.hashCode();
+        // eslint-disable-next-line prefer-destructuring
         let selectionJsx = contentPiecesBySelectionLength[idx];
 
         if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {

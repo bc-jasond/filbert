@@ -1,6 +1,5 @@
 import { fromJS, List, Map } from 'immutable';
 
-import { reviver } from './document-model';
 import {
   HISTORY_KEY_NODE_UPDATES,
   HISTORY_KEY_REDO,
@@ -17,12 +16,13 @@ import {
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
-import { moreThanNCharsAreDifferent, nodeIsValid } from '../../common/utils';
 import {
-  getSelectionAtIdx,
-  getSelectionsLength,
+  moreThanNCharsAreDifferent,
+  nodeIsValid,
+  reviver,
   Selection
-} from './selection-helpers';
+} from '../../common/utils';
+import { getSelectionAtIdx, getSelectionsLength } from './selection-helpers';
 
 const characterDiffSize = 6;
 
