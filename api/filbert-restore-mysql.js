@@ -2,14 +2,9 @@
 // ESM - remove after ECMAScript Module support is past Experimental node v14 ?
 require = require("esm")(module /*, options*/);
 const inquirer = require("inquirer");
-const path = require("path");
-const { fortune } = require("fortune-teller");
-const { say: cowsay } = require("cowsay");
 const { textSync } = require("figlet");
 const chalk = require("chalk");
 const ora = require("ora");
-const terminalImage = require("terminal-image");
-const termImg = require("term-img");
 
 const {
   error,
@@ -26,26 +21,12 @@ const {
 const { restoreMysqlFromFile } = require("./lib/mysql");
 const { filbertMysqldumpToS3Adhoc } = require("./lib/mysqldump-adhoc");
 
-function terminalImageWithFallback(filename) {
-  const filepath = path.join(__dirname, filename);
-  termImg(filepath, {
-    fallback: async () => {
-      const image = await terminalImage.file(filepath);
-      console.log(image);
-    }
-  });
-}
-
 async function main() {
   let spinner = new ora();
   try {
-    terminalImageWithFallback("quest-for-glory-ii-trial-by-fire_6.png");
     info("\n", textSync("filbert MySQL restore"));
     warn("\n\nStarting the ✍️  filbert MySQL restore tool\n");
-    success("$ fortune | cowsay ;");
-    success(cowsay({ text: fortune(), e: "oO", T: "U " }), "\n\n");
-    spinner.text = "Loading S3 buckets...";
-    spinner.start();
+    spinner.start("Loading S3 buckets...\n");
     const { Buckets } = await listBuckets();
     spinner.succeed();
     const bucketNames = Buckets.map(({ Name }) => Name).filter(name =>
@@ -59,8 +40,7 @@ async function main() {
         choices: bucketNames
       }
     ]);
-    spinner.text = `Loading files for bucket ${bucketName}`;
-    spinner.start();
+    spinner.start(`Loading files for bucket ${bucketName}\n`);
     const fileNames = await listKeysForBucket(bucketName);
     spinner.succeed();
     const { backupFileName } = await inquirer.prompt([
@@ -103,34 +83,29 @@ async function main() {
       }
     ]);
     if (!pullTheTrigger) {
-      error(cowsay({ text: textSync("Aborted") }));
-      terminalImageWithFallback("ejection-seat.jpg");
+      error(textSync("Aborted"));
       process.exit(0);
     }
     if (shouldDumpBeforeRestore) {
-      spinner.text = "Making backup";
-      spinner.start();
+      spinner.start("Making backup\n");
       await filbertMysqldumpToS3Adhoc();
       spinner.succeed();
     }
-    spinner.text = `Downloading SQL file ${chalk.cyan(backupFileName)} from S3`;
-    spinner.start();
+    spinner.start(
+      `Downloading SQL file ${chalk.cyan(backupFileName)} from S3\n`
+    );
     const tempFilenameAndPath = await downloadFileFromBucket(
       bucketName,
       backupFileName
     );
     spinner.succeed();
-    spinner.text = `Restoring MySQL from ${chalk.cyan(backupFileName)}\n`;
-    spinner.start();
+    spinner.start(`Restoring MySQL from ${chalk.cyan(backupFileName)}\n`);
     const { stderr } = await restoreMysqlFromFile(tempFilenameAndPath);
     if (stderr) {
       throw stderr;
     }
     spinner.succeed();
-    terminalImageWithFallback("saurus.png");
-    success(
-      cowsay({ text: textSync("Success, KTHXBYE"), n: true, f: "stegosaurus" })
-    );
+    success(textSync("Success, KTHXBYE"));
   } catch (err) {
     error(err);
     spinner.fail("error");

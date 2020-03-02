@@ -14,7 +14,8 @@
     "pretty": "prettier --parser=babel --write \"**/*.js\"",
     "pretty-ci": "prettier --parser=babel --check -l \"**/*.js\"",
     "cron": "nohup node filbert-cron.js >> /var/log/filbert-cron.log &",
-    "dump": "node filbert-mysqldump-adhoc.js"
+    "dump": "node filbert-mysqldump-adhoc.js",
+    "restore": "node filbert-restore-mysql.js"
   },
   "devDependencies": {
     "nodemon": "^1.18.11",
@@ -25,11 +26,9 @@
     "bcrypt": "^3.0.6",
     "chalk": "^3.0.0",
     "cors": "^2.8.5",
-    "cowsay": "^1.4.0",
     "esm": "^3.2.25",
     "express": "^4.16.4",
     "figlet": "^1.2.4",
-    "fortune-teller": "^0.1.2",
     "google-auth-library": "^5.7.0",
     "immutable": "^4.0.0-rc.12",
     "inquirer": "^7.0.4",
@@ -38,8 +37,6 @@
     "mysql2": "^1.6.5",
     "node-cron": "^2.0.3",
     "ora": "^4.0.3",
-    "sharp": "^0.23.1",
-    "term-img": "^4.1.0",
-    "terminal-image": "^0.2.0"
+    "sharp": "^0.23.1"
   }
 }
