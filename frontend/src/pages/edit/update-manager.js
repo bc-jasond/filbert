@@ -50,46 +50,47 @@ export default class UpdateManager {
     return this;
   }
 
-  get nodeUpdates() {
+  get [HISTORY_KEY_NODE_UPDATES]() {
     return this.getPostIdNamespaceValue(HISTORY_KEY_NODE_UPDATES, Map());
   }
 
-  set nodeUpdates(value) {
+  set [HISTORY_KEY_NODE_UPDATES](value) {
     return this.setPostIdNamespaceValue(HISTORY_KEY_NODE_UPDATES, value);
   }
 
-  get redoHistory() {
+  get [HISTORY_KEY_REDO]() {
     return this.getPostIdNamespaceValue(HISTORY_KEY_REDO, List());
   }
 
-  set redoHistory(value) {
+  set [HISTORY_KEY_REDO](value) {
     return this.setPostIdNamespaceValue(HISTORY_KEY_REDO, value.takeLast(100));
   }
 
-  get undoHistory() {
+  get [HISTORY_KEY_UNDO]() {
     return this.getPostIdNamespaceValue(HISTORY_KEY_UNDO, List());
   }
 
-  set undoHistory(value) {
+  set [HISTORY_KEY_UNDO](value) {
     return this.setPostIdNamespaceValue(HISTORY_KEY_UNDO, value.takeLast(100));
   }
 
   addPostIdToUpdates(postId) {
-    this.nodeUpdates = this.nodeUpdates.map(update =>
-      update.set('post_id', postId)
-    );
+    this[HISTORY_KEY_NODE_UPDATES] = this[
+      HISTORY_KEY_NODE_UPDATES
+    ].map(update => update.set('post_id', postId));
   }
 
   addToUndoHistory(prevNodesById, prevSelectionOffsets, selectionOffsets) {
     // always clear redoHistory list since it would require a merge strategy to maintain
-    this.redoHistory = List();
+    this[HISTORY_KEY_REDO] = List();
     // "reverse" the current updates list to get an "undo" list
     // for text content changes - only add to history after N characters are different
-    const newHistoryEntry = this.nodeUpdates
-      .map((update, nodeId) => {
+    const newHistoryEntry = this[HISTORY_KEY_NODE_UPDATES].map(
+      (update, nodeId) => {
+        const updateJS = update.toJS();
         const prevNode = prevNodesById.get(nodeId);
         // insert (update in nodeUpdates not present in prevNodesById) -> delete
-        // we inserted a new node, delete it (we'll update next_sibling_id for it's previous node below)
+        // we inserted a new node, delete it (we'll update next_sibling_id for it's previous node in the "structure" check below)
         if (!prevNode) {
           return update.set('action', NODE_ACTION_DELETE).delete('node');
         }
@@ -100,7 +101,7 @@ export default class UpdateManager {
         }
         const updatedNode = update.get('node');
         // update - update
-        // if it's "structural" ('type', 'next_sibling_id', or certain changes to 'meta') - add it
+        // add if it's "structural" aka changes to: 'type', 'next_sibling_id', or certain changes to 'meta'
         if (
           // node type changed
           updatedNode.get('type') !== prevNode.get('type') ||
@@ -116,7 +117,7 @@ export default class UpdateManager {
           return update.set('node', prevNode);
         }
         // At this point, changes should be local to one text content field of one node.
-        // Cache the node to refer back to on subsequent diff checks (for each keystroke on the same node)
+        // Cache the node to refer back to on subsequent diff checks (for each keystroke updating the same field on a node)
         if (this.lastUndoHistoryNode.get('id') !== nodeId) {
           this.lastUndoHistoryNode = prevNode;
           this.lastUndoHistoryOffsets = prevSelectionOffsets;
@@ -130,8 +131,16 @@ export default class UpdateManager {
             this.lastUndoHistoryNode.get('content'),
             characterDiffSize
           ) ||
+          // save a history entry if any of these fields changed at all for an Image or Quote
+          List(['url', 'width', 'height', 'rotationDegrees'])
+            .filter(
+              keyName =>
+                updatedNode.getIn(['meta', keyName], '') !==
+                this.lastUndoHistoryNode.getIn(['meta', keyName], '')
+            )
+            .first() ||
           // text content in 'meta' fields changed enough
-          List(['url', 'caption', 'author', 'context', 'quote'])
+          List(['caption', 'author', 'context', 'quote'])
             .filter(keyName =>
               moreThanNCharsAreDifferent(
                 updatedNode.getIn(['meta', keyName], ''),
@@ -179,46 +188,48 @@ export default class UpdateManager {
           return updateWithNewNode;
         }
         return Map();
-      })
+      }
+    )
       // remove empty Map()s
       .filter(update => update.get('action'));
 
     if (newHistoryEntry.size > 0) {
-      this.undoHistory = this.undoHistory.push(
+      this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO].push(
         Map({
           // execute == 'undo'
-          executeUpdates: newHistoryEntry,
-          executeOffsets: this.lastUndoHistoryOffsets || prevSelectionOffsets,
+          [HISTORY_KEY_UNDO_UPDATES]: newHistoryEntry,
+          [HISTORY_KEY_UNDO_OFFSETS]:
+            this.lastUndoHistoryOffsets || prevSelectionOffsets,
           // unexecute == 'redo'
-          unexecuteUpdates: this.nodeUpdates,
-          unexecuteOffsets: selectionOffsets
+          [HISTORY_KEY_REDO_UPDATES]: this[HISTORY_KEY_NODE_UPDATES],
+          [HISTORY_KEY_REDO_OFFSETS]: selectionOffsets
         })
       );
     }
   }
 
   clearUpdates() {
-    if (this.nodeUpdates.size > 0) {
+    if (this[HISTORY_KEY_NODE_UPDATES].size > 0) {
       console.info(
         'clearUpdates - clearing non-empty update pipeline',
-        this.nodeUpdates
+        this[HISTORY_KEY_NODE_UPDATES]
       );
     }
-    this.nodeUpdates = Map();
+    this[HISTORY_KEY_NODE_UPDATES] = Map();
   }
 
   init(post) {
     this.post = fromJS(post);
     /* eslint-disable prefer-destructuring, no-self-assign */
     // side-effectful getters to init from localStorage
-    this.nodeUpdates = this.nodeUpdates;
-    this.undoHistory = this.undoHistory;
-    this.redoHistory = this.redoHistory;
+    this[HISTORY_KEY_NODE_UPDATES] = this[HISTORY_KEY_NODE_UPDATES];
+    this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO];
+    this[HISTORY_KEY_REDO] = this[HISTORY_KEY_REDO];
     /* eslint-enable prefer-destructuring, no-self-assign */
   }
 
   saveContentBatch = async () => {
-    const updated = Object.entries(this.nodeUpdates.toJS());
+    const updated = Object.entries(this[HISTORY_KEY_NODE_UPDATES].toJS());
     if (updated.length === 0) return;
     // console.info('Save Batch', updated);
     const { error, data: result } = await apiPost('/content', updated);
@@ -245,17 +256,19 @@ export default class UpdateManager {
     }
     const nodeId = node.get('id');
     if (
-      this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE
+      this[HISTORY_KEY_NODE_UPDATES].get(nodeId, Map()).get('action') ===
+      NODE_ACTION_UPDATE
     ) {
       // TODO: ensure this is saved in history before replacing it ?
       console.info('stageNodeDelete - deleting an updated node ', node);
     } else {
       console.info('stageNodeDelete ', node);
     }
-    this.nodeUpdates = this.nodeUpdates.set(
+    this[HISTORY_KEY_NODE_UPDATES] = this[HISTORY_KEY_NODE_UPDATES].set(
       nodeId,
       Map({ action: NODE_ACTION_DELETE, post_id: this.post.get('id') })
     );
+    // TODO: check for a previous node to update it's
   }
 
   stageNodeUpdate(node) {
@@ -265,14 +278,15 @@ export default class UpdateManager {
     }
     const nodeId = node.get('id');
     if (
-      this.nodeUpdates.get(nodeId, Map()).get('action') === NODE_ACTION_DELETE
+      this[HISTORY_KEY_NODE_UPDATES].get(nodeId, Map()).get('action') ===
+      NODE_ACTION_DELETE
     ) {
       // TODO: ensure this is saved in history before replacing it ?;
       console.info('stageNodeUpdate - updating a deleted node ', nodeId);
     } else {
       console.info('stageNodeUpdate ', nodeId);
     }
-    this.nodeUpdates = this.nodeUpdates.set(
+    this[HISTORY_KEY_NODE_UPDATES] = this[HISTORY_KEY_NODE_UPDATES].set(
       nodeId,
       Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id'), node })
     );
@@ -289,47 +303,43 @@ export default class UpdateManager {
     });
     // TODO: clear or merge?
     this.clearUpdates();
-    this.nodeUpdates = updates;
+    this[HISTORY_KEY_NODE_UPDATES] = updates;
     return updatedNodesById;
   }
 
-  undo(currentNodesById) {
-    const lastHistoryEntry = this[HISTORY_KEY_UNDO].last(Map());
-    const undoUpdates = lastHistoryEntry.get(HISTORY_KEY_UNDO_UPDATES, Map());
-    const undoOffsets = lastHistoryEntry.get(HISTORY_KEY_UNDO_OFFSETS, Map());
-    this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO].pop();
-    if (undoUpdates.size === 0) {
+  internalUndo(currentNodesById, shouldUndo = true) {
+    const historyKey = shouldUndo ? HISTORY_KEY_UNDO : HISTORY_KEY_REDO;
+    const otherKey = shouldUndo ? HISTORY_KEY_REDO : HISTORY_KEY_UNDO;
+    const updatesKey = shouldUndo
+      ? HISTORY_KEY_UNDO_UPDATES
+      : HISTORY_KEY_REDO_UPDATES;
+    const offsetsKey = shouldUndo
+      ? HISTORY_KEY_UNDO_OFFSETS
+      : HISTORY_KEY_REDO_OFFSETS;
+    const lastHistoryEntry = this[historyKey].last(Map());
+    const updates = lastHistoryEntry.get(updatesKey, Map());
+    const offsets = lastHistoryEntry.get(offsetsKey, Map());
+    this[historyKey] = this[historyKey].pop();
+    if (updates.size === 0) {
       return Map();
     }
     // since history objects are self-contained with both undo and redo data
     // we just move them back and forth between undo / redo stacks
-    this[HISTORY_KEY_REDO] = this[HISTORY_KEY_REDO].push(lastHistoryEntry);
+    this[otherKey] = this[otherKey].push(lastHistoryEntry);
 
-    const updatedNodesById = this.applyUpdates(undoUpdates, currentNodesById);
+    const updatedNodesById = this.applyUpdates(updates, currentNodesById);
 
     return fromJS(
-      { nodesById: updatedNodesById, selectionOffsets: undoOffsets },
+      { nodesById: updatedNodesById, selectionOffsets: offsets },
       reviver
     );
   }
 
+  undo(currentNodesById) {
+    return this.internalUndo(currentNodesById);
+  }
+
   redo(currentNodesById) {
-    const lastHistoryEntry = this[HISTORY_KEY_REDO].last(Map());
-    const redoUpdates = lastHistoryEntry.get(HISTORY_KEY_REDO_UPDATES, Map());
-    const redoOffsets = lastHistoryEntry.get(HISTORY_KEY_REDO_OFFSETS, Map());
-    this[HISTORY_KEY_REDO] = this[HISTORY_KEY_REDO].pop();
-    if (redoUpdates.size === 0) {
-      return Map();
-    }
-    // since history objects are self-contained with both undo and redo data
-    // we just move them back and forth between undo / redo stacks
-    this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO].push(lastHistoryEntry);
-
-    const updatedNodesById = this.applyUpdates(redoUpdates, currentNodesById);
-
-    return fromJS(
-      { nodesById: updatedNodesById, selectionOffsets: redoOffsets },
-      reviver
-    );
+    return this.internalUndo(currentNodesById, false);
   }
 }

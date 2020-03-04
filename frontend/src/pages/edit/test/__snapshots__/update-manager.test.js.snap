@@ -1,20 +1,76 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`UpdateManager addToUndoHistory - delete a node in the middle 1`] = `
+Immutable.Map {
+  "4add": Immutable.Map {
+    "action": "delete",
+    "post_id": 175,
+  },
+  "43eb": Immutable.Map {
+    "action": "update",
+    "post_id": 175,
+    "node": Immutable.Map {
+      "post_id": 175,
+      "id": "43eb",
+      "next_sibling_id": "09a0",
+      "type": "pre",
+      "content": "getIt();",
+      "meta": Immutable.Map {},
+    },
+  },
+}
+`;
+
+exports[`UpdateManager addToUndoHistory - delete a node in the middle 2`] = `
+Immutable.Map {
+  "4add": Immutable.Map {
+    "action": "update",
+    "post_id": 175,
+    "node": Immutable.Map {
+      "post_id": 175,
+      "id": "4add",
+      "next_sibling_id": "09a0",
+      "type": "image",
+      "content": "",
+      "meta": Immutable.Map {
+        "url": "b38d29e7bbd96a4df4d7ac1fa442de358702b1635319c696f27c23c2bcc9d70d",
+        "width": 669,
+        "height": 1000,
+        "caption": "Kinzua Dam '91",
+        "rotationDegrees": 90,
+      },
+    },
+  },
+  "43eb": Immutable.Map {
+    "action": "update",
+    "post_id": 175,
+    "node": Immutable.Map {
+      "post_id": 175,
+      "id": "43eb",
+      "next_sibling_id": "4add",
+      "type": "pre",
+      "content": "getIt();",
+      "meta": Immutable.Map {},
+    },
+  },
+}
+`;
+
 exports[`UpdateManager init method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
   "lastUndoHistoryNode": Immutable.Map {},
   "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
-    "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
-    "created": "2019-05-18 17:28:55",
-    "published": "2019-01-04 00:00:00",
+    "abstract": null,
+    "created": "2019-12-05T07:46:51.000Z",
+    "published": null,
     "user_id": 1,
-    "canonical": "hello-world",
-    "title": "Hello World!",
+    "canonical": "large-heading-0044",
+    "title": "Large Heading",
     "deleted": null,
-    "updated": "2019-05-25 00:36:52",
-    "id": 1,
+    "updated": "2019-12-05T07:46:51.000Z",
+    "id": 175,
   },
   "saveContentBatch": [Function],
   "saveContentBatchDebounce": [Function],
@@ -27,15 +83,15 @@ UpdateManager {
   "lastUndoHistoryNode": Immutable.Map {},
   "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
-    "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
-    "created": "2019-05-18 17:28:55",
-    "published": "2019-01-04 00:00:00",
+    "abstract": null,
+    "created": "2019-12-05T07:46:51.000Z",
+    "published": null,
     "user_id": 1,
-    "canonical": "hello-world",
-    "title": "Hello World!",
+    "canonical": "large-heading-0044",
+    "title": "Large Heading",
     "deleted": null,
-    "updated": "2019-05-25 00:36:52",
-    "id": 1,
+    "updated": "2019-12-05T07:46:51.000Z",
+    "id": 175,
   },
   "saveContentBatch": [Function],
   "saveContentBatchDebounce": [Function],
@@ -48,15 +104,15 @@ UpdateManager {
   "lastUndoHistoryNode": Immutable.Map {},
   "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
-    "abstract": "Creating a simple React ( + Babel + Webpack + yarn) starter project is actually proving to be difficult starting from the documentation.",
-    "created": "2019-05-18 17:28:55",
-    "published": "2019-01-04 00:00:00",
+    "abstract": null,
+    "created": "2019-12-05T07:46:51.000Z",
+    "published": null,
     "user_id": 1,
-    "canonical": "hello-world",
-    "title": "Hello World!",
+    "canonical": "large-heading-0044",
+    "title": "Large Heading",
     "deleted": null,
-    "updated": "2019-05-25 00:36:52",
-    "id": 1,
+    "updated": "2019-12-05T07:46:51.000Z",
+    "id": 175,
   },
   "saveContentBatch": [Function],
   "saveContentBatchDebounce": [Function],

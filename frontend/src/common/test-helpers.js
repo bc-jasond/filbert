@@ -19,10 +19,6 @@ export function mockLocalStorage() {
   };
 }
 
-export function mockSetTimeout() {
-  global.setTimeout = jest.fn();
-}
-
 export function makeSelections(values) {
   const head = {};
   let current = head;

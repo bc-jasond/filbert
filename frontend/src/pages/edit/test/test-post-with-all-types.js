@@ -8,6 +8,15 @@ import {
 } from '../../../common/constants';
 import { makeSelections } from '../../../common/test-helpers';
 
+export const h2Id = '9615';
+export const h2Content = 'Small Heading';
+export const preId = 'fd25';
+export const pre2Id = '43eb'; // this points to img
+export const imgId = '4add';
+export const formattedPId = 'f677';
+export const formattedPContent = 'Second paragraph with some formats';
+export const formattedLiId = '151c';
+
 export const testPostWithAllTypesJS = {
   post: {
     id: 175,
@@ -21,17 +30,17 @@ export const testPostWithAllTypesJS = {
     deleted: null
   },
   contentNodes: {
-    '9615': {
+    [h2Id]: {
       post_id: 175,
-      id: '9615',
+      id: h2Id,
       next_sibling_id: '56da',
       type: 'h2',
-      content: 'Small Heading',
+      content: h2Content,
       meta: {}
     },
-    fd25: {
+    [preId]: {
       post_id: 175,
-      id: 'fd25',
+      id: preId,
       next_sibling_id: 'f063',
       type: 'pre',
       content: 'var someCode = "here";',
@@ -45,9 +54,9 @@ export const testPostWithAllTypesJS = {
       content: 'function getIt(sendIt) {',
       meta: {}
     },
-    '4add': {
+    [imgId]: {
       post_id: 175,
-      id: '4add',
+      id: imgId,
       next_sibling_id: '09a0',
       type: 'image',
       content: '',
@@ -78,7 +87,7 @@ export const testPostWithAllTypesJS = {
     '7a38': {
       post_id: 175,
       id: '7a38',
-      next_sibling_id: '43eb',
+      next_sibling_id: pre2Id,
       type: 'pre',
       content: '}',
       meta: {}
@@ -86,17 +95,17 @@ export const testPostWithAllTypesJS = {
     '621e': {
       post_id: 175,
       id: '621e',
-      next_sibling_id: 'f677',
+      next_sibling_id: formattedPId,
       type: 'p',
       content: 'First paragraph with no formats',
       meta: {}
     },
-    f677: {
+    [formattedPId]: {
       post_id: 175,
-      id: 'f677',
+      id: formattedPId,
       next_sibling_id: 'db70',
       type: 'p',
-      content: 'Second paragraph with some formats',
+      content: formattedPContent,
       meta: {
         selections: makeSelections([
           [17],
@@ -112,10 +121,10 @@ export const testPostWithAllTypesJS = {
         ]).toJS()
       }
     },
-    '151c': {
+    [formattedLiId]: {
       post_id: 175,
-      id: '151c',
-      next_sibling_id: 'fd25',
+      id: formattedLiId,
+      next_sibling_id: preId,
       type: 'li',
       content: 'One with a bunch of formats and stuff',
       meta: {
@@ -138,7 +147,7 @@ export const testPostWithAllTypesJS = {
     db70: {
       post_id: 175,
       id: 'db70',
-      next_sibling_id: '9615',
+      next_sibling_id: h2Id,
       type: 'spacer',
       content: '',
       meta: {}
@@ -151,10 +160,10 @@ export const testPostWithAllTypesJS = {
       content: "Here's a big quote",
       meta: {}
     },
-    '43eb': {
+    [pre2Id]: {
       post_id: 175,
-      id: '43eb',
-      next_sibling_id: '4add',
+      id: pre2Id,
+      next_sibling_id: imgId,
       type: 'pre',
       content: 'getIt();',
       meta: {}
@@ -162,7 +171,7 @@ export const testPostWithAllTypesJS = {
     '9fa0': {
       post_id: 175,
       id: '9fa0',
-      next_sibling_id: '151c',
+      next_sibling_id: formattedLiId,
       type: 'li',
       content: 'Another item here',
       meta: {}

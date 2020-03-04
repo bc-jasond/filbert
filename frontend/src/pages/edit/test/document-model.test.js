@@ -111,6 +111,6 @@ describe('DocumentModel', () => {
     expect(spy).toHaveBeenCalled();
     expect(documentModel.getNode('621e').get('content')).toBe(combinedContent);
   });
-  test.todo('update');
-  test.todo('delete');
+  //test.todo('update() - this is tested in update-manager.test.js');
+  //test.todo('delete() - this is tested in update-manager.test.js');
 });
