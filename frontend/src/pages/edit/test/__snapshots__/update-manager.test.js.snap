@@ -1,5 +1,107 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`UpdateManager addToUndoHistory - change a node\`s type from P -> H1 1`] = `
+Immutable.Map {
+  "f677": Immutable.Map {
+    "action": "update",
+    "post_id": 175,
+    "node": Immutable.Map {
+      "post_id": 175,
+      "id": "f677",
+      "next_sibling_id": "db70",
+      "type": "h1",
+      "content": "Second paragraph with some formats",
+      "meta": Immutable.Map {},
+    },
+  },
+}
+`;
+
+exports[`UpdateManager addToUndoHistory - change a node\`s type from P -> H1 2`] = `
+Immutable.Map {
+  "f677": Immutable.Map {
+    "action": "update",
+    "post_id": 175,
+    "node": Immutable.Map {
+      "post_id": 175,
+      "id": "f677",
+      "next_sibling_id": "db70",
+      "type": "p",
+      "content": "Second paragraph with some formats",
+      "meta": Immutable.Map {
+        "selections": Immutable.Record {
+          "next": Immutable.Record {
+            "next": Immutable.Record {
+              "next": Immutable.Record {
+                "next": Immutable.Record {
+                  "next": Immutable.Record {
+                    "next": undefined,
+                    "length": -1,
+                    "selection-bold": false,
+                    "selection-italic": false,
+                    "selection-code": false,
+                    "selection-siteinfo": false,
+                    "selection-mini": false,
+                    "selection-strikethrough": false,
+                    "selection-link": true,
+                    "linkUrl": "http://some.site",
+                  },
+                  "length": 1,
+                  "selection-bold": false,
+                  "selection-italic": false,
+                  "selection-code": false,
+                  "selection-siteinfo": false,
+                  "selection-mini": false,
+                  "selection-strikethrough": false,
+                  "selection-link": false,
+                  "linkUrl": "",
+                },
+                "length": 4,
+                "selection-bold": false,
+                "selection-italic": false,
+                "selection-code": true,
+                "selection-siteinfo": false,
+                "selection-mini": false,
+                "selection-strikethrough": false,
+                "selection-link": false,
+                "linkUrl": "",
+              },
+              "length": 1,
+              "selection-bold": false,
+              "selection-italic": false,
+              "selection-code": false,
+              "selection-siteinfo": false,
+              "selection-mini": false,
+              "selection-strikethrough": false,
+              "selection-link": false,
+              "linkUrl": "",
+            },
+            "length": 4,
+            "selection-bold": true,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-siteinfo": false,
+            "selection-mini": false,
+            "selection-strikethrough": false,
+            "selection-link": false,
+            "linkUrl": "",
+          },
+          "length": 17,
+          "selection-bold": false,
+          "selection-italic": false,
+          "selection-code": false,
+          "selection-siteinfo": false,
+          "selection-mini": false,
+          "selection-strikethrough": false,
+          "selection-link": false,
+          "linkUrl": "",
+        },
+      },
+    },
+  },
+}
+`;
+
 exports[`UpdateManager addToUndoHistory - delete a node in the middle 1`] = `
 Immutable.Map {
   "4add": Immutable.Map {
@@ -50,6 +152,40 @@ Immutable.Map {
       "next_sibling_id": "4add",
       "type": "pre",
       "content": "getIt();",
+      "meta": Immutable.Map {},
+    },
+  },
+}
+`;
+
+exports[`UpdateManager addToUndoHistory - simulate typing inside content field of one node 1`] = `
+Immutable.Map {
+  "9615": Immutable.Map {
+    "action": "update",
+    "post_id": 175,
+    "node": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small HeadingSammys!",
+      "meta": Immutable.Map {},
+    },
+  },
+}
+`;
+
+exports[`UpdateManager addToUndoHistory - simulate typing inside content field of one node 2`] = `
+Immutable.Map {
+  "9615": Immutable.Map {
+    "action": "update",
+    "post_id": 175,
+    "node": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small Heading",
       "meta": Immutable.Map {},
     },
   },

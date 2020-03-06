@@ -1,6 +1,6 @@
 import { Map, List } from 'immutable';
 
-import UpdateManager from '../update-manager';
+import UpdateManager, { characterDiffSize } from '../update-manager';
 import DocumentModel from '../document-model';
 import {
   overrideConsole,
@@ -8,6 +8,7 @@ import {
 } from '../../../common/test-helpers';
 import { clearForTests } from '../../../common/local-storage';
 import {
+  formattedPId,
   h2Id,
   imgId,
   pre2Id,
@@ -20,7 +21,8 @@ import {
   HISTORY_KEY_UNDO_OFFSETS,
   HISTORY_KEY_UNDO_UPDATES,
   HISTORY_KEY_REDO_OFFSETS,
-  HISTORY_KEY_REDO_UPDATES
+  HISTORY_KEY_REDO_UPDATES,
+  NODE_TYPE_H1
 } from '../../../common/constants';
 import * as api from '../../../common/fetch';
 
@@ -135,6 +137,109 @@ describe('UpdateManager', () => {
     );
     expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
   });
+  test('addToUndoHistory - change a node`s type from P -> H1', () => {
+    const prevSelectionOffsets = { is: 'previousOffsets' };
+    const selectionOffsets = { is: 'currentOffsets' };
+    const doc = new DocumentModel();
+    const firstNode = doc.init(post, updateManager, contentNodes);
+    let prevNodesById = doc.nodesById;
+    // create history entry when changing a node's type
+    doc.update(
+      doc
+        .getNode(formattedPId)
+        .set('type', NODE_TYPE_H1)
+        .set('meta', Map())
+    );
+    // 1 for the deleted node, 1 for the prev node to update next_sibling_id reference
+    expect(updateManager[HISTORY_KEY_NODE_UPDATES].size).toBe(1);
+    expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
+    expect(updateManager[HISTORY_KEY_NODE_UPDATES]).toMatchSnapshot();
+    updateManager.addToUndoHistory(
+      prevNodesById,
+      prevSelectionOffsets,
+      selectionOffsets
+    );
+    // there should be 1 history entry in the undo stack
+    expect(updateManager[HISTORY_KEY_UNDO].size).toBe(1);
+    const firstHistory = updateManager[HISTORY_KEY_UNDO].get(0);
+    // there should be 2 nodes in the undo
+    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES).size).toBe(1);
+    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES)).toMatchSnapshot();
+    expect(firstHistory.get(HISTORY_KEY_UNDO_OFFSETS)).toBe(
+      prevSelectionOffsets
+    );
+    // and 2 in the redo - they should match the current updates
+    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES).size).toBe(1);
+    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES)).toEqual(
+      updateManager[HISTORY_KEY_NODE_UPDATES]
+    );
+    expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
+  });
+  test('addToUndoHistory - simulate typing inside content field of one node', () => {
+    const prevSelectionOffsets = { is: 'previousOffsets' };
+    const selectionOffsets = { is: 'currentOffsets' };
+    const doc = new DocumentModel();
+    const firstNode = doc.init(post, updateManager, contentNodes);
+    let prevNodesById = doc.nodesById;
+    const newContent = 'Sammys!';
+    // loop over the string, adding one char at a time to simulate typing
+    for (let i = 0; i < newContent.length - 1; i++) {
+      doc.update(
+        doc
+          .getNode(h2Id)
+          .set(
+            'content',
+            `${doc.getNode(h2Id).get('content')}${newContent.charAt(i)}`
+          )
+      );
+      // since updates are keyed off of nodeId, there will only be 1 update
+      expect(updateManager[HISTORY_KEY_NODE_UPDATES].size).toBe(1);
+      expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
+      updateManager.addToUndoHistory(
+        prevNodesById,
+        i === 0 ? prevSelectionOffsets : { is: `wrongOffsets${i}` },
+        selectionOffsets
+      );
+      // there shouldn't a history entry until we reach the change threshold
+      expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
+    }
+    doc.update(
+      doc
+        .getNode(h2Id)
+        .set(
+          'content',
+          `${doc.getNode(h2Id).get('content')}${newContent.charAt(
+            newContent.length - 1
+          )}`
+        )
+    );
+    // since updates are keyed off of nodeId, there will only be 1 update
+    expect(updateManager[HISTORY_KEY_NODE_UPDATES].size).toBe(1);
+    expect(updateManager[HISTORY_KEY_NODE_UPDATES]).toMatchSnapshot();
+    expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
+    updateManager.addToUndoHistory(
+      prevNodesById,
+      { is: `wrongOffsets${newContent.length - 1}` },
+      selectionOffsets
+    );
+    // we should have hit the threshold now
+    expect(updateManager[HISTORY_KEY_UNDO].size).toBe(1);
+    const firstHistory = updateManager[HISTORY_KEY_UNDO].get(0);
+    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES).size).toBe(1);
+    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES)).toMatchSnapshot();
+    expect(firstHistory.get(HISTORY_KEY_UNDO_OFFSETS)).toBe(
+      prevSelectionOffsets
+    );
+    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES).size).toBe(1);
+    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES)).toEqual(
+      updateManager[HISTORY_KEY_NODE_UPDATES]
+    );
+    expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
+  });
+  test.todo(
+    'addToUndoHistory - simulate select and type inside content field of one node'
+  );
+  test.todo('addToUndoHistory - simulate select and type across nodes');
   test('applyUpdates', () => {
     const doc = new DocumentModel();
     const firstNode = doc.init(post, updateManager, contentNodes);

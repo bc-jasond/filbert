@@ -24,7 +24,7 @@ import {
 } from '../../common/utils';
 import { getSelectionAtIdx, getSelectionsLength } from './selection-helpers';
 
-const characterDiffSize = 6;
+export const characterDiffSize = 6;
 
 export default class UpdateManager {
   commitTimeoutId;
@@ -184,7 +184,8 @@ export default class UpdateManager {
             this.lastUndoHistoryNode
           );
           this.lastUndoHistoryNode = Map();
-          this.lastUndoHistoryOffsets = undefined;
+          // TODO: can't unset here because we need it below
+          // this.lastUndoHistoryOffsets = undefined;
           return updateWithNewNode;
         }
         return Map();
@@ -205,6 +206,8 @@ export default class UpdateManager {
           [HISTORY_KEY_REDO_OFFSETS]: selectionOffsets
         })
       );
+      // TODO: hmm, this must have bugs
+      this.lastUndoHistoryOffsets = undefined;
     }
   }
 
