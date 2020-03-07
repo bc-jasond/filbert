@@ -99,7 +99,7 @@ export const DOM_TEXT_NODE_TYPE_ID = 3;
 export const DOM_INPUT_TAG_NAME = 'INPUT';
 
 // HISTORY - undo / redo
-export const HISTORY_KEY_NODE_UPDATES = 'nodeUpdates';
+export const NODE_UPDATES = 'nodeUpdates';
 export const HISTORY_KEY_UNDO = 'undoHistory';
 export const HISTORY_KEY_REDO = 'redoHistory';
 export const HISTORY_KEY_UNDO_UPDATES = 'executeUpdates';

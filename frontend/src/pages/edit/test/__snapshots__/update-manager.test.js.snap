@@ -158,7 +158,7 @@ Immutable.Map {
 }
 `;
 
-exports[`UpdateManager addToUndoHistory - simulate typing inside content field of one node 1`] = `
+exports[`UpdateManager addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met 1`] = `
 Immutable.Map {
   "9615": Immutable.Map {
     "action": "update",
@@ -168,14 +168,14 @@ Immutable.Map {
       "id": "9615",
       "next_sibling_id": "56da",
       "type": "h2",
-      "content": "Small HeadingSammys!",
+      "content": "Small HeadingABCDEFG",
       "meta": Immutable.Map {},
     },
   },
 }
 `;
 
-exports[`UpdateManager addToUndoHistory - simulate typing inside content field of one node 2`] = `
+exports[`UpdateManager addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met 2`] = `
 Immutable.Map {
   "9615": Immutable.Map {
     "action": "update",
@@ -253,4 +253,91 @@ UpdateManager {
   "saveContentBatch": [Function],
   "saveContentBatchDebounce": [Function],
 }
+`;
+
+exports[`UpdateManager undo / redo 1`] = `
+Immutable.List [
+  Immutable.Map {
+    "executeUpdates": Immutable.Map {
+      "9615": Immutable.Map {
+        "action": "update",
+        "post_id": 175,
+        "node": Immutable.Map {
+          "post_id": 175,
+          "id": "9615",
+          "next_sibling_id": "56da",
+          "type": "h2",
+          "content": "Small Heading",
+          "meta": Immutable.Map {},
+        },
+      },
+      "4add": Immutable.Map {
+        "action": "update",
+        "post_id": 175,
+        "node": Immutable.Map {
+          "post_id": 175,
+          "id": "4add",
+          "next_sibling_id": "09a0",
+          "type": "image",
+          "content": "",
+          "meta": Immutable.Map {
+            "url": "b38d29e7bbd96a4df4d7ac1fa442de358702b1635319c696f27c23c2bcc9d70d",
+            "width": 669,
+            "height": 1000,
+            "caption": "Kinzua Dam '91",
+            "rotationDegrees": 90,
+          },
+        },
+      },
+      "43eb": Immutable.Map {
+        "action": "update",
+        "post_id": 175,
+        "node": Immutable.Map {
+          "post_id": 175,
+          "id": "43eb",
+          "next_sibling_id": "4add",
+          "type": "pre",
+          "content": "getIt();",
+          "meta": Immutable.Map {},
+        },
+      },
+    },
+    "executeOffsets": Object {
+      "is": "previousOffsets",
+    },
+    "unexecuteUpdates": Immutable.Map {
+      "9615": Immutable.Map {
+        "action": "update",
+        "post_id": 175,
+        "node": Immutable.Map {
+          "post_id": 175,
+          "id": "9615",
+          "next_sibling_id": "56da",
+          "type": "h2",
+          "content": "foo",
+          "meta": Immutable.Map {},
+        },
+      },
+      "4add": Immutable.Map {
+        "action": "delete",
+        "post_id": 175,
+      },
+      "43eb": Immutable.Map {
+        "action": "update",
+        "post_id": 175,
+        "node": Immutable.Map {
+          "post_id": 175,
+          "id": "43eb",
+          "next_sibling_id": "09a0",
+          "type": "pre",
+          "content": "getIt();",
+          "meta": Immutable.Map {},
+        },
+      },
+    },
+    "unexecuteOffsets": Object {
+      "is": "currentOffsets",
+    },
+  },
+]
 `;

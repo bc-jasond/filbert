@@ -1,7 +1,7 @@
 import { fromJS, List, Map } from 'immutable';
 
 import {
-  HISTORY_KEY_NODE_UPDATES,
+  NODE_UPDATES,
   HISTORY_KEY_REDO,
   HISTORY_KEY_REDO_OFFSETS,
   HISTORY_KEY_REDO_UPDATES,
@@ -50,12 +50,12 @@ export default class UpdateManager {
     return this;
   }
 
-  get [HISTORY_KEY_NODE_UPDATES]() {
-    return this.getPostIdNamespaceValue(HISTORY_KEY_NODE_UPDATES, Map());
+  get [NODE_UPDATES]() {
+    return this.getPostIdNamespaceValue(NODE_UPDATES, Map());
   }
 
-  set [HISTORY_KEY_NODE_UPDATES](value) {
-    return this.setPostIdNamespaceValue(HISTORY_KEY_NODE_UPDATES, value);
+  set [NODE_UPDATES](value) {
+    return this.setPostIdNamespaceValue(NODE_UPDATES, value);
   }
 
   get [HISTORY_KEY_REDO]() {
@@ -75,9 +75,9 @@ export default class UpdateManager {
   }
 
   addPostIdToUpdates(postId) {
-    this[HISTORY_KEY_NODE_UPDATES] = this[
-      HISTORY_KEY_NODE_UPDATES
-    ].map(update => update.set('post_id', postId));
+    this[NODE_UPDATES] = this[NODE_UPDATES].map(update =>
+      update.set('post_id', postId)
+    );
   }
 
   addToUndoHistory(prevNodesById, prevSelectionOffsets, selectionOffsets) {
@@ -85,112 +85,103 @@ export default class UpdateManager {
     this[HISTORY_KEY_REDO] = List();
     // "reverse" the current updates list to get an "undo" list
     // for text content changes - only add to history after N characters are different
-    const newHistoryEntry = this[HISTORY_KEY_NODE_UPDATES].map(
-      (update, nodeId) => {
-        const updateJS = update.toJS();
-        const prevNode = prevNodesById.get(nodeId);
-        // insert (update in nodeUpdates not present in prevNodesById) -> delete
-        // we inserted a new node, delete it (we'll update next_sibling_id for it's previous node in the "structure" check below)
-        if (!prevNode) {
-          return update.set('action', NODE_ACTION_DELETE).delete('node');
-        }
-        // delete -> update
-        // if we just deleted this node, add it back
-        if (update.get('action') === NODE_ACTION_DELETE) {
-          return update.set('action', NODE_ACTION_UPDATE).set('node', prevNode);
-        }
-        const updatedNode = update.get('node');
-        // update - update
-        // add if it's "structural" aka changes to: 'type', 'next_sibling_id', or certain changes to 'meta'
-        if (
-          // node type changed
-          updatedNode.get('type') !== prevNode.get('type') ||
-          // node position in document changed
-          updatedNode.get('next_sibling_id') !==
-            prevNode.get('next_sibling_id') ||
-          // node meta data changed structure
-          updatedNode.get('meta', Map()).size !==
-            prevNode.get('meta', Map()).size ||
-          // node meta,selections changed structure
-          getSelectionsLength(updatedNode) !== getSelectionsLength(prevNode)
-        ) {
-          return update.set('node', prevNode);
-        }
-        // At this point, changes should be local to one text content field of one node.
-        // Cache the node to refer back to on subsequent diff checks (for each keystroke updating the same field on a node)
-        if (this.lastUndoHistoryNode.get('id') !== nodeId) {
-          this.lastUndoHistoryNode = prevNode;
-          this.lastUndoHistoryOffsets = prevSelectionOffsets;
-        }
-        // node content can live in a few different places: ('content', ['meta':'url', 'caption', 'author', 'context', 'quote'], ['meta':'selections':N:'linkUrl'] - add if enough characters changed
-        // find first field that changed and see if it meets the threshold
-        if (
-          // text content in 'content' changed enough
-          moreThanNCharsAreDifferent(
-            updatedNode.get('content'),
-            this.lastUndoHistoryNode.get('content'),
-            characterDiffSize
-          ) ||
-          // save a history entry if any of these fields changed at all for an Image or Quote
-          List(['url', 'width', 'height', 'rotationDegrees'])
-            .filter(
-              keyName =>
-                updatedNode.getIn(['meta', keyName], '') !==
-                this.lastUndoHistoryNode.getIn(['meta', keyName], '')
+    const newHistoryEntry = this[NODE_UPDATES].map((update, nodeId) => {
+      const prevNode = prevNodesById.get(nodeId);
+      // insert (update in nodeUpdates not present in prevNodesById) -> delete
+      // we inserted a new node, delete it (we'll update next_sibling_id for it's previous node in the "structure" check below)
+      if (!prevNode) {
+        return update.set('action', NODE_ACTION_DELETE).delete('node');
+      }
+      // delete -> update
+      // if we just deleted this node, add it back
+      if (update.get('action') === NODE_ACTION_DELETE) {
+        return update.set('action', NODE_ACTION_UPDATE).set('node', prevNode);
+      }
+      const updatedNode = update.get('node');
+      // update - update
+      // add if it's "structural" aka changes to: 'type', 'next_sibling_id', or certain changes to 'meta'
+      if (
+        // node type changed
+        updatedNode.get('type') !== prevNode.get('type') ||
+        // node position in document changed
+        updatedNode.get('next_sibling_id') !==
+          prevNode.get('next_sibling_id') ||
+        // node meta data changed structure
+        updatedNode.get('meta', Map()).size !==
+          prevNode.get('meta', Map()).size ||
+        // node meta,selections changed structure
+        getSelectionsLength(updatedNode) !== getSelectionsLength(prevNode)
+      ) {
+        return update.set('node', prevNode);
+      }
+      // At this point, changes should be local to one text content field of one node.
+      // Cache the node to refer back to on subsequent diff checks (for each keystroke updating the same field on a node)
+      if (this.lastUndoHistoryNode.get('id') !== nodeId) {
+        this.lastUndoHistoryNode = prevNode;
+        this.lastUndoHistoryOffsets = prevSelectionOffsets;
+      }
+      // node content can live in a few different places: ('content', ['meta':'url', 'caption', 'author', 'context', 'quote'], ['meta':'selections':N:'linkUrl'] - add if enough characters changed
+      // find first field that changed and see if it meets the threshold
+      if (
+        // text content in 'content' changed enough
+        moreThanNCharsAreDifferent(
+          updatedNode.get('content'),
+          this.lastUndoHistoryNode.get('content'),
+          characterDiffSize
+        ) ||
+        // save a history entry if any of these fields changed at all for an Image or Quote
+        List(['url', 'width', 'height', 'rotationDegrees'])
+          .filter(
+            keyName =>
+              updatedNode.getIn(['meta', keyName], '') !==
+              this.lastUndoHistoryNode.getIn(['meta', keyName], '')
+          )
+          .first() ||
+        // text content in 'meta' fields changed enough
+        List(['caption', 'author', 'context', 'quote'])
+          .filter(keyName =>
+            moreThanNCharsAreDifferent(
+              updatedNode.getIn(['meta', keyName], ''),
+              this.lastUndoHistoryNode.getIn(['meta', keyName], ''),
+              characterDiffSize
             )
-            .first() ||
-          // text content in 'meta' fields changed enough
-          List(['caption', 'author', 'context', 'quote'])
-            .filter(keyName =>
+          )
+          .first() ||
+        // linkUrl in a selection changed enough
+        (() => {
+          let current = updatedNode.getIn(['meta', 'selections'], Selection());
+          let currentIdx = 0;
+          while (current) {
+            const compare = getSelectionAtIdx(
+              this.lastUndoHistoryNode.getIn(
+                ['meta', 'selections'],
+                Selection()
+              ),
+              currentIdx
+            );
+            if (
               moreThanNCharsAreDifferent(
-                updatedNode.getIn(['meta', keyName], ''),
-                this.lastUndoHistoryNode.getIn(['meta', keyName], ''),
+                current.get(SELECTION_LINK_URL, ''),
+                compare.get(SELECTION_LINK_URL, ''),
                 characterDiffSize
               )
-            )
-            .first() ||
-          // linkUrl in a selection changed enough
-          (() => {
-            let current = updatedNode.getIn(
-              ['meta', 'selections'],
-              Selection()
-            );
-            let currentIdx = 0;
-            while (current) {
-              const compare = getSelectionAtIdx(
-                this.lastUndoHistoryNode.getIn(
-                  ['meta', 'selections'],
-                  Selection()
-                ),
-                currentIdx
-              );
-              if (
-                moreThanNCharsAreDifferent(
-                  current.get(SELECTION_LINK_URL, ''),
-                  compare.get(SELECTION_LINK_URL, ''),
-                  characterDiffSize
-                )
-              ) {
-                return true;
-              }
-              current = current.get(SELECTION_NEXT);
-              currentIdx += 1;
+            ) {
+              return true;
             }
-            return false;
-          })()
-        ) {
-          const updateWithNewNode = update.set(
-            'node',
-            this.lastUndoHistoryNode
-          );
-          this.lastUndoHistoryNode = Map();
-          // TODO: can't unset here because we need it below
-          // this.lastUndoHistoryOffsets = undefined;
-          return updateWithNewNode;
-        }
-        return Map();
+            current = current.get(SELECTION_NEXT);
+            currentIdx += 1;
+          }
+          return false;
+        })()
+      ) {
+        const updateWithNewNode = update.set('node', this.lastUndoHistoryNode);
+        this.lastUndoHistoryNode = Map();
+        // TODO: can't unset here because we need it below
+        // this.lastUndoHistoryOffsets = undefined;
+        return updateWithNewNode;
       }
-    )
+      return Map();
+    })
       // remove empty Map()s
       .filter(update => update.get('action'));
 
@@ -202,7 +193,7 @@ export default class UpdateManager {
           [HISTORY_KEY_UNDO_OFFSETS]:
             this.lastUndoHistoryOffsets || prevSelectionOffsets,
           // unexecute == 'redo'
-          [HISTORY_KEY_REDO_UPDATES]: this[HISTORY_KEY_NODE_UPDATES],
+          [HISTORY_KEY_REDO_UPDATES]: this[NODE_UPDATES],
           [HISTORY_KEY_REDO_OFFSETS]: selectionOffsets
         })
       );
@@ -212,27 +203,27 @@ export default class UpdateManager {
   }
 
   clearUpdates() {
-    if (this[HISTORY_KEY_NODE_UPDATES].size > 0) {
+    if (this[NODE_UPDATES].size > 0) {
       console.info(
         'clearUpdates - clearing non-empty update pipeline',
-        this[HISTORY_KEY_NODE_UPDATES]
+        this[NODE_UPDATES]
       );
     }
-    this[HISTORY_KEY_NODE_UPDATES] = Map();
+    this[NODE_UPDATES] = Map();
   }
 
   init(post) {
     this.post = fromJS(post);
     /* eslint-disable prefer-destructuring, no-self-assign */
     // side-effectful getters to init from localStorage
-    this[HISTORY_KEY_NODE_UPDATES] = this[HISTORY_KEY_NODE_UPDATES];
+    this[NODE_UPDATES] = this[NODE_UPDATES];
     this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO];
     this[HISTORY_KEY_REDO] = this[HISTORY_KEY_REDO];
     /* eslint-enable prefer-destructuring, no-self-assign */
   }
 
   saveContentBatch = async () => {
-    const updated = Object.entries(this[HISTORY_KEY_NODE_UPDATES].toJS());
+    const updated = Object.entries(this[NODE_UPDATES].toJS());
     if (updated.length === 0) return;
     // console.info('Save Batch', updated);
     const { error, data: result } = await apiPost('/content', updated);
@@ -259,15 +250,14 @@ export default class UpdateManager {
     }
     const nodeId = node.get('id');
     if (
-      this[HISTORY_KEY_NODE_UPDATES].get(nodeId, Map()).get('action') ===
-      NODE_ACTION_UPDATE
+      this[NODE_UPDATES].get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE
     ) {
       // TODO: ensure this is saved in history before replacing it ?
       console.info('stageNodeDelete - deleting an updated node ', node);
     } else {
       console.info('stageNodeDelete ', node);
     }
-    this[HISTORY_KEY_NODE_UPDATES] = this[HISTORY_KEY_NODE_UPDATES].set(
+    this[NODE_UPDATES] = this[NODE_UPDATES].set(
       nodeId,
       Map({ action: NODE_ACTION_DELETE, post_id: this.post.get('id') })
     );
@@ -281,33 +271,17 @@ export default class UpdateManager {
     }
     const nodeId = node.get('id');
     if (
-      this[HISTORY_KEY_NODE_UPDATES].get(nodeId, Map()).get('action') ===
-      NODE_ACTION_DELETE
+      this[NODE_UPDATES].get(nodeId, Map()).get('action') === NODE_ACTION_DELETE
     ) {
       // TODO: ensure this is saved in history before replacing it ?;
       console.info('stageNodeUpdate - updating a deleted node ', nodeId);
     } else {
       console.info('stageNodeUpdate ', nodeId);
     }
-    this[HISTORY_KEY_NODE_UPDATES] = this[HISTORY_KEY_NODE_UPDATES].set(
+    this[NODE_UPDATES] = this[NODE_UPDATES].set(
       nodeId,
       Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id'), node })
     );
-  }
-
-  applyUpdates(updates, nodesById) {
-    let updatedNodesById = nodesById;
-    updates.forEach((update, nodeId) => {
-      if (update.get('action') === NODE_ACTION_DELETE) {
-        updatedNodesById = updatedNodesById.delete(nodeId);
-      } else {
-        updatedNodesById = updatedNodesById.set(nodeId, update.get('node'));
-      }
-    });
-    // TODO: clear or merge?
-    this.clearUpdates();
-    this[HISTORY_KEY_NODE_UPDATES] = updates;
-    return updatedNodesById;
   }
 
   internalUndo(currentNodesById, shouldUndo = true) {
@@ -330,7 +304,18 @@ export default class UpdateManager {
     // we just move them back and forth between undo / redo stacks
     this[otherKey] = this[otherKey].push(lastHistoryEntry);
 
-    const updatedNodesById = this.applyUpdates(updates, currentNodesById);
+    // apply updates
+    let updatedNodesById = currentNodesById;
+    updates.forEach((update, nodeId) => {
+      if (update.get('action') === NODE_ACTION_DELETE) {
+        updatedNodesById = updatedNodesById.delete(nodeId);
+      } else {
+        updatedNodesById = updatedNodesById.set(nodeId, update.get('node'));
+      }
+    });
+    // TODO: clear or merge?
+    this.clearUpdates();
+    this[NODE_UPDATES] = updates;
 
     return fromJS(
       { nodesById: updatedNodesById, selectionOffsets: offsets },
