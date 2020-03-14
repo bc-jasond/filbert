@@ -19,11 +19,11 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
   }
 
   let selectedNodeMap = documentModel.getNode(startNodeId);
-  const beforeContentMap = selectedNodeMap.get('content') || '';
-  const updatedContentMap = `${beforeContentMap.slice(
+  const contentBeforeUpdate = selectedNodeMap.get('content') || '';
+  const updatedContentMap = `${contentBeforeUpdate.slice(
     0,
     caretStart
-  )}${newChar}${beforeContentMap.slice(caretStart)}`;
+  )}${newChar}${contentBeforeUpdate.slice(caretStart)}`;
 
   console.info(
     'To DOM SYNC diff: ',
@@ -37,7 +37,7 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
   // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
   selectedNodeMap = adjustSelectionOffsetsAndCleanup(
     selectedNodeMap,
-    beforeContentMap,
+    contentBeforeUpdate,
     caretStart,
     newChar.length
   );
@@ -58,18 +58,20 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   console.info('From DOM SYNC', startNodeId, 'offset', caretStart);
 
   // NOTE: following for emojis keyboard insert only...
+  // TODO: actually, need to support spellcheck correction too...
   const { data: emoji } = evt;
   if (!emoji) {
     return {};
   }
 
   let selectedNodeMap = documentModel.getNode(startNodeId);
-  const beforeContentMap = selectedNodeMap.get('content') || '';
-  const updatedContentMap = `${beforeContentMap.slice(
+  const contentBeforeUpdate = selectedNodeMap.get('content') || '';
+  const updatedContentMap = `${contentBeforeUpdate.slice(
     0,
     caretStart - emoji.length
-  )}${emoji}${beforeContentMap.slice(caretStart - emoji.length)}`;
-  // since this is called after the content has been updated, subtract the length of the emoji from the start because the adjustSelectionOffsetsAndCleanup function expects to be processing PRE-update
+  )}${emoji}${contentBeforeUpdate.slice(caretStart - emoji.length)}`;
+  // since this is called after the content has been updated, subtract the length of the emoji
+  // from the start because the adjustSelectionOffsetsAndCleanup function expects to be processing PRE-update
   const preUpdateStart = caretStart - emoji.length;
 
   console.debug(
@@ -86,7 +88,7 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
   selectedNodeMap = adjustSelectionOffsetsAndCleanup(
     selectedNodeMap,
-    beforeContentMap,
+    contentBeforeUpdate,
     preUpdateStart,
     emoji.length
   );

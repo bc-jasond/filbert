@@ -1,4 +1,6 @@
 import {
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
   NODE_TYPE_LI,
   NODE_TYPE_P,
   NODE_TYPE_PRE
@@ -23,7 +25,7 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
     if (maybeEmptyNode.get('content').length === 0) {
       documentModel.delete(maybeEmptyNode);
     }
-    return { startNodeId: prevNodeId };
+    return { startNodeId: prevNodeId, caretStart: 0 };
   }
   // optionally handles Selections
   documentModel.mergeParagraphs(prevNodeId, selectedNodeId);
@@ -56,10 +58,9 @@ export function handleEnterTextType(
       documentModel.getNode(leftNodeId).set('type', NODE_TYPE_P)
     );
   }
-  // for all other node types: if user hits enter at beginning of line (always true for MetaType),
-  // insert an empty P before
+  // if user hits enter at beginning of H1 or H2, convert "left" to P
   if (
-    ![NODE_TYPE_P, NODE_TYPE_PRE, NODE_TYPE_LI].includes(newNodeType) &&
+    [NODE_TYPE_H1, NODE_TYPE_H2].includes(newNodeType) &&
     cleanText(contentLeft).length === 0
   ) {
     didConvertLeftNodeToP = true;
@@ -67,10 +68,9 @@ export function handleEnterTextType(
       documentModel.getNode(leftNodeId).set('type', NODE_TYPE_P)
     );
   }
-  // for all other node types: if user hits enter at end of line,
-  // convert new line to P
+  // if user hits enter at end of H1 or H2, set "right" type to P
   if (
-    ![NODE_TYPE_PRE, NODE_TYPE_LI].includes(newNodeType) &&
+    [NODE_TYPE_H1, NODE_TYPE_H2].includes(newNodeType) &&
     cleanText(contentRight).length === 0
   ) {
     newNodeType = NODE_TYPE_P;

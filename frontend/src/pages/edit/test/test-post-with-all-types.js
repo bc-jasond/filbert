@@ -8,6 +8,9 @@ import {
 } from '../../../common/constants';
 import { makeSelections } from '../../../common/test-helpers';
 
+export const firstNodeIdH1 = '8e34';
+export const firstNodeContent = 'Large Heading';
+export const h2PrevId = 'db70';
 export const h2Id = '9615';
 export const h2Content = 'Small Heading';
 export const preId = 'fd25';
@@ -16,6 +19,7 @@ export const imgId = '4add';
 export const formattedPId = 'f677';
 export const formattedPContent = 'Second paragraph with some formats';
 export const formattedLiId = '151c';
+export const formattedLiContent = 'One with a bunch of formats and stuff';
 
 export const testPostWithAllTypesJS = {
   post: {
@@ -76,12 +80,12 @@ export const testPostWithAllTypesJS = {
       content: 'Make sure we have a P on the end so we can delete',
       meta: {}
     },
-    '8e34': {
+    [firstNodeIdH1]: {
       post_id: 175,
-      id: '8e34',
+      id: firstNodeIdH1,
       next_sibling_id: '621e',
       type: 'h1',
-      content: 'Large Heading',
+      content: firstNodeContent,
       meta: {}
     },
     '7a38': {
@@ -126,7 +130,7 @@ export const testPostWithAllTypesJS = {
       id: formattedLiId,
       next_sibling_id: preId,
       type: 'li',
-      content: 'One with a bunch of formats and stuff',
+      content: formattedLiContent,
       meta: {
         selections: makeSelections([
           [4],
@@ -144,9 +148,9 @@ export const testPostWithAllTypesJS = {
         ]).toJS()
       }
     },
-    db70: {
+    [h2PrevId]: {
       post_id: 175,
-      id: 'db70',
+      id: h2PrevId,
       next_sibling_id: h2Id,
       type: 'spacer',
       content: '',

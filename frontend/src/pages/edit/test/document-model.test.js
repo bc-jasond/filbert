@@ -6,7 +6,11 @@ import { nodeIsValid } from '../../../common/utils';
 import * as SelectionHelpers from '../selection-helpers';
 
 import DocumentModel from '../document-model';
-import { testPostWithAllTypesJS } from './test-post-with-all-types';
+import {
+  firstNodeIdH1,
+  h2Id,
+  testPostWithAllTypesJS
+} from './test-post-with-all-types';
 
 overrideConsole();
 const updateManagerMock = {
@@ -42,7 +46,7 @@ describe('DocumentModel', () => {
   test('getNode', () => {
     expect(documentModel.getNode(null)).toBe(Map());
     // finds: root -> content -> ol -> list item
-    expect(documentModel.getNode('8e34')).toMatchSnapshot();
+    expect(documentModel.getNode(firstNodeIdH1)).toMatchSnapshot();
     expect(documentModel.getNode('badId')).toBe(Map());
   });
   test('getNextNode', () => {
@@ -52,7 +56,7 @@ describe('DocumentModel', () => {
   });
   test('getPrevNode', () => {
     // returns Map() when node is at position 0
-    expect(documentModel.getPrevNode('8e34')).toBe(Map());
+    expect(documentModel.getPrevNode(firstNodeIdH1)).toBe(Map());
     // nominal case
     expect(documentModel.getPrevNode('4add')).toMatchSnapshot();
   });
@@ -79,9 +83,9 @@ describe('DocumentModel', () => {
       // LI
       '151c',
       // H1
-      '8e34',
+      firstNodeIdH1,
       // h2
-      '9615',
+      h2Id,
       // Pre
       'fd25'
     ].forEach(nodeId => {
