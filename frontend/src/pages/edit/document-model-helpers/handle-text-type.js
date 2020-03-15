@@ -166,13 +166,11 @@ export function handlePasteTextType(
 
   // 2) if the original selected node can have Selections - move them to the right node if needed
   // NOTE: do this with BEFORE content
-  if (documentModel.canHaveSelections(leftNodeId)) {
-    ({ leftNode, rightNode } = splitSelectionsAtCaretOffset(
-      leftNode,
-      rightNode,
-      caretPosition
-    ));
-  }
+  ({ leftNode, rightNode } = splitSelectionsAtCaretOffset(
+    leftNode,
+    rightNode,
+    caretPosition
+  ));
 
   // 3) update content with firstLine & lastLine
   leftNode = leftNode.set('content', updatedLeftNodeContent);
