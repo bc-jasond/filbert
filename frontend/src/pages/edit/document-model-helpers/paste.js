@@ -15,7 +15,9 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
 
   if (!documentModel.isTextType(startNodeId)) {
     console.warn(
-      `doPaste() - trying to paste into a "${documentModel.getNode(startNodeId).get('type')}" node is not supported`,
+      `doPaste() - trying to paste into a "${documentModel
+        .getNode(startNodeId)
+        .get('type')}" node is not supported`,
       selectionOffsets,
       clipboardData
     );

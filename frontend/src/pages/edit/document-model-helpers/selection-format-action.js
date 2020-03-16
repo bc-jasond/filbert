@@ -41,7 +41,7 @@ export function selectionFormatAction(
       )
       .deleteIn(['meta', 'selections']);
   }
-  // if we changed the node back to an H1 or H2 or back to a P - we're done
+  // if we changed the node type (to an H1 or H2 or back to a P) - we're done
   if (!node.equals(nodeArg)) {
     documentModel.update(node);
     return {

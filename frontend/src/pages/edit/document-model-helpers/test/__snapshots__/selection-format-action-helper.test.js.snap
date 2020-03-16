@@ -1,0 +1,105 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Document Model -> selection-format-action node helper selectionFormatAction - action is SELECTION_ACTION_H1 1`] = `
+Object {
+  "startNodeId": "f677",
+  "updatedNode": Immutable.Map {
+    "post_id": 175,
+    "id": "f677",
+    "next_sibling_id": "db70",
+    "type": "h1",
+    "content": "Second paragraph with some formats",
+    "meta": Immutable.Map {},
+  },
+  "updatedSelection": Immutable.Record {
+    "next": undefined,
+    "length": -1,
+    "selection-bold": false,
+    "selection-italic": false,
+    "selection-code": false,
+    "selection-siteinfo": false,
+    "selection-mini": false,
+    "selection-strikethrough": false,
+    "selection-link": false,
+    "linkUrl": "",
+  },
+}
+`;
+
+exports[`Document Model -> selection-format-action node helper selectionFormatAction - action is SELECTION_ACTION_H1 2`] = `
+Object {
+  "startNodeId": "f677",
+  "updatedNode": Immutable.Map {
+    "post_id": 175,
+    "id": "f677",
+    "next_sibling_id": "db70",
+    "type": "p",
+    "content": "Second paragraph with some formats",
+    "meta": Immutable.Map {},
+  },
+  "updatedSelection": Immutable.Record {
+    "next": undefined,
+    "length": -1,
+    "selection-bold": false,
+    "selection-italic": false,
+    "selection-code": false,
+    "selection-siteinfo": false,
+    "selection-mini": false,
+    "selection-strikethrough": false,
+    "selection-link": false,
+    "linkUrl": "",
+  },
+}
+`;
+
+exports[`Document Model -> selection-format-action node helper selectionFormatAction - action is SELECTION_ACTION_H2 1`] = `
+Object {
+  "startNodeId": "f677",
+  "updatedNode": Immutable.Map {
+    "post_id": 175,
+    "id": "f677",
+    "next_sibling_id": "db70",
+    "type": "h2",
+    "content": "Second paragraph with some formats",
+    "meta": Immutable.Map {},
+  },
+  "updatedSelection": Immutable.Record {
+    "next": undefined,
+    "length": -1,
+    "selection-bold": false,
+    "selection-italic": false,
+    "selection-code": false,
+    "selection-siteinfo": false,
+    "selection-mini": false,
+    "selection-strikethrough": false,
+    "selection-link": false,
+    "linkUrl": "",
+  },
+}
+`;
+
+exports[`Document Model -> selection-format-action node helper selectionFormatAction - action is SELECTION_ACTION_H2 2`] = `
+Object {
+  "startNodeId": "f677",
+  "updatedNode": Immutable.Map {
+    "post_id": 175,
+    "id": "f677",
+    "next_sibling_id": "db70",
+    "type": "p",
+    "content": "Second paragraph with some formats",
+    "meta": Immutable.Map {},
+  },
+  "updatedSelection": Immutable.Record {
+    "next": undefined,
+    "length": -1,
+    "selection-bold": false,
+    "selection-italic": false,
+    "selection-code": false,
+    "selection-siteinfo": false,
+    "selection-mini": false,
+    "selection-strikethrough": false,
+    "selection-link": false,
+    "linkUrl": "",
+  },
+}
+`;
