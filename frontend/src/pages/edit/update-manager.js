@@ -1,7 +1,6 @@
 import { fromJS, List, Map } from 'immutable';
 
 import {
-  NODE_UPDATES,
   HISTORY_KEY_REDO,
   HISTORY_KEY_REDO_OFFSETS,
   HISTORY_KEY_REDO_UPDATES,
@@ -11,6 +10,7 @@ import {
   NEW_POST_URL_ID,
   NODE_ACTION_DELETE,
   NODE_ACTION_UPDATE,
+  NODE_UPDATES,
   SELECTION_LINK_URL,
   SELECTION_NEXT
 } from '../../common/constants';
