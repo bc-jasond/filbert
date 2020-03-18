@@ -34,66 +34,12 @@ export const testPostWithAllTypesJS = {
     deleted: null
   },
   contentNodes: {
-    [h2Id]: {
-      post_id: 175,
-      id: h2Id,
-      next_sibling_id: '56da',
-      type: 'h2',
-      content: h2Content,
-      meta: {}
-    },
-    [preId]: {
-      post_id: 175,
-      id: preId,
-      next_sibling_id: 'f063',
-      type: 'pre',
-      content: 'var someCode = "here";',
-      meta: {}
-    },
-    f063: {
-      post_id: 175,
-      id: 'f063',
-      next_sibling_id: '61cf',
-      type: 'pre',
-      content: 'function getIt(sendIt) {',
-      meta: {}
-    },
-    [imgId]: {
-      post_id: 175,
-      id: imgId,
-      next_sibling_id: '09a0',
-      type: 'image',
-      content: '',
-      meta: {
-        url: 'b38d29e7bbd96a4df4d7ac1fa442de358702b1635319c696f27c23c2bcc9d70d',
-        width: 669,
-        height: 1000,
-        caption: "Kinzua Dam '91",
-        rotationDegrees: 90
-      }
-    },
-    cce3: {
-      post_id: 175,
-      id: 'cce3',
-      next_sibling_id: null,
-      type: 'p',
-      content: 'Make sure we have a P on the end so we can delete',
-      meta: {}
-    },
     [firstNodeIdH1]: {
       post_id: 175,
       id: firstNodeIdH1,
       next_sibling_id: '621e',
       type: 'h1',
       content: firstNodeContent,
-      meta: {}
-    },
-    '7a38': {
-      post_id: 175,
-      id: '7a38',
-      next_sibling_id: pre2Id,
-      type: 'pre',
-      content: '}',
       meta: {}
     },
     '621e': {
@@ -107,7 +53,7 @@ export const testPostWithAllTypesJS = {
     [formattedPId]: {
       post_id: 175,
       id: formattedPId,
-      next_sibling_id: 'db70',
+      next_sibling_id: h2PrevId,
       type: 'p',
       content: formattedPContent,
       meta: {
@@ -124,6 +70,38 @@ export const testPostWithAllTypesJS = {
           ]
         ]).toJS()
       }
+    },
+    [h2PrevId]: {
+      post_id: 175,
+      id: h2PrevId,
+      next_sibling_id: h2Id,
+      type: 'spacer',
+      content: '',
+      meta: {}
+    },
+    [h2Id]: {
+      post_id: 175,
+      id: h2Id,
+      next_sibling_id: '56da',
+      type: 'h2',
+      content: h2Content,
+      meta: {}
+    },
+    '56da': {
+      post_id: 175,
+      id: '56da',
+      next_sibling_id: '9fa0',
+      type: 'li',
+      content: "Here's a list",
+      meta: {}
+    },
+    '9fa0': {
+      post_id: 175,
+      id: '9fa0',
+      next_sibling_id: formattedLiId,
+      type: 'li',
+      content: 'Another item here',
+      meta: {}
     },
     [formattedLiId]: {
       post_id: 175,
@@ -148,36 +126,20 @@ export const testPostWithAllTypesJS = {
         ]).toJS()
       }
     },
-    [h2PrevId]: {
+    [preId]: {
       post_id: 175,
-      id: h2PrevId,
-      next_sibling_id: h2Id,
-      type: 'spacer',
-      content: '',
-      meta: {}
-    },
-    '09a0': {
-      post_id: 175,
-      id: '09a0',
-      next_sibling_id: 'c67c',
-      type: 'h2',
-      content: "Here's a big quote",
-      meta: {}
-    },
-    [pre2Id]: {
-      post_id: 175,
-      id: pre2Id,
-      next_sibling_id: imgId,
+      id: preId,
+      next_sibling_id: 'f063',
       type: 'pre',
-      content: 'getIt();',
+      content: 'var someCode = "here";',
       meta: {}
     },
-    '9fa0': {
+    f063: {
       post_id: 175,
-      id: '9fa0',
-      next_sibling_id: formattedLiId,
-      type: 'li',
-      content: 'Another item here',
+      id: 'f063',
+      next_sibling_id: '61cf',
+      type: 'pre',
+      content: 'function getIt(sendIt) {',
       meta: {}
     },
     '61cf': {
@@ -188,12 +150,42 @@ export const testPostWithAllTypesJS = {
       content: '  const yep = false;',
       meta: {}
     },
-    '56da': {
+    '7a38': {
       post_id: 175,
-      id: '56da',
-      next_sibling_id: '9fa0',
-      type: 'li',
-      content: "Here's a list",
+      id: '7a38',
+      next_sibling_id: pre2Id,
+      type: 'pre',
+      content: '}',
+      meta: {}
+    },
+    [pre2Id]: {
+      post_id: 175,
+      id: pre2Id,
+      next_sibling_id: imgId,
+      type: 'pre',
+      content: 'getIt();',
+      meta: {}
+    },
+    [imgId]: {
+      post_id: 175,
+      id: imgId,
+      next_sibling_id: '09a0',
+      type: 'image',
+      content: '',
+      meta: {
+        url: 'b38d29e7bbd96a4df4d7ac1fa442de358702b1635319c696f27c23c2bcc9d70d',
+        width: 669,
+        height: 1000,
+        caption: "Kinzua Dam '91",
+        rotationDegrees: 90
+      }
+    },
+    '09a0': {
+      post_id: 175,
+      id: '09a0',
+      next_sibling_id: 'c67c',
+      type: 'h2',
+      content: "Here's a big quote",
       meta: {}
     },
     c67c: {
@@ -210,6 +202,14 @@ export const testPostWithAllTypesJS = {
         author: 'Frances Bacon',
         context: 'interviews with David Sylvester in 1963, 1966 and 1979'
       }
+    },
+    cce3: {
+      post_id: 175,
+      id: 'cce3',
+      next_sibling_id: null,
+      type: 'p',
+      content: 'Make sure we have a P on the end so we can delete',
+      meta: {}
     }
   }
 };

@@ -31,6 +31,7 @@ module.exports = {
     '/node_modules/',
     'jest.config.js',
     'webpack.config.js',
+    'webpack-prod.config.js',
     'coverage/',
     'test',
     'dist/'
