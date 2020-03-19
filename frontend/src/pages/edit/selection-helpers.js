@@ -257,6 +257,7 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
   const doesReplaceLastSelection = end === nodeModel.get('content', '').length;
   // first see if the exact Selection already exists?
   let head = getSelections(nodeModel);
+  let originalHead = head;
   let current = head;
   let prev;
   let caretPosition = 0;
@@ -330,6 +331,18 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
     prev = current;
     // eslint-disable-next-line prefer-destructuring
     current = current[SELECTION_NEXT];
+  }
+  if (!prev) {
+    // newSelection is new head
+    // adjust originalHead length if newSelection length <
+    if (
+      originalHead[SELECTION_LENGTH] > 0 &&
+      newSelection[SELECTION_LENGTH] < originalHead[SELECTION_LENGTH]
+    ) {
+      originalHead[SELECTION_LENGTH] -= newSelection[SELECTION_LENGTH];
+    }
+    head[SELECTION_NEXT] = originalHead;
+    return { selections: fromJS(head, reviver), idx };
   }
   if (!current) {
     // newSelection is new 2nd to last, prev is last Selection

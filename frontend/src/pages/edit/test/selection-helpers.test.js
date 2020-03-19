@@ -472,6 +472,34 @@ describe('getSelectionByContentOffset', () => {
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(0);
   });
+  test('creates new selection - replaces part of first (head) selection', () => {
+    const expectedSelections = makeSelections([
+      [1],
+      [2, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [9, SELECTION_ACTION_CODE],
+      []
+    ]);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      0,
+      1
+    );
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(0);
+  });
+  test('creates new selection - replaces first (head) selection - empty selections', () => {
+    const expectedSelections = makeSelections([[8], []]);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections.set('meta', Map()),
+      0,
+      8
+    );
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(0);
+  });
   test('creates new selection - middle through replaces last selection', () => {
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
