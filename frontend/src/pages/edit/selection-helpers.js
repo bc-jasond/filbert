@@ -333,8 +333,8 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
     current = current[SELECTION_NEXT];
   }
   if (!prev) {
-    // newSelection is new head
-    // adjust originalHead length if newSelection length <
+    // newSelection is new head and is <= the original head length
+    // adjust originalHead length if newSelection length < original
     if (
       originalHead[SELECTION_LENGTH] > 0 &&
       newSelection[SELECTION_LENGTH] < originalHead[SELECTION_LENGTH]
