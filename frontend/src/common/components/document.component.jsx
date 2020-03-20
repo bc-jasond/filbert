@@ -160,7 +160,6 @@ export default class Document extends React.PureComponent {
   }
 }
 
-// opinionated section nodes - can't have children
 // these could be interesting in the editor 'add' menu but, they're currently supported with existing node types
 // export const Gotcha = {} // facepalm emoji
 // export const Tangent = {} // horse emoji

@@ -628,6 +628,7 @@ export default class EditPost extends React.Component {
         caretEnd: 0
       };
     }
+    // TODO: style MetaType nodes that have been selected so user can tell
     return getHighlightedSelectionOffsets();
   };
 

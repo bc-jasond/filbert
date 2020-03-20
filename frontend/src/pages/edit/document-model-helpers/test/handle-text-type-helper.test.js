@@ -18,7 +18,7 @@ import {
   imgId,
   firstNodeIdH1,
   h2Id,
-  h2PrevId,
+  spacerId,
   preId,
   formattedLiId,
   pre2Id,
@@ -47,7 +47,7 @@ describe('Document Model -> handle TextType node helper', () => {
   test('handleBackspaceTextType - deletes an empty Text Type node if previous node is a Meta Type', () => {
     doc.update(doc.getNode(h2Id).set('content', ''));
     const { startNodeId, caretStart } = handleBackspaceTextType(doc, h2Id);
-    expect(startNodeId).toBe(h2PrevId);
+    expect(startNodeId).toBe(spacerId);
     expect(caretStart).toBe(0);
     expect(doc.getNode(h2Id).size).toBe(0);
   });

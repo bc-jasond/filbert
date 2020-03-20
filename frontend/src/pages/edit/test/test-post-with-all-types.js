@@ -10,7 +10,10 @@ import { makeSelections } from '../../../common/test-helpers';
 
 export const firstNodeIdH1 = '8e34';
 export const firstNodeContent = 'Large Heading';
-export const h2PrevId = 'db70';
+export const lastNodeIdP = 'cce3';
+export const lastNodeContent =
+  'Make sure we have a P on the end so we can delete';
+export const spacerId = 'db70';
 export const h2Id = '9615';
 export const h2Content = 'Small Heading';
 export const preId = 'fd25';
@@ -53,7 +56,7 @@ export const testPostWithAllTypesJS = {
     [formattedPId]: {
       post_id: 175,
       id: formattedPId,
-      next_sibling_id: h2PrevId,
+      next_sibling_id: spacerId,
       type: 'p',
       content: formattedPContent,
       meta: {
@@ -71,9 +74,9 @@ export const testPostWithAllTypesJS = {
         ]).toJS()
       }
     },
-    [h2PrevId]: {
+    [spacerId]: {
       post_id: 175,
-      id: h2PrevId,
+      id: spacerId,
       next_sibling_id: h2Id,
       type: 'spacer',
       content: '',
@@ -203,12 +206,12 @@ export const testPostWithAllTypesJS = {
         context: 'interviews with David Sylvester in 1963, 1966 and 1979'
       }
     },
-    cce3: {
+    [lastNodeIdP]: {
       post_id: 175,
-      id: 'cce3',
+      id: lastNodeIdP,
       next_sibling_id: null,
       type: 'p',
-      content: 'Make sure we have a P on the end so we can delete',
+      content: lastNodeContent,
       meta: {}
     }
   }

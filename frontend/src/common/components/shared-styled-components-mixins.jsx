@@ -6,16 +6,17 @@ export const sectionWidthMixin = css`
   max-width: 740px;
   margin: 0 auto;
 `;
+// TODO: use ::selection to style MetaType nodes when selected
 export const editSectionBorderMixin = css`
   border: 4px solid ${p => (p.isEditing ? blue : 'transparent')};
   ${p =>
     p.isEditMode &&
-    `
-    &:hover {
-      cursor: pointer;
-      border: 4px solid ${p.isEditing ? blue : lightBlue};
-    }
-  `}
+    css`
+      &:hover {
+        cursor: pointer;
+        border: 4px solid ${p.isEditing ? blue : lightBlue};
+      }
+    `}
 `;
 export const linkMixin = css`
   cursor: pointer;

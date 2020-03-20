@@ -89,7 +89,8 @@ export function doDelete(
     (endNodeId ? startNodeContent.length : caretEnd) - caretStart;
   if (
     // collapsed caret, user hit backspace anywhere after the beginning - "regular" backspace
-    (caretStart > 0 && startNodeContent) ||
+    // edge case where user starts multi-node selection at the end of the line - only process "backspace" if it's a single node selection
+    (!endNodeId && caretStart > 0 && startNodeContent) ||
     // highlighted selection
     startDiffLength > 0
   ) {
@@ -110,7 +111,7 @@ export function doDelete(
     }
 
     // After updating or deleting start/middle/end nodes - are we done (return here)? Or do we need to merge nodes?
-    // We're done if the user deleted:
+    // We're done if the user deleted the end node:
     if (!endNodeId || didDeleteEndNode || startDiffLength === 0) {
       return {
         startNodeId: selectedNodeId,
