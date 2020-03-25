@@ -64,6 +64,7 @@ export const Col9 = styled.div`
     }
   }
 `;
+export const newPostPlaceholderText = 'Write a title and hit enter...';
 export const H1Styled = styled.h1`
   ${sectionWidthMixin};
   font-family: ${titleSerif}, serif;
@@ -74,7 +75,7 @@ export const H1Styled = styled.h1`
     p.shouldShowPlaceholder &&
     `
     &::before {
-      content: 'Write a title and hit enter...';
+      content: ${newPostPlaceholderText};
       position: absolute;
       color: ${mediumGrey};
     }

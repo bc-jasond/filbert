@@ -2,7 +2,7 @@ import {
   KEYCODE_SPACE,
   KEYCODE_SPACE_NBSP,
   ZERO_LENGTH_CHAR
-} from './constants';
+} from '../constants';
 
 const { Map } = require('immutable');
 const {
@@ -15,8 +15,8 @@ const {
   getCharFromEvent,
   getCanonicalFromTitle,
   deleteContentRange
-} = require('./utils');
-const { idIsValid } = require('../common/utils');
+} = require('../utils');
+const { idIsValid } = require('../utils');
 
 global.confirm = jest.fn().mockImplementation(arg => arg);
 

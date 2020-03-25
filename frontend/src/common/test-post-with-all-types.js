@@ -5,8 +5,8 @@ import {
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_STRIKETHROUGH
-} from '../../../common/constants';
-import { makeSelections } from '../../../common/test-helpers';
+} from './constants';
+import { makeSelections } from './test-helpers';
 
 export const firstNodeIdH1 = '8e34';
 export const firstNodeContent = 'Large Heading';

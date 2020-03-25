@@ -10,7 +10,7 @@ import {
   firstNodeIdH1,
   h2Id,
   testPostWithAllTypesJS
-} from './test-post-with-all-types';
+} from '../../../common/test-post-with-all-types';
 
 overrideConsole();
 const updateManagerMock = {

@@ -6,7 +6,7 @@ import {
   testPostWithAllTypesJS,
   imgId,
   firstNodeIdH1
-} from '../../test/test-post-with-all-types';
+} from '../../../../common/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();

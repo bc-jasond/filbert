@@ -9,7 +9,7 @@ import {
   testPostWithAllTypesJS,
   h2Id,
   h2Content
-} from '../../test/test-post-with-all-types';
+} from '../../../../common/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
 const doc = new DocumentModel();
