@@ -1,0 +1,20 @@
+# here's some notes about Selenium testing filbert
+
+## Setup Steps
+1) yarn add -D selenium-webdriver
+2) install chromedriver binary
+ - const version = get('https://chromedriver.storage.googleapis.com/LATEST_RELEASE')
+ - example download url: https://chromedriver.storage.googleapis.com/80.0.3987.106/chromedriver_mac64.zip
+ - unzip and put somewhere in $PATH - /usr/local/bin ?
+3) run chromedriver - allow security exception in OS X
+4) Optional: install selenium-server
+5) TODO: use Jest as assertion lib?
+
+## Run tests
+1) start chromedriver daemon
+2) run the test
+
+## Test setup & teardown
+1) configure chromedriver: need location of chromedriver binary on host system
+2) configure Builder to use chromedriver to create a driver
+3) start test behavior
