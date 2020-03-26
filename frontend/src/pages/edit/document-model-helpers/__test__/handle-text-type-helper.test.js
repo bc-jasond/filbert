@@ -15,7 +15,6 @@ import {
 
 import {
   testPostWithAllTypesJS,
-  imgId,
   firstNodeIdH1,
   h2Id,
   spacerId,
@@ -31,6 +30,16 @@ import {
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
 const doc = new DocumentModel();
+
+const spySplit = jest
+  .spyOn(selectionHelpers, 'splitSelectionsAtCaretOffset')
+  .mockImplementation((...args) => ({
+    leftNode: args[0],
+    rightNode: args[1]
+  }));
+const spyAdjust = jest
+  .spyOn(selectionHelpers, 'adjustSelectionOffsetsAndCleanup')
+  .mockImplementation((...args) => args[0]);
 
 beforeEach(() => {
   doc.init(
@@ -111,19 +120,14 @@ describe('Document Model -> handle TextType node helper', () => {
   });
   test('handleEnterTextType - LI with Selections - splits correctly in middle', () => {
     const caretStart = Math.floor(formattedLiContent / 2);
-    const spy = jest
-      .spyOn(selectionHelpers, 'splitSelectionsAtCaretOffset')
-      .mockImplementation((...args) => ({
-        leftNode: args[0],
-        rightNode: args[1]
-      }));
+
     const newNodeId = handleEnterTextType(
       doc,
       formattedLiId,
       caretStart,
       formattedLiContent
     );
-    expect(spy).toHaveBeenCalled();
+    expect(spySplit).toHaveBeenCalled();
     expect(doc.getNode(newNodeId).get('content')).toEqual(
       formattedLiContent.substring(caretStart)
     );
@@ -134,9 +138,7 @@ describe('Document Model -> handle TextType node helper', () => {
   test('handlePasteTextType - plain text - single line paste', () => {
     const clipboardText = 'bib jibbs, bab jabs ';
     const caretStartArg = Math.floor(formattedPContent.length / 2);
-    const spy = jest
-      .spyOn(selectionHelpers, 'adjustSelectionOffsetsAndCleanup')
-      .mockImplementation((...args) => args[0]);
+
     const { startNodeId, caretStart } = handlePasteTextType(
       doc,
       formattedPId,
@@ -145,7 +147,7 @@ describe('Document Model -> handle TextType node helper', () => {
     );
     expect(startNodeId).toBe(formattedPId);
     expect(caretStart).toBe(caretStartArg + clipboardText.length);
-    expect(spy).toHaveBeenCalledWith(
+    expect(spyAdjust).toHaveBeenCalledWith(
       doc.getNode(formattedPId),
       formattedPContent,
       caretStartArg,
@@ -158,15 +160,7 @@ describe('Document Model -> handle TextType node helper', () => {
     const lastLine = textLines[textLines.length - 1];
     const caretStartArg = Math.floor(firstNodeIdH1.length / 2);
     const originalType = doc.getNode(firstNodeIdH1).get('type');
-    const spySplit = jest
-      .spyOn(selectionHelpers, 'splitSelectionsAtCaretOffset')
-      .mockImplementation((...args) => ({
-        leftNode: args[0],
-        rightNode: args[1]
-      }));
-    const spyAdjust = jest
-      .spyOn(selectionHelpers, 'adjustSelectionOffsetsAndCleanup')
-      .mockImplementation((...args) => args[0]);
+
     const { startNodeId, caretStart } = handlePasteTextType(
       doc,
       firstNodeIdH1,

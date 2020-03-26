@@ -8,6 +8,7 @@ import {
 } from './constants';
 import { makeSelections } from './test-helpers';
 
+export const testPostId = 175;
 export const firstNodeIdH1 = '8e34';
 export const firstNodeContent = 'Large Heading';
 export const lastNodeIdP = 'cce3';
@@ -26,7 +27,7 @@ export const formattedLiContent = 'One with a bunch of formats and stuff'
 
 export const testPostWithAllTypesJS = {
   post: {
-    id: 175,
+    id: testPostId,
     user_id: 1,
     canonical: 'large-heading-0044',
     title: 'Large Heading',
@@ -38,7 +39,7 @@ export const testPostWithAllTypesJS = {
   },
   contentNodes: {
     [firstNodeIdH1]: {
-      post_id: 175,
+      post_id: testPostId,
       id: firstNodeIdH1,
       next_sibling_id: '621e',
       type: 'h1',
@@ -46,7 +47,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     '621e': {
-      post_id: 175,
+      post_id: testPostId,
       id: '621e',
       next_sibling_id: formattedPId,
       type: 'p',
@@ -54,7 +55,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     [formattedPId]: {
-      post_id: 175,
+      post_id: testPostId,
       id: formattedPId,
       next_sibling_id: spacerId,
       type: 'p',
@@ -75,7 +76,7 @@ export const testPostWithAllTypesJS = {
       }
     },
     [spacerId]: {
-      post_id: 175,
+      post_id: testPostId,
       id: spacerId,
       next_sibling_id: h2Id,
       type: 'spacer',
@@ -83,7 +84,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     [h2Id]: {
-      post_id: 175,
+      post_id: testPostId,
       id: h2Id,
       next_sibling_id: '56da',
       type: 'h2',
@@ -91,7 +92,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     '56da': {
-      post_id: 175,
+      post_id: testPostId,
       id: '56da',
       next_sibling_id: '9fa0',
       type: 'li',
@@ -99,7 +100,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     '9fa0': {
-      post_id: 175,
+      post_id: testPostId,
       id: '9fa0',
       next_sibling_id: formattedLiId,
       type: 'li',
@@ -107,7 +108,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     [formattedLiId]: {
-      post_id: 175,
+      post_id: testPostId,
       id: formattedLiId,
       next_sibling_id: preId,
       type: 'li',
@@ -130,7 +131,7 @@ export const testPostWithAllTypesJS = {
       }
     },
     [preId]: {
-      post_id: 175,
+      post_id: testPostId,
       id: preId,
       next_sibling_id: 'f063',
       type: 'pre',
@@ -138,7 +139,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     f063: {
-      post_id: 175,
+      post_id: testPostId,
       id: 'f063',
       next_sibling_id: '61cf',
       type: 'pre',
@@ -146,7 +147,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     '61cf': {
-      post_id: 175,
+      post_id: testPostId,
       id: '61cf',
       next_sibling_id: '7a38',
       type: 'pre',
@@ -154,7 +155,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     '7a38': {
-      post_id: 175,
+      post_id: testPostId,
       id: '7a38',
       next_sibling_id: pre2Id,
       type: 'pre',
@@ -162,7 +163,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     [pre2Id]: {
-      post_id: 175,
+      post_id: testPostId,
       id: pre2Id,
       next_sibling_id: imgId,
       type: 'pre',
@@ -170,7 +171,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     [imgId]: {
-      post_id: 175,
+      post_id: testPostId,
       id: imgId,
       next_sibling_id: '09a0',
       type: 'image',
@@ -184,7 +185,7 @@ export const testPostWithAllTypesJS = {
       }
     },
     '09a0': {
-      post_id: 175,
+      post_id: testPostId,
       id: '09a0',
       next_sibling_id: 'c67c',
       type: 'h2',
@@ -192,7 +193,7 @@ export const testPostWithAllTypesJS = {
       meta: {}
     },
     c67c: {
-      post_id: 175,
+      post_id: testPostId,
       id: 'c67c',
       next_sibling_id: 'cce3',
       type: 'quote',
@@ -207,7 +208,7 @@ export const testPostWithAllTypesJS = {
       }
     },
     [lastNodeIdP]: {
-      post_id: 175,
+      post_id: testPostId,
       id: lastNodeIdP,
       next_sibling_id: null,
       type: 'p',

@@ -21,7 +21,6 @@ const spyText = jest
   .mockImplementation(() => {});
 
 beforeEach(() => {
-  jest.resetAllMocks();
   doc.init(post, {}, contentNodes);
 });
 describe('Document Model -> split node helper', () => {

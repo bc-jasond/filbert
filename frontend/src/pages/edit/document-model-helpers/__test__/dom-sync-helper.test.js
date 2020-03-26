@@ -15,6 +15,7 @@ overrideConsole();
 const doc = new DocumentModel();
 
 beforeEach(() => {
+  jest.clearAllMocks();
   doc.init(post, { stageNodeUpdate: jest.fn() }, contentNodes);
 });
 
