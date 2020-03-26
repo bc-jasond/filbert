@@ -8,7 +8,7 @@ import {
   imgId,
   firstNodeIdH1,
   firstNodeContent
-} from '../../test/test-post-with-all-types';
+} from '../../../../common/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
@@ -21,7 +21,6 @@ const spyText = jest
   .mockImplementation(() => {});
 
 beforeEach(() => {
-  jest.resetAllMocks();
   doc.init(post, {}, contentNodes);
 });
 describe('Document Model -> split node helper', () => {

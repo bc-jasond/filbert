@@ -17,7 +17,7 @@ import * as selectionHelpers from '../../selection-helpers';
 import {
   formattedPId,
   testPostWithAllTypesJS
-} from '../../test/test-post-with-all-types';
+} from '../../../../common/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();

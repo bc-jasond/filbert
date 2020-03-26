@@ -14,7 +14,7 @@ import {
   lastNodeIdP,
   pre2Id,
   testPostWithAllTypesJS
-} from '../../test/test-post-with-all-types';
+} from '../../../../common/test-post-with-all-types';
 import { doDelete } from '../delete';
 
 overrideConsole();

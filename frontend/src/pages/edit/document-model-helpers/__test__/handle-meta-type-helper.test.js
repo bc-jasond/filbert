@@ -7,7 +7,7 @@ import { handleEnterMetaType } from '../handle-meta-type';
 import {
   testPostWithAllTypesJS,
   imgId
-} from '../../test/test-post-with-all-types';
+} from '../../../../common/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
 const doc = new DocumentModel();

@@ -13,7 +13,7 @@ import {
   imgId,
   pre2Id,
   testPostWithAllTypesJS
-} from './test-post-with-all-types';
+} from '../../../common/test-post-with-all-types';
 import {
   NODE_UPDATES,
   HISTORY_KEY_UNDO,
