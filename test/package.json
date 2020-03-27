@@ -8,6 +8,7 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "jest": "^25.2.3",
     "selenium-webdriver": "^4.0.0-alpha.7"
   }
 }
