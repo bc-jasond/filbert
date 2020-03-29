@@ -118,6 +118,7 @@ export default class Header extends React.PureComponent {
                 <NavLink to="/private">private</NavLink>
                 {userIsMe ? (
                   <NavSpan
+                    id="signed-in-user"
                     onClick={() => {
                       if (confirm('Sign out?')) {
                         this.setState({ shouldRedirect: true }, () => {
@@ -130,13 +131,17 @@ export default class Header extends React.PureComponent {
                     sign out
                   </NavSpan>
                 ) : (
-                  <NavLink to="/me">{session.get('username')}</NavLink>
+                  <NavLink id="signed-in-user" to="/me">
+                    {session.get('username')}
+                  </NavLink>
                 )}
               </>
             ) : (
               <>
                 {shouldShowPublic && <NavLink to="/public">public</NavLink>}
-                <NavLink to="/signin">join or sign in</NavLink>
+                <NavLink id="signed-in-user" to="/signin">
+                  join or sign in
+                </NavLink>
               </>
             )}
           </HeaderContentContainer>

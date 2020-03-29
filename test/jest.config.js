@@ -20,6 +20,9 @@ module.exports = {
   // Indicates whether the coverage information should be collected while executing the test
   collectCoverage: false,
 
+  // default 5000ms
+  testTimeout: 30000,
+
   // An array of glob patterns indicating a set of files for which coverage information should be collected
   // collectCoverageFrom: ['**/*.{js,jsx}'],
 
