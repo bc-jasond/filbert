@@ -1,17 +1,17 @@
 const {
   getKnex,
   getNodesFlat,
-  getPostByCanonicalHelper
+  getPostByCanonicalHelper,
 } = require("../lib/mysql");
 const {
   getFirstPhotoAndAbstractFromContent,
-  addFirstPhotoTitleAndAbstractToPosts
+  addFirstPhotoTitleAndAbstractToPosts,
 } = require("../lib/post-util");
 
 async function getPosts(req, res) {
   const {
     loggedInUser,
-    query: { username, oldest, random }
+    query: { username, oldest, random },
   } = req;
   const knex = await getKnex();
   let builder = knex("post")
@@ -63,7 +63,7 @@ async function getPosts(req, res) {
 
   res.send(
     // TODO: add to query above instead of looping here
-    posts.map(post => {
+    posts.map((post) => {
       // keep users info private if they don't want to share it!
       if (!post.userProfileIsPublic && loggedInUser.id !== post.userId) {
         delete post.userId;
@@ -133,7 +133,7 @@ async function getPostById(req, res) {
   const knex = await getKnex();
   const [post] = await knex("post").where({
     user_id: req.loggedInUser.id,
-    id
+    id,
   });
   if (!post) {
     res.status(404).send({});
@@ -153,7 +153,7 @@ async function patchPost(req, res, next) {
     const knex = await getKnex();
     const [post] = await knex("post").where({
       user_id: req.loggedInUser.id,
-      id
+      id,
     });
     if (!post) {
       res.status(404).send({});
@@ -175,12 +175,10 @@ async function patchPost(req, res, next) {
     if (typeof meta !== "undefined") {
       patchValues.meta = JSON.stringify(meta);
     }
-    const result = await knex("post")
-      .update(patchValues)
-      .where({
-        user_id: req.loggedInUser.id,
-        id
-      });
+    const result = await knex("post").update(patchValues).where({
+      user_id: req.loggedInUser.id,
+      id,
+    });
     res.send({});
   } catch (err) {
     next(err);
@@ -192,7 +190,7 @@ async function getSummaryAndPhotoFromContent(req, res) {
   const knex = await getKnex();
   const [post] = await knex("post").where({
     user_id: req.loggedInUser.id,
-    id
+    id,
   });
   if (!post) {
     res.status(404).send({});
@@ -213,12 +211,10 @@ async function getSummaryAndPhotoFromContent(req, res) {
 async function deletePublishedPost(req, res) {
   const { id } = req.params;
   const knex = await getKnex();
-  const [post] = await knex("post")
-    .whereNotNull("published")
-    .andWhere({
-      user_id: req.loggedInUser.id,
-      id
-    });
+  const [post] = await knex("post").whereNotNull("published").andWhere({
+    user_id: req.loggedInUser.id,
+    id,
+  });
   if (!post) {
     res.status(404).send({});
     return;
@@ -226,12 +222,8 @@ async function deletePublishedPost(req, res) {
   /**
    * DANGER ZONE!!!
    */
-  await knex("content_node")
-    .where("post_id", post.id)
-    .del();
-  await knex("post")
-    .where("id", post.id)
-    .del();
+  await knex("content_node").where("post_id", post.id).del();
+  await knex("post").where("id", post.id).del();
   res.status(204).send({});
 }
 
@@ -241,5 +233,5 @@ module.exports = {
   getPostById,
   patchPost,
   deletePublishedPost,
-  getSummaryAndPhotoFromContent
+  getSummaryAndPhotoFromContent,
 };

@@ -31,9 +31,9 @@ async function filbertMysqldumpToS3Adhoc() {
     // delete the /tmp/ file
     await rmFile(filenameWithAbsolutePath);
     console.log(
-      `finished filbertMysqldumpToS3Adhoc(). Took ${Math.round(
-        performance.now() - startTime
-      ) / 1000} seconds.\n`
+      `finished filbertMysqldumpToS3Adhoc(). Took ${
+        Math.round(performance.now() - startTime) / 1000
+      } seconds.\n`
     );
   } catch (err) {
     console.error("filbertMysqldumpToS3Adhoc() Error: ", err);

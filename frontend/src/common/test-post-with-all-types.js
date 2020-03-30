@@ -4,7 +4,7 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_STRIKETHROUGH
+  SELECTION_ACTION_STRIKETHROUGH,
 } from './constants';
 import { makeSelections } from './test-helpers';
 
@@ -35,7 +35,7 @@ export const testPostWithAllTypesJS = {
     created: '2019-12-05T07:46:51.000Z',
     updated: '2019-12-05T07:46:51.000Z',
     published: null,
-    deleted: null
+    deleted: null,
   },
   contentNodes: {
     [firstNodeIdH1]: {
@@ -44,7 +44,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: '621e',
       type: 'h1',
       content: firstNodeContent,
-      meta: {}
+      meta: {},
     },
     '621e': {
       post_id: testPostId,
@@ -52,7 +52,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: formattedPId,
       type: 'p',
       content: 'First paragraph with no formats',
-      meta: {}
+      meta: {},
     },
     [formattedPId]: {
       post_id: testPostId,
@@ -70,10 +70,10 @@ export const testPostWithAllTypesJS = {
           [
             ,
             SELECTION_ACTION_LINK,
-            { key: 'linkUrl', value: 'http://some.site' }
-          ]
-        ]).toJS()
-      }
+            { key: 'linkUrl', value: 'http://some.site' },
+          ],
+        ]).toJS(),
+      },
     },
     [spacerId]: {
       post_id: testPostId,
@@ -81,7 +81,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: h2Id,
       type: 'spacer',
       content: '',
-      meta: {}
+      meta: {},
     },
     [h2Id]: {
       post_id: testPostId,
@@ -89,7 +89,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: '56da',
       type: 'h2',
       content: h2Content,
-      meta: {}
+      meta: {},
     },
     '56da': {
       post_id: testPostId,
@@ -97,7 +97,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: '9fa0',
       type: 'li',
       content: "Here's a list",
-      meta: {}
+      meta: {},
     },
     '9fa0': {
       post_id: testPostId,
@@ -105,7 +105,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: formattedLiId,
       type: 'li',
       content: 'Another item here',
-      meta: {}
+      meta: {},
     },
     [formattedLiId]: {
       post_id: testPostId,
@@ -126,9 +126,13 @@ export const testPostWithAllTypesJS = {
           [1],
           [7, SELECTION_ACTION_STRIKETHROUGH],
           [5],
-          [, SELECTION_ACTION_LINK, { key: 'linkUrl', value: 'http://yep.com' }]
-        ]).toJS()
-      }
+          [
+            ,
+            SELECTION_ACTION_LINK,
+            { key: 'linkUrl', value: 'http://yep.com' },
+          ],
+        ]).toJS(),
+      },
     },
     [preId]: {
       post_id: testPostId,
@@ -136,7 +140,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: 'f063',
       type: 'pre',
       content: 'var someCode = "here";',
-      meta: {}
+      meta: {},
     },
     f063: {
       post_id: testPostId,
@@ -144,7 +148,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: '61cf',
       type: 'pre',
       content: 'function getIt(sendIt) {',
-      meta: {}
+      meta: {},
     },
     '61cf': {
       post_id: testPostId,
@@ -152,7 +156,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: '7a38',
       type: 'pre',
       content: '  const yep = false;',
-      meta: {}
+      meta: {},
     },
     '7a38': {
       post_id: testPostId,
@@ -160,7 +164,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: pre2Id,
       type: 'pre',
       content: '}',
-      meta: {}
+      meta: {},
     },
     [pre2Id]: {
       post_id: testPostId,
@@ -168,7 +172,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: imgId,
       type: 'pre',
       content: 'getIt();',
-      meta: {}
+      meta: {},
     },
     [imgId]: {
       post_id: testPostId,
@@ -181,8 +185,8 @@ export const testPostWithAllTypesJS = {
         width: 669,
         height: 1000,
         caption: "Kinzua Dam '91",
-        rotationDegrees: 90
-      }
+        rotationDegrees: 90,
+      },
     },
     '09a0': {
       post_id: testPostId,
@@ -190,7 +194,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: 'c67c',
       type: 'h2',
       content: "Here's a big quote",
-      meta: {}
+      meta: {},
     },
     c67c: {
       post_id: testPostId,
@@ -204,8 +208,8 @@ export const testPostWithAllTypesJS = {
         quote:
           "It's an attempt to bring the figurative thing up on to the nervous system more violently and more poignantly.",
         author: 'Frances Bacon',
-        context: 'interviews with David Sylvester in 1963, 1966 and 1979'
-      }
+        context: 'interviews with David Sylvester in 1963, 1966 and 1979',
+      },
     },
     [lastNodeIdP]: {
       post_id: testPostId,
@@ -213,7 +217,7 @@ export const testPostWithAllTypesJS = {
       next_sibling_id: null,
       type: 'p',
       content: lastNodeContent,
-      meta: {}
-    }
-  }
+      meta: {},
+    },
+  },
 };

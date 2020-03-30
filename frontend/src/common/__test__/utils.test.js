@@ -1,7 +1,7 @@
 import {
   KEYCODE_SPACE,
   KEYCODE_SPACE_NBSP,
-  ZERO_LENGTH_CHAR
+  ZERO_LENGTH_CHAR,
 } from '../constants';
 
 const { Map } = require('immutable');
@@ -14,11 +14,11 @@ const {
   cleanText,
   getCharFromEvent,
   getCanonicalFromTitle,
-  deleteContentRange
+  deleteContentRange,
 } = require('../utils');
 const { idIsValid } = require('../utils');
 
-global.confirm = jest.fn().mockImplementation(arg => arg);
+global.confirm = jest.fn().mockImplementation((arg) => arg);
 
 describe('utils', () => {
   test('confirmPromise', async () => {
@@ -36,13 +36,13 @@ describe('utils', () => {
   });
   test('getMapWithId', () => {
     const objWithId = {
-      id: '4455'
+      id: '4455',
     };
     const map = getMapWithId(objWithId);
     expect(Map.isMap(map)).toBe(true);
     expect(map.get('id')).toBe('4455');
     const mapWithoutId = {
-      foo: 'bar'
+      foo: 'bar',
     };
     const map2 = getMapWithId(mapWithoutId);
     expect(Map.isMap(map2)).toBe(true);
@@ -84,11 +84,11 @@ describe('utils', () => {
   test('getCharFromEvent', () => {
     const mockEventWithALetter = {
       keyCode: 0,
-      key: 'W'
+      key: 'W',
     };
     expect(getCharFromEvent(mockEventWithALetter)).toBe('W');
     const mockEventWithEmoji = {
-      data: '👉'
+      data: '👉',
     };
     expect(getCharFromEvent(mockEventWithEmoji)).toBe('👉');
   });

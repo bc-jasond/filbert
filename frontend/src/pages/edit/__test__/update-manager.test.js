@@ -4,7 +4,7 @@ import UpdateManager, { characterDiffSize } from '../update-manager';
 import DocumentModel from '../document-model';
 import {
   overrideConsole,
-  mockLocalStorage
+  mockLocalStorage,
 } from '../../../common/test-helpers';
 import { clearForTests } from '../../../common/local-storage';
 import {
@@ -12,7 +12,7 @@ import {
   h2Id,
   imgId,
   pre2Id,
-  testPostWithAllTypesJS
+  testPostWithAllTypesJS,
 } from '../../../common/test-post-with-all-types';
 import {
   NODE_UPDATES,
@@ -22,13 +22,13 @@ import {
   HISTORY_KEY_UNDO_UPDATES,
   HISTORY_KEY_REDO_OFFSETS,
   HISTORY_KEY_REDO_UPDATES,
-  NODE_TYPE_H1
+  NODE_TYPE_H1,
 } from '../../../common/constants';
 import * as api from '../../../common/fetch';
 
 jest.mock('../../../common/fetch', () => ({
   __esModule: true,
-  apiPost: jest.fn(async () => ({}))
+  apiPost: jest.fn(async () => ({})),
 }));
 jest.useFakeTimers();
 
@@ -140,10 +140,7 @@ describe('UpdateManager', () => {
     let prevNodesById = doc.nodesById;
     // create history entry when changing a node's type
     doc.update(
-      doc
-        .getNode(formattedPId)
-        .set('type', NODE_TYPE_H1)
-        .set('meta', Map())
+      doc.getNode(formattedPId).set('type', NODE_TYPE_H1).set('meta', Map())
     );
     // 1 for the deleted node, 1 for the prev node to update next_sibling_id reference
     expect(updateManager[NODE_UPDATES].size).toBe(1);

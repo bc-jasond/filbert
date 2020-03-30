@@ -9,7 +9,7 @@ import {
   SELECTION_ACTION_MINI,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_NEXT
+  SELECTION_NEXT,
 } from '../constants';
 import { cleanTextOrZeroLengthPlaceholder, Selection } from '../utils';
 import {
@@ -19,14 +19,14 @@ import {
   ItalicText,
   MiniText,
   SiteInfo,
-  StrikeText
+  StrikeText,
 } from './shared-styled-components';
 
 export default class FormattedSelections extends React.PureComponent {
   render() {
     console.debug('FORMATTED SELECTIONS render()', this);
     const {
-      props: { node }
+      props: { node },
     } = this;
     let children = [];
     let didError = false;

@@ -8,7 +8,7 @@ import { syncToDom, syncFromDom } from '../dom-sync';
 import {
   testPostWithAllTypesJS,
   h2Id,
-  h2Content
+  h2Content,
 } from '../../../../common/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
@@ -23,7 +23,7 @@ describe('Document Model -> DOM sync helper', () => {
   test('syncToDom - validates input', () => {
     const spy = jest
       .spyOn(utils, 'getCharFromEvent')
-      .mockImplementation(arg => arg);
+      .mockImplementation((arg) => arg);
     let result = syncToDom(doc, { startNodeId: null }, {});
     expect(result).toEqual({});
     expect(console.warn).toHaveBeenCalledTimes(1);
@@ -34,7 +34,7 @@ describe('Document Model -> DOM sync helper', () => {
     const newChar = 'Z';
     const spyGetChar = jest
       .spyOn(utils, 'getCharFromEvent')
-      .mockImplementation(arg => arg);
+      .mockImplementation((arg) => arg);
     const spyAdjust = jest
       .spyOn(selectionHelpers, 'adjustSelectionOffsetsAndCleanup')
       .mockImplementation((...args) => args[0]);
@@ -62,7 +62,7 @@ describe('Document Model -> DOM sync helper', () => {
     const newChar = 'Z';
     const spyGetChar = jest
       .spyOn(utils, 'getCharFromEvent')
-      .mockImplementation(arg => arg);
+      .mockImplementation((arg) => arg);
     const spyAdjust = jest
       .spyOn(selectionHelpers, 'adjustSelectionOffsetsAndCleanup')
       .mockImplementation((...args) => args[0]);
@@ -97,7 +97,7 @@ describe('Document Model -> DOM sync helper', () => {
     const newChar = 'way too much content';
     const spyGetChar = jest
       .spyOn(utils, 'getCharFromEvent')
-      .mockImplementation(arg => arg);
+      .mockImplementation((arg) => arg);
     const spyAdjust = jest
       .spyOn(selectionHelpers, 'adjustSelectionOffsetsAndCleanup')
       .mockImplementation((...args) => args[0]);

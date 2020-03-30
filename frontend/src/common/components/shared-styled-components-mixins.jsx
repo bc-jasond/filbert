@@ -8,8 +8,8 @@ export const sectionWidthMixin = css`
 `;
 // TODO: use ::selection to style MetaType nodes when selected
 export const editSectionBorderMixin = css`
-  border: 4px solid ${p => (p.isEditing ? blue : 'transparent')};
-  ${p =>
+  border: 4px solid ${(p) => (p.isEditing ? blue : 'transparent')};
+  ${(p) =>
     p.isEditMode &&
     css`
       &:hover {
@@ -66,7 +66,7 @@ export const navButtonMixin = css`
     background-color: ${lightBlue};
     box-shadow: ${boxShadow};
   }
-  ${p =>
+  ${(p) =>
     p.isOpen &&
     `
     color: white;
@@ -84,7 +84,7 @@ export const svgIconMixin = css`
   &:hover {
     fill: ${blue};
   }
-  ${p =>
+  ${(p) =>
     p.checked &&
     `
     fill: ${darkBlue};

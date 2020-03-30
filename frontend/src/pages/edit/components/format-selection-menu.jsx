@@ -17,7 +17,7 @@ import {
   DarkInput,
   IconButton,
   LilSassyMenu,
-  PointClip
+  PointClip,
 } from '../../../common/components/shared-styled-components';
 import { svgIconMixin } from '../../../common/components/shared-styled-components-mixins';
 import {
@@ -38,12 +38,12 @@ import {
   SELECTION_ACTION_MINI,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_LINK_URL
+  SELECTION_LINK_URL,
 } from '../../../common/constants';
 import {
   caretIsAtBeginningOfInput,
   caretIsAtEndOfInput,
-  focusAndScrollSmooth
+  focusAndScrollSmooth,
 } from '../../../common/dom';
 import { stopAndPrevent } from '../../../common/utils';
 
@@ -77,15 +77,15 @@ const IconMini = styled(IconMiniSvg)`
 
 const FormatSelectionMenu = styled(LilSassyMenu)`
   // 44 is the height of menu, 10 is the height of arrow point
-  display: ${p => (p.isOpen ? 'block' : 'none')};
-  top: ${p => p.top - 44 - 15 - (p.shouldShowUrl ? 30 : 0)}px;
-  left: ${p => p.left - 183}px; // 183 is half the width of the menu
+  display: ${(p) => (p.isOpen ? 'block' : 'none')};
+  top: ${(p) => p.top - 44 - 15 - (p.shouldShowUrl ? 30 : 0)}px;
+  left: ${(p) => p.left - 183}px; // 183 is half the width of the menu
 `;
 const LinkInput = styled(DarkInput)`
   height: 0;
   padding: 0;
   transition: 0.05s height;
-  ${p =>
+  ${(p) =>
     p.checked &&
     `
     padding: 12px;
@@ -99,7 +99,7 @@ const FormatSelectionMenuItem = ({
   Styled,
   selected,
   checked,
-  shouldAddSpacer
+  shouldAddSpacer,
 }) => (
   <>
     {shouldAddSpacer && <ButtonSeparator />}
@@ -121,48 +121,48 @@ export default class FormatSelectionMenuComponent extends React.Component {
     {
       type: SELECTION_ACTION_BOLD,
       Styled: IconBold,
-      shouldAddSpacer: false
+      shouldAddSpacer: false,
     },
     {
       type: SELECTION_ACTION_ITALIC,
       Styled: IconItalic,
-      shouldAddSpacer: false
+      shouldAddSpacer: false,
     },
     {
       type: SELECTION_ACTION_CODE,
       Styled: IconCode,
-      shouldAddSpacer: false
+      shouldAddSpacer: false,
     },
     {
       type: SELECTION_ACTION_SITEINFO,
       Styled: IconSiteinfo,
-      shouldAddSpacer: false
+      shouldAddSpacer: false,
     },
     {
       type: SELECTION_ACTION_MINI,
       Styled: IconMini,
-      shouldAddSpacer: false
+      shouldAddSpacer: false,
     },
     {
       type: SELECTION_ACTION_STRIKETHROUGH,
       Styled: IconStrikethrough,
-      shouldAddSpacer: false
+      shouldAddSpacer: false,
     },
     {
       type: SELECTION_ACTION_LINK, // position 6
       Styled: IconLink,
-      shouldAddSpacer: false
+      shouldAddSpacer: false,
     },
     {
       type: SELECTION_ACTION_H1,
       Styled: IconH1,
-      shouldAddSpacer: true
+      shouldAddSpacer: true,
     },
     {
       type: SELECTION_ACTION_H2,
       Styled: IconH2,
-      shouldAddSpacer: false
-    }
+      shouldAddSpacer: false,
+    },
   ];
 
   constructor(props) {
@@ -173,13 +173,13 @@ export default class FormatSelectionMenuComponent extends React.Component {
       currentIdx: selectionModel?.get(SELECTION_ACTION_LINK)
         ? this.linkMenuItemIdx
         : -1,
-      isMenuOpen: true
+      isMenuOpen: true,
     };
   }
 
   componentDidMount() {
     const {
-      props: { nodeModel, selectionModel }
+      props: { nodeModel, selectionModel },
     } = this;
     if (selectionModel.get(SELECTION_ACTION_LINK) && this.ref) {
       focusAndScrollSmooth(nodeModel.get('id'), this.ref?.current);
@@ -189,7 +189,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     const {
       state: { currentIdx },
-      props: { nodeModel, selectionModel, windowEvent }
+      props: { nodeModel, selectionModel, windowEvent },
     } = this;
     const { currentIdx: prevIdx } = prevState;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
@@ -209,10 +209,10 @@ export default class FormatSelectionMenuComponent extends React.Component {
     this.ref?.current?.blur?.();
   }
 
-  handleKeyDown = evt => {
+  handleKeyDown = (evt) => {
     const {
       props: { selectionModel },
-      state: { currentIdx, isMenuOpen }
+      state: { currentIdx, isMenuOpen },
     } = this;
 
     // if 'link' is selected we need to let keystrokes pass through to the URL input... messy business
@@ -226,7 +226,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
         KEYCODE_ESC,
         KEYCODE_SPACE,
         KEYCODE_LEFT_ARROW,
-        KEYCODE_RIGHT_ARROW
+        KEYCODE_RIGHT_ARROW,
       ].includes(evt.keyCode)
     ) {
       return;
@@ -322,9 +322,9 @@ export default class FormatSelectionMenuComponent extends React.Component {
     }
   };
 
-  isChecked = type => {
+  isChecked = (type) => {
     const {
-      props: { selectionModel, nodeModel }
+      props: { selectionModel, nodeModel },
     } = this;
     if (
       nodeModel.get('type') === NODE_TYPE_H1 &&
@@ -344,7 +344,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
   render() {
     const {
       props: { offsetTop, offsetLeft, selectionModel, updateLinkUrl },
-      state: { currentIdx, isMenuOpen }
+      state: { currentIdx, isMenuOpen },
     } = this;
 
     return (
@@ -368,7 +368,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
           ref={this.ref}
           placeholder="Enter URL here..."
           checked={selectionModel.get(SELECTION_ACTION_LINK)}
-          onChange={e => updateLinkUrl(e.target.value)}
+          onChange={(e) => updateLinkUrl(e.target.value)}
           value={selectionModel.get(SELECTION_LINK_URL)}
         />
         <PointClip>

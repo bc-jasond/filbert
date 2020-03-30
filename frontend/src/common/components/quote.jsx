@@ -5,14 +5,14 @@ import {
   ContentSection,
   ItalicText,
   MiniText,
-  QuoteP
+  QuoteP,
 } from './shared-styled-components';
 
 export default class Quote extends React.PureComponent {
   render() {
     console.debug('Quote RENDER', this);
     const {
-      props: { node, isEditing, setEditNodeId }
+      props: { node, isEditing, setEditNodeId },
     } = this;
     const id = node.get('id');
     const quote = node.getIn(['meta', 'quote'], '');

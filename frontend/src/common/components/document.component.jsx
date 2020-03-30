@@ -10,7 +10,7 @@ import {
   NODE_TYPE_PRE,
   NODE_TYPE_QUOTE,
   NODE_TYPE_ROOT,
-  NODE_TYPE_SPACER
+  NODE_TYPE_SPACER,
 } from '../constants';
 import { CodeSection, ContentSection, Ol } from './shared-styled-components';
 import Quote from './quote';
@@ -96,7 +96,7 @@ export default class Document extends React.PureComponent {
   render() {
     console.debug('Document RENDER', this);
     const {
-      props: { nodesById, currentEditNode = Map(), setEditNodeId }
+      props: { nodesById, currentEditNode = Map(), setEditNodeId },
     } = this;
     const children = [];
     this.current = DocumentModel.getFirstNode(nodesById);

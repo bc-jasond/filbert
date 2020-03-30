@@ -5,17 +5,17 @@ import {
   Arrow,
   DarkInput,
   LilSassyMenu,
-  PointClip
+  PointClip,
 } from '../../../common/components/shared-styled-components';
 import {
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
-  KEYCODE_TAB
+  KEYCODE_TAB,
 } from '../../../common/constants';
 import {
   caretIsAtBeginningOfInput,
   caretIsAtEndOfInput,
-  focusAndScrollSmooth
+  focusAndScrollSmooth,
 } from '../../../common/dom';
 import { stopAndPrevent } from '../../../common/utils';
 
@@ -23,7 +23,7 @@ const EditQuoteMenu = styled(LilSassyMenu)`
   display: flex;
   flex-direction: column;
   justify-items: center;
-  top: ${p => p.top - 90}px;
+  top: ${(p) => p.top - 90}px;
   width: 400px;
   margin: 0 auto;
   padding: 8px;
@@ -47,7 +47,7 @@ export default class EditQuoteForm extends React.Component {
     super(props);
     this.state = {
       currentIdx: 0,
-      shouldFocusEnd: true
+      shouldFocusEnd: true,
     };
     this.inputRefs = Array(4)
       .fill(null)
@@ -56,11 +56,11 @@ export default class EditQuoteForm extends React.Component {
 
   componentDidMount() {
     const {
-      props: { nodeModel }
+      props: { nodeModel },
     } = this;
     // find first empty value - or first value
     let [focusRef] = this.inputRefs.filter(
-      r => r?.current?.value?.length === 0
+      (r) => r?.current?.value?.length === 0
     );
     focusRef = focusRef || this.inputRefs[0];
 
@@ -70,7 +70,7 @@ export default class EditQuoteForm extends React.Component {
   componentDidUpdate(prevProps) {
     const {
       state: { currentIdx, shouldFocusEnd },
-      props: { nodeModel, windowEvent }
+      props: { nodeModel, windowEvent },
     } = this;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
       this.handleKeyDown(windowEvent);
@@ -83,9 +83,9 @@ export default class EditQuoteForm extends React.Component {
     );
   }
 
-  handleKeyDown = evt => {
+  handleKeyDown = (evt) => {
     const {
-      state: { currentIdx }
+      state: { currentIdx },
     } = this;
     if (
       (evt.keyCode === KEYCODE_TAB && evt.shiftKey) ||
@@ -110,14 +110,14 @@ export default class EditQuoteForm extends React.Component {
 
   updateMeta = (key, value) => {
     const {
-      props: { nodeModel, update }
+      props: { nodeModel, update },
     } = this;
     update?.(nodeModel.setIn(['meta', key], value));
   };
 
   render() {
     const {
-      props: { offsetTop, nodeModel }
+      props: { offsetTop, nodeModel },
     } = this;
     return (
       <EditQuoteMenu data-is-menu top={offsetTop}>
@@ -126,7 +126,7 @@ export default class EditQuoteForm extends React.Component {
             <QuoteInput
               ref={this.inputRefs[idx]}
               placeholder={`Enter ${metaKey.toLocaleUpperCase()} here...`}
-              onChange={e => this.updateMeta(metaKey, e.target.value)}
+              onChange={(e) => this.updateMeta(metaKey, e.target.value)}
               value={nodeModel.getIn(['meta', metaKey], '')}
             />
           </Row>

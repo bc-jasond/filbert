@@ -2,7 +2,7 @@ import { fromJS, List } from 'immutable';
 import React from 'react';
 import {
   Article,
-  StyledHeadingA
+  StyledHeadingA,
 } from '../common/components/layout-styled-components';
 import {
   BaseRow,
@@ -11,7 +11,7 @@ import {
   FilterInput,
   FilterWithInput,
   StyledH2,
-  StyledH3
+  StyledH3,
 } from '../common/components/list-all-styled-components';
 import { FlexGrid } from '../common/components/shared-styled-components';
 import { PAGE_NAME_PUBLIC } from '../common/constants';
@@ -33,7 +33,7 @@ export default class Public extends React.Component {
       usernameFilterIsSelected: false,
       username: '',
       randomFilterIsSelected: false,
-      loading: false
+      loading: false,
     };
   }
 
@@ -56,7 +56,7 @@ export default class Public extends React.Component {
         oldestFilterIsSelected: queryParams.has('oldest'),
         usernameFilterIsSelected: queryParams.has('username'),
         username: queryParams.get('username') || '',
-        randomFilterIsSelected: queryParams.has('random')
+        randomFilterIsSelected: queryParams.has('random'),
       },
       this.loadPosts
     );
@@ -68,13 +68,13 @@ export default class Public extends React.Component {
         loading,
         username,
         randomFilterIsSelected: random,
-        oldestFilterIsSelected: oldest
-      }
+        oldestFilterIsSelected: oldest,
+      },
     } = this;
     if (loading) {
       return;
     }
-    await new Promise(resolve => this.setState({ loading: true }, resolve));
+    await new Promise((resolve) => this.setState({ loading: true }, resolve));
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.delete('username');
     queryParams.delete('random');
@@ -99,10 +99,10 @@ export default class Public extends React.Component {
     const { error, data: posts } = await apiGet(`/post${queryString}`);
     if (!error) {
       const postsFormatted = fromJS(
-        posts.map(post => ({
+        posts.map((post) => ({
           ...post,
           published: formatPostDate(post.published),
-          updated: formatPostDate(post.updated)
+          updated: formatPostDate(post.updated),
         }))
       );
       this.setState({ posts: postsFormatted });
@@ -119,7 +119,7 @@ export default class Public extends React.Component {
 
   toggleOldestFilter = () => {
     const {
-      state: { oldestFilterIsSelected, loading }
+      state: { oldestFilterIsSelected, loading },
     } = this;
     if (loading) {
       return;
@@ -132,7 +132,7 @@ export default class Public extends React.Component {
 
   toggleRandomFilter = () => {
     const {
-      state: { randomFilterIsSelected, loading }
+      state: { randomFilterIsSelected, loading },
     } = this;
     if (loading) {
       return;
@@ -145,7 +145,7 @@ export default class Public extends React.Component {
 
   toggleUsernameFilter = () => {
     const {
-      state: { usernameFilterIsSelected, loading }
+      state: { usernameFilterIsSelected, loading },
     } = this;
     if (loading) {
       return;
@@ -153,7 +153,7 @@ export default class Public extends React.Component {
     this.setState(
       {
         usernameFilterIsSelected: !usernameFilterIsSelected,
-        username: ''
+        username: '',
       },
       () => {
         if (!usernameFilterIsSelected) {
@@ -165,12 +165,12 @@ export default class Public extends React.Component {
     );
   };
 
-  updateUsername = event => {
+  updateUsername = (event) => {
     const {
-      target: { value }
+      target: { value },
     } = event;
     const {
-      state: { username, loading }
+      state: { username, loading },
     } = this;
     if (loading) {
       return;
@@ -196,9 +196,9 @@ export default class Public extends React.Component {
         oldestFilterIsSelected,
         usernameFilterIsSelected,
         username,
-        randomFilterIsSelected
+        randomFilterIsSelected,
       },
-      props: { session, setSession }
+      props: { session, setSession },
     } = this;
 
     return (
@@ -277,7 +277,7 @@ export default class Public extends React.Component {
                 </StyledHeadingA>
               </BaseRow>
             )}
-            {posts.map(post => (
+            {posts.map((post) => (
               <PostListRow key={post.get('canonical')} post={post} />
             ))}
           </>

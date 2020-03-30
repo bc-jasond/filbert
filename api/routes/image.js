@@ -38,7 +38,7 @@ async function uploadImage(req, res, next) {
       size: `${imgMeta.size}`,
       mimeType: file.mimetype,
       encoding: file.encoding,
-      url: `https://${imageBucketName}.${objectStorageBaseUrl}/${imageKey}`
+      url: `https://${imageBucketName}.${objectStorageBaseUrl}/${imageKey}`,
     };
     try {
       image = await bucketHasKey(imageBucketName, imageKey);
@@ -69,5 +69,5 @@ async function uploadImage(req, res, next) {
 }
 
 module.exports = {
-  uploadImage
+  uploadImage,
 };

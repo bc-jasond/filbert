@@ -14,7 +14,7 @@ import {
   NODE_TYPE_LI,
   NODE_TYPE_PRE,
   NODE_TYPE_QUOTE,
-  NODE_TYPE_SPACER
+  NODE_TYPE_SPACER,
 } from '../../../common/constants';
 
 import { grey } from '../../../common/css';
@@ -23,10 +23,10 @@ import { stopAndPrevent } from '../../../common/utils';
 
 const InsertSectionMenu = styled.div`
   position: absolute;
-  width: ${p => (p.isOpen ? '755' : '50')}px;
+  width: ${(p) => (p.isOpen ? '755' : '50')}px;
   display: block;
-  top: ${p => p.topOffset + 52}px;
-  left: ${p => p.leftOffset - 68}px;
+  top: ${(p) => p.topOffset + 52}px;
+  left: ${(p) => p.leftOffset - 68}px;
 `;
 const lineMixin = css`
   z-index: 2;
@@ -52,7 +52,7 @@ const InsertSectionMenuButton = styled.button`
   &:before {
     ${lineMixin}
     transform: rotateZ(0deg);
-    ${p =>
+    ${(p) =>
       p.isOpen &&
       `
       transform: rotateZ(225deg);
@@ -61,7 +61,7 @@ const InsertSectionMenuButton = styled.button`
   &:after {
     ${lineMixin}
     transform: rotateZ(90deg);
-    ${p =>
+    ${(p) =>
       p.isOpen &&
       `
       transform: rotateZ(-45deg);
@@ -79,7 +79,7 @@ const InsertSectionMenuItemsContainer = styled.div`
   left: 48px;
   display: block;
   transition: left 0.2s ease-in-out, display 0.2 ease-in-out;
-  ${p =>
+  ${(p) =>
     !p.isOpen &&
     `
     left: -100%;
@@ -100,27 +100,27 @@ export default class InsertSectionMenuComponent extends React.Component {
     {
       type: NODE_TYPE_H1,
       children: 'H1',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_H1)
+      callback: () => this.props?.insertSection?.(NODE_TYPE_H1),
     },
     {
       type: NODE_TYPE_H2,
       children: 'H2',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_H2)
+      callback: () => this.props?.insertSection?.(NODE_TYPE_H2),
     },
     {
       type: NODE_TYPE_PRE,
       children: 'code',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_PRE)
+      callback: () => this.props?.insertSection?.(NODE_TYPE_PRE),
     },
     {
       type: NODE_TYPE_LI,
       children: 'list',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_LI)
+      callback: () => this.props?.insertSection?.(NODE_TYPE_LI),
     },
     {
       type: NODE_TYPE_SPACER,
       children: 'spacer',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_SPACER)
+      callback: () => this.props?.insertSection?.(NODE_TYPE_SPACER),
     },
     {
       type: NODE_TYPE_IMAGE,
@@ -130,7 +130,7 @@ export default class InsertSectionMenuComponent extends React.Component {
           <HiddenFileInput
             name="hidden-image-upload-file-input"
             type="file"
-            onChange={e => {
+            onChange={(e) => {
               this.props?.insertSection?.(NODE_TYPE_IMAGE, e.target.files);
             }}
             accept="image/*"
@@ -138,13 +138,13 @@ export default class InsertSectionMenuComponent extends React.Component {
           />
         </>
       ),
-      callback: () => this.fileInputRef.current.click()
+      callback: () => this.fileInputRef.current.click(),
     },
     {
       type: NODE_TYPE_QUOTE,
       children: 'quote',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_QUOTE)
-    }
+      callback: () => this.props?.insertSection?.(NODE_TYPE_QUOTE),
+    },
   ];
 
   constructor(props) {
@@ -152,13 +152,13 @@ export default class InsertSectionMenuComponent extends React.Component {
 
     this.state = {
       currentIdx: -1,
-      menuIsOpen: false
+      menuIsOpen: false,
     };
   }
 
   componentDidUpdate(prevProps) {
     const {
-      props: { windowEvent }
+      props: { windowEvent },
     } = this;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
       this.handleKeyDown(windowEvent);
@@ -167,17 +167,17 @@ export default class InsertSectionMenuComponent extends React.Component {
 
   focusInsertNode = () => {
     const {
-      props: { insertNodeId }
+      props: { insertNodeId },
     } = this;
     setCaret({ startNodeId: insertNodeId });
   };
 
-  handleKeyDown = evt => {
+  handleKeyDown = (evt) => {
     // don't let contenteditable take over!
     stopAndPrevent(evt);
 
     const {
-      state: { currentIdx }
+      state: { currentIdx },
     } = this;
 
     /* eslint-disable-next-line default-case */
@@ -226,7 +226,7 @@ export default class InsertSectionMenuComponent extends React.Component {
   toggleMenu = () => {
     const {
       props: { insertNodeId },
-      state: { menuIsOpen: menuWasOpen }
+      state: { menuIsOpen: menuWasOpen },
     } = this;
 
     this.setState({ menuIsOpen: !menuWasOpen }, () => {
@@ -243,7 +243,7 @@ export default class InsertSectionMenuComponent extends React.Component {
   render() {
     const {
       props: { insertMenuTopOffset, insertMenuLeftOffset },
-      state: { currentIdx, menuIsOpen }
+      state: { currentIdx, menuIsOpen },
     } = this;
 
     return (

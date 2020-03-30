@@ -58,7 +58,7 @@ export function doDelete(
   if (endNodeId) {
     const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
     console.info('doDelete() - middle nodes', middle);
-    middle.forEach(node => {
+    middle.forEach((node) => {
       documentModel.delete(node);
     });
   }
@@ -106,7 +106,7 @@ export function doDelete(
     if (selectedNodeId !== startNodeId) {
       return {
         startNodeId: selectedNodeId,
-        caretStart: -1
+        caretStart: -1,
       };
     }
 
@@ -115,7 +115,7 @@ export function doDelete(
     if (!endNodeId || didDeleteEndNode || startDiffLength === 0) {
       return {
         startNodeId: selectedNodeId,
-        caretStart: startDiffLength === 0 ? caretStart - 1 : caretStart
+        caretStart: startDiffLength === 0 ? caretStart - 1 : caretStart,
       };
     }
     // if we're here, the end node needs to be merged into the start node

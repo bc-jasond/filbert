@@ -9,13 +9,13 @@ import DocumentModel from '../document-model';
 import {
   firstNodeIdH1,
   h2Id,
-  testPostWithAllTypesJS
+  testPostWithAllTypesJS,
 } from '../../../common/test-post-with-all-types';
 
 overrideConsole();
 const updateManagerMock = {
   stageNodeUpdate: jest.fn(),
-  stageNodeDelete: jest.fn()
+  stageNodeDelete: jest.fn(),
 };
 
 const { post, contentNodes } = testPostWithAllTypesJS;
@@ -87,8 +87,8 @@ describe('DocumentModel', () => {
       // h2
       h2Id,
       // Pre
-      'fd25'
-    ].forEach(nodeId => {
+      'fd25',
+    ].forEach((nodeId) => {
       expect(documentModel.isTextType(nodeId)).toBe(true);
       expect(documentModel.isMetaType(nodeId)).toBe(false);
     });
@@ -98,8 +98,8 @@ describe('DocumentModel', () => {
       // IMAGE
       '4add',
       // QUOTE
-      'c67c'
-    ].forEach(nodeId => {
+      'c67c',
+    ].forEach((nodeId) => {
       expect(documentModel.isTextType(nodeId)).toBe(false);
       expect(documentModel.isMetaType(nodeId)).toBe(true);
     });
@@ -110,7 +110,7 @@ describe('DocumentModel', () => {
       .get('content')}${documentModel.getNode('f677').get('content')}`;
     const spy = jest
       .spyOn(SelectionHelpers, 'concatSelections')
-      .mockImplementation(arg => arg);
+      .mockImplementation((arg) => arg);
     documentModel.mergeParagraphs('621e', 'f677');
     expect(spy).toHaveBeenCalled();
     expect(documentModel.getNode('621e').get('content')).toBe(combinedContent);

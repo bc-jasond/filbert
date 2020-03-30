@@ -6,7 +6,7 @@ import {
   GitHubStyled,
   InfoStyled,
   LogoLinkStyled,
-  SocialLinksContainer
+  SocialLinksContainer,
 } from '../common/components/layout-styled-components';
 
 const Br = styled.div`

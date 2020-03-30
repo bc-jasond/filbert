@@ -10,7 +10,7 @@ import { overrideConsole } from '../../../../common/test-helpers';
 import {
   firstNodeContent,
   testPostId,
-  testPostWithAllTypesJS
+  testPostWithAllTypesJS,
 } from '../../../../common/test-post-with-all-types';
 import EditPost from '../edit';
 import { newPostPlaceholderText } from '../../../../common/components/shared-styled-components';
@@ -23,18 +23,20 @@ overrideConsole();
 
 const EditPostWithRouter = withRouter(EditPost);
 
-const apiGetSpy = jest.spyOn(fetchHelpers, 'apiGet').mockImplementation(url => {
-  if (!url.includes(testPostId)) {
-    return { error: 'post not found' };
-  }
-  return { data: { post, contentNodes } };
-});
+const apiGetSpy = jest
+  .spyOn(fetchHelpers, 'apiGet')
+  .mockImplementation((url) => {
+    if (!url.includes(testPostId)) {
+      return { error: 'post not found' };
+    }
+    return { data: { post, contentNodes } };
+  });
 const getHighlightedSelectionOffsetsSpy = jest
   .spyOn(domHelpers, 'getHighlightedSelectionOffsets')
   .mockImplementation(() => ({}));
 
 describe('Edit - creates a new post', () => {
-  test('expects the url to be /edit/new', async done => {
+  test('expects the url to be /edit/new', async (done) => {
     // manually mock "with session" functionality for now
     renderWithRouter(<EditPostWithRouter params={{ id: NEW_POST_URL_ID }} />);
 
@@ -47,7 +49,7 @@ describe('Edit - creates a new post', () => {
 });
 
 describe('Edit - loads a post from fixture data', () => {
-  test('loads post as expected', async done => {
+  test('loads post as expected', async (done) => {
     // manually mock "with session" functionality for now
     renderWithRouter(<EditPostWithRouter params={{ id: testPostId }} />);
 

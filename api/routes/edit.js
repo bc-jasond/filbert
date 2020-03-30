@@ -7,7 +7,7 @@ async function getPostForEdit(req, res) {
   const knex = await getKnex();
   const [post] = await knex("post").where({
     id,
-    user_id: req.loggedInUser.id
+    user_id: req.loggedInUser.id,
   });
   if (!post) {
     res.status(404).send({});
@@ -18,5 +18,5 @@ async function getPostForEdit(req, res) {
 }
 
 module.exports = {
-  getPostForEdit
+  getPostForEdit,
 };

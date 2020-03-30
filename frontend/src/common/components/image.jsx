@@ -7,7 +7,7 @@ import { nodeIsValid } from '../utils';
 import { ContentSection } from './shared-styled-components';
 import {
   editSectionBorderMixin,
-  miniTextMixin
+  miniTextMixin,
 } from './shared-styled-components-mixins';
 
 export const ImageSection = styled(ContentSection)`
@@ -17,7 +17,7 @@ export const ImageSection = styled(ContentSection)`
 `;
 export const Figure = styled.figure`
   position: relative;
-  ${p =>
+  ${(p) =>
     p.heightOverride &&
     !Number.isNaN(p.heightOverride) &&
     css`
@@ -33,13 +33,13 @@ export const ImagePlaceholderContainer = styled.div`
   position: relative;
   width: 100%;
   margin: 0 auto;
-  ${p => css`
+  ${(p) => css`
     max-width: ${p.w}px;
     max-height: ${p.h}px;
   `};
 `;
 export const ImagePlaceholderFill = styled.div`
-  ${p => `padding-bottom: ${(p.h / p.w) * 100}%;`}
+  ${(p) => `padding-bottom: ${(p.h / p.w) * 100}%;`}
 `;
 export const Img = styled.img`
   object-fit: cover;
@@ -53,19 +53,19 @@ export const Img = styled.img`
   display: block;
   max-width: 100%;
   ${ease('transform')};
-  ${p => !p.hideBorder && editSectionBorderMixin};
-  ${p =>
+  ${(p) => !p.hideBorder && editSectionBorderMixin};
+  ${(p) =>
     p.rotationDegrees === 90 &&
     css`
       transform-origin: left;
       transform: translate(50%, -50%) rotate(90deg);
     `}
-  ${p =>
+  ${(p) =>
     p.rotationDegrees === 180 &&
     css`
       transform: scale(1, -1);
     `}
-  ${p =>
+  ${(p) =>
     p.rotationDegrees === 270 &&
     css`
       transform-origin: right;
@@ -83,8 +83,8 @@ export default class Image extends React.PureComponent {
         setEditNodeId,
         hideBorder,
         hideCaption,
-        className
-      }
+        className,
+      },
     } = this;
     if (!nodeIsValid(node)) {
       return null;

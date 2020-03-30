@@ -12,7 +12,7 @@ export function renderWithRouter(
     route = '/',
     history = createMemoryHistory({ initialEntries: [route] }),
     session = {},
-    setSession = jest.fn()
+    setSession = jest.fn(),
   } = {}
 ) {
   return {
@@ -20,6 +20,6 @@ export function renderWithRouter(
     // adding `history` to the returned utilities to allow us
     // to reference it in our tests (just try to avoid using
     // this to test implementation details).
-    history
+    history,
   };
 }

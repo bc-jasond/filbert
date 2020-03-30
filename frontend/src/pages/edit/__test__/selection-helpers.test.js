@@ -7,7 +7,7 @@ import {
   SELECTION_ACTION_SITEINFO,
   SELECTION_LENGTH,
   SELECTION_LINK_URL,
-  SELECTION_NEXT
+  SELECTION_NEXT,
 } from '../../../common/constants';
 import { makeSelections } from '../../../common/test-helpers';
 
@@ -20,7 +20,7 @@ const {
   replaceSelection,
   splitSelectionsAtCaretOffset,
   concatSelections,
-  getContentBySelections
+  getContentBySelections,
 } = require('../selection-helpers');
 
 const testContent = 'And a second paragraph because';
@@ -30,7 +30,7 @@ const testSelections = makeSelections([
   [6, SELECTION_ACTION_ITALIC],
   [1],
   [9, SELECTION_ACTION_CODE],
-  []
+  [],
 ]);
 const nodeModelWithSelections = Map({
   type: 'p',
@@ -38,7 +38,7 @@ const nodeModelWithSelections = Map({
   position: 1,
   content: testContent,
   id: '6eda',
-  post_id: 166
+  post_id: 166,
 }).setIn(['meta', 'selections'], testSelections);
 
 beforeAll(() => {
@@ -84,7 +84,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
           [9, SELECTION_ACTION_CODE],
           [5],
           [4, SELECTION_ACTION_BOLD, SELECTION_ACTION_ITALIC],
-          []
+          [],
         ])
       );
     const updatedModel = adjustSelectionOffsetsAndCleanup(
@@ -101,7 +101,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [3],
       [6, SELECTION_ACTION_ITALIC],
       [1],
-      [, SELECTION_ACTION_CODE]
+      [, SELECTION_ACTION_CODE],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -123,7 +123,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [3, SELECTION_ACTION_SITEINFO],
       [1],
       [5, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -147,7 +147,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [3, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -181,7 +181,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [3, SELECTION_ACTION_SITEINFO],
       [3],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -201,7 +201,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
   test('delete - will merge with last selection if same formats', () => {
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -225,7 +225,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [5, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -249,7 +249,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [5, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -292,7 +292,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -315,7 +315,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set(
       'content',
@@ -338,7 +338,7 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.set('content', `${testContent}X`);
     const modelAdjusted = adjustSelectionOffsetsAndCleanup(
@@ -407,9 +407,9 @@ describe('getSelectionByContentOffset', () => {
       [
         9,
         SELECTION_ACTION_LINK,
-        { key: SELECTION_LINK_URL, value: 'http://foo.bar' }
+        { key: SELECTION_LINK_URL, value: 'http://foo.bar' },
       ],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.setIn(
       ['meta', 'selections'],
@@ -428,9 +428,9 @@ describe('getSelectionByContentOffset', () => {
       [
         9,
         SELECTION_ACTION_LINK,
-        { key: SELECTION_LINK_URL, value: 'http://foo.bar' }
+        { key: SELECTION_LINK_URL, value: 'http://foo.bar' },
       ],
-      []
+      [],
     ]);
     const testModel = nodeModelWithSelections.setIn(
       ['meta', 'selections'],
@@ -446,7 +446,7 @@ describe('getSelectionByContentOffset', () => {
       [2],
       [11],
       [6, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -462,7 +462,7 @@ describe('getSelectionByContentOffset', () => {
       [4, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -480,7 +480,7 @@ describe('getSelectionByContentOffset', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -505,7 +505,7 @@ describe('getSelectionByContentOffset', () => {
       [3, SELECTION_ACTION_SITEINFO],
       [3],
       [6, SELECTION_ACTION_ITALIC],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -523,7 +523,7 @@ describe('getSelectionByContentOffset', () => {
       [1],
       [9, SELECTION_ACTION_CODE],
       [3],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -539,7 +539,7 @@ describe('getSelectionByContentOffset', () => {
       [3],
       [6, SELECTION_ACTION_ITALIC],
       [16],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -558,7 +558,7 @@ describe('getSelectionByContentOffset', () => {
       [3, SELECTION_ACTION_CODE],
       [3],
       [3, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -577,7 +577,7 @@ describe('getSelectionByContentOffset', () => {
       [9, SELECTION_ACTION_CODE],
       [3],
       [3],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -592,7 +592,7 @@ describe('getSelectionByContentOffset', () => {
       [3, SELECTION_ACTION_SITEINFO],
       [10],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -610,7 +610,7 @@ describe('replaceSelection', () => {
     const newSelection = Selection({
       [SELECTION_LENGTH]: 6,
       [SELECTION_ACTION_ITALIC]: true,
-      [SELECTION_ACTION_SITEINFO]: true
+      [SELECTION_ACTION_SITEINFO]: true,
     });
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
@@ -618,7 +618,7 @@ describe('replaceSelection', () => {
       [6, SELECTION_ACTION_ITALIC, SELECTION_ACTION_SITEINFO],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const updatedModel = replaceSelection(
       nodeModelWithSelections,
@@ -631,13 +631,13 @@ describe('replaceSelection', () => {
   });
   test('replaces and merges Selections - in the middle', () => {
     const newSelection = Selection({
-      [SELECTION_LENGTH]: 6
+      [SELECTION_LENGTH]: 6,
     });
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
       [10],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const updatedModel = replaceSelection(
       nodeModelWithSelections,
@@ -651,7 +651,7 @@ describe('replaceSelection', () => {
   test('replaces a Selection - first (head) selection', () => {
     const newSelection = Selection({
       [SELECTION_LENGTH]: 3,
-      [SELECTION_ACTION_MINI]: true
+      [SELECTION_ACTION_MINI]: true,
     });
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_MINI],
@@ -659,7 +659,7 @@ describe('replaceSelection', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const updatedModel = replaceSelection(
       nodeModelWithSelections,
@@ -672,14 +672,14 @@ describe('replaceSelection', () => {
   });
   test('replaces and merges Selection - first (head) selection', () => {
     const newSelection = Selection({
-      [SELECTION_LENGTH]: 3
+      [SELECTION_LENGTH]: 3,
     });
     const expectedSelections = makeSelections([
       [6],
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const updatedModel = replaceSelection(
       nodeModelWithSelections,
@@ -699,11 +699,11 @@ describe('splitSelectionsAtCaretOffset', () => {
       [3],
       [6, SELECTION_ACTION_ITALIC],
       [1],
-      [, SELECTION_ACTION_CODE]
+      [, SELECTION_ACTION_CODE],
     ]);
     const expectedSelectionsRight = makeSelections([
       [5, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const leftModel = nodeModelWithSelections.set(
       'content',
@@ -730,11 +730,11 @@ describe('splitSelectionsAtCaretOffset', () => {
       [3, SELECTION_ACTION_SITEINFO],
       [3],
       [6, SELECTION_ACTION_ITALIC],
-      []
+      [],
     ]);
     const expectedSelectionsRight = makeSelections([
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const leftModel = nodeModelWithSelections.set(
       'content',
@@ -762,7 +762,7 @@ describe('splitSelectionsAtCaretOffset', () => {
       [3],
       [6, SELECTION_ACTION_ITALIC],
       [1],
-      [, SELECTION_ACTION_CODE]
+      [, SELECTION_ACTION_CODE],
     ]);
     const leftModel = nodeModelWithSelections.set(
       'content',
@@ -789,7 +789,7 @@ describe('splitSelectionsAtCaretOffset', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const leftModel = nodeModelWithSelections.set(
       'content',
@@ -813,7 +813,7 @@ describe('splitSelectionsAtCaretOffset', () => {
     const expectedSelectionsLeft = makeSelections([
       // NOTE: this is kind of strange but, it makes sense.  splitSelectionsAtCaretOffset() won't be called this way
       // but, if it were to be... then this should be the expected behavior instead of the default Selection()
-      [, SELECTION_ACTION_SITEINFO]
+      [, SELECTION_ACTION_SITEINFO],
     ]);
     const expectedSelectionsRight = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
@@ -821,7 +821,7 @@ describe('splitSelectionsAtCaretOffset', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const leftModel = nodeModelWithSelections.set('content', '');
     const rightModel = nodeModelWithSelections.set('content', testContent);
@@ -857,14 +857,14 @@ describe('concatSelections', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const rightSelections = makeSelections([
       [6],
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
@@ -876,7 +876,7 @@ describe('concatSelections', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const leftModel = nodeModelWithSelections.setIn(
       ['meta', 'selections'],
@@ -898,7 +898,7 @@ describe('concatSelections', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const expectedSelections = makeSelections([
       [30],
@@ -907,7 +907,7 @@ describe('concatSelections', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const leftModel = nodeModelWithSelections.deleteIn(['meta', 'selections']);
     const rightModel = nodeModelWithSelections.setIn(
@@ -926,7 +926,7 @@ describe('concatSelections', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
-      []
+      [],
     ]);
     const leftModel = nodeModelWithSelections.setIn(
       ['meta', 'selections'],
@@ -949,7 +949,7 @@ describe('getContentBySelections', () => {
       'second',
       ' ',
       'paragraph',
-      ' because'
+      ' because',
     ]);
   });
   test('returns an array of one string with all content when no selections', () => {

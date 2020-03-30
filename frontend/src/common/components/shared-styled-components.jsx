@@ -11,7 +11,7 @@ import {
   mediumGrey,
   success,
   viewport7,
-  viewport9
+  viewport9,
 } from '../css';
 import { contentSerif, monospaced, sansSerif, titleSerif } from '../fonts.css';
 import {
@@ -22,7 +22,7 @@ import {
   metaContentMixin,
   miniTextMixin,
   navButtonMixin,
-  sectionWidthMixin
+  sectionWidthMixin,
 } from './shared-styled-components-mixins';
 
 export const FlexGrid = styled.div`
@@ -71,7 +71,7 @@ export const H1Styled = styled.h1`
   font-size: 46px;
   line-height: 1.25;
   margin-bottom: 24px;
-  ${p =>
+  ${(p) =>
     p.shouldShowPlaceholder &&
     `
     &::before {
@@ -226,7 +226,7 @@ export const Input = styled.input`
   border-radius: 2px;
   border: 1px solid ${grey};
   padding: 2px 8px;
-  ${p =>
+  ${(p) =>
     p.error &&
     css`
       border-color: ${error};
@@ -241,7 +241,7 @@ export const TextArea = styled.textarea`
   border: 1px solid ${grey};
   padding: 2px 8px;
   min-height: 200px;
-  ${p =>
+  ${(p) =>
     p.error &&
     css`
       border-color: ${error};
@@ -251,7 +251,7 @@ export const Label = styled.label`
   display: block;
   margin-bottom: 4px;
   font-family: ${sansSerif};
-  ${p =>
+  ${(p) =>
     p.error &&
     css`
       color: ${error};
@@ -284,7 +284,7 @@ export const Button = styled.button`
   &:hover {
     background: ${darkBlue};
   }
-  ${p =>
+  ${(p) =>
     p.disabled &&
     css`
       cursor: not-allowed;
@@ -316,7 +316,7 @@ export const ButtonSpan = styled.span`
 export const LilSassyMenu = styled.div`
   position: absolute;
   transition: 0.1s top;
-  top: ${p => p.top}px;
+  top: ${(p) => p.top}px;
   z-index: 13;
   background-image: linear-gradient(to bottom, rgba(49, 49, 47, 0.99), #262625);
   background-repeat: repeat-x;

@@ -10,5 +10,5 @@ module.exports = {
   objectStorageApiVersion: "2006-03-01",
   objectStorageBaseUrl: "us-east-1.linodeobjects.com",
   objectStorageACLPublic: "public-read",
-  objectStorageACLPrivate: "private"
+  objectStorageACLPrivate: "private",
 };

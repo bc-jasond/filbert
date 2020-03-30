@@ -9,7 +9,7 @@ import Header from './header';
 import Footer from './footer';
 import {
   Article,
-  StyledHeadingA
+  StyledHeadingA,
 } from '../common/components/layout-styled-components';
 import {
   BaseRow,
@@ -18,7 +18,7 @@ import {
   FilterInput,
   FilterWithInput,
   StyledH2,
-  StyledH3
+  StyledH3,
 } from '../common/components/list-all-styled-components';
 
 import PostListRow from '../common/components/post-list-row';
@@ -35,7 +35,7 @@ export default class PrivatePosts extends React.Component {
       containsFilterIsSelected: false,
       contains: '',
       randomFilterIsSelected: false,
-      loading: false
+      loading: false,
     };
   }
 
@@ -58,7 +58,7 @@ export default class PrivatePosts extends React.Component {
         oldestFilterIsSelected: queryParams.has('oldest'),
         containsFilterIsSelected: queryParams.has('contains'),
         contains: queryParams.get('contains') || '',
-        randomFilterIsSelected: queryParams.has('random')
+        randomFilterIsSelected: queryParams.has('random'),
       },
       this.loadDrafts
     );
@@ -70,13 +70,13 @@ export default class PrivatePosts extends React.Component {
         loading,
         contains,
         randomFilterIsSelected: random,
-        oldestFilterIsSelected: oldest
-      }
+        oldestFilterIsSelected: oldest,
+      },
     } = this;
     if (loading) {
       return;
     }
-    await new Promise(resolve => this.setState({ loading: true }, resolve));
+    await new Promise((resolve) => this.setState({ loading: true }, resolve));
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.delete('contains');
     queryParams.delete('random');
@@ -101,9 +101,9 @@ export default class PrivatePosts extends React.Component {
     const { error, data: drafts } = await apiGet(`/draft${queryString}`);
     if (!error) {
       const postsFormatted = fromJS(
-        drafts.map(draft => ({
+        drafts.map((draft) => ({
           ...draft,
-          updated: formatPostDate(draft.updated)
+          updated: formatPostDate(draft.updated),
         }))
       );
       this.setState({ drafts: postsFormatted });
@@ -120,7 +120,7 @@ export default class PrivatePosts extends React.Component {
 
   toggleOldestFilter = () => {
     const {
-      state: { oldestFilterIsSelected, loading }
+      state: { oldestFilterIsSelected, loading },
     } = this;
     if (loading) {
       return;
@@ -133,7 +133,7 @@ export default class PrivatePosts extends React.Component {
 
   toggleRandomFilter = () => {
     const {
-      state: { randomFilterIsSelected, loading }
+      state: { randomFilterIsSelected, loading },
     } = this;
     if (loading) {
       return;
@@ -146,7 +146,7 @@ export default class PrivatePosts extends React.Component {
 
   toggleContainsFilter = () => {
     const {
-      state: { containsFilterIsSelected, loading }
+      state: { containsFilterIsSelected, loading },
     } = this;
     if (loading) {
       return;
@@ -154,7 +154,7 @@ export default class PrivatePosts extends React.Component {
     this.setState(
       {
         containsFilterIsSelected: !containsFilterIsSelected,
-        contains: ''
+        contains: '',
       },
       () => {
         if (!containsFilterIsSelected) {
@@ -166,12 +166,12 @@ export default class PrivatePosts extends React.Component {
     );
   };
 
-  updateContains = event => {
+  updateContains = (event) => {
     const {
-      target: { value }
+      target: { value },
     } = event;
     const {
-      state: { contains, loading }
+      state: { contains, loading },
     } = this;
     if (loading) {
       return;
@@ -192,9 +192,9 @@ export default class PrivatePosts extends React.Component {
         oldestFilterIsSelected,
         containsFilterIsSelected,
         contains,
-        randomFilterIsSelected
+        randomFilterIsSelected,
       },
-      props: { session, setSession }
+      props: { session, setSession },
     } = this;
 
     return (
@@ -277,7 +277,7 @@ export default class PrivatePosts extends React.Component {
                 </StyledHeadingA>
               </BaseRow>
             )}
-            {drafts.map(draft => (
+            {drafts.map((draft) => (
               <PostListRow key={draft.get('id')} post={draft} />
             ))}
           </>

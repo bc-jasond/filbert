@@ -7,7 +7,7 @@ export default class H2 extends React.PureComponent {
   render() {
     console.debug('H2 RENDER', this);
     const {
-      props: { node }
+      props: { node },
     } = this;
     return (
       <H2Styled data-type={NODE_TYPE_H2} name={node.get('id')}>

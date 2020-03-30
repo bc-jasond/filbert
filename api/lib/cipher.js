@@ -38,8 +38,9 @@ export function getChecksum(buffer) {
   hash.update(buffer);
   const hexDigest = hash.digest("hex");
   console.log(
-    `finished sha256 hash. Took ${(performance.now() - startTime) /
-      1000} seconds.\n`
+    `finished sha256 hash. Took ${
+      (performance.now() - startTime) / 1000
+    } seconds.\n`
   );
   return hexDigest;
 }

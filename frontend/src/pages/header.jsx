@@ -66,7 +66,7 @@ export default class Header extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      shouldRedirect: null
+      shouldRedirect: null,
     };
   }
 
@@ -77,9 +77,9 @@ export default class Header extends React.PureComponent {
         setSession = () => {},
         pageName,
         userIsMe,
-        post = Map()
+        post = Map(),
       },
-      state: { shouldRedirect }
+      state: { shouldRedirect },
     } = this;
     if (shouldRedirect) {
       return <Redirect to="/signout" />;

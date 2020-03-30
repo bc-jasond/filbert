@@ -21,7 +21,7 @@ async function getDrafts(req, res, next) {
   try {
     const {
       loggedInUser,
-      query: { contains, oldest, random }
+      query: { contains, oldest, random },
     } = req;
     const knex = await getKnex();
     let builder = knex("post")
@@ -84,28 +84,24 @@ async function getDrafts(req, res, next) {
 async function publishDraft(req, res) {
   const { id } = req.params;
   const knex = await getKnex();
-  const [post] = await knex("post")
-    .whereNull("published")
-    .andWhere({
-      user_id: req.loggedInUser.id,
-      id
-    });
+  const [post] = await knex("post").whereNull("published").andWhere({
+    user_id: req.loggedInUser.id,
+    id,
+  });
   if (!post) {
     res.status(404).send({});
     return;
   }
   if (!post.canonical) {
     res.status(400).send({
-      message: "Error: Can't publish a draft with no canonical URL"
+      message: "Error: Can't publish a draft with no canonical URL",
     });
     return;
   }
-  await knex("post")
-    .update({ published: getMysqlDatetime() })
-    .where({
-      user_id: req.loggedInUser.id,
-      id
-    });
+  await knex("post").update({ published: getMysqlDatetime() }).where({
+    user_id: req.loggedInUser.id,
+    id,
+  });
   res.send({});
 }
 
@@ -115,12 +111,10 @@ async function publishDraft(req, res) {
 async function deleteDraftAndContentNodes(req, res) {
   const { id } = req.params;
   const knex = await getKnex();
-  const [post] = await knex("post")
-    .whereNull("published")
-    .andWhere({
-      user_id: req.loggedInUser.id,
-      id
-    });
+  const [post] = await knex("post").whereNull("published").andWhere({
+    user_id: req.loggedInUser.id,
+    id,
+  });
 
   if (!post) {
     res.status(404).send({});
@@ -130,12 +124,8 @@ async function deleteDraftAndContentNodes(req, res) {
    * DANGER ZONE!!!
    */
   // TODO: transaction
-  await knex("content_node")
-    .where("post_id", id)
-    .del();
-  await knex("post")
-    .where("id", id)
-    .del();
+  await knex("content_node").where("post_id", id).del();
+  await knex("post").where("id", id).del();
 
   res.status(204).send({});
 }
@@ -144,5 +134,5 @@ module.exports = {
   postDraft,
   getDrafts,
   publishDraft,
-  deleteDraftAndContentNodes
+  deleteDraftAndContentNodes,
 };

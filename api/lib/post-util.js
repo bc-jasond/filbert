@@ -90,5 +90,5 @@ async function addFirstPhotoTitleAndAbstractToPosts(posts) {
 
 module.exports = {
   getFirstPhotoAndAbstractFromContent,
-  addFirstPhotoTitleAndAbstractToPosts
+  addFirstPhotoTitleAndAbstractToPosts,
 };

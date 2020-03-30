@@ -10,10 +10,10 @@ function getBaseConfig(abortSignal = null) {
     cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
     headers: {
       'Content-Type': 'application/json',
-      Authorization: get(AUTH_TOKEN_KEY)
+      Authorization: get(AUTH_TOKEN_KEY),
     },
     redirect: 'follow', // manual, *follow, error
-    referrer: 'no-referrer' // no-referrer, *client
+    referrer: 'no-referrer', // no-referrer, *client
   };
   if (abortSignal) {
     config.signal = abortSignal;
@@ -77,7 +77,7 @@ async function fetchRefresh(url, config) {
   const res2 = await fetch(url, {
     ...config,
     // reset Authorization header
-    headers: { Authorization: get(AUTH_TOKEN_KEY) }
+    headers: { Authorization: get(AUTH_TOKEN_KEY) },
   });
   return handleResponse(res2);
 }
@@ -129,7 +129,7 @@ export async function uploadImage(formData, abortSignal = null) {
 export async function signin(username, password) {
   const {
     error,
-    data: { session, token }
+    data: { session, token },
   } = await apiPost('/signin', { username, password });
   if (error) {
     console.error('Admin Signin Error: ', error);

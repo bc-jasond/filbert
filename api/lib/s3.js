@@ -8,7 +8,7 @@ const {
   objectStorageBaseUrl,
   objectStorageACLPublic,
   objectStorageACLPrivate,
-  fileUploadStagingDirectory
+  fileUploadStagingDirectory,
 } = require("./constants");
 
 const s3Client = new AWS.S3({
@@ -17,8 +17,8 @@ const s3Client = new AWS.S3({
   apiVersion: objectStorageApiVersion,
   credentials: new AWS.Credentials({
     accessKeyId: process.env.LINODE_OBJECT_STORAGE_ACCESS_KEY,
-    secretAccessKey: process.env.LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY
-  })
+    secretAccessKey: process.env.LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY,
+  }),
 });
 
 const listBuckets = promisify(s3Client.listBuckets).bind(s3Client);
@@ -48,26 +48,30 @@ async function assertBucket(name) {
 async function downloadFileFromBucket(bucket, filename) {
   const { Body } = await getObject({ Bucket: bucket, Key: filename });
   return new Promise((resolve, reject) =>
-    fs.writeFile(path.join(fileUploadStagingDirectory, filename), Body, err => {
-      if (err) {
-        reject(err);
-        return;
+    fs.writeFile(
+      path.join(fileUploadStagingDirectory, filename),
+      Body,
+      (err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(path.join(fileUploadStagingDirectory, filename));
       }
-      resolve(path.join(fileUploadStagingDirectory, filename));
-    })
+    )
   );
 }
 
 async function uploadFileToBucket(bucket, fileNameWithAbsolutePath) {
   const fileStream = fs.createReadStream(fileNameWithAbsolutePath);
-  fileStream.on("error", err => {
+  fileStream.on("error", (err) => {
     console.log("uploadFileToBucket - File Error", err);
   });
   // call S3 to retrieve upload file to specified bucket
   return upload({
     Bucket: bucket,
     Body: fileStream,
-    Key: path.basename(fileNameWithAbsolutePath)
+    Key: path.basename(fileNameWithAbsolutePath),
   });
 }
 
@@ -83,7 +87,7 @@ async function uploadImageToBucket(
     Body: buffer,
     Key: key,
     Metadata: metadata,
-    ACL: isPublic ? objectStorageACLPublic : objectStorageACLPrivate
+    ACL: isPublic ? objectStorageACLPublic : objectStorageACLPrivate,
   });
 }
 
@@ -117,18 +121,18 @@ async function copyKeyFromBucketToBucket(bucketSrc, bucketDest, key) {
   return copyObject({
     Bucket: bucketDest,
     CopySource: `/${bucketSrc}/${key}`,
-    Key: key
+    Key: key,
   });
 }
 
 async function deleteKeysForBucket(bucket, keys) {
-  const formattedKeys = keys.map(k => ({ Key: k }));
+  const formattedKeys = keys.map((k) => ({ Key: k }));
   const params = {
     Bucket: bucket,
     Delete: {
       Objects: formattedKeys,
-      Quiet: false
-    }
+      Quiet: false,
+    },
   };
   return deleteObjects(params);
 }
@@ -142,7 +146,7 @@ module.exports = {
   listKeysForBucket,
   bucketHasKey,
   copyKeyFromBucketToBucket,
-  deleteKeysForBucket
+  deleteKeysForBucket,
 };
 
 /*

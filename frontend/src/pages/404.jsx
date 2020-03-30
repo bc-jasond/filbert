@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {
   H1Center,
-  StaticFooter
+  StaticFooter,
 } from '../common/components/layout-styled-components';
 import Header from './header';
 import Footer from './footer';

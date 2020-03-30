@@ -6,7 +6,7 @@ export default class Spacer extends React.PureComponent {
   render() {
     console.debug('Spacer RENDER', this);
     const {
-      props: { node, isEditing, setEditNodeId }
+      props: { node, isEditing, setEditNodeId },
     } = this;
     const id = node.get('id');
     return (

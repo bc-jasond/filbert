@@ -13,11 +13,11 @@ import {
   SELECTION_LENGTH,
   SELECTION_LINK_URL,
   SELECTION_NEXT,
-  ZERO_LENGTH_CHAR
+  ZERO_LENGTH_CHAR,
 } from './constants';
 
 export function confirmPromise(msg) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     if (confirm(msg)) {
       resolve(true);
       return;
@@ -32,7 +32,7 @@ export function formatPostDate(dateStr) {
     // weekday: 'long',
     year: 'numeric',
     day: 'numeric',
-    month: 'long'
+    month: 'long',
   });
 }
 
@@ -45,7 +45,7 @@ export function formatStreakDate(dateInt) {
     // weekday: 'long',
     year: 'numeric',
     day: 'numeric',
-    month: 'long'
+    month: 'long',
   });
 }
 
@@ -194,7 +194,7 @@ export const Selection = Record({
   [SELECTION_ACTION_MINI]: false,
   [SELECTION_ACTION_STRIKETHROUGH]: false,
   [SELECTION_ACTION_LINK]: false,
-  [SELECTION_LINK_URL]: ''
+  [SELECTION_LINK_URL]: '',
 });
 
 export function reviver(key, value) {

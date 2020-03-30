@@ -12,7 +12,7 @@ import {
   NODE_ACTION_UPDATE,
   NODE_UPDATES,
   SELECTION_LINK_URL,
-  SELECTION_NEXT
+  SELECTION_NEXT,
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
@@ -20,7 +20,7 @@ import {
   moreThanNCharsAreDifferent,
   nodeIsValid,
   reviver,
-  Selection
+  Selection,
 } from '../../common/utils';
 import { getSelectionAtIdx, getSelectionsLength } from './selection-helpers';
 
@@ -75,7 +75,7 @@ export default class UpdateManager {
   }
 
   addPostIdToUpdates(postId) {
-    this[NODE_UPDATES] = this[NODE_UPDATES].map(update =>
+    this[NODE_UPDATES] = this[NODE_UPDATES].map((update) =>
       update.set('post_id', postId)
     );
   }
@@ -132,14 +132,14 @@ export default class UpdateManager {
         // save a history entry if any of these fields changed at all for an Image or Quote
         List(['url', 'width', 'height', 'rotationDegrees'])
           .filter(
-            keyName =>
+            (keyName) =>
               updatedNode.getIn(['meta', keyName], '') !==
               this.lastUndoHistoryNode.getIn(['meta', keyName], '')
           )
           .first() ||
         // text content in 'meta' fields changed enough
         List(['caption', 'author', 'context', 'quote'])
-          .filter(keyName =>
+          .filter((keyName) =>
             moreThanNCharsAreDifferent(
               updatedNode.getIn(['meta', keyName], ''),
               this.lastUndoHistoryNode.getIn(['meta', keyName], ''),
@@ -183,7 +183,7 @@ export default class UpdateManager {
       return Map();
     })
       // remove empty Map()s
-      .filter(update => update.get('action'));
+      .filter((update) => update.get('action'));
 
     if (newHistoryEntry.size > 0) {
       this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO].push(
@@ -194,7 +194,7 @@ export default class UpdateManager {
             this.lastUndoHistoryOffsets || prevSelectionOffsets,
           // unexecute == 'redo'
           [HISTORY_KEY_REDO_UPDATES]: this[NODE_UPDATES],
-          [HISTORY_KEY_REDO_OFFSETS]: selectionOffsets
+          [HISTORY_KEY_REDO_OFFSETS]: selectionOffsets,
         })
       );
       // TODO: hmm, this must have bugs

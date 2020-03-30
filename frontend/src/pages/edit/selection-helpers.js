@@ -4,7 +4,7 @@ import { SELECTION_LENGTH, SELECTION_NEXT } from '../../common/constants';
 import {
   cleanTextOrZeroLengthPlaceholder,
   reviver,
-  Selection
+  Selection,
 } from '../../common/utils';
 
 export function formatSelections(head) {
@@ -283,7 +283,7 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
   // if we're here, we didn't find an exact match in existing selections
   const newSelection = {
     [SELECTION_LENGTH]: doesReplaceLastSelection ? -1 : length,
-    [SELECTION_NEXT]: undefined
+    [SELECTION_NEXT]: undefined,
   };
   // capture current length before mutation
   // eslint-disable-next-line prefer-destructuring
@@ -432,14 +432,14 @@ export function splitSelectionsAtCaretOffset(
     // splits in middle of a selection
     headRight = {
       ...current,
-      [SELECTION_LENGTH]: headRightLength
+      [SELECTION_LENGTH]: headRightLength,
     };
   }
   current[SELECTION_LENGTH] = -1;
   current[SELECTION_NEXT] = undefined;
   return {
     leftNode: setSelections(leftNode, head),
-    rightNode: setSelections(rightNode, headRight)
+    rightNode: setSelections(rightNode, headRight),
   };
 }
 

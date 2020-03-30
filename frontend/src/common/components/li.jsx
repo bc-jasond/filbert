@@ -6,7 +6,7 @@ export default class Li extends React.PureComponent {
   render() {
     console.debug('Li RENDER', this);
     const {
-      props: { node }
+      props: { node },
     } = this;
     return (
       <LiStyled data-type={node.get('type')} name={node.get('id')}>

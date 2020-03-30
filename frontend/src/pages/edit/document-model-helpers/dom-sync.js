@@ -45,7 +45,7 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
 
   return {
     startNodeId,
-    caretStart: caretStart + newChar.length
+    caretStart: caretStart + newChar.length,
   };
 }
 

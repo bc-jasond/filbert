@@ -13,7 +13,7 @@ import {
   lastNodeContent,
   lastNodeIdP,
   pre2Id,
-  testPostWithAllTypesJS
+  testPostWithAllTypesJS,
 } from '../../../../common/test-post-with-all-types';
 import { doDelete } from '../delete';
 
@@ -53,7 +53,7 @@ describe('Document Model -> Delete helper - single node', () => {
     const { startNodeId, caretStart } = doDelete(doc, {
       startNodeId: firstNodeIdH1,
       caretStart: 5,
-      caretEnd: 5
+      caretEnd: 5,
     });
     expect(startNodeId).toBe(firstNodeIdH1);
     expect(caretStart).toBe(4);
@@ -65,7 +65,7 @@ describe('Document Model -> Delete helper - single node', () => {
     const { startNodeId, caretStart } = doDelete(doc, {
       startNodeId: firstNodeIdH1,
       caretStart: 5,
-      caretEnd: 6
+      caretEnd: 6,
     });
     expect(startNodeId).toBe(firstNodeIdH1);
     expect(caretStart).toBe(5);
@@ -79,7 +79,7 @@ describe('Document Model -> Delete helper - single node', () => {
     const { startNodeId, caretStart } = doDelete(doc, {
       startNodeId: formattedPId,
       caretStart: 0,
-      caretEnd: 15
+      caretEnd: 15,
     });
     expect(startNodeId).toBe(formattedPId);
     expect(caretStart).toBe(0);
@@ -99,7 +99,7 @@ describe('Document Model -> Delete helper - single node', () => {
     const { startNodeId, caretStart } = doDelete(doc, {
       startNodeId: formattedPId,
       caretStart: 16,
-      caretEnd: formattedPContent.length
+      caretEnd: formattedPContent.length,
     });
     expect(startNodeId).toBe(formattedPId);
     expect(caretStart).toBe(16);
@@ -117,7 +117,7 @@ describe('Document Model -> Delete helper - single node', () => {
     const { startNodeId, caretStart } = doDelete(doc, {
       startNodeId: imgId,
       caretStart: 0,
-      caretEnd: 0
+      caretEnd: 0,
     });
     expect(startNodeId).toBe(pre2Id);
     expect(caretStart).toBe(-1);
@@ -130,7 +130,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
     doDelete(doc, {
       startNodeId: formattedLiId,
       caretStart: 0,
-      caretEnd: 0
+      caretEnd: 0,
     });
     expect(spyAdjust).not.toHaveBeenCalled();
     expect(spyBackspace).toHaveBeenCalledWith(doc, formattedLiId);
@@ -140,7 +140,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
       startNodeId: h2Id,
       caretStart: 6,
       endNodeId: pre2Id,
-      caretEnd: 3
+      caretEnd: 3,
     });
     // 1 for h2 and 1 for pre
     expect(spyAdjust).toHaveBeenCalledTimes(2);
@@ -155,7 +155,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
       startNodeId: firstNodeIdH1,
       caretStart: firstNodeContent.length,
       endNodeId: formattedPId,
-      caretEnd: formattedPContent.length
+      caretEnd: formattedPContent.length,
     });
     expect(spyAdjust).not.toHaveBeenCalled();
     expect(spyBackspace).toHaveBeenCalledWith(doc, firstNodeIdH1);
@@ -169,7 +169,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
       startNodeId: firstNodeIdH1,
       endNodeId: lastNodeIdP,
       caretStart: 0,
-      caretEnd: lastNodeContent.length
+      caretEnd: lastNodeContent.length,
     });
     expect(startNodeId).not.toBe(firstNodeIdH1);
     expect(caretStart).toBe(-1);

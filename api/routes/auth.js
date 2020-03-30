@@ -7,7 +7,7 @@ const { decrypt } = require("../lib/cipher");
 async function parseAuthorizationHeader(req, res, next) {
   try {
     const {
-      headers: { authorization }
+      headers: { authorization },
     } = req;
     // decrypt Authorization header
     // assign 'loggedInUser' session to req for all routes
@@ -57,5 +57,5 @@ async function assertLoggedInUser(req, res, next) {
 
 module.exports = {
   parseAuthorizationHeader,
-  assertLoggedInUser
+  assertLoggedInUser,
 };

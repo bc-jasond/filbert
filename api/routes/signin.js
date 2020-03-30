@@ -33,12 +33,12 @@ async function postSignin(req, res) {
 async function postSigninGoogle(req, res) {
   try {
     const {
-      body: { googleUser: { idToken } = {}, filbertUsername } = {}
+      body: { googleUser: { idToken } = {}, filbertUsername } = {},
     } = req;
     const client = new OAuth2Client(process.env.GOOGLE_API_FILBERT_CLIENT_ID);
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_API_FILBERT_CLIENT_ID
+      audience: process.env.GOOGLE_API_FILBERT_CLIENT_ID,
     });
     // LoginTicket api/node_modules/google-auth-library/build/src/auth/loginticket.d.ts
     const {
@@ -47,7 +47,7 @@ async function postSigninGoogle(req, res) {
       family_name,
       picture,
       iss,
-      exp
+      exp,
     } = ticket.getPayload();
 
     const knex = await getKnex();
@@ -69,7 +69,7 @@ async function postSigninGoogle(req, res) {
       RegExp(/[^0-9a-z]/g).test(filbertUsername)
     ) {
       res.status(400).send({
-        error: `Invalid Username: ${filbertUsername} - Pick a username with at least 5 to 42 characters in length with only lowercase letters and numbers.  No spaces, special characters or emojis or anything of that nature.`
+        error: `Invalid Username: ${filbertUsername} - Pick a username with at least 5 to 42 characters in length with only lowercase letters and numbers.  No spaces, special characters or emojis or anything of that nature.`,
       });
       return;
     }
@@ -77,7 +77,7 @@ async function postSigninGoogle(req, res) {
     [user] = await knex("user").where("username", filbertUsername);
     if (user) {
       res.status(400).send({
-        error: `Invalid Username: ${filbertUsername} - It's already taken!`
+        error: `Invalid Username: ${filbertUsername} - It's already taken!`,
       });
       return;
     }
@@ -90,7 +90,7 @@ async function postSigninGoogle(req, res) {
         given_name,
         family_name,
         picture_url: picture,
-        iss
+        iss,
       })
       .into("user");
 
@@ -105,5 +105,5 @@ async function postSigninGoogle(req, res) {
 
 module.exports = {
   postSignin,
-  postSigninGoogle
+  postSigninGoogle,
 };

@@ -10,7 +10,7 @@ const { saneEnvironmentOrExit } = require("./lib/util");
 
 const {
   parseAuthorizationHeader,
-  assertLoggedInUser
+  assertLoggedInUser,
 } = require("./routes/auth");
 const { postSignin, postSigninGoogle } = require("./routes/signin");
 const { getUser, patchProfile, getStats } = require("./routes/user");
@@ -20,13 +20,13 @@ const {
   getPostById,
   patchPost,
   deletePublishedPost,
-  getSummaryAndPhotoFromContent
+  getSummaryAndPhotoFromContent,
 } = require("./routes/post");
 const {
   postDraft,
   getDrafts,
   publishDraft,
-  deleteDraftAndContentNodes
+  deleteDraftAndContentNodes,
 } = require("./routes/draft");
 const { uploadImage } = require("./routes/image");
 const { getPostForEdit } = require("./routes/edit");
@@ -40,8 +40,8 @@ async function main() {
       //dest: './uploads/', // store in filesystem
       limits: {
         // busboy option
-        fileSize: 16777216 // 16MB in bytes max file size
-      }
+        fileSize: 16777216, // 16MB in bytes max file size
+      },
     });
 
     const app = express();
@@ -118,7 +118,7 @@ saneEnvironmentOrExit([
   "ENCRYPTION_KEY",
   "GOOGLE_API_FILBERT_CLIENT_ID",
   "LINODE_OBJECT_STORAGE_ACCESS_KEY",
-  "LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY"
+  "LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY",
 ]);
 
 // from figlet

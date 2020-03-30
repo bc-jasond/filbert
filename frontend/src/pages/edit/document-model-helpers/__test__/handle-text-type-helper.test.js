@@ -1,7 +1,7 @@
 import {
   NODE_TYPE_LI,
   NODE_TYPE_P,
-  NODE_TYPE_PRE
+  NODE_TYPE_PRE,
 } from '../../../../common/constants';
 import { overrideConsole } from '../../../../common/test-helpers';
 
@@ -10,7 +10,7 @@ import * as selectionHelpers from '../../selection-helpers';
 import {
   handleBackspaceTextType,
   handleEnterTextType,
-  handlePasteTextType
+  handlePasteTextType,
 } from '../handle-text-type';
 
 import {
@@ -25,7 +25,7 @@ import {
   firstNodeContent,
   formattedLiContent,
   formattedPContent,
-  formattedPId
+  formattedPId,
 } from '../../../../common/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
@@ -35,7 +35,7 @@ const spySplit = jest
   .spyOn(selectionHelpers, 'splitSelectionsAtCaretOffset')
   .mockImplementation((...args) => ({
     leftNode: args[0],
-    rightNode: args[1]
+    rightNode: args[1],
   }));
 const spyAdjust = jest
   .spyOn(selectionHelpers, 'adjustSelectionOffsetsAndCleanup')

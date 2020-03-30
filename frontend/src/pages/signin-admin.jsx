@@ -14,7 +14,7 @@ import {
   InputContainer,
   Label,
   MessageContainer,
-  SuccessMessage
+  SuccessMessage,
 } from '../common/components/shared-styled-components';
 
 import { signin } from '../common/fetch';
@@ -53,7 +53,7 @@ export default class SignInAdmin extends React.Component {
       password: '',
       error: null,
       success: null,
-      shouldRedirect: false
+      shouldRedirect: false,
     };
   }
 
@@ -63,16 +63,16 @@ export default class SignInAdmin extends React.Component {
     }
   }
 
-  doLogin = async event => {
+  doLogin = async (event) => {
     event.preventDefault();
     try {
       const {
-        state: { username, password }
+        state: { username, password },
       } = this;
       await signin(username, password);
       this.setState({
         error: null,
-        success: 'All set 👍'
+        success: 'All set 👍',
       });
       setTimeout(() => {
         this.setState({ shouldRedirect: true }, () => {
@@ -84,22 +84,22 @@ export default class SignInAdmin extends React.Component {
       console.error('Login Error: ', error);
       this.setState({
         error,
-        success: null
+        success: null,
       });
     }
   };
 
-  updatePassword = event => {
+  updatePassword = (event) => {
     this.setState({ password: event.target.value, error: null });
   };
 
-  updateUsername = event => {
+  updateUsername = (event) => {
     this.setState({ username: event.target.value, error: null });
   };
 
   render() {
     const {
-      state: { error, success, shouldRedirect }
+      state: { error, success, shouldRedirect },
     } = this;
     if (shouldRedirect) {
       return <Redirect push to="/private" />;

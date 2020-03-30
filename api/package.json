@@ -11,15 +11,14 @@
     "start": "node filbert-api.js",
     "docker-build": "docker build --tag=filbert-api:`git log -1 --pretty=format:%h` .",
     "docker-run": "docker run -p 3001:3001 filbert-api:`git log -1 --pretty=format:%h`",
-    "pretty": "prettier --parser=babel --write \"**/*.js\"",
-    "pretty-ci": "prettier --parser=babel --check -l \"**/*.js\"",
+    "pretty": "prettier --parser=babel --single-quote --write \"**/*.js\"",
+    "pretty-ci": "prettier --parser=babel --single-quote --check -l \"**/*.js\"",
     "cron": "nohup node filbert-cron.js >> /var/log/filbert-cron.log &",
     "dump": "node filbert-mysqldump-adhoc.js",
     "restore": "node filbert-restore-mysql.js"
   },
   "devDependencies": {
-    "nodemon": "^1.18.11",
-    "prettier": "^1.19.1"
+    "nodemon": "^1.18.11"
   },
   "dependencies": {
     "aws-sdk": "^2.597.0",
@@ -37,6 +36,7 @@
     "mysql2": "^1.6.5",
     "node-cron": "^2.0.3",
     "ora": "^4.0.3",
+    "prettier": "^2.0.2",
     "sharp": "^0.23.1"
   }
 }

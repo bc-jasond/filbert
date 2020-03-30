@@ -12,7 +12,7 @@ export const success = (...args) => console.log(chalk.green(...args));
 
 export function saneEnvironmentOrExit(requiredVars) {
   const { env } = process;
-  const missingEnvVariables = requiredVars.filter(key => !env[key] && key);
+  const missingEnvVariables = requiredVars.filter((key) => !env[key] && key);
   if (missingEnvVariables.length > 0) {
     error(
       `❌ process.env not sane!\n\nThe following variables are missing:\n${missingEnvVariables.join(
@@ -54,7 +54,7 @@ export function getFirstNode(nodesById) {
       nextSeen.add(node.next_sibling_id);
     }
   }
-  const difference = new Set([...idSeen].filter(id => !nextSeen.has(id)));
+  const difference = new Set([...idSeen].filter((id) => !nextSeen.has(id)));
   if (difference.size !== 1) {
     error(
       "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",

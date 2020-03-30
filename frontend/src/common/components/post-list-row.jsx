@@ -9,7 +9,7 @@ import Image from './image';
 import { AuthorExpand, FlexGrid } from './shared-styled-components';
 import {
   metaFontMixin,
-  navButtonMixin
+  navButtonMixin,
 } from './shared-styled-components-mixins';
 
 const PostRow = styled(FlexGrid)`
@@ -49,7 +49,7 @@ const PostActionContainer = styled.div`
   position: relative;
   min-height: 18px;
   display: inline-block;
-  padding-left: ${p => (p.noPadding ? '0' : '8px')};
+  padding-left: ${(p) => (p.noPadding ? '0' : '8px')};
   &:first-of-type {
     padding-left: 0;
   }

@@ -18,12 +18,12 @@ import {
   Col,
   FlexGrid,
   H3Styled,
-  SiteInfo
+  SiteInfo,
 } from '../common/components/shared-styled-components';
 import {
   AbstractLink,
   Article,
-  StyledHeadingA
+  StyledHeadingA,
 } from '../common/components/layout-styled-components';
 import Document from '../common/components/document.component';
 import PostAvatar from '../common/components/post-avatar';
@@ -128,7 +128,7 @@ export default class ViewPost extends React.PureComponent {
       post: Map(),
       nodesById: Map(),
       shouldShow404: false,
-      shouldRedirectToHome: false
+      shouldRedirectToHome: false,
     };
   }
 
@@ -149,7 +149,7 @@ export default class ViewPost extends React.PureComponent {
   async loadPost() {
     const {
       error,
-      data: { prevPost, nextPost, post, contentNodes } = {}
+      data: { prevPost, nextPost, post, contentNodes } = {},
     } = await apiGet(`/post/${this.props?.params?.canonical}`);
     if (error) {
       console.error(error);
@@ -164,7 +164,7 @@ export default class ViewPost extends React.PureComponent {
       nextPost: fromJS(nextPost),
       post: fromJS(post),
       nodesById: fromJS(contentNodes, reviver),
-      shouldShow404: false
+      shouldShow404: false,
     });
   }
 
@@ -176,9 +176,9 @@ export default class ViewPost extends React.PureComponent {
         post,
         nodesById,
         shouldShow404,
-        shouldRedirectToHome
+        shouldRedirectToHome,
       },
-      props: { session, setSession }
+      props: { session, setSession },
     } = this;
 
     if (shouldShow404) return <Page404 session={session} />;

@@ -5,7 +5,7 @@ import { boxShadow, darkGrey } from '../css';
 import { AuthorExpand, ProfileImg } from './shared-styled-components';
 import {
   italicMixin,
-  metaContentMixin
+  metaContentMixin,
 } from './shared-styled-components-mixins';
 
 const ListAvatar = styled.div`

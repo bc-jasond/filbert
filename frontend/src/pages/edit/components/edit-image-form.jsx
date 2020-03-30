@@ -8,7 +8,7 @@ import {
   DarkInput,
   IconButton,
   LilSassyMenu,
-  PointClip
+  PointClip,
 } from '../../../common/components/shared-styled-components';
 import IconImageSvg from '../../../../assets/icons/image.svg';
 import IconRotateSvg from '../../../../assets/icons/rotate.svg';
@@ -18,7 +18,7 @@ import { svgIconMixin } from '../../../common/components/shared-styled-component
 import {
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
-  KEYCODE_SPACE
+  KEYCODE_SPACE,
 } from '../../../common/constants';
 import { uploadImage } from '../../../common/fetch';
 import { stopAndPrevent } from '../../../common/utils';
@@ -26,7 +26,7 @@ import {
   caretIsAtBeginningOfInput,
   caretIsAtEndOfInput,
   focusAndScrollSmooth,
-  getImageFileFormData
+  getImageFileFormData,
 } from '../../../common/dom';
 
 const IconImage = styled(IconImageSvg)`
@@ -53,11 +53,11 @@ export const EditImageMenu = styled(LilSassyMenu)`
   display: flex;
   align-items: center;
   justify-items: center;
-  top: ${p => p.top + 10}px;
-  width: ${p => (p.shouldHideCaption ? '162px' : '500px')};
+  top: ${(p) => p.top + 10}px;
+  width: ${(p) => (p.shouldHideCaption ? '162px' : '500px')};
   margin: 0 auto;
-  left: ${p => (p.left ? `${p.left}px` : '50%')};
-  margin-left: ${p => (p.shouldHideCaption ? '-81px' : '-250px')};
+  left: ${(p) => (p.left ? `${p.left}px` : '50%')};
+  margin-left: ${(p) => (p.shouldHideCaption ? '-81px' : '-250px')};
 `;
 export const ImageCaptionInput = styled(DarkInput)`
   margin: 0 8px;
@@ -80,26 +80,26 @@ export default class EditImageForm extends React.Component {
   menuItems = [
     {
       Component: IconImage,
-      onClick: () => this.fileInputRef?.current?.click?.()
+      onClick: () => this.fileInputRef?.current?.click?.(),
     },
     {
       Component: IconRotate,
-      onClick: () => this.imageRotate()
+      onClick: () => this.imageRotate(),
     },
     { Component: PlusPx, onClick: () => this.imageResize(true) },
-    { Component: MinusPx, onClick: () => this.imageResize(false) }
+    { Component: MinusPx, onClick: () => this.imageResize(false) },
   ];
 
   constructor(props) {
     super(props);
     this.state = {
-      currentIdx: this.captionInputIdx
+      currentIdx: this.captionInputIdx,
     };
   }
 
   componentDidMount() {
     const {
-      props: { nodeModel }
+      props: { nodeModel },
     } = this;
     if (this.captionRef) {
       focusAndScrollSmooth(nodeModel.get('id'), this.captionRef?.current);
@@ -109,7 +109,7 @@ export default class EditImageForm extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     const {
       state: { currentIdx },
-      props: { nodeModel, windowEvent }
+      props: { nodeModel, windowEvent },
     } = this;
     const { currentIdx: prevIdx } = prevState;
     if (windowEvent && windowEvent !== prevProps.windowEvent) {
@@ -128,7 +128,7 @@ export default class EditImageForm extends React.Component {
 
   replaceImageFile = async ([firstFile]) => {
     const {
-      props: { post, nodeModel, update }
+      props: { post, nodeModel, update },
     } = this;
     if (!firstFile) {
       // TODO: user hit cancel in the file dialog?
@@ -149,7 +149,7 @@ export default class EditImageForm extends React.Component {
 
   imageRotate = () => {
     const {
-      props: { nodeModel, update }
+      props: { nodeModel, update },
     } = this;
     const currentRotationDegrees = nodeModel.getIn(
       ['meta', 'rotationDegrees'],
@@ -164,9 +164,9 @@ export default class EditImageForm extends React.Component {
     update?.(updatedNodeModel);
   };
 
-  imageResize = shouldGetBigger => {
+  imageResize = (shouldGetBigger) => {
     const {
-      props: { nodeModel, update }
+      props: { nodeModel, update },
     } = this;
     const maxAllowed = 1000;
     const resizeAmount = 0.1; // +/- by 10% at a time
@@ -213,16 +213,16 @@ export default class EditImageForm extends React.Component {
     update?.(updatedNodeModel);
   };
 
-  updateCaption = evt => {
+  updateCaption = (evt) => {
     const {
-      props: { nodeModel, update }
+      props: { nodeModel, update },
     } = this;
     update?.(nodeModel.setIn(['meta', 'caption'], evt.target.value));
   };
 
-  handleKeyDown = evt => {
+  handleKeyDown = (evt) => {
     const {
-      state: { currentIdx }
+      state: { currentIdx },
     } = this;
 
     if (
@@ -258,7 +258,7 @@ export default class EditImageForm extends React.Component {
   render() {
     const {
       props: { offsetTop, offsetLeft, nodeModel, shouldHideCaption },
-      state: { currentIdx }
+      state: { currentIdx },
     } = this;
 
     return (
@@ -291,7 +291,7 @@ export default class EditImageForm extends React.Component {
         <HiddenFileInput
           name="hidden-image-upload-file-input"
           type="file"
-          onChange={e => {
+          onChange={(e) => {
             this.replaceImageFile(e.target.files);
           }}
           accept="image/*"

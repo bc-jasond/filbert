@@ -8,7 +8,7 @@ import { Article } from '../common/components/layout-styled-components';
 import {
   NODE_TYPE_IMAGE,
   PAGE_NAME_VIEW,
-  POST_ACTION_REDIRECT_TIMEOUT
+  POST_ACTION_REDIRECT_TIMEOUT,
 } from '../common/constants';
 import { ease, grey, viewport12, viewport7 } from '../common/css';
 import { focusAndScrollSmooth, getNextFromUrl } from '../common/dom';
@@ -31,7 +31,7 @@ import {
   Label,
   MessageContainer,
   SuccessMessage,
-  TextArea
+  TextArea,
 } from '../common/components/shared-styled-components';
 import Toggle from '../common/components/toggle';
 import EditImageForm from './edit/components/edit-image-form';
@@ -40,7 +40,7 @@ import {
   confirmPromise,
   formatPostDate,
   getMapWithId,
-  nodeIsValid
+  nodeIsValid,
 } from '../common/utils';
 import Page404 from './404';
 import Footer from './footer';
@@ -62,7 +62,7 @@ const MiddleWrapper = styled.div`
 const InputContainerStyled = styled(InputContainer)`
   opacity: 1;
   ${ease('opacity')};
-  ${p =>
+  ${(p) =>
     p.shouldHide &&
     css`
       opacity: 0.4;
@@ -105,7 +105,7 @@ export default class Publish extends React.Component {
       error: null,
       successMessage: null,
       shouldShow404: false,
-      redirectUrl: false
+      redirectUrl: false,
     };
   }
 
@@ -118,7 +118,7 @@ export default class Publish extends React.Component {
 
   async componentDidUpdate(prevProps) {
     const {
-      state: { post }
+      state: { post },
     } = this;
     const params = this.props?.params;
     const id = params?.id;
@@ -132,7 +132,7 @@ export default class Publish extends React.Component {
   async componentWillUnmount() {
     this.state = {
       post: Map(),
-      postSummary: {}
+      postSummary: {},
     };
     window.removeEventListener('resize', this.positionImageMenu);
   }
@@ -166,7 +166,7 @@ export default class Publish extends React.Component {
     const postSummary = fromJS(await this.loadPostSummary());
     post = this.syncTitleAndAbstract(post, postSummary);
     post = this.syncImage(post, postSummary);
-    return new Promise(resolve =>
+    return new Promise((resolve) =>
       this.setState({ post, postSummary, shouldShow404: false }, resolve)
     );
   }
@@ -202,7 +202,7 @@ export default class Publish extends React.Component {
 
   toggleTitleAndAbstract = () => {
     const {
-      state: { post, postSummary }
+      state: { post, postSummary },
     } = this;
     const current = post.getIn(['meta', 'syncTitleAndAbstract']);
     let updatedPost = post.setIn(['meta', 'syncTitleAndAbstract'], !current);
@@ -212,7 +212,7 @@ export default class Publish extends React.Component {
 
   toggleImage = () => {
     const {
-      state: { post, postSummary }
+      state: { post, postSummary },
     } = this;
     const current = post.getIn(['meta', 'syncTopPhoto']);
     let updatedPost = post.setIn(['meta', 'syncTopPhoto'], !current);
@@ -220,35 +220,35 @@ export default class Publish extends React.Component {
     this.updatePost(updatedPost);
   };
 
-  updatePost = post => {
+  updatePost = (post) => {
     this.setState({
       post,
       error: null,
-      successMessage: null
+      successMessage: null,
     });
   };
 
   savePost = async () => {
     const {
-      state: { post }
+      state: { post },
     } = this;
     const { error } = await apiPatch(`/post/${post.get('id')}`, {
       title: post.get('title'),
       canonical: post.get('canonical'),
       abstract: post.get('abstract'),
-      meta: post.get('meta')
+      meta: post.get('meta'),
     });
     if (error) {
       this.setState({
         successMessage: null,
-        error
+        error,
       });
       return { error };
     }
     this.setState(
       {
         successMessage: true,
-        error: null
+        error: null,
       },
       () => {
         setTimeout(
@@ -262,7 +262,7 @@ export default class Publish extends React.Component {
 
   publishPost = async () => {
     const {
-      state: { post }
+      state: { post },
     } = this;
 
     const didConfirm = await confirmPromise(
@@ -285,13 +285,13 @@ export default class Publish extends React.Component {
     this.setState(
       {
         successMessage: true,
-        error: null
+        error: null,
       },
       () => {
         setTimeout(
           () =>
             this.setState({
-              redirectUrl: `/p/${post.get('canonical')}`
+              redirectUrl: `/p/${post.get('canonical')}`,
             }),
           POST_ACTION_REDIRECT_TIMEOUT
         );
@@ -301,7 +301,7 @@ export default class Publish extends React.Component {
 
   deletePost = async () => {
     const {
-      state: { post }
+      state: { post },
     } = this;
     if (post.get('published')) {
       const didConfim = await confirmPromise(
@@ -332,9 +332,9 @@ export default class Publish extends React.Component {
     this.setState({ redirectUrl: '/' });
   };
 
-  updateImage = imageNode => {
+  updateImage = (imageNode) => {
     const {
-      state: { post }
+      state: { post },
     } = this;
     let imageNodeUpdated = imageNode;
     if (!nodeIsValid(imageNode)) {
@@ -343,7 +343,7 @@ export default class Publish extends React.Component {
       );
     }
     this.setState({
-      post: post.setIn(['meta', 'imageNode'], imageNodeUpdated)
+      post: post.setIn(['meta', 'imageNode'], imageNodeUpdated),
     });
   };
 
@@ -357,8 +357,8 @@ export default class Publish extends React.Component {
         successMessage,
         shouldShow404,
         imageMenuOffsetTop,
-        imageMenuOffsetLeft
-      }
+        imageMenuOffsetLeft,
+      },
     } = this;
     const imageNode = post.getIn(['meta', 'imageNode']) || Map();
     const syncTitleAndAbstract = post.getIn(['meta', 'syncTitleAndAbstract']);
@@ -396,7 +396,7 @@ export default class Publish extends React.Component {
                     disabled={
                       post.getIn(['meta', 'syncTitleAndAbstract']) && 'disabled'
                     }
-                    onChange={e => {
+                    onChange={(e) => {
                       this.updatePost(post.set('title', e.target.value));
                     }}
                     error={error?.title}
@@ -412,7 +412,7 @@ export default class Publish extends React.Component {
                     type="text"
                     value={post.get('canonical')}
                     disabled={post.get('published') && 'disabled'}
-                    onChange={e => {
+                    onChange={(e) => {
                       this.updatePost(post.set('canonical', e.target.value));
                     }}
                     error={error?.canonical}
@@ -431,7 +431,7 @@ export default class Publish extends React.Component {
                     disabled={
                       post.getIn(['meta', 'syncTitleAndAbstract']) && 'disabled'
                     }
-                    onChange={e => {
+                    onChange={(e) => {
                       this.updatePost(post.set('abstract', e.target.value));
                     }}
                     error={error?.abstract}

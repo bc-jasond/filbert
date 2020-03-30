@@ -10,11 +10,11 @@ function sendSession(res, user) {
       familyName: user.family_name,
       pictureUrl: user.picture_url,
       created: user.created,
-      iss: user.iss
-    }
+      iss: user.iss,
+    },
   });
 }
 
 module.exports = {
-  sendSession
+  sendSession,
 };

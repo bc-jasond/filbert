@@ -15,7 +15,7 @@ import {
   Label,
   MessageContainer,
   ProfileImg,
-  SuccessMessage
+  SuccessMessage,
 } from '../common/components/shared-styled-components';
 import { darkGrey } from '../common/css';
 import { loadScript } from '../common/dom';
@@ -107,7 +107,7 @@ export default class SignIn extends React.Component {
       shouldRedirect: false,
       username: '',
       googleUser: {},
-      shouldShowUsernameInput: false
+      shouldShowUsernameInput: false,
     };
   }
 
@@ -139,16 +139,16 @@ export default class SignIn extends React.Component {
     delete window.initThaGoog;
   }
 
-  setGoogleUser = async user => {
+  setGoogleUser = async (user) => {
     const googleUser = getGoogleUser(user);
-    return new Promise(resolve =>
+    return new Promise((resolve) =>
       this.setState({ googleUser }, () => resolve(googleUser))
     );
   };
 
-  doLoginGoogle = async evt => {
+  doLoginGoogle = async (evt) => {
     const {
-      state: { googleUser, username }
+      state: { googleUser, username },
     } = this;
     let currentUser;
     // evt is a 'submit' event, we don't want the page to reload
@@ -173,7 +173,7 @@ export default class SignIn extends React.Component {
       this.setState({
         success: null,
         error: error?.error || error?.message || 'Error',
-        loading: false
+        loading: false,
       });
       return;
     }
@@ -183,7 +183,7 @@ export default class SignIn extends React.Component {
           shouldShowUsernameInput: true,
           error: null,
           success: null,
-          loading: false
+          loading: false,
         },
         () => {
           usernameRef.current.focus();
@@ -207,12 +207,12 @@ export default class SignIn extends React.Component {
     this.setState({ googleUser: {}, loading: false });
   };
 
-  updateUsername = event => {
+  updateUsername = (event) => {
     const {
-      target: { value }
+      target: { value },
     } = event;
     const {
-      state: { username }
+      state: { username },
     } = this;
     const newUsername = value.replace(/[^0-9a-z]/g, '');
     if (newUsername === username) {
@@ -226,7 +226,7 @@ export default class SignIn extends React.Component {
         this.setState({
           error: `${newUsername} is too short.  Pick a username between 5 and 42 characters.`,
           success: null,
-          loading: false
+          loading: false,
         });
         return;
       }
@@ -234,7 +234,7 @@ export default class SignIn extends React.Component {
         this.setState({
           error: `${newUsername} is too long.  Pick a username between 5 and 42 characters.`,
           success: null,
-          loading: false
+          loading: false,
         });
         return;
       }
@@ -245,14 +245,14 @@ export default class SignIn extends React.Component {
           this.setState({
             success: `"${newUsername}" is available 👍`,
             error: null,
-            loading: false
+            loading: false,
           });
           return;
         }
         this.setState({
           error: `${newUsername} is taken`,
           success: null,
-          loading: false
+          loading: false,
         });
       }, 750);
     });
@@ -267,8 +267,8 @@ export default class SignIn extends React.Component {
         shouldRedirect,
         shouldShowUsernameInput,
         username,
-        googleUser: { name, givenName, imageUrl, email }
-      }
+        googleUser: { name, givenName, imageUrl, email },
+      },
     } = this;
     if (shouldRedirect) {
       const queryParams = new URLSearchParams(window.location.search);

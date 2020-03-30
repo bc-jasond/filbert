@@ -7,16 +7,16 @@ export function overrideConsole() {
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
-    error: jest.fn()
+    error: jest.fn(),
   };
 }
 
 export function mockLocalStorage() {
   global.localStorageStorage = {};
   global.localStorage = {
-    getItem: k => global.localStorageStorage[k],
+    getItem: (k) => global.localStorageStorage[k],
     setItem: (k, v) => (global.localStorageStorage[k] = v),
-    clear: () => (global.localStorageStorage = {})
+    clear: () => (global.localStorageStorage = {}),
   };
 }
 
@@ -27,7 +27,7 @@ export function makeSelections(values) {
   do {
     let [currentLength, ...currentValues] = values.shift();
     current[SELECTION_LENGTH] = currentLength;
-    currentValues.forEach(v => {
+    currentValues.forEach((v) => {
       if (typeof v === 'object') {
         current[v.key] = v.value;
       } else {

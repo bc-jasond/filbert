@@ -25,7 +25,7 @@ const SpinnerStyled = styled(Spinner)`
   width: 32px;
   height: 32px;
   ${bezier('all')}
-  ${p =>
+  ${(p) =>
     p.loading &&
     `
     opacity: 1;
@@ -39,7 +39,7 @@ const ButtonLabel = styled.div`
   font-size: larger;
   color: inherit;
   ${bezier('opacity')}
-  ${p =>
+  ${(p) =>
     p.loading &&
     css`
       opacity: 0;
@@ -54,22 +54,22 @@ const Button = styled.button`
   position: relative;
   width: 100%;
   margin-bottom: 16px;
-  ${p =>
+  ${(p) =>
     p.primary &&
     css`
       border: 1px solid ${mediumGrey};
     `};
   ${bezier('all')};
   &:hover {
-    ${p =>
+    ${(p) =>
       p.primary &&
       css`
         border-color: transparent;
       `};
-    background-color: ${p => p.primary && 'white'};
-    color: ${p => p.primary && darkGrey};
+    background-color: ${(p) => p.primary && 'white'};
+    color: ${(p) => p.primary && darkGrey};
   }
-  ${p =>
+  ${(p) =>
     p.disabled &&
     css`
       background-color: ${mediumGrey};
@@ -77,7 +77,7 @@ const Button = styled.button`
         background-color: ${mediumGrey};
       }
     `}
-  ${p =>
+  ${(p) =>
     p.loading &&
     css`
       cursor: not-allowed;
@@ -88,7 +88,7 @@ const Button = styled.button`
     `}
 `;
 
-export default props => {
+export default (props) => {
   const {
     label,
     loading,
@@ -96,7 +96,7 @@ export default props => {
     children,
     primary,
     onClick,
-    className
+    className,
   } = props;
   return (
     <Button

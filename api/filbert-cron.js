@@ -9,13 +9,13 @@ const {
   uploadFileToBucket,
   listKeysForBucket,
   copyKeyFromBucketToBucket,
-  deleteKeysForBucket
+  deleteKeysForBucket,
 } = require("./lib/s3");
 const { makeMysqlDump } = require("./lib/mysql");
 const {
   fileUploadStagingDirectory,
   dailyBucketName,
-  hourlyBucketName
+  hourlyBucketName,
 } = require("./lib/constants");
 const { saneEnvironmentOrExit, assertDir, rmFile } = require("./lib/util");
 
@@ -63,9 +63,9 @@ async function filbertMysqldumpToS3Job() {
     // assumes the files are named by when they were created
     if (filesInHourly.length < numberOfHourlyBackupsToKeep) {
       console.log(
-        `finished filbertMysqldumpToS3Job(). Took ${Math.round(
-          performance.now() - startTime
-        ) / 1000} seconds.\n`
+        `finished filbertMysqldumpToS3Job(). Took ${
+          Math.round(performance.now() - startTime) / 1000
+        } seconds.\n`
       );
       isRunning = false;
       return;
@@ -108,9 +108,9 @@ async function filbertMysqldumpToS3Job() {
       await deleteKeysForBucket(hourlyBucketName, hourlyBackupsToDelete);
     }
     console.log(
-      `finished filbertMysqldumpToS3Job(). Took ${Math.round(
-        performance.now() - startTime
-      ) / 1000} seconds.\n`
+      `finished filbertMysqldumpToS3Job(). Took ${
+        Math.round(performance.now() - startTime) / 1000
+      } seconds.\n`
     );
     isRunning = false;
   } catch (err) {
@@ -124,7 +124,7 @@ saneEnvironmentOrExit([
   "MYSQL_ROOT_PASSWORD",
   "PERCONA_CONTAINER_NAME",
   "LINODE_OBJECT_STORAGE_ACCESS_KEY",
-  "LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY"
+  "LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY",
 ]);
 
 //filbertMysqldumpToS3Job();

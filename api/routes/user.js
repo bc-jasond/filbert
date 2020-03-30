@@ -6,7 +6,7 @@ async function getUser(req, res) {
   const {
     query: { forSignup },
     params: { username },
-    loggedInUser
+    loggedInUser,
   } = req;
   if (!username) {
     res.status(404).send({});
@@ -64,7 +64,7 @@ async function getUser(req, res) {
 async function patchProfile(req, res) {
   const {
     body: { profileIsPublic, statsArePublic } = {},
-    loggedInUser: { id }
+    loggedInUser: { id },
   } = req;
   let updateCount = 0;
   const update = {};
@@ -89,7 +89,7 @@ async function getStats(req, res, next) {
   try {
     const {
       params: { username },
-      loggedInUser
+      loggedInUser,
     } = req;
     const start = performance.now();
     const knex = await getKnex();
@@ -121,7 +121,7 @@ async function getStats(req, res, next) {
       if (!matched) {
         return;
       }
-      matched.forEach(word => {
+      matched.forEach((word) => {
         stats.totalWords += 1;
         const lc = word.toLowerCase();
         if (lc.length > 2 && !["the", "and"].includes(lc)) {
@@ -136,17 +136,14 @@ async function getStats(req, res, next) {
         }
       });
     };
-    const addChars = str => {
+    const addChars = (str) => {
       stats.totalCharacters += str.length;
     };
-    const getFormattedDate = date =>
+    const getFormattedDate = (date) =>
       `${date.getFullYear()}${date
         .getMonth()
         .toString()
-        .padStart(2, "0")}${date
-        .getDate()
-        .toString()
-        .padStart(2, "0")}`;
+        .padStart(2, "0")}${date.getDate().toString().padStart(2, "0")}`;
 
     const seenDays = new Set();
     const allPosts = await knex("post").where({ user_id: userId });
@@ -184,7 +181,7 @@ async function getStats(req, res, next) {
         content,
         meta: { caption = "", quote = "", author = "", context = "" },
         created,
-        updated
+        updated,
       }) => {
         seenDays.add(getFormattedDate(created));
         seenDays.add(getFormattedDate(updated));
@@ -230,7 +227,7 @@ async function getStats(req, res, next) {
     let [currentEnd] = dates;
     let [longestStart] = dates;
     let [longestEnd] = dates;
-    dates.forEach(date => {
+    dates.forEach((date) => {
       if (date - currentEnd > 1) {
         if (currentEnd - currentStart >= longestEnd - longestStart) {
           longestStart = currentStart;
@@ -255,8 +252,9 @@ async function getStats(req, res, next) {
     stats.longestStreakEnd = longestEnd;
 
     console.info(
-      `User Stats for ${username} took ${Math.round(performance.now() - start) /
-        1000} seconds.`
+      `User Stats for ${username} took ${
+        Math.round(performance.now() - start) / 1000
+      } seconds.`
     );
     res.send(stats);
   } catch (err) {
@@ -267,5 +265,5 @@ async function getStats(req, res, next) {
 module.exports = {
   getUser,
   patchProfile,
-  getStats
+  getStats,
 };

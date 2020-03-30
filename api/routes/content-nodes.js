@@ -1,14 +1,14 @@
 const {
   bulkContentNodeDelete,
-  bulkContentNodeUpsert
+  bulkContentNodeUpsert,
 } = require("../lib/mysql");
 /**
  * takes a list of 1 or more content nodes to update and/or delete for a post during edit
  */
 async function postContentNodes(req, res) {
   try {
-    const updates = req.body.filter(change => change[1].action === "update");
-    const deletes = req.body.filter(change => change[1].action === "delete");
+    const updates = req.body.filter((change) => change[1].action === "update");
+    const deletes = req.body.filter((change) => change[1].action === "delete");
     // TODO: put in transaction
     // TODO: validate updates, trim invalid selections, orphaned nodes, etc.
     const updateResult = await bulkContentNodeUpsert(updates);
@@ -21,5 +21,5 @@ async function postContentNodes(req, res) {
 }
 
 module.exports = {
-  postContentNodes
+  postContentNodes,
 };

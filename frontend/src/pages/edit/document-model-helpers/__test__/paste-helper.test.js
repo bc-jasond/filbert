@@ -5,7 +5,7 @@ import * as textTypeHelpers from '../handle-text-type';
 import {
   testPostWithAllTypesJS,
   imgId,
-  firstNodeIdH1
+  firstNodeIdH1,
 } from '../../../../common/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;
@@ -14,7 +14,7 @@ const doc = new DocumentModel();
 
 const mockText = 'some sample string';
 const clipboardDataMock = {
-  getData: () => mockText
+  getData: () => mockText,
 };
 
 beforeEach(() => {

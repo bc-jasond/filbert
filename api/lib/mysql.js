@@ -13,10 +13,10 @@ export async function getKnex() {
         host: process.env.NODE_ENV === "production" ? "db" : "localhost", // docker-compose.yml service name
         user: "root",
         password: process.env.MYSQL_ROOT_PASSWORD,
-        database: "filbert"
+        database: "filbert",
       },
       asyncStackTraces: true,
-      debug: true
+      debug: true,
     });
   }
   return knexConnection;
@@ -108,7 +108,7 @@ export async function bulkContentNodeUpsert(records) {
       node.next_sibling_id || null,
       node.type,
       node.content || "",
-      JSON.stringify(node.meta || {})
+      JSON.stringify(node.meta || {}),
     ]);
   });
 
@@ -119,7 +119,7 @@ export async function bulkContentNodeDelete(records) {
   // delete all records WHERE id IN (...recordIds) OR WHERE parent_id IN (...recordIds)
   if (records.length === 0) return;
   const postId = records[0][1].post_id;
-  const recordIds = records.map(r => r[0]);
+  const recordIds = records.map((r) => r[0]);
   const knexInstance = await getKnex();
   return knexInstance("content_node")
     .whereIn("id", recordIds)
@@ -139,10 +139,7 @@ export async function makeMysqlDump(now, stagingDirectory) {
     .padStart(2, "0")}${now
     .getMinutes()
     .toString()
-    .padStart(2, "0")}${now
-    .getSeconds()
-    .toString()
-    .padStart(2, "0")}.sql`;
+    .padStart(2, "0")}${now.getSeconds().toString().padStart(2, "0")}.sql`;
   const currentFileAndPath = `${stagingDirectory}/${currentBackupFilename}`;
   // TODO: anyone that can run a `ps -A` can see this password... 🤦‍♀️
   //  use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf

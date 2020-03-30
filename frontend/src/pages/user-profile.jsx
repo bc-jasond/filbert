@@ -7,7 +7,7 @@ import {
   ContentSection,
   H1Styled,
   H2Styled,
-  ProfileImg
+  ProfileImg,
 } from '../common/components/shared-styled-components';
 import { authorExpandMixin } from '../common/components/shared-styled-components-mixins';
 
@@ -15,7 +15,7 @@ import { apiGet, apiPatch } from '../common/fetch';
 import {
   formatNumber,
   formatPostDate,
-  formatStreakDate
+  formatStreakDate,
 } from '../common/utils';
 import Page404 from './404';
 import Footer from './footer';
@@ -63,7 +63,7 @@ export default class UserProfile extends React.Component {
     this.state = {
       shouldShow404: false,
       userIsMe: false,
-      user: null
+      user: null,
     };
   }
 
@@ -75,8 +75,8 @@ export default class UserProfile extends React.Component {
     const {
       props: {
         params: { username },
-        session
-      }
+        session,
+      },
     } = this;
     if (!/^@[0-9a-z]+/.test(username)) {
       this.setState({ shouldShow404: true });
@@ -109,7 +109,7 @@ export default class UserProfile extends React.Component {
 
   updateProfilePublic = async () => {
     const {
-      state: { user }
+      state: { user },
     } = this;
     this.setState(
       { user: { ...user, profileIsPublic: !user?.profileIsPublic } },
@@ -122,7 +122,7 @@ export default class UserProfile extends React.Component {
 
   updateStatsArePublic = async () => {
     const {
-      state: { user }
+      state: { user },
     } = this;
     this.setState(
       { user: { ...user, statsArePublic: !user?.statsArePublic } },
@@ -136,7 +136,7 @@ export default class UserProfile extends React.Component {
   render() {
     const {
       state: { shouldShow404, user, userIsMe, stats },
-      props: { session, setSession }
+      props: { session, setSession },
     } = this;
     if (shouldShow404) return <Page404 session={session} />;
 

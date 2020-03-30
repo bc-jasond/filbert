@@ -7,7 +7,7 @@ export default class Pre extends React.PureComponent {
   render() {
     console.debug('Pre RENDER', this);
     const {
-      props: { node }
+      props: { node },
     } = this;
     return (
       <PreStyled data-type={NODE_TYPE_PRE} name={`${node.get('id')}`}>

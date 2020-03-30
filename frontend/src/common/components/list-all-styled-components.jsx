@@ -29,7 +29,7 @@ export const BaseRow = styled.div`
   @media (min-width: ${viewport7}) {
     margin: 0 auto;
   }
-  ${p =>
+  ${(p) =>
     p.loading &&
     css`
       opacity: 0.3;
@@ -62,7 +62,7 @@ export const FilterWithInput = styled(Filter)`
   border: 1px solid transparent;
   border-right: none;
   margin-right: 0;
-  ${p =>
+  ${(p) =>
     p.isOpen &&
     css`
       border: 1px solid ${lightBlue};
@@ -82,7 +82,7 @@ export const FilterInput = styled(Input)`
   border: 1px solid ${lightBlue};
   border-left: none;
   border-radius: 0 26px 26px 0;
-  ${p =>
+  ${(p) =>
     p.shouldHide &&
     css`
       opacity: 0;

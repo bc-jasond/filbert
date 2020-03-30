@@ -3,13 +3,13 @@ import {
   NODE_TYPE_H2,
   NODE_TYPE_LI,
   NODE_TYPE_P,
-  NODE_TYPE_PRE
+  NODE_TYPE_PRE,
 } from '../../../common/constants';
 import { cleanText } from '../../../common/utils';
 import {
   adjustSelectionOffsetsAndCleanup,
   formatSelections,
-  splitSelectionsAtCaretOffset
+  splitSelectionsAtCaretOffset,
 } from '../selection-helpers';
 
 export function handleBackspaceTextType(documentModel, selectedNodeId) {
@@ -31,7 +31,7 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
   documentModel.mergeParagraphs(prevNodeId, selectedNodeId);
   return {
     startNodeId: prevNodeId,
-    caretStart: prevNode.get('content').length
+    caretStart: prevNode.get('content').length,
   };
 }
 
@@ -138,7 +138,7 @@ export function handlePasteTextType(
     documentModel.update(selectedNode);
     return {
       startNodeId: selectedNodeId,
-      caretStart: contentLeft.length + diffLength
+      caretStart: contentLeft.length + diffLength,
     };
   }
   // MULTI LINE PASTE
@@ -209,6 +209,6 @@ export function handlePasteTextType(
 
   return {
     startNodeId: rightNodeId,
-    caretStart: lastLine.length
+    caretStart: lastLine.length,
   };
 }

@@ -12,8 +12,8 @@ const ToggleWrapper = styled.div`
   flex-shrink: 0;
   align-items: center;
   position: relative;
-  outline: ${p => p.isFocused && outline};
-  background-color: ${p => (p.value ? lightBlue : 'transparent')};
+  outline: ${(p) => p.isFocused && outline};
+  background-color: ${(p) => (p.value ? lightBlue : 'transparent')};
   ${ease('background-color')};
   padding-left: 1px;
   padding-right: 1px;
@@ -23,9 +23,9 @@ const ToggleWrapper = styled.div`
   width: 64px;
   height: 34px;
   &:hover {
-    cursor: ${p => (p.disabled ? 'not-allowed' : 'pointer')};
+    cursor: ${(p) => (p.disabled ? 'not-allowed' : 'pointer')};
   }
-  ${p =>
+  ${(p) =>
     p.disabled &&
     css`
       background-color: ${lightGrey};
@@ -40,7 +40,7 @@ const Knob = styled.div`
   border-radius: 50%;
   height: 32px;
   width: 32px;
-  ${p =>
+  ${(p) =>
     !p.value &&
     css`
       left: 1px;
@@ -61,14 +61,14 @@ export default class extends React.PureComponent {
     super(props);
 
     this.state = {
-      isFocused: false
+      isFocused: false,
     };
   }
 
   render() {
     const {
       props: { value, onUpdate, label, children, disabled },
-      state: { isFocused }
+      state: { isFocused },
     } = this;
     return (
       <Wrapper>

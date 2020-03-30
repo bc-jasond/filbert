@@ -7,7 +7,7 @@ import {
   testPostWithAllTypesJS,
   imgId,
   firstNodeIdH1,
-  firstNodeContent
+  firstNodeContent,
 } from '../../../../common/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;

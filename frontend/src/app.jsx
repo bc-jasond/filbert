@@ -25,15 +25,15 @@ export default class App extends React.Component {
     super(props);
     this.state = {
       session: getSession(),
-      setSession: session => {
+      setSession: (session) => {
         this.setState({ session });
-      }
+      },
     };
   }
 
   render() {
     const {
-      state: { session, setSession }
+      state: { session, setSession },
     } = this;
     const username = session.get('username');
     const RouteWithSession = ({ component: Component, exact, path }) => {

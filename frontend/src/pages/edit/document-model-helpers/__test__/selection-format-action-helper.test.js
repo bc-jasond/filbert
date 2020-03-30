@@ -6,7 +6,7 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
-  SELECTION_LINK_URL
+  SELECTION_LINK_URL,
 } from '../../../../common/constants';
 import { overrideConsole } from '../../../../common/test-helpers';
 import { Selection } from '../../../../common/utils';
@@ -16,7 +16,7 @@ import { selectionFormatAction } from '../selection-format-action';
 import * as selectionHelpers from '../../selection-helpers';
 import {
   formattedPId,
-  testPostWithAllTypesJS
+  testPostWithAllTypesJS,
 } from '../../../../common/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;
@@ -98,7 +98,7 @@ describe('Document Model -> selection-format-action node helper', () => {
       doc.getNode(formattedPId),
       Selection({
         [SELECTION_ACTION_LINK]: true,
-        [SELECTION_LINK_URL]: 'http://foo.bar'
+        [SELECTION_LINK_URL]: 'http://foo.bar',
       }),
       0,
       SELECTION_ACTION_LINK

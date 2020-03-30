@@ -34,7 +34,7 @@ import {
   KEYCODE_UP_ARROW,
   NODE_TYPE_H1,
   NODE_TYPE_LI,
-  NODE_TYPE_P
+  NODE_TYPE_P,
 } from './constants';
 import { cleanText } from './utils';
 
@@ -156,7 +156,7 @@ export function scrollToCaretIfOutOfView(nodeId) {
     }
     window.scrollTo({
       top: totalOffset - middleOfViewport,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   }
 }
@@ -179,13 +179,13 @@ export function replaceRange({ startNodeId, endNodeId, caretStart, caretEnd }) {
   const startContainer = getNodeById(startNodeId);
   const {
     childNode: startNode,
-    childOffset: startOffset
+    childOffset: startOffset,
   } = getChildTextNodeAndOffsetFromParentOffset(startContainer, caretStart);
   replacementRange.setStart(startNode, startOffset);
   const endContainer = endNodeId ? getNodeById(endNodeId) : startContainer;
   const {
     childNode: endNode,
-    childOffset: endOffset
+    childOffset: endOffset,
   } = getChildTextNodeAndOffsetFromParentOffset(endContainer, caretEnd);
   replacementRange.setEnd(endNode, endOffset);
   selection.removeAllRanges();
@@ -209,7 +209,7 @@ export function setCaret({ startNodeId, caretStart = -1 }) {
   if ([NODE_TYPE_P, NODE_TYPE_LI].includes(containerNode.dataset.type)) {
     ({
       childNode: textNode,
-      childOffset: caretStart // eslint-disable-line no-param-reassign
+      childOffset: caretStart, // eslint-disable-line no-param-reassign
     } = getChildTextNodeAndOffsetFromParentOffset(containerNode, caretStart));
   } else {
     if (containerNode.childNodes.length > 1) {
@@ -330,7 +330,7 @@ export function getHighlightedSelectionOffsets() {
     caretEnd: range.collapsed
       ? caretStart
       : cleanText(startNode.textContent).length,
-    startNodeId: getNodeId(startNode)
+    startNodeId: getNodeId(startNode),
   };
   if (range.collapsed) {
     return selectionOffsets;
@@ -388,7 +388,7 @@ export function caretIsOnEdgeOfParagraphText() {
     currentChildCaretOffset + currentChildParagraphContentOffset ===
       currentParagraph.textContent.length,
     compareRangeAndParagraphTopOrBottom('bottom'),
-    currentChildCaretOffset + currentChildParagraphContentOffset === 0
+    currentChildCaretOffset + currentChildParagraphContentOffset === 0,
   ];
 }
 
@@ -423,7 +423,7 @@ export function isControlKey(code) {
     KEYCODE_F10,
     KEYCODE_F11,
     KEYCODE_F12,
-    KEYCODE_PRINT_SCREEN
+    KEYCODE_PRINT_SCREEN,
   ].includes(code);
 }
 
@@ -442,7 +442,7 @@ export function loadScript(src) {
 
 export function getCurrentPath() {
   const {
-    location: { pathname: path, search }
+    location: { pathname: path, search },
   } = window;
   const queryParams = new URLSearchParams(search);
   const queryString = queryParams.toString();

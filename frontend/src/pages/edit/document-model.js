@@ -9,7 +9,7 @@ import {
   NODE_TYPE_P,
   NODE_TYPE_PRE,
   NODE_TYPE_QUOTE,
-  NODE_TYPE_SPACER
+  NODE_TYPE_SPACER,
 } from '../../common/constants';
 import { cleanText, getMapWithId, reviver } from '../../common/utils';
 import { concatSelections } from './selection-helpers';
@@ -24,13 +24,13 @@ export default class DocumentModel {
   static getFirstNode(nodesById) {
     const idSeen = new Set();
     const nextSeen = new Set();
-    nodesById.forEach(node => {
+    nodesById.forEach((node) => {
       idSeen.add(node.get('id'));
       if (node.get('next_sibling_id')) {
         nextSeen.add(node.get('next_sibling_id'));
       }
     });
-    const difference = new Set([...idSeen].filter(id => !nextSeen.has(id)));
+    const difference = new Set([...idSeen].filter((id) => !nextSeen.has(id)));
     if (difference.size !== 1) {
       console.error(
         "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",
@@ -42,7 +42,7 @@ export default class DocumentModel {
   }
 
   static getLastNode(nodesById) {
-    return nodesById.filter(n => !n.get('next_sibling_id')).first(Map());
+    return nodesById.filter((n) => !n.get('next_sibling_id')).first(Map());
   }
 
   init(post, updateManager = {}, jsonData = null) {
@@ -81,7 +81,7 @@ export default class DocumentModel {
 
   getPrevNode(nodeId) {
     return this.nodesById
-      .filter(n => n.get('next_sibling_id') === nodeId)
+      .filter((n) => n.get('next_sibling_id') === nodeId)
       .first(Map());
   }
 
@@ -125,7 +125,7 @@ export default class DocumentModel {
       NODE_TYPE_H2,
       NODE_TYPE_PRE,
       NODE_TYPE_P,
-      NODE_TYPE_LI
+      NODE_TYPE_LI,
     ].includes(this.getNode(nodeId).get('type'));
   }
 
@@ -170,7 +170,7 @@ export default class DocumentModel {
     const newNode = this.getMapWithId({
       type,
       content: cleanText(content),
-      meta
+      meta,
     });
     // first node in document
     if (this.nodesById.size === 0) {

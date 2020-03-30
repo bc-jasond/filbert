@@ -7,7 +7,7 @@ export default class H1 extends React.PureComponent {
   render() {
     console.debug('H1 RENDER', this);
     const {
-      props: { node, shouldShowPlaceholder }
+      props: { node, shouldShowPlaceholder },
     } = this;
     return (
       <H1Styled

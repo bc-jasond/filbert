@@ -27,7 +27,7 @@ export function set(key, value, debounce = true) {
   if (writeTimeout[key]) {
     clearTimeout(writeTimeout[key]);
   }
-  const setLocalStorage = k => {
+  const setLocalStorage = (k) => {
     try {
       const namespacedKey = getNamespacedKey(k);
       let item = inMemoryCache.get(k);

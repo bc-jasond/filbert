@@ -34,7 +34,7 @@ module.exports = {
     'webpack-prod.config.js',
     'coverage/',
     'test',
-    'dist/'
+    'dist/',
   ],
 
   // A list of reporter names that Jest uses when writing coverage reports
@@ -87,7 +87,7 @@ module.exports = {
   // A map from regular expressions to module names that allow to stub out resources with a single module
   moduleNameMapper: {
     '\\.svg': '<rootDir>/src/common/test-mock-image.jsx',
-    '\\.woff': '<rootDir>/src/common/test-mock-font.js'
+    '\\.woff': '<rootDir>/src/common/test-mock-font.js',
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
@@ -141,7 +141,7 @@ module.exports = {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: 'jest-environment-jsdom-sixteen'
+  testEnvironment: 'jest-environment-jsdom-sixteen',
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
