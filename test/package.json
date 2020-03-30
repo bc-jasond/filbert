@@ -1,0 +1,17 @@
+{
+  "name": "filbert-e2e-tests",
+  "version": "1.0.0",
+  "description": "Selenium Webdriver tests for filbert",
+  "main": "index.js",
+  "repository": "https://github.com/bc-jasond/filbert",
+  "author": "Jason Dubaniewicz",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "e2e": "jest --config=jest.config.js"
+  },
+  "dependencies": {
+    "jest": "^25.2.3",
+    "selenium-webdriver": "^4.0.0-alpha.7"
+  }
+}

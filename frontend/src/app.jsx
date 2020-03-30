@@ -9,7 +9,7 @@ import CssBase from './common/fonts.css';
 import CssPace from './common/pace.css';
 
 import Page404 from './pages/404';
-import KThxBye from './pages/kthxbye';
+import Signout from './pages/signout';
 
 import Public from './pages/public';
 import EditPost from './pages/edit/components/edit';
@@ -71,7 +71,7 @@ export default class App extends React.Component {
               <Redirect push exact from="/me" to={`/@${username}`} />
             )}
 
-            <RouteWithSession exact path="/signout" component={KThxBye} />
+            <RouteWithSession exact path="/signout" component={Signout} />
             <RouteWithSession exact path="/signin" component={SignIn} />
             {/* NOTE: signin admin doesn't have a link in, you have to know the url */}
             <RouteWithSession
