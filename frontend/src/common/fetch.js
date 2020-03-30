@@ -26,7 +26,9 @@ async function handleResponse(res) {
   // TODO: don't use throw for control flow.  Return the whole response and let the client figure it out
   if (res.status < 200 || res.status > 299) {
     Pace.stop();
-    return { error: { ...data } };
+    return {
+      error: { ...data, status: res.status, statusText: res.statusText },
+    };
   }
   Pace.stop();
   return { error: null, data };

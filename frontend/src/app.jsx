@@ -36,7 +36,15 @@ export default class App extends React.Component {
       state: { session, setSession },
     } = this;
     const username = session.get('username');
-    const RouteWithSession = ({ component: Component, exact, path }) => {
+    const RouteWithSession = ({
+      component: Component,
+      exact,
+      path,
+      requiresAuth,
+    }) => {
+      if (requiresAuth && !username) {
+        return <Page404 />;
+      }
       return (
         <Route
           exact={exact}
@@ -72,12 +80,27 @@ export default class App extends React.Component {
               component={SignInAdmin}
             />
             <RouteWithSession exact path="/public" component={Public} />
-            <RouteWithSession exact path="/private" component={Private} />
+            <RouteWithSession
+              exact
+              path="/private"
+              component={Private}
+              requiresAuth
+            />
             {/* NOTE: view a "published" post - this :canonical is a string like: 'some-url-87ba' */}
             <RouteWithSession exact path="/p/:canonical" component={ViewPost} />
             {/* NOTE: this :id is an int like: 34 */}
-            <RouteWithSession exact path="/edit/:id" component={EditPost} />
-            <RouteWithSession exact path="/publish/:id" component={Publish} />
+            <RouteWithSession
+              exact
+              path="/edit/:id"
+              component={EditPost}
+              requiresAuth
+            />
+            <RouteWithSession
+              exact
+              path="/publish/:id"
+              component={Publish}
+              requiresAuth
+            />
             <RouteWithSession exact path="/:username" component={UserProfile} />
 
             <RouteWithSession component={Page404} />

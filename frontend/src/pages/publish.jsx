@@ -118,12 +118,12 @@ export default class Publish extends React.Component {
 
   async componentDidUpdate(prevProps) {
     const {
-      state: { post },
+      state: { post, shouldShow404 },
     } = this;
     const params = this.props?.params;
     const id = params?.id;
     const prevId = prevProps?.params?.id;
-    if (post.size > 0 && id === prevId) {
+    if (id === prevId && (post.size > 0 || shouldShow404)) {
       return;
     }
     await this.loadPostAndSummary();
@@ -151,12 +151,14 @@ export default class Publish extends React.Component {
 
   async loadPostAndSummary() {
     // eslint-disable-next-line prefer-const
-    let { errorPost, data: { post } = {} } = await apiGet(
+    let { error, data: { post } = {} } = await apiGet(
       `/publish/${this.props?.params?.id}`
     );
-    if (errorPost) {
-      console.error(errorPost);
-      this.setState({ shouldShow404: true });
+    if (error) {
+      console.error(error);
+      if (error?.status === 404) {
+        this.setState({ shouldShow404: true });
+      }
       return Promise.resolve();
     }
     post = fromJS(post);
