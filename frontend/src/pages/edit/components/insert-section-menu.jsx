@@ -128,7 +128,7 @@ export default class InsertSectionMenuComponent extends React.Component {
         <>
           photo
           <HiddenFileInput
-            name="hidden-image-upload-file-input"
+            name="edit-image-hidden-file-input"
             type="file"
             onChange={(e) => {
               this.props?.insertSection?.(NODE_TYPE_IMAGE, e.target.files);
@@ -248,17 +248,19 @@ export default class InsertSectionMenuComponent extends React.Component {
 
     return (
       <InsertSectionMenu
-        name="insert-section-menu"
+        id="insert-section-menu"
         isOpen={menuIsOpen}
         topOffset={insertMenuTopOffset}
         leftOffset={insertMenuLeftOffset}
         onKeyDown={this.handleKeyDown}
       >
         <InsertSectionMenuButton
+          id="insert-section-menu-button"
           onClick={this.toggleMenu}
           isOpen={menuIsOpen}
         />
         <InsertSectionMenuItemsContainer
+          id="insert-section-menu-container"
           autocomplete="off"
           autocorrect="off"
           autocapitalize="off"
@@ -267,6 +269,7 @@ export default class InsertSectionMenuComponent extends React.Component {
         >
           {this.sectionTypes.map(({ type, children, callback }, idx) => (
             <InsertSectionItem
+              id={`insert-section-menu-item-${type}`}
               key={type}
               isOpen={currentIdx === idx}
               onClick={callback}

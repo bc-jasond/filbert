@@ -67,15 +67,6 @@ function ensureSignedOut() {
   return driver.get(getUrl('/signout'));
 }
 
-async function sendKeysOneAtATime(string, elem) {
-  const letters = string.split('');
-  while (letters.length > 1) {
-    await elem.sendKeys(letters.shift());
-    await dummyDriver.sleep(150);
-  }
-  return elem.sendKeys(letters.shift());
-}
-
 module.exports = {
   getEnv,
   getChromedriverClient,
@@ -83,5 +74,4 @@ module.exports = {
   getUrl,
   ensureSignedIn,
   ensureSignedOut,
-  sendKeysOneAtATime,
 };

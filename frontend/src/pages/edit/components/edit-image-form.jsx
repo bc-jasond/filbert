@@ -263,6 +263,7 @@ export default class EditImageForm extends React.Component {
 
     return (
       <EditImageMenu
+        id="edit-image-menu"
         data-is-menu
         top={offsetTop}
         left={offsetLeft}
@@ -278,7 +279,7 @@ export default class EditImageForm extends React.Component {
         ))}
         {!shouldHideCaption && (
           <ImageCaptionInput
-            id="image-caption-input"
+            id="edit-image-menu-caption-input"
             ref={this.captionRef}
             placeholder="Enter Image Caption here..."
             onChange={this.updateCaption}
@@ -289,7 +290,7 @@ export default class EditImageForm extends React.Component {
           <Arrow />
         </PointClip>
         <HiddenFileInput
-          name="hidden-image-upload-file-input"
+          name="edit-image-hidden-file-input"
           type="file"
           onChange={(e) => {
             this.replaceImageFile(e.target.files);
