@@ -68,6 +68,9 @@ const InsertSectionMenuButton = styled.button`
     `}
   }
 `;
+const HiddenForm = styled.form`
+  display: none;
+`;
 const HiddenFileInput = styled.input`
   display: none;
 `;
@@ -127,15 +130,17 @@ export default class InsertSectionMenuComponent extends React.Component {
       children: (
         <>
           photo
-          <HiddenFileInput
-            name="edit-image-hidden-file-input"
-            type="file"
-            onChange={(e) => {
-              this.props?.insertSection?.(NODE_TYPE_IMAGE, e.target.files);
-            }}
-            accept="image/*"
-            ref={this.fileInputRef}
-          />
+          <HiddenForm id="" onSubmit={() => alert('Hey!')}>
+            <HiddenFileInput
+              id="edit-image-hidden-file-input"
+              type="file"
+              onChange={(e) => {
+                this.props?.insertSection?.(NODE_TYPE_IMAGE, e.target.files);
+              }}
+              accept="image/*"
+              ref={this.fileInputRef}
+            />
+          </HiddenForm>
         </>
       ),
       callback: () => this.fileInputRef.current.click(),

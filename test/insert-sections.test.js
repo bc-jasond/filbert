@@ -1,3 +1,4 @@
+const path = require('path');
 const { By, Key, until } = require('selenium-webdriver');
 
 const {
@@ -12,7 +13,6 @@ const {
   INSERT_SECTION_MENU_BUTTON_ID,
   INSERT_SECTION_MENU_CONTAINER_ID,
   INSERT_SECTION_MENU_ITEM_ID_PREFIX,
-  EDIT_IMAGE_MENU_ID,
   EDIT_IMAGE_MENU_CAPTION_INPUT_ID,
   EDIT_IMAGE_HIDDEN_FILE_INPUT_ID,
 } = require('./constants');
@@ -57,6 +57,7 @@ describe('filbert - Create a new Post', () => {
     }
   });
   test('user sees Insert Menu on empty Paragraph, can open and close menu with keyboard and mouse', async (done) => {
+    // TODO: depends on create post test above
     try {
       await driver.get(getUrl(`/edit/${postId}`));
       const contentEditable = await driver.wait(
@@ -94,172 +95,108 @@ describe('filbert - Create a new Post', () => {
       done(err);
     }
   });
-  test('user can add Heading, Small Heading, Paragraph, List, Code, Image & Quote sections', async (done) => {
-    try {
-      await driver.get(getUrl(`/edit/${postId}`));
+  test('user can insert Heading, Small Heading, Paragraph, List, Code, Image & Quote sections', async (done) => {
+    async function insertHelper(type, isSpecialCaseForImage = false) {
       const contentEditable = await driver.wait(
         until.elementLocated(By.id(EDITOR_CONTAINER_ID))
       );
-      // START section LOOP - do for all sections - H1
-      let allParagraphs = await contentEditable.findElements(By.css('p'));
-      let lastParagraph = allParagraphs.pop();
-      let lastParagraphId = await lastParagraph.getAttribute('name');
+      const allParagraphs = await contentEditable.findElements(By.css('p'));
+      const lastParagraph = allParagraphs.pop();
+      const lastParagraphId = await lastParagraph.getAttribute('name');
       await lastParagraph.click();
-      let insertMenu = await driver.wait(
+      const insertMenu = await driver.wait(
         until.elementLocated(By.id(INSERT_SECTION_MENU_ID))
       );
-      let insertMenuToggleButton = await insertMenu.findElement(
+      const insertMenuToggleButton = await insertMenu.findElement(
         By.id(INSERT_SECTION_MENU_BUTTON_ID)
       );
-      insertMenuToggleButton.click();
-      let insertButton = driver.wait(
-        until.elementLocated(By.id(`${INSERT_SECTION_MENU_ITEM_ID_PREFIX}h1`))
+      await insertMenuToggleButton.click();
+      const insertButton = await driver.wait(
+        until.elementLocated(
+          By.id(`${INSERT_SECTION_MENU_ITEM_ID_PREFIX}${type}`)
+        )
       );
+      if (isSpecialCaseForImage) {
+        // override click handler for input[type="file"] so system dialog doesn't open
+        // https://stackoverflow.com/a/39500300/1991322
+        await driver.executeScript(() => {
+          HTMLInputElement.prototype.click = () => {
+            if (this.type !== 'file') {
+              HTMLElement.prototype.click.call(this);
+            }
+          };
+        });
+      }
       await insertButton.click();
-      // p -> h1 by changing type - mutable!
-      let newSection = await driver.findElement(
+      if (isSpecialCaseForImage) {
+        return lastParagraphId;
+      }
+      // p -> {type} by changing type - mutable!
+      const newSection = await driver.findElement(
         By.css(`[name="${lastParagraphId}"]`)
       );
+      return newSection;
+    }
+    // TODO: depends on create post test above
+    try {
+      await driver.get(getUrl(`/edit/${postId}`));
+
+      // h1
+      let newSection = await insertHelper('h1');
       expect(await newSection.getTagName()).toBe('h1');
       await newSection.sendKeys('Another Title\n');
-      // END LOOP
 
-      // H2
-      allParagraphs = await contentEditable.findElements(By.css('p'));
-      lastParagraph = allParagraphs.pop();
-      lastParagraphId = await lastParagraph.getAttribute('name');
-      await lastParagraph.click();
-      insertMenu = await driver.wait(
-        until.elementLocated(By.id(INSERT_SECTION_MENU_ID))
-      );
-      insertMenuToggleButton = await insertMenu.findElement(
-        By.id(INSERT_SECTION_MENU_BUTTON_ID)
-      );
-      insertMenuToggleButton.click();
-      insertButton = driver.wait(
-        until.elementLocated(By.id(`${INSERT_SECTION_MENU_ITEM_ID_PREFIX}h2`))
-      );
-      await insertButton.click();
-      newSection = await driver.findElement(
-        By.css(`[name="${lastParagraphId}"]`)
-      );
+      // h2
+      newSection = await insertHelper('h2');
       expect(await newSection.getTagName()).toBe('h2');
       await newSection.sendKeys('Small Title\n');
 
       // code
-      allParagraphs = await contentEditable.findElements(By.css('p'));
-      lastParagraph = allParagraphs.pop();
-      lastParagraphId = await lastParagraph.getAttribute('name');
-      await lastParagraph.click();
-      insertMenu = await driver.wait(
-        until.elementLocated(By.id(INSERT_SECTION_MENU_ID))
-      );
-      insertMenuToggleButton = await insertMenu.findElement(
-        By.id(INSERT_SECTION_MENU_BUTTON_ID)
-      );
-      insertMenuToggleButton.click();
-      insertButton = driver.wait(
-        until.elementLocated(By.id(`${INSERT_SECTION_MENU_ITEM_ID_PREFIX}pre`))
-      );
-      await insertButton.click();
-      newSection = await driver.findElement(
-        By.css(`[name="${lastParagraphId}"]`)
-      );
+      newSection = await insertHelper('pre');
       expect(await newSection.getTagName()).toBe('pre');
       await newSection.sendKeys(
-        'var wat = undefined;\nfunction hey() {\n  console.log("hey");\n}\nhey();\n\n'
+        'function hey() {\n  console.log("hey");\n}\nhey();\n\n'
       );
 
       // list
-      allParagraphs = await contentEditable.findElements(By.css('p'));
-      lastParagraph = allParagraphs.pop();
-      lastParagraphId = await lastParagraph.getAttribute('name');
-      await lastParagraph.click();
-      insertMenu = await driver.wait(
-        until.elementLocated(By.id(INSERT_SECTION_MENU_ID))
-      );
-      insertMenuToggleButton = await insertMenu.findElement(
-        By.id(INSERT_SECTION_MENU_BUTTON_ID)
-      );
-      insertMenuToggleButton.click();
-      insertButton = driver.wait(
-        until.elementLocated(By.id(`${INSERT_SECTION_MENU_ITEM_ID_PREFIX}li`))
-      );
-      await insertButton.click();
-      newSection = await driver.findElement(
-        By.css(`[name="${lastParagraphId}"]`)
-      );
+      newSection = await insertHelper('li');
       expect(await newSection.getTagName()).toBe('li');
       await newSection.sendKeys(
         "one o'clock\ntwo o'clock\nthree o'clock rock\n\n"
       );
 
       // spacer
-      allParagraphs = await contentEditable.findElements(By.css('p'));
-      lastParagraph = allParagraphs.pop();
-      lastParagraphId = await lastParagraph.getAttribute('name');
-      await lastParagraph.click();
-      insertMenu = await driver.wait(
-        until.elementLocated(By.id(INSERT_SECTION_MENU_ID))
-      );
-      insertMenuToggleButton = await insertMenu.findElement(
-        By.id(INSERT_SECTION_MENU_BUTTON_ID)
-      );
-      insertMenuToggleButton.click();
-      insertButton = driver.wait(
-        until.elementLocated(
-          By.id(`${INSERT_SECTION_MENU_ITEM_ID_PREFIX}spacer`)
-        )
-      );
-      await insertButton.click();
-      newSection = await driver.findElement(
-        By.css(`[name="${lastParagraphId}"]`)
-      );
+      newSection = await insertHelper('spacer');
       expect(await newSection.getTagName()).toBe('section');
       expect(await newSection.getAttribute('data-type')).toBe('spacer');
       await newSection.sendKeys(Key.ENTER);
 
-      done();
-      return;
-
-      // TODO: photo
-      allParagraphs = await contentEditable.findElements(By.css('p'));
-      lastParagraph = allParagraphs.pop();
-      lastParagraphId = await lastParagraph.getAttribute('name');
-      await lastParagraph.click();
-      insertMenu = await driver.wait(
-        until.elementLocated(By.id(INSERT_SECTION_MENU_ID))
-      );
-      insertMenuToggleButton = await insertMenu.findElement(
-        By.id(INSERT_SECTION_MENU_BUTTON_ID)
-      );
-      insertMenuToggleButton.click();
-      insertButton = driver.wait(
-        until.elementLocated(
-          By.id(`${INSERT_SECTION_MENU_ITEM_ID_PREFIX}image`)
-        )
-      );
-      // override click handler for input[type="file"] so system dialog doesn't open
-      // https://stackoverflow.com/a/39500300/1991322
-      await driver.executeScript(() => {
-        HTMLInputElement.prototype.click = () => {
-          if (this.type !== 'file') {
-            HTMLElement.prototype.click.call(this);
-          }
-        };
-      });
-      await insertButton.click();
+      // photo
+      const lastParagraphId = await insertHelper('image', true);
       const editImageFileInput = await driver.wait(
         until.elementLocated(By.id(EDIT_IMAGE_HIDDEN_FILE_INPUT_ID))
       );
-      await editImageFileInput.sendKeys('~/testimage.jpg');
+      await editImageFileInput.sendKeys(path.resolve('./testimage.jpg'));
       newSection = await driver.wait(
-        until.elementLocated(By.css(`[name="${lastParagraphId}"]`))
+        until.elementLocated(By.css(`section[name="${lastParagraphId}"]`))
       );
       expect(await newSection.getTagName()).toBe('section');
-      expect(await newSection.getAttribute('data-type')).toBe('photo');
+      expect(await newSection.getAttribute('data-type')).toBe('image');
+      const editImageMenuCaptionInput = await driver.wait(
+        until.elementLocated(By.id(EDIT_IMAGE_MENU_CAPTION_INPUT_ID))
+      );
+      await editImageMenuCaptionInput.sendKeys(Key.ESCAPE);
+      await newSection.sendKeys(Key.ENTER);
 
-      // quote TODO
+      // quote
+      newSection = await insertHelper('quote');
+      expect(await newSection.getTagName()).toBe('section');
+      expect(await newSection.getAttribute('data-type')).toBe('quote');
+      await newSection.sendKeys(
+        'Simple things should be simple and complex things should be possible.\tAlan Kay\tneeds citation\thttps://en.wikipedia.org/wiki/Alan_Kay\n\n'
+      );
+
+      done();
     } catch (err) {
       done(err);
     }

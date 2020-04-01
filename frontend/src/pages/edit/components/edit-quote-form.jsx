@@ -41,7 +41,7 @@ const QuoteInput = styled(DarkInput)`
 `;
 
 export default class EditQuoteForm extends React.Component {
-  menuItems = ['quote', 'url', 'author', 'context'];
+  menuItems = ['quote', 'author', 'context', 'url'];
 
   constructor(props) {
     super(props);
