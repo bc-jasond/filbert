@@ -36,7 +36,7 @@ afterAll(() => {
   cleanupClient(driver);
 });
 
-describe('filbert - Create a new Post', () => {
+describe('filbert - Insert Menu', () => {
   test('user types a title and hits enter to create a new post', async (done) => {
     try {
       await ensureSignedIn(driver);
@@ -44,7 +44,7 @@ describe('filbert - Create a new Post', () => {
       const placeholderTitle = await driver
         .findElement(By.id(EDITOR_CONTAINER_ID))
         .findElement(By.css('h1'));
-      await placeholderTitle.sendKeys('Title\n');
+      await placeholderTitle.sendKeys('Insert Menu Tests\n');
       await driver.wait(async () => {
         const currentUrl = await driver.getCurrentUrl();
         postId = parseInt(currentUrl.split('/').pop(), 10);
@@ -117,7 +117,7 @@ describe('filbert - Create a new Post', () => {
         )
       );
       if (isSpecialCaseForImage) {
-        // override click handler for input[type="file"] so system dialog doesn't open
+        // override click handler for input[type="file"] so system filepicker dialog doesn't open
         // https://stackoverflow.com/a/39500300/1991322
         await driver.executeScript(() => {
           HTMLInputElement.prototype.click = () => {

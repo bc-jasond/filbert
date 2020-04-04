@@ -349,6 +349,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
 
     return (
       <FormatSelectionMenu
+        id="format-selection-menu"
         shouldShowUrl={selectionModel.get(SELECTION_ACTION_LINK)}
         top={offsetTop}
         left={offsetLeft}
@@ -356,6 +357,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
       >
         {this.sectionTypes.map(({ type, Styled, shouldAddSpacer }, idx) => (
           <FormatSelectionMenuItem
+            id={`format-selection-menu-${type}`}
             key={type}
             onClick={() => this.props?.selectionAction?.(type)}
             Styled={Styled}
@@ -365,6 +367,7 @@ export default class FormatSelectionMenuComponent extends React.Component {
           />
         ))}
         <LinkInput
+          id="format-selection-menu-link-url-input"
           ref={this.ref}
           placeholder="Enter URL here..."
           checked={selectionModel.get(SELECTION_ACTION_LINK)}

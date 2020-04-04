@@ -67,6 +67,58 @@ function ensureSignedOut() {
   return driver.get(getUrl('/signout'));
 }
 
+async function selectRangeOfText(
+  driver,
+  actions,
+  element,
+  startOffset,
+  endOffset
+) {
+  const elementText = await element.getText();
+  const selectionText = elementText.slice(startOffset, endOffset);
+  const startOffsetText = elementText.slice(0, startOffset);
+  const getTextWidth = () => {
+    const [text, font] = arguments;
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = font;
+    const metrics = context.measureText(text);
+    return Math.floor(metrics.width);
+  };
+
+  const fontCssValue = await element.getCssValue('font');
+
+  // for selection width - get length of selected text
+  const selectionWidth = await driver.executeScript(
+    getTextWidth,
+    selectionText,
+    fontCssValue
+  );
+  // for starting X coord - get length of text to the left of selected text
+  const selectionStartOffset = await driver.executeScript(
+    getTextWidth,
+    startOffsetText,
+    fontCssValue
+  );
+
+  const offset = await element.getRect();
+  const x = await parseInt(await offset.x, 10);
+  // need to move the y axis down or it will act as if selecting the whole line on a vertical selection
+  const y = await parseInt((await offset.y) + (await offset.height) / 2, 10);
+  await actions
+    .move({
+      x: x + selectionStartOffset,
+      y,
+    })
+    .press()
+    .move({
+      x: x + selectionStartOffset + selectionWidth,
+      y,
+    })
+    .release()
+    .perform();
+}
+
 module.exports = {
   getEnv,
   getChromedriverClient,
@@ -74,4 +126,5 @@ module.exports = {
   getUrl,
   ensureSignedIn,
   ensureSignedOut,
+  selectRangeOfText,
 };

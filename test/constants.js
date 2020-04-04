@@ -7,4 +7,8 @@ module.exports = {
   EDIT_IMAGE_MENU_ID: 'edit-image-menu',
   EDIT_IMAGE_MENU_CAPTION_INPUT_ID: 'edit-image-menu-caption-input',
   EDIT_IMAGE_HIDDEN_FILE_INPUT_ID: 'edit-image-hidden-file-input',
+  FORMAT_SELECTION_MENU_ID: 'format-selection-menu',
+  FORMAT_SELECTION_MENU_ID_PREFIX: 'format-selection-menu-',
+  FORMAT_SELECTION_MENU_LINK_URL_INPUT_ID:
+    'format-selection-menu-link-url-input',
 };
