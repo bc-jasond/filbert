@@ -257,7 +257,7 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
   const doesReplaceLastSelection = end === nodeModel.get('content', '').length;
   // first see if the exact Selection already exists?
   let head = getSelections(nodeModel);
-  let originalHead = head;
+  const originalHead = head;
   let current = head;
   let prev;
   let caretPosition = 0;

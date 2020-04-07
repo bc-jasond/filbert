@@ -24,6 +24,7 @@ import {
   isControlKey,
   removeAllRanges,
   replaceRange,
+  selectionOffsetsAreEqual,
   setCaret,
 } from '../../../common/dom';
 
@@ -99,6 +100,7 @@ export default class EditPost extends React.Component {
       editSectionNode: Map(),
       shouldShowEditSectionMenu: false,
       editSectionMetaFormTopOffset: 0,
+      formatSelectionLastOffsets: {},
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
       formatSelectionModelIdx: -1,
@@ -279,7 +281,7 @@ export default class EditPost extends React.Component {
     if (updatedNodesById.size === 0) {
       return;
     }
-    console.info(`${shouldUndo ? 'UNDO!' : 'REDO!'}`);
+    console.info(`${shouldUndo ? 'UNDO!' : 'REDO!'}`, historyEntry.toJS());
     this.documentModel.nodesById = updatedNodesById;
     // passing undefined as prevSelectionOffsets will skip adding this operation to history again
     await this.commitUpdates(undefined, historyOffsets.toJS());
@@ -290,7 +292,7 @@ export default class EditPost extends React.Component {
     const {
       state: { editSectionNode, formatSelectionModel },
     } = this;
-    // TODO: optimistically save updated nodes - look ma, no errors!
+    // TODO: optimistically saving updated nodes with no error handling - look ma, no errors!
     return new Promise((resolve /* , reject */) => {
       const {
         state: {
@@ -832,9 +834,9 @@ export default class EditPost extends React.Component {
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "cut" with clipboard data...
     if (evt.type !== 'cut') {
+      // save these to pass to commitUpdates for undo history
+      this.selectionOffsets = selectionOffsets;
       if (caretStart !== caretEnd) {
-        // save these to pass to commitUpdates for undo history
-        this.selectionOffsets = selectionOffsets;
         doDelete(this.documentModel, selectionOffsets);
       }
       return;
@@ -844,7 +846,8 @@ export default class EditPost extends React.Component {
     console.debug('CUT selection', selectionString);
     evt.clipboardData.setData('text/plain', selectionString);
 
-    // NOTE: if these get called on the 'keydown' event, they'll cancel the 'cut' event
+    // NOTE: if we stopPropagation and preventDefault on the 'keydown' event, they'll cancel the 'cut' event too
+    // so don't move this up
     stopAndPrevent(evt);
 
     // for commitUpdates() -> setCaret()
@@ -882,9 +885,9 @@ export default class EditPost extends React.Component {
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "paste" with clipboard data...
     if (evt.type !== 'paste') {
+      // for undo history - need to store the "first" selections, aka before the delete operation
+      this.selectionOffsets = selectionOffsets;
       if (selectionOffsets.caretStart !== selectionOffsets.caretEnd) {
-        // for undo history
-        this.selectionOffsets = selectionOffsets;
         doDelete(this.documentModel, selectionOffsets);
       }
       return;
@@ -1079,11 +1082,27 @@ export default class EditPost extends React.Component {
     );
   };
 
+  // TODO: add history entry for change in selection.  When user moves caret either collapsed or a selection range
+  // it's nice during undo/redo to show the change in caret placement.  Currently, when doing an undo - if the caret
+  // had changed place - all of a sudden a character "somewhere else" disappears/reappears and it's kinda WTF?
   manageFormatSelectionMenu = async (evt, selectionOffsets) => {
     const {
-      state: { formatSelectionNode },
+      state: { formatSelectionLastOffsets, formatSelectionNode },
     } = this;
     const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
+    if (
+      selectionOffsetsAreEqual(selectionOffsets, formatSelectionLastOffsets)
+    ) {
+      return;
+    }
+    console.debug(
+      'SELECTION TEST: ',
+      formatSelectionLastOffsets,
+      selectionOffsets
+    );
+    await new Promise((resolve) =>
+      this.setState({ formatSelectionLastOffsets: selectionOffsets }, resolve)
+    );
     if (
       // no node
       !startNodeId ||
