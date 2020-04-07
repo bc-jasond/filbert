@@ -195,7 +195,6 @@ Immutable.Map {
 exports[`UpdateManager init method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
-  "lastUndoHistoryNode": Immutable.Map {},
   "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
     "abstract": null,
@@ -216,7 +215,6 @@ UpdateManager {
 exports[`UpdateManager stageNodeDelete method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
-  "lastUndoHistoryNode": Immutable.Map {},
   "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
     "abstract": null,
@@ -237,7 +235,6 @@ UpdateManager {
 exports[`UpdateManager stageNodeUpdate method 1`] = `
 UpdateManager {
   "commitTimeoutId": undefined,
-  "lastUndoHistoryNode": Immutable.Map {},
   "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
     "abstract": null,

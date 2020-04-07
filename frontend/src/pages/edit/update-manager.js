@@ -11,26 +11,15 @@ import {
   NODE_ACTION_DELETE,
   NODE_ACTION_UPDATE,
   NODE_UPDATES,
-  SELECTION_LINK_URL,
-  SELECTION_NEXT,
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
-import {
-  moreThanNCharsAreDifferent,
-  nodeIsValid,
-  reviver,
-  Selection,
-} from '../../common/utils';
-import { getSelectionAtIdx, getSelectionsLength } from './selection-helpers';
+import { nodeIsValid, reviver } from '../../common/utils';
 
 export const characterDiffSize = 6;
 
 export default class UpdateManager {
   commitTimeoutId;
-
-  // cache last node for text changes, so we don't add a history entry for every keystroke
-  lastUndoHistoryNode = Map();
 
   lastUndoHistoryOffsets;
 
@@ -97,108 +86,24 @@ export default class UpdateManager {
       if (update.get('action') === NODE_ACTION_DELETE) {
         return update.set('action', NODE_ACTION_UPDATE).set('node', prevNode);
       }
-      const updatedNode = update.get('node');
-      // update - update
-      // add if it's "structural" aka changes to: 'type', 'next_sibling_id', or certain changes to 'meta'
-      if (
-        // node type changed
-        updatedNode.get('type') !== prevNode.get('type') ||
-        // node position in document changed
-        updatedNode.get('next_sibling_id') !==
-          prevNode.get('next_sibling_id') ||
-        // node meta data changed structure
-        updatedNode.get('meta', Map()).size !==
-          prevNode.get('meta', Map()).size ||
-        // node meta,selections changed structure
-        getSelectionsLength(updatedNode) !== getSelectionsLength(prevNode)
-      ) {
-        return update.set('node', prevNode);
-      }
-      // At this point, changes should be local to one text content field of one node.
-      // Cache the node to refer back to on subsequent diff checks (for each keystroke updating the same field on a node)
-      if (this.lastUndoHistoryNode.get('id') !== nodeId) {
-        this.lastUndoHistoryNode = prevNode;
-        this.lastUndoHistoryOffsets = prevSelectionOffsets;
-      }
-      // node content can live in a few different places: ('content', ['meta':'url', 'caption', 'author', 'context', 'quote'], ['meta':'selections':N:'linkUrl'] - add if enough characters changed
-      // find first field that changed and see if it meets the threshold
-      if (
-        // text content in 'content' changed enough
-        moreThanNCharsAreDifferent(
-          updatedNode.get('content'),
-          this.lastUndoHistoryNode.get('content'),
-          characterDiffSize
-        ) ||
-        // save a history entry if any of these fields changed at all for an Image or Quote
-        List(['url', 'width', 'height', 'rotationDegrees'])
-          .filter(
-            (keyName) =>
-              updatedNode.getIn(['meta', keyName], '') !==
-              this.lastUndoHistoryNode.getIn(['meta', keyName], '')
-          )
-          .first() ||
-        // text content in 'meta' fields changed enough
-        List(['caption', 'author', 'context', 'quote'])
-          .filter((keyName) =>
-            moreThanNCharsAreDifferent(
-              updatedNode.getIn(['meta', keyName], ''),
-              this.lastUndoHistoryNode.getIn(['meta', keyName], ''),
-              characterDiffSize
-            )
-          )
-          .first() ||
-        // linkUrl in a selection changed enough
-        (() => {
-          let current = updatedNode.getIn(['meta', 'selections'], Selection());
-          let currentIdx = 0;
-          while (current) {
-            const compare = getSelectionAtIdx(
-              this.lastUndoHistoryNode.getIn(
-                ['meta', 'selections'],
-                Selection()
-              ),
-              currentIdx
-            );
-            if (
-              moreThanNCharsAreDifferent(
-                current.get(SELECTION_LINK_URL, ''),
-                compare.get(SELECTION_LINK_URL, ''),
-                characterDiffSize
-              )
-            ) {
-              return true;
-            }
-            current = current.get(SELECTION_NEXT);
-            currentIdx += 1;
-          }
-          return false;
-        })()
-      ) {
-        const updateWithNewNode = update.set('node', this.lastUndoHistoryNode);
-        this.lastUndoHistoryNode = Map();
-        // TODO: can't unset here because we need it below
-        // this.lastUndoHistoryOffsets = undefined;
-        return updateWithNewNode;
-      }
-      return Map();
-    })
-      // remove empty Map()s
-      .filter((update) => update.get('action'));
+      // update -> update
+      // Simplify this for now - all updates get history entries.  This means a history entry for every keystroke.
+      // Trying to optimize this for space is causing fundamental issues.  My new stance is to "save too much" and
+      // then have a job merge and delete redundant records (TODO later)
+      return update.set('node', prevNode);
+    });
 
     if (newHistoryEntry.size > 0) {
-      this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO].push(
-        Map({
-          // execute == 'undo'
-          [HISTORY_KEY_UNDO_UPDATES]: newHistoryEntry,
-          [HISTORY_KEY_UNDO_OFFSETS]:
-            this.lastUndoHistoryOffsets || prevSelectionOffsets,
-          // unexecute == 'redo'
-          [HISTORY_KEY_REDO_UPDATES]: this[NODE_UPDATES],
-          [HISTORY_KEY_REDO_OFFSETS]: selectionOffsets,
-        })
-      );
-      // TODO: hmm, this must have bugs
-      this.lastUndoHistoryOffsets = undefined;
+      const historyEntry = Map({
+        // execute == 'undo'
+        [HISTORY_KEY_UNDO_UPDATES]: newHistoryEntry,
+        [HISTORY_KEY_UNDO_OFFSETS]: prevSelectionOffsets,
+        // unexecute == 'redo'
+        [HISTORY_KEY_REDO_UPDATES]: this[NODE_UPDATES],
+        [HISTORY_KEY_REDO_OFFSETS]: selectionOffsets,
+      });
+      console.info('HISTORY: adding to undo history', historyEntry.toJS());
+      this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO].push(historyEntry);
     }
   }
 
@@ -313,7 +218,7 @@ export default class UpdateManager {
         updatedNodesById = updatedNodesById.set(nodeId, update.get('node'));
       }
     });
-    // TODO: clear or merge?
+    // TODO: I think updates need to merge here...
     this.clearUpdates();
     this[NODE_UPDATES] = updates;
 

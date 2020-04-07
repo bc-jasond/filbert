@@ -150,7 +150,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
     // which does the merge) for the pre (endNode) and 7 in between
     expect(originalNodeCount - doc.nodesById.size).toEqual(7);
   });
-  test('doDelete - deletes across nodes - from end of one TextType through another TextType', () => {
+  test('doDelete - deletes across nodes - from end of one TextType through end of another TextType', () => {
     doDelete(doc, {
       startNodeId: firstNodeIdH1,
       caretStart: firstNodeContent.length,
@@ -158,7 +158,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
       caretEnd: formattedPContent.length,
     });
     expect(spyAdjust).not.toHaveBeenCalled();
-    expect(spyBackspace).toHaveBeenCalledWith(doc, firstNodeIdH1);
+    expect(spyBackspace).not.toHaveBeenCalledWith(doc, firstNodeIdH1);
     // again IRL this will be 3 because of mock handleBackspaceTextType()
     expect(originalNodeCount - doc.nodesById.size).toEqual(2);
   });

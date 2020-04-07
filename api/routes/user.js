@@ -8,17 +8,18 @@ async function getUser(req, res) {
     params: { username },
     loggedInUser,
   } = req;
+  const isCheckingAvailability = typeof forSignup === "string";
   if (!username) {
     res.status(404).send({});
     return;
   }
-  if (username.length < 5 || username.length > 42) {
+  if (isCheckingAvailability && (username.length < 5 || username.length > 42)) {
     res.status(404).send({});
     return;
   }
   const knex = await getKnex();
   // TODO: one-time token to prevent abuse?
-  if (typeof forSignup === "string") {
+  if (isCheckingAvailability) {
     const [user] = await knex("user")
       .select("username")
       .where("username", username);

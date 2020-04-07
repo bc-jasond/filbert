@@ -167,7 +167,7 @@ describe('UpdateManager', () => {
     );
     expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
   });
-  test('addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met', () => {
+  test.skip('addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met', () => {
     const firstNode = doc.init(post, updateManager, contentNodes);
     let prevNodesById = doc.nodesById;
     const newContent = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.substring(

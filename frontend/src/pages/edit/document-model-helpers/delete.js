@@ -87,10 +87,21 @@ export function doDelete(
   // if there's an endNodeId - startNode has been selected from caretStart through the end
   const startDiffLength =
     (endNodeId ? startNodeContent.length : caretEnd) - caretStart;
+
+  // edge case where user selects from end of line (no selected chars in first line) through a following line (didDeleteEndNode)
+  // code below will interpret don't merge, we're done here
+  if (startDiffLength === 0 && didDeleteEndNode) {
+    return {
+      startNodeId,
+      caretStart,
+    };
+  }
+  // start diff adjustment
+  // user hit backspace anywhere after the position 0 "beginning" aka - a "regular" backspace
+  // handles collapsed caret or selection range
   if (
-    // collapsed caret, user hit backspace anywhere after the beginning - "regular" backspace
     // edge case where user starts multi-node selection at the end of the line - only process "backspace" if it's a single node selection
-    (!endNodeId && caretStart > 0 && startNodeContent) ||
+    (caretStart > 0 && startNodeContent) ||
     // highlighted selection
     startDiffLength > 0
   ) {
@@ -115,6 +126,7 @@ export function doDelete(
     if (!endNodeId || didDeleteEndNode || startDiffLength === 0) {
       return {
         startNodeId: selectedNodeId,
+        // startDiffLength === 0 means a collapsed caret backspace, decrement the caret position by 1
         caretStart: startDiffLength === 0 ? caretStart - 1 : caretStart,
       };
     }
