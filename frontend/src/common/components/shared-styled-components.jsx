@@ -1,18 +1,25 @@
 import { Link } from 'react-router-dom';
 import styled, { css, keyframes } from 'styled-components';
 import {
-  blue,
+  accentColorPrimary,
+  accentColorSecondary,
+  backgroundColorPrimary,
+  backgroundColorSecondary,
   darkBlue,
   darkGrey,
   error,
+  getVar,
   grey,
   lightError,
-  lightGrey,
   mediumGrey,
+  outline,
   success,
+  textColorSecondary,
+  titleColorPrimary,
+  titleColorSecondary,
   viewport7,
   viewport9,
-} from '../css';
+} from '../../variables.css';
 import { contentSerif, monospaced, sansSerif, titleSerif } from '../fonts.css';
 import {
   authorExpandMixin,
@@ -71,6 +78,7 @@ export const H1Styled = styled.h1`
   font-size: 46px;
   line-height: 1.25;
   margin-bottom: 24px;
+  color: ${getVar(titleColorPrimary)};
   ${(p) =>
     p.shouldShowPlaceholder &&
     `
@@ -79,24 +87,22 @@ export const H1Styled = styled.h1`
       position: absolute;
       color: ${mediumGrey};
     }
-  `}
+  `};
 `;
 export const H2Styled = styled.h2`
   ${sectionWidthMixin};
+  color: ${getVar(titleColorPrimary)};
   margin-top: 30px;
   margin-bottom: 8px;
   font-weight: 600;
-  --x-height-multiplier: 0.342;
-  --baseline-multiplier: 0.22;
   font-family: ${sansSerif}, sans-serif;
-  letter-spacing: -0.02em;
-  font-style: normal;
   font-size: 32px;
   line-height: 1.22;
   letter-spacing: -0.012em;
 `;
 export const H3Styled = styled.h3`
-  ${sectionWidthMixin}
+  ${sectionWidthMixin};
+  color: ${getVar(titleColorSecondary)};
   text-overflow: ellipsis;
   //max-height: 56px;
   margin-bottom: 8px;
@@ -108,11 +114,11 @@ export const H3Styled = styled.h3`
   font-family: ${sansSerif}, sans-serif;
 `;
 export const ContentSection = styled.section`
-  ${sectionWidthMixin}
+  ${sectionWidthMixin};
   font-family: ${contentSerif}, serif;
   font-size: 21px;
   line-height: 1.58;
-  letter-spacing: -.01em;
+  letter-spacing: -0.01em;
   margin-bottom: 52px;
 `;
 export const SpacerSection = styled(ContentSection)`
@@ -136,10 +142,11 @@ export const QuoteP = styled(PStyled)`
 export const PreStyled = styled.pre`
   font: inherit;
   margin: 0;
+  color: ${getVar(textColorSecondary)};
   &::before {
     display: inline-block;
     width: 35px;
-    color: ${mediumGrey};
+    color: ${getVar(backgroundColorPrimary)};
     counter-increment: code;
     content: counter(code);
   }
@@ -151,7 +158,7 @@ export const CodeSection = styled(ContentSection)`
   letter-spacing: -0.03em;
   word-spacing: -0.2em;
   line-height: 1.75;
-  background: ${lightGrey};
+  background: ${getVar(backgroundColorSecondary)};
   padding: 20px;
   overflow: auto;
   counter-reset: code;
@@ -183,27 +190,28 @@ export const LiStyled = styled.li`
 export const A = styled.a`
   ${linkMixin}
 `;
-export const LinkStyled = styled(Link)`
-  ${linkMixin}
-`;
 export const Code = styled.code`
   font-family: ${monospaced}, monospace;
   font-size: 18px;
-  background: ${lightGrey};
+  color: ${getVar(textColorSecondary)};
+  background: ${getVar(backgroundColorSecondary)};
   padding: 4px;
   margin: 0 2px;
 `;
 export const SiteInfo = styled.span`
+  color: ${getVar(textColorSecondary)};
   font-family: ${sansSerif}, sans-serif;
 `;
 export const ItalicText = styled.em`
   ${italicMixin};
 `;
 export const StrikeText = styled.span`
+  color: ${getVar(textColorSecondary)};
   text-decoration: line-through;
   font-family: inherit;
 `;
 export const BoldText = styled.strong`
+  color: ${getVar(textColorSecondary)};
   font-weight: 700;
 `;
 export const MiniText = styled.span`
@@ -279,10 +287,10 @@ export const Button = styled.button`
   display: block;
   width: 100%;
   margin-bottom: 16px;
-  background: ${blue};
+  background: ${getVar(accentColorPrimary)};
 
   &:hover {
-    background: ${darkBlue};
+    background: ${getVar(accentColorSecondary)};
   }
   ${(p) =>
     p.disabled &&
@@ -326,7 +334,7 @@ export const LilSassyMenu = styled.div`
 `;
 const blink = keyframes`
   from, to {
-    background-color: ${darkBlue};
+    background-color: ${getVar(accentColorPrimary)};
   }
   50% {
     background-color: transparent;
@@ -336,7 +344,7 @@ export const Cursor = styled.div`
   position: absolute;
   height: 2px;
   width: 100%;
-  background-color: ${darkBlue};
+  background-color: ${getVar(accentColorPrimary)};
   animation: 1s ${blink} step-end infinite;
 }
 `;
@@ -355,14 +363,14 @@ export const IconButton = styled.button`
   padding: 0;
   cursor: pointer;
   user-select: none;
-  outline: 0;
+  //outline: ${getVar(outline)};
 `;
 export const DarkInput = styled.input`
   //flex: 1;
   background: rgba(0, 0, 0, 0);
   color: #fff;
   border: none;
-  outline: 0;
+  //outline: ${getVar(outline)};
   font-size: 16px;
   border-radius: 5px;
   display: block;

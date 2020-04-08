@@ -17,7 +17,6 @@ import {
   ProfileImg,
   SuccessMessage,
 } from '../common/components/shared-styled-components';
-import { darkGrey } from '../common/css';
 import { loadScript } from '../common/dom';
 import { apiGet, signinGoogle } from '../common/fetch';
 import ButtonSpinner from '../common/components/button-spinner';
@@ -26,6 +25,11 @@ import { sansSerif } from '../common/fonts.css';
 import { getSession, signout } from '../common/session';
 import { getGoogleUser, googleAuthInit } from '../common/google-auth';
 import { stopAndPrevent } from '../common/utils';
+import {
+  backgroundColorPrimary,
+  getVar,
+  titleColorPrimary,
+} from '../variables.css';
 
 const Container = styled.div`
   display: flex;
@@ -38,7 +42,7 @@ const SignInForm = styled.form`
   min-width: 320px;
   padding: 40px;
   overflow: hidden;
-  background-color: white;
+  background-color: ${getVar(backgroundColorPrimary)};
   border-radius: 2px;
 `;
 const StyledLinkStyled = styled(LogoLinkStyled)`
@@ -69,12 +73,8 @@ const GoogleInfo = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: white;
   margin-bottom: 16px;
   font-size: 18px;
-  &:hover {
-    background: white;
-  }
 `;
 const GoogleIcon = styled(GoogleIconSvg)`
   position: absolute;
@@ -86,7 +86,7 @@ const GoogleIcon = styled(GoogleIconSvg)`
 const GoogleInfoSpan = styled.span`
   font-family: ${sansSerif};
   display: block;
-  color: ${darkGrey};
+  color: ${getVar(titleColorPrimary)};
   overflow: hidden;
   white-space: pre-wrap;
   text-overflow: ellipsis;

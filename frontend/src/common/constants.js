@@ -92,6 +92,7 @@ export const API_URL = process.env.API_URL;
 export const FILBERT_LOCALSTORAGE_NAMESPACE = 'filbert';
 export const AUTH_TOKEN_KEY = 'token';
 export const SESSION_KEY = 'session';
+export const SESSION_THEME = 'theme';
 
 // DOM
 export const DOM_ELEMENT_NODE_TYPE_ID = 1;
@@ -106,3 +107,7 @@ export const HISTORY_KEY_UNDO_UPDATES = 'executeUpdates';
 export const HISTORY_KEY_UNDO_OFFSETS = 'executeOffsets';
 export const HISTORY_KEY_REDO_UPDATES = 'unexecuteUpdates';
 export const HISTORY_KEY_REDO_OFFSETS = 'unexecuteOffsets';
+
+// THEME
+export const DARK_MODE_THEME = 'dark';
+export const LIGHT_MODE_THEME = 'light';

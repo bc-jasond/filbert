@@ -1,6 +1,15 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
-import { boxShadow, ease, lightBlue, lightGrey, outline } from '../css';
+import {
+  abramovTextWhite,
+  accentColorPrimary,
+  backgroundColorSecondary,
+  boxShadow,
+  getVar,
+  outline,
+  textColorPrimary,
+} from '../../variables.css';
+import { ease } from '../css';
 
 const Wrapper = styled.div`
   display: flex;
@@ -12,14 +21,15 @@ const ToggleWrapper = styled.div`
   flex-shrink: 0;
   align-items: center;
   position: relative;
-  outline: ${(p) => p.isFocused && outline};
-  background-color: ${(p) => (p.value ? lightBlue : 'transparent')};
+  outline: ${(p) => p.isFocused && getVar(outline)};
+  background-color: ${(p) =>
+    p.value ? getVar(accentColorPrimary) : 'transparent'};
   ${ease('background-color')};
   padding-left: 1px;
   padding-right: 1px;
   margin-left: 8px;
   border-radius: 32px;
-  border: 1px solid ${lightGrey};
+  border: 1px solid ${getVar(backgroundColorSecondary)};
   width: 64px;
   height: 34px;
   &:hover {
@@ -28,15 +38,15 @@ const ToggleWrapper = styled.div`
   ${(p) =>
     p.disabled &&
     css`
-      background-color: ${lightGrey};
+      background-color: ${getVar(backgroundColorSecondary)};
     `}
 `;
 const Knob = styled.div`
   position: absolute;
   left: 34px;
   ${ease('left')};
-  background-color: white;
-  box-shadow: ${boxShadow};
+  background-color: ${abramovTextWhite};
+  box-shadow: ${getVar(boxShadow)};
   border-radius: 50%;
   height: 32px;
   width: 32px;

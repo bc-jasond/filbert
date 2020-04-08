@@ -183,7 +183,7 @@ export default class UserProfile extends React.Component {
                 />
               </ContentSection>
             )}
-            {stats && (
+            {stats?.totalPosts > 0 && (
               <ContentSection>
                 <H2Styled>Stats</H2Styled>
                 <Table>

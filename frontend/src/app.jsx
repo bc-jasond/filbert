@@ -4,8 +4,10 @@ import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
 import { getSession } from './common/session';
 
 // GLOBAL CSS HERE
+import CssVariables from './variables.css';
+import CssGlobals from './global.css';
 import CssReset from './reset.css';
-import CssBase from './common/fonts.css';
+import CssFonts from './common/fonts.css';
 import CssPace from './common/pace.css';
 
 import Page404 from './pages/404';
@@ -25,15 +27,16 @@ export default class App extends React.Component {
     super(props);
     this.state = {
       session: getSession(),
-      setSession: (session) => {
-        this.setState({ session });
-      },
     };
   }
 
+  setSession = (session) => {
+    this.setState({ session });
+  };
+
   render() {
     const {
-      state: { session, setSession },
+      state: { session },
     } = this;
     const username = session.get('username');
     const RouteWithSession = ({
@@ -53,7 +56,7 @@ export default class App extends React.Component {
             <Component
               params={params}
               session={session}
-              setSession={setSession}
+              setSession={this.setSession}
             />
           )}
         />
@@ -107,7 +110,9 @@ export default class App extends React.Component {
           </Switch>
         </BrowserRouter>
         <CssReset />
-        <CssBase />
+        <CssFonts />
+        <CssVariables />
+        <CssGlobals />
         <CssPace />
       </>
     );

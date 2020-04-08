@@ -17,9 +17,9 @@ import {
   NODE_TYPE_SPACER,
 } from '../../../common/constants';
 
-import { grey } from '../../../common/css';
 import { removeAllRanges, setCaret } from '../../../common/dom';
 import { stopAndPrevent } from '../../../common/utils';
+import { getVar, grey, outline } from '../../../variables.css';
 
 const InsertSectionMenu = styled.div`
   position: absolute;
@@ -40,17 +40,17 @@ const lineMixin = css`
 `;
 const InsertSectionMenuButton = styled.button`
   position: absolute;
-  top: 16px;
+  top: 14px;
   z-index: 3;
   width: 24px;
   height: 24px;
   display: block;
   cursor: pointer;
   border: 0;
-  outline: 0;
+  outline: 0; // ${getVar(outline)};
   background: transparent;
   &:before {
-    ${lineMixin}
+    ${lineMixin};
     transform: rotateZ(0deg);
     ${(p) =>
       p.isOpen &&
@@ -59,7 +59,7 @@ const InsertSectionMenuButton = styled.button`
     `}
   }
   &:after {
-    ${lineMixin}
+    ${lineMixin};
     transform: rotateZ(90deg);
     ${(p) =>
       p.isOpen &&

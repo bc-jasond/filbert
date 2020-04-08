@@ -1,5 +1,5 @@
 import { createGlobalStyle } from 'styled-components';
-import { mediumGrey } from './css';
+import { mediumGrey } from '../variables.css';
 
 export default createGlobalStyle`
   .pace {

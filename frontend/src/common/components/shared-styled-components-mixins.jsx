@@ -1,5 +1,19 @@
 import { css } from 'styled-components';
-import { blue, boxShadow, darkBlue, darkGrey, grey, lightBlue } from '../css';
+import {
+  getVar,
+  textColorSecondary,
+  textColorPrimary,
+  accentColorPrimary,
+  accentColorSecondary,
+  blue,
+  lightBlue,
+  grey,
+  boxShadow,
+  backgroundColorPrimary,
+  accentHoverColor,
+  abramovTextWhite,
+  white,
+} from '../../variables.css';
 import { italicSerif, monospaced, sansSerif } from '../fonts.css';
 
 export const sectionWidthMixin = css`
@@ -8,37 +22,48 @@ export const sectionWidthMixin = css`
 `;
 // TODO: use ::selection to style MetaType nodes when selected
 export const editSectionBorderMixin = css`
-  border: 4px solid ${(p) => (p.isEditing ? blue : 'transparent')};
+  border: 4px solid
+    ${(p) => (p.isEditing ? getVar(accentColorPrimary) : 'transparent')};
   ${(p) =>
     p.isEditMode &&
     css`
       &:hover {
         cursor: pointer;
-        border: 4px solid ${p.isEditing ? blue : lightBlue};
+        border: 4px solid
+          ${p.isEditing
+            ? getVar(accentColorPrimary)
+            : getVar(accentColorSecondary)};
       }
     `}
 `;
 export const linkMixin = css`
+  color: ${getVar(accentColorSecondary)};
   cursor: pointer;
   font: inherit;
   text-decoration: none;
   background-repeat: repeat-x;
   background-image: linear-gradient(
     to right,
-    ${darkGrey} 100%,
-    rgba(0, 0, 0, 0) 0
-  );
-  background-image: linear-gradient(
-    to right,
     currentColor 100%,
     currentColor 0
   );
   background-size: 1px 1px;
-  background-position: 0 1.05em;
   background-position: 0 calc(1em + 1px);
+  &:hover {
+    color: ${getVar(accentColorPrimary)};
+    background-image: linear-gradient(
+      to right,
+      currentColor 100%,
+      currentColor 0
+    );
+  }
+  &:visited {
+    color: mediumpurple;
+  }
 `;
 export const italicMixin = css`
   font-family: ${italicSerif}, sans-serif;
+  color: ${getVar(textColorSecondary)};
 `;
 export const miniTextMixin = css`
   font-family: ${sansSerif}, sans-serif;
@@ -46,7 +71,7 @@ export const miniTextMixin = css`
   font-style: normal;
   font-size: 16px;
   line-height: 1.4;
-  color: rgba(0, 0, 0, 0.68);
+  color: ${getVar(textColorSecondary)};
   letter-spacing: 0;
 `;
 export const navButtonMixin = css`
@@ -62,19 +87,19 @@ export const navButtonMixin = css`
   transition: background-color 0.125s, color 0.125s;
   flex-grow: 0;
   &:hover {
-    color: white;
-    background-color: ${lightBlue};
-    box-shadow: ${boxShadow};
+    color: ${abramovTextWhite};
+    background-color: ${getVar(accentColorPrimary)};
+    box-shadow: ${getVar(boxShadow)};
   }
   ${(p) =>
     p.isOpen &&
     `
-    color: white;
-    background-color: ${lightBlue};
+    color: ${abramovTextWhite};
+    background-color: ${getVar(accentColorPrimary)};
   `}
 `;
 export const svgIconMixin = css`
-  fill: #fff;
+  fill: ${white};
   position: relative;
   top: -1px;
   vertical-align: middle;
@@ -82,12 +107,12 @@ export const svgIconMixin = css`
   width: 21px;
   border-bottom: 2px solid transparent;
   &:hover {
-    fill: ${blue};
+    fill: ${getVar(accentColorPrimary)};
   }
   ${(p) =>
     p.checked &&
     `
-    fill: ${darkBlue};
+    fill: ${getVar(accentColorPrimary)};
   `}
 `;
 export const metaFontMixin = css`
@@ -98,7 +123,7 @@ export const metaFontMixin = css`
 `;
 export const metaContentMixin = css`
   ${metaFontMixin};
-  color: ${grey};
+  color: ${getVar(textColorPrimary)};
   font-family: ${sansSerif};
 `;
 export const authorExpandMixin = css`
@@ -110,7 +135,7 @@ export const authorExpandMixin = css`
   transition: letter-spacing 0.125s, color 0.125s;
   &:hover {
     letter-spacing: 8px;
-    color: ${darkGrey};
+    color: ${getVar(textColorSecondary)};
     cursor: pointer;
   }
 `;

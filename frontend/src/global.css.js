@@ -1,7 +1,18 @@
 import { createGlobalStyle } from 'styled-components';
 
+import { contentSerif } from './common/fonts.css';
+
+import {
+  textColorPrimary,
+  getVar,
+  backgroundColorSecondary,
+  backgroundColorPrimary,
+} from './variables.css';
+
 export default createGlobalStyle`
-/* http://meyerweb.com/eric/tools/css/reset/ 
+/*
+ Overrides for the original reset at:
+ http://meyerweb.com/eric/tools/css/reset/
    v2.0 | 20110126
    License: none (public domain)
 */
@@ -19,37 +30,21 @@ article, aside, canvas, details, embed,
 figure, figcaption, footer, header, hgroup, 
 menu, nav, output, ruby, section, summary,
 time, mark, audio, video {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	font-size: 100%;
-	font: inherit;
+	color: ${getVar(textColorPrimary)};
+	font-family: ${contentSerif}, serif;
+	/* looks a lot more suavecito with smoothing */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 	vertical-align: baseline;
-}
-/* HTML5 display-role reset for older browsers */
-article, aside, details, figcaption, figure,
-footer, header, hgroup, menu, nav, section {
-	display: block;
+	text-rendering: optimizeLegibility;
 }
 body {
-	line-height: 1;
+  background: ${getVar(backgroundColorSecondary)};
 }
-ol, ul {
-	list-style: none;
+[contenteditable="true"] {
+  outline: none;
 }
-blockquote, q {
-	quotes: none;
-}
-blockquote:before, blockquote:after,
-q:before, q:after {
-	content: '';
-	content: none;
-}
-table {
-	border-collapse: collapse;
-	border-spacing: 0;
-}
-button {
-  background-color: transparent;
+#app {
+  background: ${getVar(backgroundColorPrimary)};
 }
 `;

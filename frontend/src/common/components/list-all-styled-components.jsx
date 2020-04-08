@@ -1,5 +1,18 @@
 import styled, { css } from 'styled-components';
-import { grey, lightBlue, viewport7, viewport9 } from '../css';
+import {
+  accentColorPrimary,
+  backgroundColorPrimary,
+  backgroundColorSecondary,
+  getVar,
+  grey,
+  lightBlue,
+  outline,
+  textColorPrimary,
+  textColorSecondary,
+  titleColorSecondary,
+  viewport7,
+  viewport9,
+} from '../../variables.css';
 import { Col, H2Styled, H3Styled, Input } from './shared-styled-components';
 import { navButtonMixin } from './shared-styled-components-mixins';
 
@@ -11,12 +24,11 @@ export const StyledH3 = styled(H3Styled)`
   margin-left: 0;
   margin-right: 0;
   font-weight: normal;
-  color: ${grey};
 `;
 export const BaseRow = styled.div`
   max-width: ${viewport7};
   padding: 16px 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid ${getVar(backgroundColorSecondary)};
   word-wrap: break-word;
   word-break: break-word;
   &:first-of-type {
@@ -48,7 +60,7 @@ export const ColFilter = styled(Col)`
     }
   }
 `;
-export const Filter = styled.span`
+export const Filter = styled.button`
   ${navButtonMixin};
   display: inline-block;
   padding: 9px;
@@ -65,7 +77,7 @@ export const FilterWithInput = styled(Filter)`
   ${(p) =>
     p.isOpen &&
     css`
-      border: 1px solid ${lightBlue};
+      border: 1px solid ${getVar(accentColorPrimary)};
       border-right: none;
       margin-right: 0;
       border-top-right-radius: 0;
@@ -78,7 +90,7 @@ export const FilterInput = styled(Input)`
   margin-right: 8px;
   transition: opacity 0.2s;
   opacity: 1;
-  //outline: 0; // outline is ugly but, a11y
+  //outline: ${getVar(outline)};
   border: 1px solid ${lightBlue};
   border-left: none;
   border-radius: 0 26px 26px 0;

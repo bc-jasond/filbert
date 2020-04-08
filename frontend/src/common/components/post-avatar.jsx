@@ -1,7 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { boxShadow, darkGrey } from '../css';
+import {
+  accentColorPrimary,
+  accentColorSecondary,
+  boxShadow,
+  darkGrey,
+  getVar,
+} from '../../variables.css';
 import { AuthorExpand, ProfileImg } from './shared-styled-components';
 import {
   italicMixin,
@@ -17,7 +23,7 @@ const ListAvatarImg = styled(ProfileImg)`
   width: 40px;
   &:hover {
     cursor: pointer;
-    box-shadow: ${boxShadow};
+    box-shadow: ${getVar(boxShadow)};
   }
 `;
 const ListAvatarContent = styled.div`
@@ -32,7 +38,7 @@ const ListAvatarContentRowItalic = styled(ListAvatarContentRow)`
   ${italicMixin};
 `;
 const ListAvatarContentRowDarker = styled(ListAvatarContentRow)`
-  color: ${darkGrey};
+  color: ${getVar(accentColorSecondary)};
 `;
 
 export default ({ post, className, showHandle }) => {

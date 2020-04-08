@@ -4,10 +4,15 @@ import { Link, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
 import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
-import { PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../common/constants';
-import { viewport7 } from '../common/css';
+import {
+  DARK_MODE_THEME,
+  LIGHT_MODE_THEME,
+  PAGE_NAME_EDIT,
+  PAGE_NAME_VIEW,
+} from '../common/constants';
 import { createNextUrl } from '../common/dom';
-import { signout } from '../common/session';
+import { getTheme, setTheme, signout } from '../common/session';
+import { backgroundColorPrimary, getVar, viewport7 } from '../variables.css';
 
 const HeaderStyled = styled.header`
   position: fixed;
@@ -17,7 +22,8 @@ const HeaderStyled = styled.header`
   box-sizing: border-box;
   z-index: 12;
   width: 100%;
-  background: rgba(255, 255, 255, 0.97);
+  background: ${getVar(backgroundColorPrimary)};
+  opacity: 0.97;
   letter-spacing: 0;
   font-weight: 400;
   font-style: normal;
@@ -56,18 +62,31 @@ const LogoContainer = styled.div`
     align-self: center;
   }
 `;
-const NavSpan = styled.span`
+const NavSpan = styled.button`
   ${navButtonMixin};
 `;
 const NavLink = styled(Link)`
   ${navButtonMixin};
 `;
+
 export default class Header extends React.PureComponent {
   constructor(props) {
     super(props);
     this.state = {
       shouldRedirect: null,
+      theme: getTheme(),
     };
+  }
+
+  componentDidMount() {
+    const {
+      state: { theme },
+    } = this;
+    if (theme === DARK_MODE_THEME) {
+      document.body.classList.add(DARK_MODE_THEME);
+    } else {
+      document.body.classList.remove(DARK_MODE_THEME);
+    }
   }
 
   render() {
@@ -79,7 +98,7 @@ export default class Header extends React.PureComponent {
         userIsMe,
         post = Map(),
       },
-      state: { shouldRedirect },
+      state: { shouldRedirect, theme },
     } = this;
     if (shouldRedirect) {
       return <Redirect to="/signout" />;
@@ -89,6 +108,7 @@ export default class Header extends React.PureComponent {
     const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
     const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
     const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
+
     return (
       <>
         <HeaderStyled>
@@ -105,6 +125,22 @@ export default class Header extends React.PureComponent {
           <HeaderContentContainer>
             {session.get('userId') ? (
               <>
+                <NavSpan
+                  id="dark-mode-toggle"
+                  onClick={() => {
+                    if (theme === DARK_MODE_THEME) {
+                      document.body.classList.remove(DARK_MODE_THEME);
+                      setTheme(LIGHT_MODE_THEME);
+                      this.setState({ theme: LIGHT_MODE_THEME });
+                      return;
+                    }
+                    document.body.classList.add(DARK_MODE_THEME);
+                    setTheme(DARK_MODE_THEME);
+                    this.setState({ theme: DARK_MODE_THEME });
+                  }}
+                >
+                  {theme === DARK_MODE_THEME ? '☀️' : '🌑'}
+                </NavSpan>
                 {shouldShowManagePost && (
                   <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>
                     publish
