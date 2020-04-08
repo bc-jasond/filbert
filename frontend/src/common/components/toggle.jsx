@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled, { css } from 'styled-components';
 import {
-  white,
   abramovTextWhite,
   accentColorPrimary,
   backgroundColorSecondary,

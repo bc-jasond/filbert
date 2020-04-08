@@ -3,7 +3,6 @@ import styled, { css, keyframes } from 'styled-components';
 import {
   accentColorPrimary,
   accentColorSecondary,
-  backgroundColorPrimary,
   backgroundColorSecondary,
   darkGrey,
   error,
@@ -22,7 +21,6 @@ import {
 import { contentSerif, monospaced, sansSerif, titleSerif } from '../fonts.css';
 import {
   authorExpandMixin,
-  editSectionBorderMixin,
   italicMixin,
   linkMixin,
   metaContentMixin,
