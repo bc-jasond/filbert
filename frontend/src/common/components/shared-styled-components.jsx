@@ -334,7 +334,7 @@ export const LilSassyMenu = styled.div`
 `;
 const blink = keyframes`
   from, to {
-    background-color: ${darkBlue};
+    background-color: ${getVar(accentColorPrimary)};
   }
   50% {
     background-color: transparent;
@@ -344,7 +344,7 @@ export const Cursor = styled.div`
   position: absolute;
   height: 2px;
   width: 100%;
-  background-color: ${darkBlue};
+  background-color: ${getVar(accentColorPrimary)};
   animation: 1s ${blink} step-end infinite;
 }
 `;

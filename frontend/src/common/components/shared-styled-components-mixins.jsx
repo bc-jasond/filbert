@@ -12,6 +12,7 @@ import {
   backgroundColorPrimary,
   accentHoverColor,
   abramovTextWhite,
+  white,
 } from '../../variables.css';
 import { italicSerif, monospaced, sansSerif } from '../fonts.css';
 
@@ -98,7 +99,7 @@ export const navButtonMixin = css`
   `}
 `;
 export const svgIconMixin = css`
-  fill: ${getVar(textColorPrimary)};
+  fill: ${white};
   position: relative;
   top: -1px;
   vertical-align: middle;
@@ -106,12 +107,12 @@ export const svgIconMixin = css`
   width: 21px;
   border-bottom: 2px solid transparent;
   &:hover {
-    fill: ${getVar(accentColorSecondary)};
+    fill: ${getVar(accentColorPrimary)};
   }
   ${(p) =>
     p.checked &&
     `
-    fill: ${getVar(accentColorSecondary)};
+    fill: ${getVar(accentColorPrimary)};
   `}
 `;
 export const metaFontMixin = css`
