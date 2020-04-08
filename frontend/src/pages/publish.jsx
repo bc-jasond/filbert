@@ -10,7 +10,7 @@ import {
   PAGE_NAME_VIEW,
   POST_ACTION_REDIRECT_TIMEOUT,
 } from '../common/constants';
-import { ease, grey, viewport12, viewport7 } from '../common/css';
+import { ease } from '../common/css';
 import { focusAndScrollSmooth, getNextFromUrl } from '../common/dom';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../common/fetch';
 import { monospaced } from '../common/fonts.css';
@@ -34,6 +34,7 @@ import {
   TextArea,
 } from '../common/components/shared-styled-components';
 import Toggle from '../common/components/toggle';
+import { grey, viewport12, viewport7 } from '../variables.css';
 import EditImageForm from './edit/components/edit-image-form';
 
 import {
@@ -351,7 +352,7 @@ export default class Publish extends React.Component {
 
   render() {
     const {
-      props: { session, setSession },
+      props: { session, setSession, theme, setTheme },
       state: {
         post,
         redirectUrl,
@@ -375,6 +376,8 @@ export default class Publish extends React.Component {
           <Header
             session={session}
             setSession={setSession}
+            theme={theme}
+            setTheme={setTheme}
             post={post}
             pageName={PAGE_NAME_VIEW}
           />

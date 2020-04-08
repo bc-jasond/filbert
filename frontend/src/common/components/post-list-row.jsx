@@ -1,7 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { viewport7 } from '../css';
+import {
+  backgroundColorPrimary,
+  backgroundColorSecondary,
+  getVar,
+  grey,
+  viewport7,
+} from '../../variables.css';
 import { createNextUrl } from '../dom';
 import { AbstractLink, StyledHeadingA } from './layout-styled-components';
 import PostAvatar from './post-avatar';
@@ -15,7 +21,7 @@ import {
 const PostRow = styled(FlexGrid)`
   max-width: ${viewport7};
   padding: 16px 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid ${getVar(backgroundColorSecondary)};
   align-items: center;
   &:last-of-type {
     margin-bottom: 42px;

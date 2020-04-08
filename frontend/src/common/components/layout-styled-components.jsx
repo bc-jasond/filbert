@@ -2,7 +2,14 @@ import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import GitHubSvg from '../../../assets/icons/github-mark.svg';
 import InfoSvg from '../../../assets/icons/info.svg';
-import { darkGrey, grey, lightGrey, viewport9 } from '../css';
+import {
+  backgroundColorSecondary,
+  darkGrey,
+  getVar,
+  grey,
+  lightGrey,
+  viewport9,
+} from '../../variables.css';
 import { monospaced, sansSerif } from '../fonts.css';
 
 export const LinkStyled = styled(Link)`
@@ -34,7 +41,7 @@ export const FooterStyled = styled.footer`
   background: ${lightGrey};
   padding: 20px;
   text-align: center;
-  color: ${grey};
+  color: ${getVar(backgroundColorSecondary)};
 `;
 export const SocialLinksContainer = styled.div`
   display: flex;

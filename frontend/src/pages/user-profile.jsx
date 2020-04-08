@@ -136,7 +136,7 @@ export default class UserProfile extends React.Component {
   render() {
     const {
       state: { shouldShow404, user, userIsMe, stats },
-      props: { session, setSession },
+      props: { session, setSession, theme, setTheme },
     } = this;
     if (shouldShow404) return <Page404 session={session} />;
 
@@ -146,6 +146,8 @@ export default class UserProfile extends React.Component {
           <Header
             session={session}
             setSession={setSession}
+            theme={theme}
+            setTheme={setTheme}
             userIsMe={userIsMe}
           />
           <Article>

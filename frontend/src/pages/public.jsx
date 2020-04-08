@@ -198,7 +198,7 @@ export default class Public extends React.Component {
         username,
         randomFilterIsSelected,
       },
-      props: { session, setSession },
+      props: { session, setSession, theme, setTheme },
     } = this;
 
     return (
@@ -206,6 +206,8 @@ export default class Public extends React.Component {
         <Header
           session={session}
           setSession={setSession}
+          theme={theme}
+          setTheme={setTheme}
           pageName={PAGE_NAME_PUBLIC}
         />
         <Article>

@@ -4,10 +4,10 @@ import { Link, Redirect } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
 import Image from '../common/components/image';
 import { PAGE_NAME_VIEW } from '../common/constants';
-import { grey, viewport7 } from '../common/css';
 import { apiGet } from '../common/fetch';
 import { monospaced } from '../common/fonts.css';
 import { formatPostDate, reviver } from '../common/utils';
+import { grey, viewport7 } from '../variables.css';
 
 import Header from './header';
 import Footer from './footer';
@@ -178,7 +178,7 @@ export default class ViewPost extends React.PureComponent {
         shouldShow404,
         shouldRedirectToHome,
       },
-      props: { session, setSession },
+      props: { session, setSession, theme, setTheme },
     } = this;
 
     if (shouldShow404) return <Page404 session={session} />;
@@ -190,6 +190,8 @@ export default class ViewPost extends React.PureComponent {
           <Header
             session={session}
             setSession={setSession}
+            theme={theme}
+            setTheme={setTheme}
             post={post}
             pageName={PAGE_NAME_VIEW}
           />

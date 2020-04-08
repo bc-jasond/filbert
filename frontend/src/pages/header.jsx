@@ -4,10 +4,15 @@ import { Link, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
 import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
-import { PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../common/constants';
-import { viewport7 } from '../common/css';
+import {
+  DARK_MODE_THEME,
+  LIGHT_MODE_THEME,
+  PAGE_NAME_EDIT,
+  PAGE_NAME_VIEW,
+} from '../common/constants';
 import { createNextUrl } from '../common/dom';
 import { signout } from '../common/session';
+import { backgroundColorPrimary, getVar, viewport7 } from '../variables.css';
 
 const HeaderStyled = styled.header`
   position: fixed;
@@ -17,7 +22,7 @@ const HeaderStyled = styled.header`
   box-sizing: border-box;
   z-index: 12;
   width: 100%;
-  background: rgba(255, 255, 255, 0.97);
+//  background: ${getVar(backgroundColorPrimary)};
   letter-spacing: 0;
   font-weight: 400;
   font-style: normal;
@@ -75,6 +80,8 @@ export default class Header extends React.PureComponent {
       props: {
         session = Map(),
         setSession = () => {},
+        theme,
+        setTheme,
         pageName,
         userIsMe,
         post = Map(),
@@ -89,6 +96,7 @@ export default class Header extends React.PureComponent {
     const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
     const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
     const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
+
     return (
       <>
         <HeaderStyled>
@@ -105,6 +113,18 @@ export default class Header extends React.PureComponent {
           <HeaderContentContainer>
             {session.get('userId') ? (
               <>
+                <NavSpan
+                  id="dark-mode-toggle"
+                  onClick={() => {
+                    setTheme(
+                      theme === DARK_MODE_THEME
+                        ? LIGHT_MODE_THEME
+                        : DARK_MODE_THEME
+                    );
+                  }}
+                >
+                  {theme === DARK_MODE_THEME ? 'light' : 'dark'}
+                </NavSpan>
                 {shouldShowManagePost && (
                   <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>
                     publish

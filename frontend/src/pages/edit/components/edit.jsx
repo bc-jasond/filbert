@@ -2,10 +2,10 @@ import React from 'react';
 import styled from 'styled-components';
 import { Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
-import { viewport7 } from '../../../common/css';
 
 import { apiGet, apiPost, uploadImage } from '../../../common/fetch';
 import { Article } from '../../../common/components/layout-styled-components';
+import { viewport7 } from '../../../variables.css';
 import Header from '../../header';
 import Footer from '../../footer';
 

@@ -1,11 +1,14 @@
 import React from 'react';
 
 import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
-import { getSession } from './common/session';
+import { DARK_MODE_THEME } from './common/constants';
+import { getSession, getTheme, setTheme } from './common/session';
 
 // GLOBAL CSS HERE
+import CssVariables from './variables.css';
+import CssGlobals from './global.css';
 import CssReset from './reset.css';
-import CssBase from './common/fonts.css';
+import CssFonts from './common/fonts.css';
 import CssPace from './common/pace.css';
 
 import Page404 from './pages/404';
@@ -24,6 +27,10 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      theme: getTheme(),
+      setTheme: (theme) => {
+        this.setState({ theme });
+      },
       session: getSession(),
       setSession: (session) => {
         this.setState({ session });
@@ -31,9 +38,34 @@ export default class App extends React.Component {
     };
   }
 
+  setTheme = (theme) => {
+    const [htmlElement] = document.getElementsByTagName('html');
+    if (theme === DARK_MODE_THEME) {
+      htmlElement.classList.add('dark');
+    } else {
+      htmlElement.classList.remove('dark');
+    }
+    setTheme(theme);
+    this.setState({ theme });
+  };
+
+  setSession = (session) => {
+    this.setState({ session });
+  };
+
+  componentDidMount() {
+    const { theme } = this.state;
+    const [htmlElement] = document.getElementsByTagName('html');
+    if (theme === DARK_MODE_THEME) {
+      htmlElement.classList.add('dark');
+      return;
+    }
+    htmlElement.classList.remove('dark');
+  }
+
   render() {
     const {
-      state: { session, setSession },
+      state: { session, theme },
     } = this;
     const username = session.get('username');
     const RouteWithSession = ({
@@ -53,7 +85,9 @@ export default class App extends React.Component {
             <Component
               params={params}
               session={session}
-              setSession={setSession}
+              setSession={this.setSession}
+              theme={theme}
+              setTheme={this.setTheme}
             />
           )}
         />
@@ -107,7 +141,9 @@ export default class App extends React.Component {
           </Switch>
         </BrowserRouter>
         <CssReset />
-        <CssBase />
+        <CssFonts />
+        <CssVariables />
+        <CssGlobals />
         <CssPace />
       </>
     );
