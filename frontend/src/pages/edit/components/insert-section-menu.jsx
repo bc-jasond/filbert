@@ -40,7 +40,7 @@ const lineMixin = css`
 `;
 const InsertSectionMenuButton = styled.button`
   position: absolute;
-  top: 14px;
+  top: 15px;
   z-index: 3;
   width: 24px;
   height: 24px;

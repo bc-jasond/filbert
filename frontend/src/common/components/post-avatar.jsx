@@ -1,13 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import {
-  accentColorPrimary,
-  accentColorSecondary,
-  boxShadow,
-  darkGrey,
-  getVar,
-} from '../../variables.css';
+import { accentColorSecondary, boxShadow, getVar } from '../../variables.css';
 import { AuthorExpand, ProfileImg } from './shared-styled-components';
 import {
   italicMixin,
@@ -41,7 +35,7 @@ const ListAvatarContentRowDarker = styled(ListAvatarContentRow)`
   color: ${getVar(accentColorSecondary)};
 `;
 
-export default ({ post, className, showHandle }) => {
+export default React.memo(({ post, className, showHandle }) => {
   const postIsPrivate = !post.get('published');
   return (
     <ListAvatar className={className}>
@@ -69,4 +63,4 @@ export default ({ post, className, showHandle }) => {
       </ListAvatarContent>
     </ListAvatar>
   );
-};
+});

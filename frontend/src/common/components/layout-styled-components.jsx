@@ -1,15 +1,6 @@
 import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
-import GitHubSvg from '../../../assets/icons/github-mark.svg';
-import InfoSvg from '../../../assets/icons/info.svg';
-import {
-  backgroundColorSecondary,
-  darkGrey,
-  getVar,
-  grey,
-  lightGrey,
-  viewport9,
-} from '../../variables.css';
+import { darkGrey, grey, viewport9 } from '../../variables.css';
 import { monospaced, sansSerif } from '../fonts.css';
 
 export const LinkStyled = styled(Link)`
@@ -36,17 +27,6 @@ export const Article = styled.article`
     padding: 48px 80px;
   }
 `;
-export const FooterStyled = styled.footer`
-  font-family: ${monospaced}, monospaced;
-  background: ${lightGrey};
-  padding: 20px;
-  text-align: center;
-  color: ${getVar(backgroundColorSecondary)};
-`;
-export const SocialLinksContainer = styled.div`
-  display: flex;
-  justify-content: center;
-`;
 export const ALayout = styled.a`
   text-decoration: none;
   text-overflow: ellipsis;
@@ -66,14 +46,7 @@ export const SocialIcon = css`
     fill: ${darkGrey};
   }
 `;
-export const GitHubStyled = styled(GitHubSvg)`
-  cursor: pointer;
-  ${SocialIcon};
-`;
-export const InfoStyled = styled(InfoSvg)`
-  cursor: pointer;
-  ${SocialIcon};
-`;
+
 export const StaticFooter = styled.div`
   position: fixed;
   width: 100%;

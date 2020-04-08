@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Link, Redirect } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { fromJS, Map } from 'immutable';
 import Image from '../common/components/image';
 import { PAGE_NAME_VIEW } from '../common/constants';
@@ -70,150 +70,118 @@ const SiteInfoStyled = styled(SiteInfo)`
   margin: 48px 0 32px 0;
 `;
 
-function NextPostNav({ post, isPrevious }) {
-  return (
-    <Col>
-      {isPrevious ? (
-        <H3Centered>
-          <span role="img" aria-label="finger pointing left">
-            👈
-          </span>{' '}
-          previous
-        </H3Centered>
-      ) : (
-        <H3Centered>
-          next{' '}
-          <span role="img" aria-label="finger pointing right">
-            👉
-          </span>
-        </H3Centered>
+const NextPostNav = React.memo(({ post, isPrevious }) => (
+  <Col>
+    {isPrevious ? (
+      <H3Centered>
+        <span role="img" aria-label="finger pointing left">
+          👈
+        </span>{' '}
+        previous
+      </H3Centered>
+    ) : (
+      <H3Centered>
+        next{' '}
+        <span role="img" aria-label="finger pointing right">
+          👉
+        </span>
+      </H3Centered>
+    )}
+    <ImageContainer>
+      {post.getIn(['meta', 'imageNode']) && (
+        <ImageContainer>
+          <Link to={`/p/${post.get('canonical')}`}>
+            <PostImage
+              node={post.getIn(['meta', 'imageNode'])}
+              hideBorder
+              hideCaption
+            />
+          </Link>
+        </ImageContainer>
       )}
-      <ImageContainer>
-        {post.getIn(['meta', 'imageNode']) && (
-          <ImageContainer>
-            <Link to={`/p/${post.get('canonical')}`}>
-              <PostImage
-                node={post.getIn(['meta', 'imageNode'])}
-                hideBorder
-                hideCaption
-              />
-            </Link>
-          </ImageContainer>
-        )}
-      </ImageContainer>
-      <TitleContainer>
-        <StyledHeadingA href={`/p/${post.get('canonical')}`}>
-          {post.get('title')}
-        </StyledHeadingA>
-      </TitleContainer>
-      <AbstractContainer>
-        <AbstractLink href={`/p/${post.get('canonical')}`}>
-          {post.get('abstract')}
-        </AbstractLink>
-      </AbstractContainer>
-      <PostAvatarContainer>
-        <PostAvatar post={post} showHandle />
-      </PostAvatarContainer>
-    </Col>
+    </ImageContainer>
+    <TitleContainer>
+      <StyledHeadingA href={`/p/${post.get('canonical')}`}>
+        {post.get('title')}
+      </StyledHeadingA>
+    </TitleContainer>
+    <AbstractContainer>
+      <AbstractLink href={`/p/${post.get('canonical')}`}>
+        {post.get('abstract')}
+      </AbstractLink>
+    </AbstractContainer>
+    <PostAvatarContainer>
+      <PostAvatar post={post} showHandle />
+    </PostAvatarContainer>
+  </Col>
+));
+
+export default React.memo(({ params: { canonical }, session, setSession }) => {
+  const [prevPost, setPrevPost] = useState(Map());
+  const [nextPost, setNextPost] = useState(Map());
+  const [post, setPost] = useState(Map());
+  const [nodesById, setNodesById] = useState(Map());
+  const [shouldShow404, setShouldShow404] = useState(false);
+
+  useEffect(() => {
+    async function loadPost() {
+      const {
+        error,
+        data: {
+          prevPost: prevPostData,
+          nextPost: nextPostData,
+          post: postData,
+          contentNodes,
+        } = {},
+      } = await apiGet(`/post/${canonical}`);
+      if (error) {
+        console.error(error);
+        setShouldShow404(true);
+        return;
+      }
+      prevPostData.published = formatPostDate(prevPostData.published);
+      nextPostData.published = formatPostDate(nextPostData.published);
+      postData.published = formatPostDate(postData.published);
+      setPrevPost(fromJS(prevPostData));
+      setNextPost(fromJS(nextPostData));
+      setPost(fromJS(postData));
+      setNodesById(fromJS(contentNodes, reviver));
+      setShouldShow404(false);
+    }
+    loadPost();
+  }, [canonical]);
+
+  if (shouldShow404) return <Page404 session={session} />;
+
+  return (
+    nodesById.size > 0 && (
+      <>
+        <Header
+          session={session}
+          setSession={setSession}
+          post={post}
+          pageName={PAGE_NAME_VIEW}
+        />
+        <Article>
+          <PostDetailsSection>
+            <PostAvatar post={post} showHandle />
+          </PostDetailsSection>
+          <Document nodesById={nodesById} />
+          <PrevNextPostSection>
+            <SiteInfoStyled>
+              Thanks for reading{' '}
+              <span role="img" aria-label="peace sign">
+                ✌🏼
+              </span>
+            </SiteInfoStyled>
+            <FlexGrid>
+              <NextPostNav post={prevPost} isPrevious />
+              <NextPostNav post={nextPost} />
+            </FlexGrid>
+          </PrevNextPostSection>
+        </Article>
+        <Footer />
+      </>
+    )
   );
-}
-
-export default class ViewPost extends React.PureComponent {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      prevPost: Map(),
-      nextPost: Map(),
-      post: Map(),
-      nodesById: Map(),
-      shouldShow404: false,
-      shouldRedirectToHome: false,
-    };
-  }
-
-  async componentDidMount() {
-    await this.loadPost();
-  }
-
-  async componentDidUpdate(prevProps) {
-    const params = this.props?.params;
-    const id = params?.canonical;
-    const prevId = prevProps?.params?.canonical;
-    if (id === prevId) {
-      return;
-    }
-    await this.loadPost();
-  }
-
-  async loadPost() {
-    const {
-      error,
-      data: { prevPost, nextPost, post, contentNodes } = {},
-    } = await apiGet(`/post/${this.props?.params?.canonical}`);
-    if (error) {
-      console.error(error);
-      this.setState({ shouldShow404: true });
-      return;
-    }
-    prevPost.published = formatPostDate(prevPost.published);
-    nextPost.published = formatPostDate(nextPost.published);
-    post.published = formatPostDate(post.published);
-    this.setState({
-      prevPost: fromJS(prevPost),
-      nextPost: fromJS(nextPost),
-      post: fromJS(post),
-      nodesById: fromJS(contentNodes, reviver),
-      shouldShow404: false,
-    });
-  }
-
-  render() {
-    const {
-      state: {
-        prevPost,
-        nextPost,
-        post,
-        nodesById,
-        shouldShow404,
-        shouldRedirectToHome,
-      },
-      props: { session, setSession },
-    } = this;
-
-    if (shouldShow404) return <Page404 session={session} />;
-    if (shouldRedirectToHome) return <Redirect to="/" />;
-
-    return (
-      nodesById.size > 0 && (
-        <>
-          <Header
-            session={session}
-            setSession={setSession}
-            post={post}
-            pageName={PAGE_NAME_VIEW}
-          />
-          <Article>
-            <PostDetailsSection>
-              <PostAvatar post={post} showHandle />
-            </PostDetailsSection>
-            <Document nodesById={nodesById} />
-            <PrevNextPostSection>
-              <SiteInfoStyled>
-                Thanks for reading{' '}
-                <span role="img" aria-label="peace sign">
-                  ✌🏼
-                </span>
-              </SiteInfoStyled>
-              <FlexGrid>
-                <NextPostNav post={prevPost} isPrevious />
-                <NextPostNav post={nextPost} />
-              </FlexGrid>
-            </PrevNextPostSection>
-          </Article>
-          <Footer />
-        </>
-      )
-    );
-  }
-}
+});

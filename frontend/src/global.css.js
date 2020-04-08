@@ -3,10 +3,10 @@ import { createGlobalStyle } from 'styled-components';
 import { contentSerif } from './common/fonts.css';
 
 import {
-  textColorPrimary,
-  getVar,
-  backgroundColorSecondary,
   backgroundColorPrimary,
+  backgroundColorSecondary,
+  getVar,
+  textColorPrimary,
 } from './variables.css';
 
 export default createGlobalStyle`

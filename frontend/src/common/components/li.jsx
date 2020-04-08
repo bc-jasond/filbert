@@ -1,17 +1,28 @@
 import React from 'react';
+import styled from 'styled-components';
 import FormattedSelections from './formatted-selections';
-import { LiStyled } from './shared-styled-components';
 
-export default class Li extends React.PureComponent {
-  render() {
-    console.debug('Li RENDER', this);
-    const {
-      props: { node },
-    } = this;
-    return (
-      <LiStyled data-type={node.get('type')} name={node.get('id')}>
-        <FormattedSelections node={node} />
-      </LiStyled>
-    );
+const LiStyled = styled.li`
+  margin-left: 30px;
+  margin-bottom: 14px;
+  &::before {
+    box-sizing: border-box;
+    padding-right: 12px;
+    counter-increment: post;
+    content: counter(post) '.';
+    position: absolute;
+    display: inline-block;
+    width: 78px;
+    margin-left: -78px;
+    text-align: right;
   }
-}
+`;
+
+export default React.memo(({ node }) => {
+  console.debug('Li RENDER', node);
+  return (
+    <LiStyled data-type={node.get('type')} name={node.get('id')}>
+      <FormattedSelections node={node} />
+    </LiStyled>
+  );
+});

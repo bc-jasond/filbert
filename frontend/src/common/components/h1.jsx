@@ -3,20 +3,15 @@ import { NODE_TYPE_H1 } from '../constants';
 import { cleanTextOrZeroLengthPlaceholder } from '../utils';
 import { H1Styled } from './shared-styled-components';
 
-export default class H1 extends React.PureComponent {
-  render() {
-    console.debug('H1 RENDER', this);
-    const {
-      props: { node, shouldShowPlaceholder },
-    } = this;
-    return (
-      <H1Styled
-        data-type={NODE_TYPE_H1}
-        name={node.get('id')}
-        shouldShowPlaceholder={shouldShowPlaceholder}
-      >
-        {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
-      </H1Styled>
-    );
-  }
-}
+export default React.memo(({ node, shouldShowPlaceholder }) => {
+  console.debug('H1 RENDER', node);
+  return (
+    <H1Styled
+      data-type={NODE_TYPE_H1}
+      name={node.get('id')}
+      shouldShowPlaceholder={shouldShowPlaceholder}
+    >
+      {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
+    </H1Styled>
+  );
+});

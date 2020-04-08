@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import React from 'react';
 import { getContentBySelections } from '../../pages/edit/selection-helpers';
 import {
@@ -22,62 +21,57 @@ import {
   StrikeText,
 } from './shared-styled-components';
 
-export default class FormattedSelections extends React.PureComponent {
-  render() {
-    console.debug('FORMATTED SELECTIONS render()', this);
-    const {
-      props: { node },
-    } = this;
-    let children = [];
-    let didError = false;
-    let selection = node.getIn(['meta', 'selections'], Selection());
-    const contentPiecesBySelectionLength = getContentBySelections(node);
-    let idx = 0;
-    try {
-      while (selection) {
-        // re-render all selections if any one changes
-        const key = selection.hashCode();
-        // eslint-disable-next-line prefer-destructuring
-        let selectionJsx = contentPiecesBySelectionLength[idx];
+export default React.memo(({ node }) => {
+  console.debug('FORMATTED SELECTIONS render()', node);
+  let children = [];
+  let didError = false;
+  let selection = node.getIn(['meta', 'selections'], Selection());
+  const contentPiecesBySelectionLength = getContentBySelections(node);
+  let idx = 0;
+  try {
+    while (selection) {
+      // re-render all selections if any one changes
+      const key = selection.hashCode();
+      // eslint-disable-next-line prefer-destructuring
+      let selectionJsx = contentPiecesBySelectionLength[idx];
 
-        if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
-          selectionJsx = <StrikeText key={key}>{selectionJsx}</StrikeText>;
-        }
-        if (selection.get(SELECTION_ACTION_SITEINFO)) {
-          selectionJsx = <SiteInfo key={key}>{selectionJsx}</SiteInfo>;
-        }
-        if (selection.get(SELECTION_ACTION_MINI)) {
-          selectionJsx = <MiniText key={key}>{selectionJsx}</MiniText>;
-        }
-        if (selection.get(SELECTION_ACTION_ITALIC)) {
-          selectionJsx = <ItalicText key={key}>{selectionJsx}</ItalicText>;
-        }
-        if (selection.get(SELECTION_ACTION_CODE)) {
-          selectionJsx = <Code key={key}>{selectionJsx}</Code>;
-        }
-        if (selection.get(SELECTION_ACTION_BOLD)) {
-          selectionJsx = <BoldText key={key}>{selectionJsx}</BoldText>;
-        }
-        if (selection.get(SELECTION_ACTION_LINK)) {
-          selectionJsx = (
-            <A key={key} href={selection.get('linkUrl')}>
-              {selectionJsx}
-            </A>
-          );
-        }
-        children.push(selectionJsx);
-        selection = selection.get(SELECTION_NEXT);
-        idx += 1;
+      if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
+        selectionJsx = <StrikeText key={key}>{selectionJsx}</StrikeText>;
       }
-    } catch (err) {
-      console.warn(err);
-      // selections got corrupt, just display unformatted text
-      didError = true;
+      if (selection.get(SELECTION_ACTION_SITEINFO)) {
+        selectionJsx = <SiteInfo key={key}>{selectionJsx}</SiteInfo>;
+      }
+      if (selection.get(SELECTION_ACTION_MINI)) {
+        selectionJsx = <MiniText key={key}>{selectionJsx}</MiniText>;
+      }
+      if (selection.get(SELECTION_ACTION_ITALIC)) {
+        selectionJsx = <ItalicText key={key}>{selectionJsx}</ItalicText>;
+      }
+      if (selection.get(SELECTION_ACTION_CODE)) {
+        selectionJsx = <Code key={key}>{selectionJsx}</Code>;
+      }
+      if (selection.get(SELECTION_ACTION_BOLD)) {
+        selectionJsx = <BoldText key={key}>{selectionJsx}</BoldText>;
+      }
+      if (selection.get(SELECTION_ACTION_LINK)) {
+        selectionJsx = (
+          <A key={key} href={selection.get('linkUrl')}>
+            {selectionJsx}
+          </A>
+        );
+      }
+      children.push(selectionJsx);
+      selection = selection.get(SELECTION_NEXT);
+      idx += 1;
     }
-    // if there's an error, show unformatted content
-    if (didError) {
-      children = [cleanTextOrZeroLengthPlaceholder(node.get('content'))];
-    }
-    return <>{children}</>;
+  } catch (err) {
+    console.warn(err);
+    // selections got corrupt, just display unformatted text
+    didError = true;
   }
-}
+  // if there's an error, show unformatted content
+  if (didError) {
+    children = [cleanTextOrZeroLengthPlaceholder(node.get('content'))];
+  }
+  return <>{children}</>;
+});

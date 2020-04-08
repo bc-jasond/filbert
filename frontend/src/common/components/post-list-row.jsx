@@ -2,10 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import {
-  backgroundColorPrimary,
   backgroundColorSecondary,
   getVar,
-  grey,
   viewport7,
 } from '../../variables.css';
 import { createNextUrl } from '../dom';
@@ -75,7 +73,7 @@ const PostImage = styled(Image)`
   }
 `;
 
-export default ({ post }) => {
+export default React.memo(({ post }) => {
   const postIsPrivate = !post.get('published');
   return (
     <PostRow>
@@ -144,4 +142,4 @@ export default ({ post }) => {
       </DetailsCol>
     </PostRow>
   );
-};
+});
