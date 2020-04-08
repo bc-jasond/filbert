@@ -6,11 +6,12 @@ import { LogoLinkStyled } from '../common/components/layout-styled-components';
 import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
 import {
   DARK_MODE_THEME,
+  LIGHT_MODE_THEME,
   PAGE_NAME_EDIT,
   PAGE_NAME_VIEW,
 } from '../common/constants';
 import { createNextUrl } from '../common/dom';
-import { signout } from '../common/session';
+import { getTheme, setTheme, signout } from '../common/session';
 import { backgroundColorPrimary, getVar, viewport7 } from '../variables.css';
 
 const HeaderStyled = styled.header`
@@ -73,7 +74,19 @@ export default class Header extends React.PureComponent {
     super(props);
     this.state = {
       shouldRedirect: null,
+      theme: getTheme(),
     };
+  }
+
+  componentDidMount() {
+    const {
+      state: { theme },
+    } = this;
+    if (theme === DARK_MODE_THEME) {
+      document.body.classList.add(DARK_MODE_THEME);
+    } else {
+      document.body.classList.remove(DARK_MODE_THEME);
+    }
   }
 
   render() {
@@ -85,7 +98,7 @@ export default class Header extends React.PureComponent {
         userIsMe,
         post = Map(),
       },
-      state: { shouldRedirect },
+      state: { shouldRedirect, theme },
     } = this;
     if (shouldRedirect) {
       return <Redirect to="/signout" />;
@@ -114,19 +127,19 @@ export default class Header extends React.PureComponent {
               <>
                 <NavSpan
                   id="dark-mode-toggle"
-                  onClick={(e) => {
-                    if (document.body.classList.contains(DARK_MODE_THEME)) {
+                  onClick={() => {
+                    if (theme === DARK_MODE_THEME) {
                       document.body.classList.remove(DARK_MODE_THEME);
-                      e.currentTarget.innerText = '🌑';
+                      setTheme(LIGHT_MODE_THEME);
+                      this.setState({ theme: LIGHT_MODE_THEME });
                       return;
                     }
                     document.body.classList.add(DARK_MODE_THEME);
-                    e.currentTarget.innerText = '☀️';
+                    setTheme(DARK_MODE_THEME);
+                    this.setState({ theme: DARK_MODE_THEME });
                   }}
                 >
-                  {document.body.classList.contains(DARK_MODE_THEME)
-                    ? '☀️'
-                    : '🌑'}
+                  {theme === DARK_MODE_THEME ? '☀️' : '🌑'}
                 </NavSpan>
                 {shouldShowManagePost && (
                   <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>

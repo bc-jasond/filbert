@@ -1,8 +1,7 @@
 import React from 'react';
 
 import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
-import { DARK_MODE_THEME } from './common/constants';
-import { getSession, getTheme, setTheme } from './common/session';
+import { getSession } from './common/session';
 
 // GLOBAL CSS HERE
 import CssVariables from './variables.css';
@@ -37,7 +36,7 @@ export default class App extends React.Component {
 
   render() {
     const {
-      state: { session, theme },
+      state: { session },
     } = this;
     const username = session.get('username');
     const RouteWithSession = ({
@@ -58,8 +57,6 @@ export default class App extends React.Component {
               params={params}
               session={session}
               setSession={this.setSession}
-              theme={theme}
-              setTheme={this.setTheme}
             />
           )}
         />
