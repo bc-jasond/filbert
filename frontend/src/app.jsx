@@ -27,41 +27,13 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      theme: getTheme(),
-      setTheme: (theme) => {
-        this.setState({ theme });
-      },
       session: getSession(),
-      setSession: (session) => {
-        this.setState({ session });
-      },
     };
   }
-
-  setTheme = (theme) => {
-    const [htmlElement] = document.getElementsByTagName('html');
-    if (theme === DARK_MODE_THEME) {
-      htmlElement.classList.add('dark');
-    } else {
-      htmlElement.classList.remove('dark');
-    }
-    setTheme(theme);
-    this.setState({ theme });
-  };
 
   setSession = (session) => {
     this.setState({ session });
   };
-
-  componentDidMount() {
-    const { theme } = this.state;
-    const [htmlElement] = document.getElementsByTagName('html');
-    if (theme === DARK_MODE_THEME) {
-      htmlElement.classList.add('dark');
-      return;
-    }
-    htmlElement.classList.remove('dark');
-  }
 
   render() {
     const {

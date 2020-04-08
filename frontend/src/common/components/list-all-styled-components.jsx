@@ -9,6 +9,7 @@ import {
   outline,
   textColorPrimary,
   textColorSecondary,
+  titleColorSecondary,
   viewport7,
   viewport9,
 } from '../../variables.css';
@@ -23,7 +24,6 @@ export const StyledH3 = styled(H3Styled)`
   margin-left: 0;
   margin-right: 0;
   font-weight: normal;
-  color: ${getVar(textColorSecondary)};
 `;
 export const BaseRow = styled.div`
   max-width: ${viewport7};

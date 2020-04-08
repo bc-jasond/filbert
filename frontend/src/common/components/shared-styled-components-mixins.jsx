@@ -10,6 +10,8 @@ import {
   grey,
   boxShadow,
   backgroundColorPrimary,
+  accentHoverColor,
+  abramovTextWhite,
 } from '../../variables.css';
 import { italicSerif, monospaced, sansSerif } from '../fonts.css';
 
@@ -76,14 +78,14 @@ export const navButtonMixin = css`
   transition: background-color 0.125s, color 0.125s;
   flex-grow: 0;
   &:hover {
-    color: ${getVar(textColorSecondary)};
+    color: ${abramovTextWhite};
     background-color: ${getVar(accentColorPrimary)};
     box-shadow: ${getVar(boxShadow)};
   }
   ${(p) =>
     p.isOpen &&
     `
-    color: ${getVar(textColorSecondary)};
+    color: ${abramovTextWhite};
     background-color: ${getVar(accentColorPrimary)};
   `}
 `;

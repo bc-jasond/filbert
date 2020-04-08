@@ -67,6 +67,7 @@ const NavSpan = styled.span`
 const NavLink = styled(Link)`
   ${navButtonMixin};
 `;
+
 export default class Header extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -80,8 +81,6 @@ export default class Header extends React.PureComponent {
       props: {
         session = Map(),
         setSession = () => {},
-        theme,
-        setTheme,
         pageName,
         userIsMe,
         post = Map(),
@@ -115,15 +114,19 @@ export default class Header extends React.PureComponent {
               <>
                 <NavSpan
                   id="dark-mode-toggle"
-                  onClick={() => {
-                    setTheme(
-                      theme === DARK_MODE_THEME
-                        ? LIGHT_MODE_THEME
-                        : DARK_MODE_THEME
-                    );
+                  onClick={(e) => {
+                    if (document.body.classList.contains(DARK_MODE_THEME)) {
+                      document.body.classList.remove(DARK_MODE_THEME);
+                      e.currentTarget.innerText = '🌑';
+                      return;
+                    }
+                    document.body.classList.add(DARK_MODE_THEME);
+                    e.currentTarget.innerText = '☀️';
                   }}
                 >
-                  {theme === DARK_MODE_THEME ? 'light' : 'dark'}
+                  {document.body.classList.contains(DARK_MODE_THEME)
+                    ? '☀️'
+                    : '🌑'}
                 </NavSpan>
                 {shouldShowManagePost && (
                   <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>

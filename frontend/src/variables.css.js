@@ -21,8 +21,11 @@ export const backgroundColorPrimary = '--background-color-primary';
 export const backgroundColorSecondary = '--background-color-secondary';
 export const textColorPrimary = '--text-color-primary';
 export const textColorSecondary = '--text-color-secondary';
+export const titleColorPrimary = '--title-color-primary';
+export const titleColorSecondary = '--title-color-secondary';
 export const accentColorPrimary = '--accent-color-primary';
 export const accentColorSecondary = '--accent-color-secondary';
+export const accentHoverColor = '--accent-hover-color';
 export const boxShadow = '--filbert-box-shadow';
 export const outline = '--filbert-outline';
 
@@ -31,21 +34,25 @@ export function getVar(name, fallback) {
 }
 
 export default createGlobalStyle`
-html {
+body {
   ${backgroundColorPrimary}: ${white};
   ${backgroundColorSecondary}: ${lightGrey};
   ${textColorPrimary}: ${darkGrey};
-  ${textColorSecondary}: ${darkGrey};
+  ${textColorSecondary}: ${grey};
+  ${titleColorPrimary}: ${darkGrey};
+  ${titleColorSecondary}: ${grey};
   ${accentColorPrimary}: ${blue};
   ${accentColorSecondary}: ${darkBlue};
   ${boxShadow}: ${`0 2px 4px 0 ${mediumGrey}`};
   ${outline}: ${`3px solid ${blue}`};
 }
-html.dark {
+body.dark {
   ${backgroundColorPrimary}: ${darkGrey};
   ${backgroundColorSecondary}: ${grey};
   ${textColorPrimary}: ${abramovTextWhite};
   ${textColorSecondary}: ${white};
+  ${titleColorPrimary}: ${white};
+  ${titleColorSecondary}: ${abramovTextWhite};
   ${accentColorPrimary}: ${darkBlue};
   ${accentColorSecondary}: ${blue};
   ${boxShadow}: ${`0 2px 4px 0 ${darkGrey}`};

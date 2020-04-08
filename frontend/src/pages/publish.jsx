@@ -352,7 +352,7 @@ export default class Publish extends React.Component {
 
   render() {
     const {
-      props: { session, setSession, theme, setTheme },
+      props: { session, setSession },
       state: {
         post,
         redirectUrl,
@@ -376,8 +376,6 @@ export default class Publish extends React.Component {
           <Header
             session={session}
             setSession={setSession}
-            theme={theme}
-            setTheme={setTheme}
             post={post}
             pageName={PAGE_NAME_VIEW}
           />

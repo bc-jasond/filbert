@@ -15,6 +15,8 @@ import {
   outline,
   success,
   textColorSecondary,
+  titleColorPrimary,
+  titleColorSecondary,
   viewport7,
   viewport9,
 } from '../../variables.css';
@@ -76,7 +78,7 @@ export const H1Styled = styled.h1`
   font-size: 46px;
   line-height: 1.25;
   margin-bottom: 24px;
-  color: ${getVar(textColorSecondary)};
+  color: ${getVar(titleColorPrimary)};
   ${(p) =>
     p.shouldShowPlaceholder &&
     `
@@ -89,7 +91,7 @@ export const H1Styled = styled.h1`
 `;
 export const H2Styled = styled.h2`
   ${sectionWidthMixin};
-  color: ${getVar(textColorSecondary)};
+  color: ${getVar(titleColorPrimary)};
   margin-top: 30px;
   margin-bottom: 8px;
   font-weight: 600;
@@ -100,7 +102,7 @@ export const H2Styled = styled.h2`
 `;
 export const H3Styled = styled.h3`
   ${sectionWidthMixin};
-  color: ${getVar(textColorSecondary)};
+  color: ${getVar(titleColorSecondary)};
   text-overflow: ellipsis;
   //max-height: 56px;
   margin-bottom: 8px;

@@ -194,17 +194,12 @@ export default class PrivatePosts extends React.Component {
         contains,
         randomFilterIsSelected,
       },
-      props: { session, setSession, theme, setTheme },
+      props: { session, setSession },
     } = this;
 
     return (
       <>
-        <Header
-          session={session}
-          setSession={setSession}
-          theme={theme}
-          setTheme={setTheme}
-        />
+        <Header session={session} setSession={setSession} />
         <Article>
           <>
             <BaseRow>

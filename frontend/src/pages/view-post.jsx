@@ -178,7 +178,7 @@ export default class ViewPost extends React.PureComponent {
         shouldShow404,
         shouldRedirectToHome,
       },
-      props: { session, setSession, theme, setTheme },
+      props: { session, setSession },
     } = this;
 
     if (shouldShow404) return <Page404 session={session} />;
@@ -190,8 +190,6 @@ export default class ViewPost extends React.PureComponent {
           <Header
             session={session}
             setSession={setSession}
-            theme={theme}
-            setTheme={setTheme}
             post={post}
             pageName={PAGE_NAME_VIEW}
           />
