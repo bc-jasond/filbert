@@ -35,7 +35,7 @@ const ListAvatarContentRowDarker = styled(ListAvatarContentRow)`
   color: ${getVar(accentColorSecondary)};
 `;
 
-export default ({ post, className, showHandle }) => {
+export default React.memo(({ post, className, showHandle }) => {
   const postIsPrivate = !post.get('published');
   return (
     <ListAvatar className={className}>
@@ -63,4 +63,4 @@ export default ({ post, className, showHandle }) => {
       </ListAvatarContent>
     </ListAvatar>
   );
-};
+});

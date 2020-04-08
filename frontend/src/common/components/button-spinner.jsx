@@ -89,17 +89,8 @@ const Button = styled.button`
     `}
 `;
 
-export default (props) => {
-  const {
-    label,
-    loading,
-    disabled,
-    children,
-    primary,
-    onClick,
-    className,
-  } = props;
-  return (
+export default React.memo(
+  ({ label, loading, disabled, children, primary, onClick, className }) => (
     <Button
       className={className}
       disabled={loading || disabled ? 'disabled' : ''}
@@ -111,5 +102,5 @@ export default (props) => {
       <ButtonLabel loading={loading ? 'true' : undefined}>{label}</ButtonLabel>
       <SpinnerStyled loading={loading ? 'true' : undefined} />
     </Button>
-  );
-};
+  )
+);

@@ -73,19 +73,9 @@ export const Img = styled.img`
     `}
 `;
 
-export default class Image extends React.PureComponent {
-  render() {
-    console.debug('Image RENDER', this);
-    const {
-      props: {
-        node,
-        isEditing,
-        setEditNodeId,
-        hideBorder,
-        hideCaption,
-        className,
-      },
-    } = this;
+export default React.memo(
+  ({ node, isEditing, setEditNodeId, hideBorder, hideCaption, className }) => {
+    console.debug('Image RENDER', node);
     if (!nodeIsValid(node)) {
       return null;
     }
@@ -123,4 +113,4 @@ export default class Image extends React.PureComponent {
       </ImageSection>
     );
   }
-}
+);

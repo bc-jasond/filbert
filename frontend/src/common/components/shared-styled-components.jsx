@@ -120,36 +120,6 @@ export const ContentSection = styled.section`
   letter-spacing: -0.01em;
   margin-bottom: 52px;
 `;
-export const SpacerSection = styled(ContentSection)`
-  &::after {
-    content: '✎﹏﹏﹏﹏﹏﹏﹏﹏﹏';
-    text-align: center;
-    display: block;
-    margin: 0 auto;
-    width: 266px;
-  }
-  ${editSectionBorderMixin};
-`;
-export const PStyled = styled.p`
-  position: relative;
-  margin-bottom: 32px;
-  word-break: break-word;
-`;
-export const QuoteP = styled(PStyled)`
-  ${editSectionBorderMixin};
-`;
-export const PreStyled = styled.pre`
-  font: inherit;
-  margin: 0;
-  color: ${getVar(textColorSecondary)};
-  &::before {
-    display: inline-block;
-    width: 35px;
-    color: ${getVar(backgroundColorPrimary)};
-    counter-increment: code;
-    content: counter(code);
-  }
-`;
 export const CodeSection = styled(ContentSection)`
   font-family: ${monospaced}, monospace;
   font-size: 16px;
@@ -170,21 +140,6 @@ export const Ol = styled.ol`
   list-style-image: none;
   word-break: break-word;
   visibility: visible;
-`;
-export const LiStyled = styled.li`
-  margin-left: 30px;
-  margin-bottom: 14px;
-  &::before {
-    box-sizing: border-box;
-    padding-right: 12px;
-    counter-increment: post;
-    content: counter(post) '.';
-    position: absolute;
-    display: inline-block;
-    width: 78px;
-    margin-left: -78px;
-    text-align: right;
-  }
 `;
 export const A = styled.a`
   ${linkMixin}

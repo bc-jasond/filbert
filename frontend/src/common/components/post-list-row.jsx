@@ -73,7 +73,7 @@ const PostImage = styled(Image)`
   }
 `;
 
-export default ({ post }) => {
+export default React.memo(({ post }) => {
   const postIsPrivate = !post.get('published');
   return (
     <PostRow>
@@ -142,4 +142,4 @@ export default ({ post }) => {
       </DetailsCol>
     </PostRow>
   );
-};
+});

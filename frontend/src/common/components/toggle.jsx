@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled, { css } from 'styled-components';
 import {
+  white,
   abramovTextWhite,
   accentColorPrimary,
   backgroundColorSecondary,
@@ -65,41 +66,29 @@ const HiddenCheckbox = styled.input`
   opacity: 0;
 `;
 
-export default class extends React.PureComponent {
-  constructor(props) {
-    super(props);
+export default React.memo(({ value, onUpdate, label, children, disabled }) => {
+  const [isFocused, setIsFocused] = useState(false);
 
-    this.state = {
-      isFocused: false,
-    };
-  }
-
-  render() {
-    const {
-      props: { value, onUpdate, label, children, disabled },
-      state: { isFocused },
-    } = this;
-    return (
-      <Wrapper>
-        {children || <Label>{label}</Label>}
-        <ToggleWrapper
-          value={value}
+  return (
+    <Wrapper>
+      {children || <Label>{label}</Label>}
+      <ToggleWrapper
+        value={value}
+        disabled={disabled}
+        onClick={() => !disabled && onUpdate()}
+        isFocused={isFocused}
+      >
+        <Knob value={value} />
+        <HiddenCheckbox
+          key={`checkbox${value}`}
+          type="checkbox"
+          checked={!!value}
           disabled={disabled}
-          onClick={() => !disabled && onUpdate()}
-          isFocused={isFocused}
-        >
-          <Knob value={value} />
-          <HiddenCheckbox
-            key={`checkbox${value}`}
-            type="checkbox"
-            checked={!!value}
-            disabled={disabled}
-            onFocus={() => this.setState({ isFocused: true })}
-            onBlur={() => this.setState({ isFocused: false })}
-            onChange={onUpdate}
-          />
-        </ToggleWrapper>
-      </Wrapper>
-    );
-  }
-}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onChange={onUpdate}
+        />
+      </ToggleWrapper>
+    </Wrapper>
+  );
+});

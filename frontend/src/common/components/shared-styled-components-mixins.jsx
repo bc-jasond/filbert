@@ -18,8 +18,9 @@ export const sectionWidthMixin = css`
 `;
 // TODO: use ::selection to style MetaType nodes when selected
 export const editSectionBorderMixin = css`
-  border: ${`4px solid ${({ isEditing }) =>
-    isEditing ? getVar(accentColorPrimary) : 'transparent'}`};
+  border: 4px solid
+    ${({ isEditing }) =>
+      isEditing ? getVar(accentColorPrimary) : 'transparent'};
   ${({ isEditMode, isEditing }) =>
     isEditMode &&
     css`
