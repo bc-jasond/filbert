@@ -1,5 +1,5 @@
 import { Map } from 'immutable';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
@@ -69,121 +69,106 @@ const NavLink = styled(Link)`
   ${navButtonMixin};
 `;
 
-export default class Header extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      shouldRedirect: null,
-      theme: getTheme(),
-    };
-  }
+export default function Header({
+  session = Map(),
+  setSession = () => {},
+  pageName,
+  userIsMe,
+  post = Map(),
+}) {
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [theme, setThemeHook] = useState(getTheme());
 
-  componentDidMount() {
-    const {
-      state: { theme },
-    } = this;
+  useEffect(() => {
     if (theme === DARK_MODE_THEME) {
       document.body.classList.add(DARK_MODE_THEME);
-    } else {
-      document.body.classList.remove(DARK_MODE_THEME);
+      return;
     }
+    document.body.classList.remove(DARK_MODE_THEME);
+  });
+
+  if (shouldRedirect) {
+    return <Redirect to="/signout" />;
   }
 
-  render() {
-    const {
-      props: {
-        session = Map(),
-        setSession = () => {},
-        pageName,
-        userIsMe,
-        post = Map(),
-      },
-      state: { shouldRedirect, theme },
-    } = this;
-    if (shouldRedirect) {
-      return <Redirect to="/signout" />;
-    }
+  const shouldShowManagePost = pageName === PAGE_NAME_EDIT && post.get('id');
+  const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
+  const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
+  const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
 
-    const shouldShowManagePost = pageName === PAGE_NAME_EDIT && post.get('id');
-    const shouldShowEdit = pageName === PAGE_NAME_VIEW && post.get('canEdit');
-    const shouldShowNew = pageName !== PAGE_NAME_EDIT || post.get('id');
-    const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
-
-    return (
-      <>
-        <HeaderStyled>
-          <HeaderContentContainer>
-            <LogoContainer>
-              <LogoLinkStyled to="/">
-                <span role="img" aria-label="hand writing with a pen">
-                  ✍️
-                </span>{' '}
-                filbert
-              </LogoLinkStyled>
-            </LogoContainer>
-          </HeaderContentContainer>
-          <HeaderContentContainer>
-            {session.get('userId') ? (
-              <>
+  return (
+    <>
+      <HeaderStyled>
+        <HeaderContentContainer>
+          <LogoContainer>
+            <LogoLinkStyled to="/">
+              <span role="img" aria-label="hand writing with a pen">
+                ✍️
+              </span>{' '}
+              filbert
+            </LogoLinkStyled>
+          </LogoContainer>
+        </HeaderContentContainer>
+        <HeaderContentContainer>
+          {session.get('userId') ? (
+            <>
+              <NavSpan
+                id="dark-mode-toggle"
+                onClick={() => {
+                  if (theme === DARK_MODE_THEME) {
+                    document.body.classList.remove(DARK_MODE_THEME);
+                    setTheme(LIGHT_MODE_THEME);
+                    setThemeHook(LIGHT_MODE_THEME);
+                    return;
+                  }
+                  document.body.classList.add(DARK_MODE_THEME);
+                  setTheme(DARK_MODE_THEME);
+                  setThemeHook(DARK_MODE_THEME);
+                }}
+              >
+                {theme === DARK_MODE_THEME ? '☀️' : '🌑'}
+              </NavSpan>
+              {shouldShowManagePost && (
+                <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>
+                  publish
+                </NavLink>
+              )}
+              {shouldShowEdit && (
+                <NavLink to={`/edit/${post.get('id')}`}>edit</NavLink>
+              )}
+              {shouldShowNew && <NavLink to="/edit/new">new</NavLink>}
+              {shouldShowPublic && <NavLink to="/public">public</NavLink>}
+              <NavLink to="/private">private</NavLink>
+              {userIsMe ? (
                 <NavSpan
-                  id="dark-mode-toggle"
+                  id="signed-in-user"
                   onClick={() => {
-                    if (theme === DARK_MODE_THEME) {
-                      document.body.classList.remove(DARK_MODE_THEME);
-                      setTheme(LIGHT_MODE_THEME);
-                      this.setState({ theme: LIGHT_MODE_THEME });
-                      return;
+                    if (confirm('Sign out?')) {
+                      setShouldRedirect(true);
+                      signout();
+                      setSession(Map());
                     }
-                    document.body.classList.add(DARK_MODE_THEME);
-                    setTheme(DARK_MODE_THEME);
-                    this.setState({ theme: DARK_MODE_THEME });
                   }}
                 >
-                  {theme === DARK_MODE_THEME ? '☀️' : '🌑'}
+                  sign out
                 </NavSpan>
-                {shouldShowManagePost && (
-                  <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>
-                    publish
-                  </NavLink>
-                )}
-                {shouldShowEdit && (
-                  <NavLink to={`/edit/${post.get('id')}`}>edit</NavLink>
-                )}
-                {shouldShowNew && <NavLink to="/edit/new">new</NavLink>}
-                {shouldShowPublic && <NavLink to="/public">public</NavLink>}
-                <NavLink to="/private">private</NavLink>
-                {userIsMe ? (
-                  <NavSpan
-                    id="signed-in-user"
-                    onClick={() => {
-                      if (confirm('Sign out?')) {
-                        this.setState({ shouldRedirect: true }, () => {
-                          signout();
-                          setSession(Map());
-                        });
-                      }
-                    }}
-                  >
-                    sign out
-                  </NavSpan>
-                ) : (
-                  <NavLink id="signed-in-user" to="/me">
-                    {session.get('username')}
-                  </NavLink>
-                )}
-              </>
-            ) : (
-              <>
-                {shouldShowPublic && <NavLink to="/public">public</NavLink>}
-                <NavLink id="signed-in-user" to="/signin">
-                  join or sign in
+              ) : (
+                <NavLink id="signed-in-user" to="/me">
+                  {session.get('username')}
                 </NavLink>
-              </>
-            )}
-          </HeaderContentContainer>
-        </HeaderStyled>
-        <HeaderSpacer />
-      </>
-    );
-  }
+              )}
+            </>
+          ) : (
+            <>
+              {shouldShowPublic && <NavLink to="/public">public</NavLink>}
+              <NavLink id="signed-in-user" to="/signin">
+                join or sign in
+              </NavLink>
+            </>
+          )}
+        </HeaderContentContainer>
+      </HeaderStyled>
+      <HeaderSpacer />
+    </>
+  );
 }
