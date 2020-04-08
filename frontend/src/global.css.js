@@ -38,7 +38,7 @@ time, mark, audio, video {
 	vertical-align: baseline;
 	text-rendering: optimizeLegibility;
 }
-html {
+body {
   background: ${getVar(backgroundColorSecondary)};
 }
 [contenteditable="true"] {
