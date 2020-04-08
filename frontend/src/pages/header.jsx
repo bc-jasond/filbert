@@ -6,7 +6,6 @@ import { LogoLinkStyled } from '../common/components/layout-styled-components';
 import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
 import {
   DARK_MODE_THEME,
-  LIGHT_MODE_THEME,
   PAGE_NAME_EDIT,
   PAGE_NAME_VIEW,
 } from '../common/constants';
@@ -22,7 +21,8 @@ const HeaderStyled = styled.header`
   box-sizing: border-box;
   z-index: 12;
   width: 100%;
-//  background: ${getVar(backgroundColorPrimary)};
+  background: ${getVar(backgroundColorPrimary)};
+  opacity: 0.97;
   letter-spacing: 0;
   font-weight: 400;
   font-style: normal;
@@ -61,7 +61,7 @@ const LogoContainer = styled.div`
     align-self: center;
   }
 `;
-const NavSpan = styled.span`
+const NavSpan = styled.button`
   ${navButtonMixin};
 `;
 const NavLink = styled(Link)`

@@ -60,7 +60,7 @@ export const ColFilter = styled(Col)`
     }
   }
 `;
-export const Filter = styled.span`
+export const Filter = styled.button`
   ${navButtonMixin};
   display: inline-block;
   padding: 9px;

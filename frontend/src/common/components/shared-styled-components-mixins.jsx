@@ -50,6 +50,14 @@ export const linkMixin = css`
   background-position: 0 calc(1em + 1px);
   &:hover {
     color: ${getVar(accentColorPrimary)};
+    background-image: linear-gradient(
+      to right,
+      currentColor 100%,
+      currentColor 0
+    );
+  }
+  &:visited {
+    color: mediumpurple;
   }
 `;
 export const italicMixin = css`

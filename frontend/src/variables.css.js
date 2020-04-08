@@ -1,7 +1,6 @@
 import { createGlobalStyle } from 'styled-components';
 
-const white = '#fff';
-const black = '#000';
+export const white = '#fff';
 export const abramovTextWhite = 'hsla(0,0%,100%,0.88)';
 export const lightGrey = '#DEDEDF';
 export const mediumGrey = '#C7C7C8';
@@ -9,7 +8,7 @@ export const grey = '#7C7C7C';
 export const darkGrey = '#292929';
 export const lightBlue = '#A0CFE1';
 export const blue = '#79bbd5';
-export const darkBlue = '#52a8c9';
+export const darkBlue = '#1F7596';
 export const lightError = '#ff6565';
 export const error = '#cc0000';
 export const success = '#5CB85C';
@@ -38,7 +37,7 @@ body {
   ${backgroundColorPrimary}: ${white};
   ${backgroundColorSecondary}: ${lightGrey};
   ${textColorPrimary}: ${darkGrey};
-  ${textColorSecondary}: ${grey};
+  ${textColorSecondary}: ${darkGrey};
   ${titleColorPrimary}: ${darkGrey};
   ${titleColorSecondary}: ${grey};
   ${accentColorPrimary}: ${blue};
