@@ -1,5 +1,5 @@
 import { Map } from 'immutable';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';

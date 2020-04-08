@@ -1,15 +1,10 @@
 import styled, { css } from 'styled-components';
 import {
   accentColorPrimary,
-  backgroundColorPrimary,
   backgroundColorSecondary,
   getVar,
-  grey,
   lightBlue,
   outline,
-  textColorPrimary,
-  textColorSecondary,
-  titleColorSecondary,
   viewport7,
   viewport9,
 } from '../../variables.css';

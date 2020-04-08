@@ -5,7 +5,6 @@ import {
   accentColorSecondary,
   backgroundColorPrimary,
   backgroundColorSecondary,
-  darkBlue,
   darkGrey,
   error,
   getVar,

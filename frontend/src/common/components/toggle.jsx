@@ -7,7 +7,6 @@ import {
   boxShadow,
   getVar,
   outline,
-  textColorPrimary,
 } from '../../variables.css';
 import { ease } from '../css';
 

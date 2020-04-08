@@ -1,17 +1,13 @@
 import { css } from 'styled-components';
 import {
-  getVar,
-  textColorSecondary,
-  textColorPrimary,
+  abramovTextWhite,
   accentColorPrimary,
   accentColorSecondary,
-  blue,
-  lightBlue,
-  grey,
   boxShadow,
-  backgroundColorPrimary,
-  accentHoverColor,
-  abramovTextWhite,
+  getVar,
+  grey,
+  textColorPrimary,
+  textColorSecondary,
   white,
 } from '../../variables.css';
 import { italicSerif, monospaced, sansSerif } from '../fonts.css';
@@ -22,15 +18,15 @@ export const sectionWidthMixin = css`
 `;
 // TODO: use ::selection to style MetaType nodes when selected
 export const editSectionBorderMixin = css`
-  border: 4px solid
-    ${(p) => (p.isEditing ? getVar(accentColorPrimary) : 'transparent')};
-  ${(p) =>
-    p.isEditMode &&
+  border: ${`4px solid ${({ isEditing }) =>
+    isEditing ? getVar(accentColorPrimary) : 'transparent'}`};
+  ${({ isEditMode, isEditing }) =>
+    isEditMode &&
     css`
       &:hover {
         cursor: pointer;
         border: 4px solid
-          ${p.isEditing
+          ${isEditing
             ? getVar(accentColorPrimary)
             : getVar(accentColorSecondary)};
       }

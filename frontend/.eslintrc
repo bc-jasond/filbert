@@ -3,7 +3,8 @@
         "airbnb",
         "prettier",
         "prettier/babel",
-        "prettier/react"
+        "prettier/react",
+        "plugin:react-hooks/recommended"
     ],
     "globals": {
         "Pace": "readonly",

@@ -1,13 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import {
-  accentColorPrimary,
-  accentColorSecondary,
-  boxShadow,
-  darkGrey,
-  getVar,
-} from '../../variables.css';
+import { accentColorSecondary, boxShadow, getVar } from '../../variables.css';
 import { AuthorExpand, ProfileImg } from './shared-styled-components';
 import {
   italicMixin,
