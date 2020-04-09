@@ -43,7 +43,7 @@ export default class App extends React.Component {
       exact,
       path,
       requiresAuth,
-      ...props
+      shouldListDrafts,
     }) => {
       if (requiresAuth && !username) {
         return <Page404 />;
@@ -57,7 +57,7 @@ export default class App extends React.Component {
               params={params}
               session={session}
               setSession={this.setSession}
-              {...props}
+              shouldListDrafts={shouldListDrafts}
             />
           )}
         />
@@ -89,7 +89,7 @@ export default class App extends React.Component {
               path="/private"
               component={PostList}
               requiresAuth
-              shouldListDrafts={true}
+              shouldListDrafts
             />
             {/* NOTE: view a "published" post - this :canonical is a string like: 'some-url-87ba' */}
             <RouteWithSession exact path="/p/:canonical" component={ViewPost} />

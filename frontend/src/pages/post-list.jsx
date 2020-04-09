@@ -1,5 +1,5 @@
 import { fromJS, List } from 'immutable';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlexGrid } from '../common/components/shared-styled-components';
 import { PAGE_NAME_PRIVATE, PAGE_NAME_PUBLIC } from '../common/constants';
 
@@ -34,7 +34,7 @@ export default React.memo(
     const [loading, setLoading] = useState(false);
     const [posts, setDrafts] = useState(List());
 
-    const queryParams = new URLSearchParams(window.location.search);
+    let queryParams = new URLSearchParams(window.location.search);
     const [oldestFilterIsSelected, setOldestFilterIsSelected] = useState(
       queryParams.has('oldest')
     );
@@ -53,21 +53,8 @@ export default React.memo(
       queryParams.has('random')
     );
 
-    useEffect(() => {
-      syncQueryStringWithStateAndPushHistory();
-      loadPosts();
-    }, [
-      oldestFilterIsSelected,
-      containsFilterIsSelected,
-      randomFilterIsSelected,
-      shouldListDrafts,
-    ]);
-    useEffect(() => {
-      syncQueryStringWithStateAndPushHistory();
-    }, [contains, username]);
-
     function syncQueryStringWithStateAndPushHistory() {
-      const queryParams = new URLSearchParams(window.location.search);
+      queryParams = new URLSearchParams(window.location.search);
       queryParams.delete('username');
       queryParams.delete('contains');
       queryParams.delete('random');
@@ -99,16 +86,16 @@ export default React.memo(
         return;
       }
       setLoading(true);
-      const queryParams = new URLSearchParams(window.location.search);
+      queryParams = new URLSearchParams(window.location.search);
       const queryString =
         queryParams.toString().length > 0 ? `?${queryParams.toString()}` : '';
 
-      const { error, data: posts } = await apiGet(
+      const { error, data: postsData } = await apiGet(
         `${getPostsUrl}${queryString}`
       );
       if (!error) {
         const postsFormatted = fromJS(
-          posts.map((post) => ({
+          postsData.map((post) => ({
             ...post,
             published: formatPostDate(post.published),
             updated: formatPostDate(post.updated),
@@ -118,6 +105,19 @@ export default React.memo(
       }
       setLoading(false);
     }
+
+    useEffect(() => {
+      syncQueryStringWithStateAndPushHistory();
+      loadPosts();
+    }, [
+      oldestFilterIsSelected,
+      containsFilterIsSelected,
+      randomFilterIsSelected,
+      shouldListDrafts,
+    ]);
+    useEffect(() => {
+      syncQueryStringWithStateAndPushHistory();
+    }, [contains, username]);
 
     function toggleOldestFilter() {
       if (loading) {
