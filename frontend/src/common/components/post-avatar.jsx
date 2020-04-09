@@ -35,8 +35,7 @@ const ListAvatarContentRowDarker = styled(ListAvatarContentRow)`
   color: ${getVar(accentColorSecondary)};
 `;
 
-export default React.memo(({ post, className, showHandle }) => {
-  const postIsPrivate = !post.get('published');
+export default React.memo(({ post, className, showHandle, postIsPrivate }) => {
   return (
     <ListAvatar className={className}>
       {(post.get('userProfileIsPublic') || postIsPrivate) && (

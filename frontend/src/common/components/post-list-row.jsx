@@ -73,8 +73,7 @@ const PostImage = styled(Image)`
   }
 `;
 
-export default React.memo(({ post }) => {
-  const postIsPrivate = !post.get('published');
+export default React.memo(({ post, postIsPrivate }) => {
   return (
     <PostRow>
       {post.getIn(['meta', 'imageNode']) && (
@@ -117,7 +116,7 @@ export default React.memo(({ post }) => {
         </PostAbstractRow>
         <PostMetaRow>
           <PostActionContainer>
-            <PostAvatar post={post} />
+            <PostAvatar post={post} postIsPrivate={postIsPrivate} />
           </PostActionContainer>
           {post.get('canEdit') && (
             <PostActionContainer>

@@ -13,9 +13,8 @@ import CssPace from './common/pace.css';
 import Page404 from './pages/404';
 import Signout from './pages/signout';
 
-import Public from './pages/public';
 import EditPost from './pages/edit/components/edit';
-import Private from './pages/private';
+import PostList from './pages/post-list';
 import SignIn from './pages/signin';
 import SignInAdmin from './pages/signin-admin';
 import ViewPost from './pages/view-post';
@@ -44,6 +43,7 @@ export default class App extends React.Component {
       exact,
       path,
       requiresAuth,
+      ...props
     }) => {
       if (requiresAuth && !username) {
         return <Page404 />;
@@ -57,6 +57,7 @@ export default class App extends React.Component {
               params={params}
               session={session}
               setSession={this.setSession}
+              {...props}
             />
           )}
         />
@@ -82,12 +83,13 @@ export default class App extends React.Component {
               path="/signin-admin"
               component={SignInAdmin}
             />
-            <RouteWithSession exact path="/public" component={Public} />
+            <RouteWithSession exact path="/public" component={PostList} />
             <RouteWithSession
               exact
               path="/private"
-              component={Private}
+              component={PostList}
               requiresAuth
+              shouldListDrafts={true}
             />
             {/* NOTE: view a "published" post - this :canonical is a string like: 'some-url-87ba' */}
             <RouteWithSession exact path="/p/:canonical" component={ViewPost} />
