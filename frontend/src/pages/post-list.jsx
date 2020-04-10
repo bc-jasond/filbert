@@ -23,18 +23,17 @@ import {
 } from '../common/components/list-all-styled-components';
 
 import PostListRow from '../common/components/post-list-row';
+import useDebounce from '../common/use-debounce.hook';
 
 export default React.memo(
   ({ shouldListDrafts = false, session, setSession }) => {
     const getPostsUrl = shouldListDrafts ? '/draft' : '/post';
 
     const inputRef = React.createRef();
-
-    const [debounceTimeout, setDebounceTimeout] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [posts, setDrafts] = useState(List());
+    const [posts, setPosts] = useState(List());
 
-    let queryParams = new URLSearchParams(window.location.search);
+    const queryParams = new URLSearchParams(window.location.search);
     const [oldestFilterIsSelected, setOldestFilterIsSelected] = useState(
       queryParams.has('oldest')
     );
@@ -43,81 +42,108 @@ export default React.memo(
       queryParams.has('contains')
     );
     const [contains, setContains] = useState(queryParams.get('contains') || '');
+    const containsDebounced = useDebounce(contains, 750);
+
     // for Posts - username is like...
     const [usernameFilterIsSelected, setUsernameFilterIsSelected] = useState(
       queryParams.has('username')
     );
     const [username, setUsername] = useState(queryParams.get('username') || '');
+    const usernameDebounced = useDebounce(username, 750);
+
     // I thought this would be fun, not implemented yet
     const [randomFilterIsSelected, setRandomFilterIsSelected] = useState(
       queryParams.has('random')
     );
+    const [queryString, setQueryString] = useState(queryParams.toString());
 
-    function syncQueryStringWithStateAndPushHistory() {
-      queryParams = new URLSearchParams(window.location.search);
-      queryParams.delete('username');
-      queryParams.delete('contains');
-      queryParams.delete('random');
-      queryParams.delete('oldest');
-      if (!shouldListDrafts && username) {
-        queryParams.set('username', username);
-      }
-      if (shouldListDrafts && contains) {
-        queryParams.set('contains', contains);
-      }
-      if (randomFilterIsSelected) {
-        queryParams.set('random', '');
-      }
-      if (oldestFilterIsSelected) {
-        queryParams.set('oldest', '');
-      }
-      const queryString =
-        queryParams.toString().length > 0 ? `?${queryParams.toString()}` : '';
+    function pushHistory(params) {
+      const queryStringInternal =
+        params.toString().length > 0 ? `?${params.toString()}` : '';
       // update the URL in history for the user to retain
       window.history.pushState(
         {},
         document.title,
-        `${window.location.pathname}${queryString}`
+        `${window.location.pathname}${queryStringInternal}`
       );
-    }
-
-    async function loadPosts() {
-      if (loading) {
-        return;
-      }
-      setLoading(true);
-      queryParams = new URLSearchParams(window.location.search);
-      const queryString =
-        queryParams.toString().length > 0 ? `?${queryParams.toString()}` : '';
-
-      const { error, data: postsData } = await apiGet(
-        `${getPostsUrl}${queryString}`
-      );
-      if (!error) {
-        const postsFormatted = fromJS(
-          postsData.map((post) => ({
-            ...post,
-            published: formatPostDate(post.published),
-            updated: formatPostDate(post.updated),
-          }))
-        );
-        setDrafts(postsFormatted);
-      }
-      setLoading(false);
     }
 
     useEffect(() => {
-      syncQueryStringWithStateAndPushHistory();
-      loadPosts();
+      const queryParamsInternal = new URLSearchParams(window.location.search);
+      queryParamsInternal.delete('random');
+      queryParamsInternal.delete('oldest');
+      if (!containsFilterIsSelected) {
+        queryParamsInternal.delete('contains');
+      }
+      if (!usernameFilterIsSelected) {
+        queryParamsInternal.delete('username');
+      }
+      if (randomFilterIsSelected) {
+        queryParamsInternal.set('random', '');
+      }
+      if (oldestFilterIsSelected) {
+        queryParamsInternal.set('oldest', '');
+      }
+      pushHistory(queryParamsInternal);
+      setQueryString(queryParamsInternal.toString());
     }, [
       oldestFilterIsSelected,
-      containsFilterIsSelected,
       randomFilterIsSelected,
+      containsFilterIsSelected,
+      usernameFilterIsSelected,
       shouldListDrafts,
     ]);
+
     useEffect(() => {
-      syncQueryStringWithStateAndPushHistory();
-    }, [contains, username]);
+      if (!shouldListDrafts) {
+        return;
+      }
+      const queryParamsInternal = new URLSearchParams(window.location.search);
+      queryParamsInternal.delete('contains');
+      if (containsDebounced.length < 3) {
+        return;
+      }
+      queryParamsInternal.set('contains', containsDebounced);
+      pushHistory(queryParamsInternal);
+      setQueryString(queryParamsInternal.toString());
+    }, [containsDebounced, shouldListDrafts]);
+
+    useEffect(() => {
+      if (shouldListDrafts) {
+        return;
+      }
+      const queryParamsInternal = new URLSearchParams(window.location.search);
+      queryParamsInternal.delete('username');
+      if (usernameDebounced.length < 5 || usernameDebounced.length > 42) {
+        return;
+      }
+      queryParamsInternal.set('username', usernameDebounced);
+      pushHistory(queryParamsInternal);
+      setQueryString(queryParamsInternal.toString());
+    }, [usernameDebounced, shouldListDrafts]);
+
+    useEffect(() => {
+      async function loadPosts(queryStringArg = '') {
+        setLoading(true);
+        const queryStringInternal =
+          queryStringArg.length > 0 ? `?${queryStringArg}` : '';
+        const { error, data: postsData } = await apiGet(
+          `${getPostsUrl}${queryStringInternal}`
+        );
+        if (!error) {
+          const postsFormatted = fromJS(
+            postsData.map((post) => ({
+              ...post,
+              published: formatPostDate(post.published),
+              updated: formatPostDate(post.updated),
+            }))
+          );
+          setPosts(postsFormatted);
+        }
+        setLoading(false);
+      }
+      loadPosts(queryString);
+    }, [queryString, getPostsUrl]);
 
     function toggleOldestFilter() {
       if (loading) {
@@ -149,13 +175,6 @@ export default React.memo(
         return;
       }
       setContains(value);
-      if (value === contains || value.length < 3) {
-        return;
-      }
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-      setDebounceTimeout(setTimeout(loadPosts, 750));
     }
 
     function toggleUsernameFilter() {
@@ -164,7 +183,6 @@ export default React.memo(
       }
       setUsernameFilterIsSelected(!usernameFilterIsSelected);
       setUsername('');
-
       if (!usernameFilterIsSelected) {
         inputRef.current.focus();
       }
@@ -176,17 +194,6 @@ export default React.memo(
       }
       const newUsername = value.replace(/[^0-9a-z]/g, '');
       setUsername(newUsername);
-      if (
-        newUsername === username ||
-        newUsername.length < 5 ||
-        newUsername.length > 42
-      ) {
-        return;
-      }
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-      setDebounceTimeout(setTimeout(loadPosts, 750));
     }
 
     return (
