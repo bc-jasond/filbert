@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 // copied from https://dev.to/gabe_ragland/debouncing-with-react-hooks-jci
-export default function useDebounce(value, delay) {
+export default function useDebounce(value, delay = 750) {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {

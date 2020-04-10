@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import GoogleIconSvg from '../../assets/icons/google-logo.svg';
@@ -24,6 +24,7 @@ import { sansSerif } from '../common/fonts.css';
 
 import { getSession, signout } from '../common/session';
 import { getGoogleUser, googleAuthInit } from '../common/google-auth';
+import useDebounce from '../common/use-debounce.hook';
 import { stopAndPrevent } from '../common/utils';
 import {
   backgroundColorPrimary,
@@ -93,274 +94,242 @@ const GoogleInfoSpan = styled.span`
   padding: 4px;
 `;
 
-const usernameRef = React.createRef();
+export default React.memo(({ setSession }) => {
+  const GoogleAuth = useRef(null);
+  const usernameRef = useRef(null);
 
-export default class SignIn extends React.Component {
-  GoogleAuth;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [username, setUsername] = useState(null);
+  const [googleUser, setGoogleUser] = useState({});
+  const [shouldShowUsernameInput, setShouldShowUsernameInput] = useState(false);
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      error: null,
-      success: null,
-      shouldRedirect: false,
-      username: '',
-      googleUser: {},
-      shouldShowUsernameInput: false,
-    };
-  }
+  const usernameDebounced = useDebounce(username);
 
-  async componentDidMount() {
-    if (usernameRef && usernameRef.current) {
-      usernameRef.current.focus();
-    }
-    window.initThaGoog = async () => {
-      this.setState({ loading: true });
-      this.GoogleAuth = await googleAuthInit();
-      if (this.GoogleAuth.isSignedIn.get()) {
-        const user = this.GoogleAuth.currentUser.get();
-        await this.setGoogleUser(user);
+  useEffect(() => {
+    async function init() {
+      window.initThaGoog = async () => {
+        setLoading(true);
+        GoogleAuth.current = await googleAuthInit();
+        if (GoogleAuth.current.isSignedIn.get()) {
+          const user = GoogleAuth.current.currentUser.get();
+          setGoogleUser(getGoogleUser(user));
+        }
+        setLoading(false);
+      };
+      if (!GoogleAuth.current) {
+        await loadScript(
+          'https://apis.google.com/js/platform.js?onload=initThaGoog'
+        );
+      } else if (GoogleAuth.current.isSignedIn.get()) {
+        const user = GoogleAuth.current.currentUser.get();
+        setGoogleUser(getGoogleUser(user));
       }
-      this.setState({ loading: false });
-    };
-    if (!this.GoogleAuth) {
-      await loadScript(
-        'https://apis.google.com/js/platform.js?onload=initThaGoog'
-      );
-    } else if (this.GoogleAuth.isSignedIn.get()) {
-      const user = this.GoogleAuth.currentUser.get();
-      await this.setGoogleUser(user);
+      setLoading(false);
     }
-    this.setState({ loading: false });
-  }
+    init();
+    return () => {
+      delete window.initThaGoog;
+    };
+  }, []);
 
-  componentWillUnmount() {
-    delete window.initThaGoog;
-  }
+  useEffect(() => {
+    async function checkUsernameAvailability() {
+      if (!shouldShowUsernameInput || typeof usernameDebounced !== 'string') {
+        return;
+      }
+      if (usernameDebounced.length < 5) {
+        setError(
+          `${usernameDebounced} is too short.  Pick a username between 5 and 42 characters.`
+        );
+        setSuccess(null);
+        setLoading(false);
+        return;
+      }
+      if (usernameDebounced.length > 42) {
+        setError(
+          `${usernameDebounced} is too long.  Pick a username between 5 and 42 characters.`
+        );
+        setSuccess(null);
+        setLoading(false);
+        return;
+      }
+      const { error: errorApi } = await apiGet(
+        `/user/${usernameDebounced}?forSignup`
+      );
+      // here a 404 means "not taken"
+      if (errorApi) {
+        setSuccess(`"${usernameDebounced}" is available 👍`);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+      setError(`${usernameDebounced} is taken`);
+      setSuccess(null);
+      setLoading(false);
+    }
+    checkUsernameAvailability();
+  }, [shouldShowUsernameInput, usernameDebounced]);
 
-  setGoogleUser = async (user) => {
-    const googleUser = getGoogleUser(user);
-    return new Promise((resolve) =>
-      this.setState({ googleUser }, () => resolve(googleUser))
-    );
-  };
-
-  doLoginGoogle = async (evt) => {
-    const {
-      state: { googleUser, username },
-    } = this;
+  async function doLoginGoogle(event) {
     let currentUser;
     // evt is a 'submit' event, we don't want the page to reload
+    stopAndPrevent(event);
 
-    stopAndPrevent(evt);
-
-    this.setState({ success: null, error: null, loading: true });
+    setSuccess(null);
+    setError(null);
+    setLoading(true);
 
     if (!googleUser?.idToken) {
       // open google window to let the user select a user to login as, or to grant access
-      const user = await this.GoogleAuth.signIn();
-      currentUser = await this.setGoogleUser(user);
+      const user = await GoogleAuth.current.signIn();
+      currentUser = getGoogleUser(user);
     } else {
-      // user was already logged in and set in this.state
+      // user was already logged in and set in state
       currentUser = googleUser;
     }
-    const { error, signupIsIncomplete } = await signinGoogle(
+    const { error: errorApi, signupIsIncomplete } = await signinGoogle(
       currentUser,
       username
     );
-    if (error) {
-      this.setState({
-        success: null,
-        error: error?.error || error?.message || 'Error',
-        loading: false,
-      });
+    if (errorApi) {
+      setSuccess(null);
+      setError(errorApi?.error || errorApi?.message || 'Error');
+      setLoading(false);
       return;
     }
     if (signupIsIncomplete) {
-      this.setState(
-        {
-          shouldShowUsernameInput: true,
-          error: null,
-          success: null,
-          loading: false,
-        },
-        () => {
-          usernameRef.current.focus();
-        }
-      );
+      setShouldShowUsernameInput(true);
+      setError(null);
+      setSuccess(null);
+      setLoading(false);
+      usernameRef.current.focus();
       return;
     }
-    this.setState({ success: 'All set 👍', error: null });
+    setSuccess('All set 👍');
+    setError(null);
     setTimeout(() => {
-      this.setState({ shouldRedirect: true }, () => {
-        // set session on App state on the way out...
-        this.props?.setSession?.(getSession());
-      });
+      setShouldRedirect(true);
+      // set session on App state on the way out...
+      setSession(getSession());
     }, 400);
-  };
+  }
 
-  doLogout = async () => {
-    this.setState({ error: null, success: null, loading: true });
-    await this.GoogleAuth.signOut();
+  async function doLogout() {
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+    await GoogleAuth.current.signOut();
     signout();
-    this.setState({ googleUser: {}, loading: false });
-  };
+    setGoogleUser({});
+    setLoading(false);
+  }
 
-  updateUsername = (event) => {
+  function updateUsername(event) {
     const {
       target: { value },
     } = event;
-    const {
-      state: { username },
-    } = this;
     const newUsername = value.replace(/[^0-9a-z]/g, '');
     if (newUsername === username) {
       return;
     }
-    this.setState({ username: newUsername, error: null, loading: true }, () => {
-      if (this.checkUsernameTimeout) {
-        clearTimeout(this.checkUsernameTimeout);
-      }
-      if (newUsername.length < 5) {
-        this.setState({
-          error: `${newUsername} is too short.  Pick a username between 5 and 42 characters.`,
-          success: null,
-          loading: false,
-        });
-        return;
-      }
-      if (newUsername.length > 42) {
-        this.setState({
-          error: `${newUsername} is too long.  Pick a username between 5 and 42 characters.`,
-          success: null,
-          loading: false,
-        });
-        return;
-      }
-      this.checkUsernameTimeout = setTimeout(async () => {
-        const { error } = await apiGet(`/user/${newUsername}?forSignup`);
-        // here a 404 means "not taken"
-        if (error) {
-          this.setState({
-            success: `"${newUsername}" is available 👍`,
-            error: null,
-            loading: false,
-          });
-          return;
-        }
-        this.setState({
-          error: `${newUsername} is taken`,
-          success: null,
-          loading: false,
-        });
-      }, 750);
-    });
-  };
-
-  render() {
-    const {
-      state: {
-        loading,
-        error,
-        success,
-        shouldRedirect,
-        shouldShowUsernameInput,
-        username,
-        googleUser: { name, givenName, imageUrl, email },
-      },
-    } = this;
-    if (shouldRedirect) {
-      const queryParams = new URLSearchParams(window.location.search);
-      const nextUrl = queryParams.get('next') || '/private'; // returns null if empty
-      return <Redirect push to={nextUrl} />;
-    }
-    return (
-      <Container>
-        <SignInForm onSubmit={this.doLoginGoogle}>
-          <StyledLinkStyled to="/">
-            <span role="img" aria-label="hand writing with a pen">
-              ✍️
-            </span>{' '}
-            filbert
-          </StyledLinkStyled>
-          <H1StyledStyled>Sign In</H1StyledStyled>
-          {imageUrl && name && email && (
-            <GoogleInfo>
-              <ProfileImg src={imageUrl} />
-              <GoogleInfoSpan>{name}</GoogleInfoSpan>
-              <GoogleInfoSpan>
-                <Smaller>{email}</Smaller>
-              </GoogleInfoSpan>
-            </GoogleInfo>
-          )}
-          {shouldShowUsernameInput && (
-            <>
-              <H3StyledStyled>
-                Welcome!
-                <Smaller2>
-                  Just one more step before we continue - Choose a filbert
-                  username.
-                </Smaller2>
-              </H3StyledStyled>
-              <InputContainer>
-                <Label htmlFor="username" error={error}>
-                  filbert username (lowercase letters a-z and numbers 0-9 only,
-                  length 5 to 42 characters)
-                </Label>
-                <Input
-                  name="username"
-                  type="text"
-                  value={username}
-                  onChange={this.updateUsername}
-                  error={error}
-                  ref={usernameRef}
-                  autoComplete="off"
-                  minLength="5"
-                  maxLength="42"
-                />
-              </InputContainer>
-            </>
-          )}
-          <MessageContainer>
-            {error && (
-              <ErrorMessage>
-                Try again. {error}{' '}
-                <span role="img" aria-label="male police officer">
-                  👮
-                </span>
-              </ErrorMessage>
-            )}
-            {success && <SuccessMessage>{success}</SuccessMessage>}
-          </MessageContainer>
-          <GoogleSigninButton
-            id="google-sign-in-button"
-            type="submit"
-            primary
-            loading={loading}
-            label={
-              givenName || shouldShowUsernameInput
-                ? `Continue as ${
-                    shouldShowUsernameInput ? username : givenName
-                  }`
-                : 'Sign in to filbert with Google'
-            }
-          >
-            <GoogleIcon />
-          </GoogleSigninButton>
-          {!shouldShowUsernameInput && givenName ? (
-            <CancelButton type="button" onClick={this.doLogout}>
-              <ButtonSpan>Logout</ButtonSpan>
-            </CancelButton>
-          ) : (
-            <LinkStyled2 to="/">
-              <CancelButton>
-                <ButtonSpan>Cancel</ButtonSpan>
-              </CancelButton>
-            </LinkStyled2>
-          )}
-        </SignInForm>
-      </Container>
-    );
+    setUsername(newUsername);
+    setError(null);
+    setLoading(true);
   }
-}
+
+  const { name, givenName, imageUrl, email } = googleUser;
+
+  if (shouldRedirect) {
+    const queryParams = new URLSearchParams(window.location.search);
+    const nextUrl = queryParams.get('next') || '/private'; // returns null if empty
+    return <Redirect push to={nextUrl} />;
+  }
+  return (
+    <Container>
+      <SignInForm onSubmit={doLoginGoogle}>
+        <StyledLinkStyled to="/">
+          <span role="img" aria-label="hand writing with a pen">
+            ✍️
+          </span>{' '}
+          filbert
+        </StyledLinkStyled>
+        <H1StyledStyled>Sign In</H1StyledStyled>
+        {imageUrl && name && email && (
+          <GoogleInfo>
+            <ProfileImg src={imageUrl} />
+            <GoogleInfoSpan>{name}</GoogleInfoSpan>
+            <GoogleInfoSpan>
+              <Smaller>{email}</Smaller>
+            </GoogleInfoSpan>
+          </GoogleInfo>
+        )}
+        {shouldShowUsernameInput && (
+          <>
+            <H3StyledStyled>
+              Welcome!
+              <Smaller2>
+                Just one more step before we continue - Choose a filbert
+                username.
+              </Smaller2>
+            </H3StyledStyled>
+            <InputContainer>
+              <Label htmlFor="username" error={error}>
+                filbert username (lowercase letters a-z and numbers 0-9 only,
+                length 5 to 42 characters)
+              </Label>
+              <Input
+                name="username"
+                type="text"
+                value={username}
+                onChange={updateUsername}
+                error={error}
+                ref={usernameRef}
+                autoComplete="off"
+                minLength="5"
+                maxLength="42"
+              />
+            </InputContainer>
+          </>
+        )}
+        <MessageContainer>
+          {error && (
+            <ErrorMessage>
+              Try again. {error}{' '}
+              <span role="img" aria-label="male police officer">
+                👮
+              </span>
+            </ErrorMessage>
+          )}
+          {success && <SuccessMessage>{success}</SuccessMessage>}
+        </MessageContainer>
+        <GoogleSigninButton
+          id="google-sign-in-button"
+          type="submit"
+          primary
+          loading={loading}
+          label={
+            givenName || shouldShowUsernameInput
+              ? `Continue as ${shouldShowUsernameInput ? username : givenName}`
+              : 'Sign in to filbert with Google'
+          }
+        >
+          <GoogleIcon />
+        </GoogleSigninButton>
+        {!shouldShowUsernameInput && givenName ? (
+          <CancelButton type="button" onClick={doLogout}>
+            <ButtonSpan>Logout</ButtonSpan>
+          </CancelButton>
+        ) : (
+          <LinkStyled2 to="/">
+            <CancelButton>
+              <ButtonSpan>Cancel</ButtonSpan>
+            </CancelButton>
+          </LinkStyled2>
+        )}
+      </SignInForm>
+    </Container>
+  );
+});

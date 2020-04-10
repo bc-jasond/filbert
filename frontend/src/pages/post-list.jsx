@@ -42,14 +42,14 @@ export default React.memo(
       queryParams.has('contains')
     );
     const [contains, setContains] = useState(queryParams.get('contains') || '');
-    const containsDebounced = useDebounce(contains, 750);
+    const containsDebounced = useDebounce(contains);
 
     // for Posts - username is like...
     const [usernameFilterIsSelected, setUsernameFilterIsSelected] = useState(
       queryParams.has('username')
     );
     const [username, setUsername] = useState(queryParams.get('username') || '');
-    const usernameDebounced = useDebounce(username, 750);
+    const usernameDebounced = useDebounce(username);
 
     // I thought this would be fun, not implemented yet
     const [randomFilterIsSelected, setRandomFilterIsSelected] = useState(
