@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { Article } from '../common/components/layout-styled-components';
@@ -57,216 +57,202 @@ const TableCell = styled.div`
   overflow: hidden;
 `;
 
-export default class UserProfile extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      shouldShow404: false,
-      userIsMe: false,
-      user: null,
-    };
-  }
+export default React.memo(({ params: { username }, session, setSession }) => {
+  const [shouldShow404, setShouldShow404] = useState(false);
+  const [userIsMe, setUserIsMe] = useState(false);
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
 
-  async componentDidMount() {
-    await this.getUser();
-  }
-
-  async getUser() {
-    const {
-      props: {
-        params: { username },
-        session,
-      },
-    } = this;
-    if (!/^@[0-9a-z]+/.test(username)) {
-      this.setState({ shouldShow404: true });
-      return;
-    }
-    const usernameWithoutAt = username.slice(1);
-    const userIsMe = usernameWithoutAt === session.get('username');
-
-    const { error: userError, data: user } = await apiGet(
-      `/user/${usernameWithoutAt}`
-    );
-    if (userError) {
-      console.error('USER PROFILE Error: ', userError);
-      this.setState({ shouldShow404: true });
-      return;
-    }
-    this.setState({ userIsMe, user });
-    if (!(user.statsArePublic || userIsMe)) {
-      return;
-    }
-    const { error: statsError, data: stats } = await apiGet(
-      `/user-stats/${usernameWithoutAt}`
-    );
-    if (statsError) {
-      console.error('USER STATS Error: ', statsError);
-      return;
-    }
-    this.setState({ stats });
-  }
-
-  updateProfilePublic = async () => {
-    const {
-      state: { user },
-    } = this;
-    this.setState(
-      { user: { ...user, profileIsPublic: !user?.profileIsPublic } },
-      () => {
-        // TODO: rollback on error?
-        apiPatch('/profile', { profileIsPublic: !user?.profileIsPublic });
+  useEffect(() => {
+    async function getUser() {
+      if (!/^@[0-9a-z]+/.test(username)) {
+        setShouldShow404(true);
+        return;
       }
-    );
-  };
+      const usernameWithoutAt = username.slice(1);
+      const isMe = usernameWithoutAt === session.get('username');
 
-  updateStatsArePublic = async () => {
-    const {
-      state: { user },
-    } = this;
-    this.setState(
-      { user: { ...user, statsArePublic: !user?.statsArePublic } },
-      () => {
-        // TODO: rollback on error?
-        apiPatch('/profile', { statsArePublic: !user?.statsArePublic });
+      const { error: userError, data: userData } = await apiGet(
+        `/user/${usernameWithoutAt}`
+      );
+      if (userError) {
+        console.error('USER PROFILE Error: ', userError);
+        setShouldShow404(true);
+        return;
       }
-    );
-  };
+      setUserIsMe(isMe);
+      setUser(userData);
+      if (!(userData.statsArePublic || isMe)) {
+        return;
+      }
+      const { error: statsError, data: statsData } = await apiGet(
+        `/user-stats/${usernameWithoutAt}`
+      );
+      if (statsError) {
+        console.error('USER STATS Error: ', statsError);
+        return;
+      }
+      setStats(statsData);
+    }
+    getUser();
+  }, [username, session]);
 
-  render() {
-    const {
-      state: { shouldShow404, user, userIsMe, stats },
-      props: { session, setSession },
-    } = this;
-    if (shouldShow404) return <Page404 session={session} />;
+  function updateProfilePublic() {
+    setUser({ ...user, profileIsPublic: !user?.profileIsPublic });
+    // TODO: rollback on error?
+    apiPatch('/profile', { profileIsPublic: !user?.profileIsPublic });
+  }
 
-    return (
-      user && (
-        <>
-          <Header
-            session={session}
-            setSession={setSession}
-            userIsMe={userIsMe}
-          />
-          <Article>
-            <H1Styled>User Profile</H1Styled>
+  function updateStatsArePublic() {
+    setUser({ ...user, statsArePublic: !user?.statsArePublic });
+
+    // TODO: rollback on error?
+    apiPatch('/profile', { statsArePublic: !user?.statsArePublic });
+  }
+
+  if (shouldShow404) return <Page404 session={session} />;
+
+  const statsFormatted = !stats?.totalPosts
+    ? []
+    : [
+        {
+          key: 'since',
+          label: 'Member Since:',
+          figure: formatPostDate(user?.created),
+        },
+        {
+          key: 'streak',
+          label: 'Current Streak:',
+          figure:
+            stats?.currentStreak > 0
+              ? `${stats?.currentStreak} days`
+              : `0 days 👩🏽‍💻 smash that 'new' button!`,
+        },
+        {
+          key: 'streak-longest',
+          label: 'Longest Streak:',
+          figure: (
+            <>
+              {`${stats?.longestStreak} days`}
+              <div>{`from ${formatStreakDate(
+                stats?.longestStreakStart
+              )} to ${formatStreakDate(stats?.longestStreakEnd)}`}</div>
+            </>
+          ),
+        },
+        // {key: 'cadence', label: 'Publishing Cadence:', figure: 'every TODO days'},
+        {
+          key: 'favorite',
+          label: 'Favorite Words:',
+          figure: (
+            <>
+              {stats?.favoriteWords.map(({ word, count }) => (
+                <div key={word}>{`"${word}" used ${formatNumber(
+                  count
+                )} times`}</div>
+              ))}
+            </>
+          ),
+        },
+        {
+          key: 'avg-length',
+          label: 'Avg Post Length:',
+          figure: `${formatNumber(stats?.averagePostWordLength)} words`,
+        },
+        {
+          key: 'longest',
+          label: 'Longest Post:',
+          figure: `${formatNumber(stats?.longestPostWords)} words`,
+        },
+        {
+          key: 'total-chars',
+          label: '# of Characters:',
+          figure: formatNumber(stats?.totalCharacters),
+        },
+        {
+          key: 'total-words',
+          label: '# of Words Total:',
+          figure: formatNumber(stats?.totalWords),
+        },
+        {
+          key: 'total-posts',
+          label: '# of Posts Total:',
+          figure: formatNumber(stats?.totalPosts),
+        },
+        {
+          key: 'total-published',
+          label: '# of Posts Published:',
+          figure: formatNumber(stats?.totalPostsPublished),
+        },
+        {
+          key: 'total-images',
+          label: '# of Images:',
+          figure: formatNumber(stats?.totalImages),
+        },
+        {
+          key: 'total-quotes',
+          label: '# of Quotes:',
+          figure: formatNumber(stats?.totalQuotes),
+        },
+      ];
+
+  return (
+    user && (
+      <>
+        <Header session={session} setSession={setSession} userIsMe={userIsMe} />
+        <Article>
+          <H1Styled>User Profile</H1Styled>
+          <ContentSection>
+            <Row>
+              <Col>
+                {user?.pictureUrl && <BiggerImg src={user.pictureUrl} />}
+              </Col>
+              <ColRight>
+                <FullName>
+                  {user?.givenName} {user?.familyName}
+                </FullName>
+                <AuthorContainer>
+                  <AuthorExpand to={`/public?username=${user?.username}`}>
+                    {user?.username}
+                  </AuthorExpand>
+                </AuthorContainer>
+              </ColRight>
+            </Row>
+          </ContentSection>
+          {userIsMe && (
             <ContentSection>
-              <Row>
-                <Col>
-                  {user?.pictureUrl && <BiggerImg src={user.pictureUrl} />}
-                </Col>
-                <ColRight>
-                  <FullName>
-                    {user?.givenName} {user?.familyName}
-                  </FullName>
-                  <AuthorContainer>
-                    <AuthorExpand to={`/public?username=${user?.username}`}>
-                      {user?.username}
-                    </AuthorExpand>
-                  </AuthorContainer>
-                </ColRight>
-              </Row>
+              <H2Styled>Settings</H2Styled>
+              <Toggle
+                label="Make my profile public?"
+                value={user?.profileIsPublic}
+                onUpdate={updateProfilePublic}
+              />
+              <Toggle
+                disabled={!user?.profileIsPublic}
+                label="Make my stats public?"
+                value={user?.statsArePublic}
+                onUpdate={updateStatsArePublic}
+              />
             </ContentSection>
-            {userIsMe && (
-              <ContentSection>
-                <H2Styled>Settings</H2Styled>
-                <Toggle
-                  label="Make my profile public?"
-                  value={user?.profileIsPublic}
-                  onUpdate={this.updateProfilePublic}
-                />
-                <Toggle
-                  disabled={!user?.profileIsPublic}
-                  label="Make my stats public?"
-                  value={user?.statsArePublic}
-                  onUpdate={this.updateStatsArePublic}
-                />
-              </ContentSection>
-            )}
-            {stats?.totalPosts > 0 && (
-              <ContentSection>
-                <H2Styled>Stats</H2Styled>
-                <Table>
-                  <TableCell>
-                    <Code>Member Since:</Code>
-                  </TableCell>
-                  <TableCell>{formatPostDate(user?.created)}</TableCell>
-                  <TableCell>
-                    <Code>Current Streak:</Code>
-                  </TableCell>
-                  <TableCell>
-                    {stats?.currentStreak > 0
-                      ? `${stats?.currentStreak} days`
-                      : `0 days 👩🏽‍💻 smash that 'new' button!`}
-                  </TableCell>
-                  <TableCell>
-                    <Code>Longest Streak:</Code>
-                  </TableCell>
-                  <TableCell>
-                    {`${stats?.longestStreak} days`}
-                    <div>{`from ${formatStreakDate(
-                      stats?.longestStreakStart
-                    )} to ${formatStreakDate(stats?.longestStreakEnd)}`}</div>
-                  </TableCell>
-                  {/* <TableCell> */}
-                  {/*  <Code>Publishing Cadence:</Code> */}
-                  {/* </TableCell> */}
-                  {/* <TableCell> */}
-                  {/*  every TODO days */}
-                  {/* </TableCell> */}
-                  <TableCell>
-                    <Code>Favorite Words:</Code>
-                  </TableCell>
-                  <TableCell>
-                    {stats?.favoriteWords.map(({ word, count }) => (
-                      <div>{`"${word}" used ${formatNumber(count)} times`}</div>
-                    ))}
-                  </TableCell>
-                  <TableCell>
-                    <Code>Avg Post Length:</Code>
-                  </TableCell>
-                  <TableCell>{`${formatNumber(
-                    stats?.averagePostWordLength
-                  )} words`}</TableCell>
-                  <TableCell>
-                    <Code>Longest Post:</Code>
-                  </TableCell>
-                  <TableCell>{`${formatNumber(
-                    stats?.longestPostWords
-                  )} words`}</TableCell>
-                  <TableCell>
-                    <Code># of Characters:</Code>
-                  </TableCell>
-                  <TableCell>{formatNumber(stats?.totalCharacters)}</TableCell>
-                  <TableCell>
-                    <Code># of Words Total:</Code>
-                  </TableCell>
-                  <TableCell>{formatNumber(stats?.totalWords)}</TableCell>
-                  <TableCell>
-                    <Code># of Posts Total:</Code>
-                  </TableCell>
-                  <TableCell>{formatNumber(stats?.totalPosts)}</TableCell>
-                  <TableCell>
-                    <Code># of Posts Published:</Code>
-                  </TableCell>
-                  <TableCell>
-                    {formatNumber(stats?.totalPostsPublished)}
-                  </TableCell>
-                  <TableCell>
-                    <Code># of Images:</Code>
-                  </TableCell>
-                  <TableCell>{formatNumber(stats?.totalImages)}</TableCell>
-                  <TableCell>
-                    <Code># of Quotes:</Code>
-                  </TableCell>
-                  <TableCell>{formatNumber(stats?.totalQuotes)}</TableCell>
-                </Table>
-              </ContentSection>
-            )}
-          </Article>
-          <Footer />
-        </>
-      )
-    );
-  }
-}
+          )}
+          {stats?.totalPosts > 0 && (
+            <ContentSection>
+              <H2Styled>Stats</H2Styled>
+              <Table>
+                {statsFormatted.map(({ key, label, figure }) => (
+                  <React.Fragment key={key}>
+                    <TableCell>
+                      <Code>{label}</Code>
+                    </TableCell>
+                    <TableCell>{figure}</TableCell>
+                  </React.Fragment>
+                ))}
+              </Table>
+            </ContentSection>
+          )}
+        </Article>
+        <Footer />
+      </>
+    )
+  );
+});
