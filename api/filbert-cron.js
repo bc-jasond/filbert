@@ -14,6 +14,7 @@ const {
 const { makeMysqlDump } = require("./lib/mysql");
 const {
   fileUploadStagingDirectory,
+  monthlyBucketName,
   dailyBucketName,
   hourlyBucketName,
 } = require("./lib/constants");
@@ -24,27 +25,23 @@ const { saneEnvironmentOrExit, assertDir, rmFile } = require("./lib/util");
  *
  * keeps a backup per hour, and one a day
  */
-let isRunning = false;
 
 async function filbertMysqldumpToS3Job() {
-  if (isRunning) {
-    console.error("I'm already running!");
-    return;
-  }
   try {
-    isRunning = true;
     const startTime = performance.now();
     console.log("starting filbertMysqldumpToS3Job()");
 
     const numberOfHourlyBackupsToKeep = 24;
-    const numberOfDailyBackupsToKeep = 14;
+    const numberOfDailyBackupsToKeep = 30;
     const now = new Date();
     const hour = now.getHours();
+    const date = now.getDate();
     // make sure the temp dir exists
     await assertDir(fileUploadStagingDirectory);
     // make sure the buckets exist...
     await assertBucket(hourlyBucketName);
     await assertBucket(dailyBucketName);
+    await assertBucket(monthlyBucketName);
 
     console.log(`Attempting a mysqldump at ${now.toISOString()}`);
     // TODO: gzip the output?
@@ -67,21 +64,38 @@ async function filbertMysqldumpToS3Job() {
           Math.round(performance.now() - startTime) / 1000
         } seconds.\n`
       );
-      isRunning = false;
       return;
     }
     if (hour === 0) {
       // promote the oldest file to the next level
-      const promotedFile = filesInHourly[numberOfHourlyBackupsToKeep];
+      const promotedFileHourlyToDaily =
+        filesInHourly[
+          Math.min(filesInHourly.length - 1, numberOfHourlyBackupsToKeep)
+        ];
       await copyKeyFromBucketToBucket(
         hourlyBucketName,
         dailyBucketName,
-        promotedFile
+        promotedFileHourlyToDaily
       );
       console.log(
-        `Promoted ${promotedFile} from ${hourlyBucketName} to ${dailyBucketName} 👍`
+        `⬆️ Promoted ${promotedFileHourlyToDaily} from ${hourlyBucketName} to ${dailyBucketName} 👍`
       );
       const filesInDaily = await listKeysForBucket(dailyBucketName);
+      if (date === 1) {
+        // promote the oldest daily file to monthly
+        const promotedFileDailyToMonthly =
+          filesInDaily[
+            Math.min(filesInDaily.length - 1, numberOfDailyBackupsToKeep)
+          ];
+        await copyKeyFromBucketToBucket(
+          dailyBucketName,
+          monthlyBucketName,
+          promotedFileDailyToMonthly
+        );
+        console.log(
+          `📅 ⬆️ Promoted ${promotedFileDailyToMonthly} from ${dailyBucketName} to ${monthlyBucketName} 👍`
+        );
+      }
       // keep a max window by deleting older backups
       const dailyBackupsToDelete = filesInDaily.slice(
         numberOfDailyBackupsToKeep
@@ -112,10 +126,8 @@ async function filbertMysqldumpToS3Job() {
         Math.round(performance.now() - startTime) / 1000
       } seconds.\n`
     );
-    isRunning = false;
   } catch (err) {
     console.error("filbert cron error: ", err);
-    isRunning = false;
   }
 }
 
