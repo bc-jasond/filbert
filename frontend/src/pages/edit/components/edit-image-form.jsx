@@ -1,5 +1,5 @@
 import { Map } from 'immutable';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
 import {
@@ -86,21 +86,22 @@ export default React.memo(
     const captionRef = useRef(null);
     const fileInputRef = useRef(null);
     const [currentIdx, setCurrentIdx] = useState(captionInputIdx);
-    const [isMovingLeft, setIsMovingLeft] = useState(null);
+    const [shouldFocusEnd, setShouldFocusEnd] = useState(null);
 
     useEffect(() => {
       if (currentIdx === captionInputIdx) {
-        focusAndScrollSmooth(nodeId, captionRef?.current, isMovingLeft);
+        focusAndScrollSmooth(nodeId, captionRef?.current, shouldFocusEnd);
         return;
       }
       captionRef?.current?.blur?.();
-    }, [currentIdx, isMovingLeft, nodeId, captionInputIdx]);
+    }, [currentIdx, shouldFocusEnd, nodeId, captionInputIdx]);
 
     async function replaceImageFile([firstFile]) {
       if (!firstFile) {
         // TODO: user hit cancel in the file dialog?
         return;
       }
+      // TODO: add a loading indicator while uploading
       const { error, data: imageMeta } = await uploadImage(
         getImageFileFormData(firstFile, post)
       );
@@ -193,7 +194,7 @@ export default React.memo(
 
     useEffect(() => {
       function handleKeyDown(evt) {
-        if (!evt) {
+        if (!evt || evt.defaultPrevented) {
           return;
         }
         if (
@@ -202,7 +203,7 @@ export default React.memo(
         ) {
           const nextIdx = currentIdx === 0 ? captionInputIdx : currentIdx - 1;
           setCurrentIdx(nextIdx);
-          setIsMovingLeft(true);
+          setShouldFocusEnd(true);
           stopAndPrevent(evt);
           return;
         }
@@ -212,7 +213,7 @@ export default React.memo(
         ) {
           const nextIdx = currentIdx === captionInputIdx ? 0 : currentIdx + 1;
           setCurrentIdx(nextIdx);
-          setIsMovingLeft(false);
+          setShouldFocusEnd(false);
           stopAndPrevent(evt);
           return;
         }
@@ -229,7 +230,7 @@ export default React.memo(
       }
 
       handleKeyDown(windowEvent);
-    }, [windowEvent]);
+    }, [windowEvent, currentIdx, menuItems]);
 
     return (
       <EditImageMenu

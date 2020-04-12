@@ -964,6 +964,7 @@ export default class EditPost extends React.Component {
     } = this;
     let meta = Map();
     if (sectionType === NODE_TYPE_IMAGE) {
+      // TODO: add a loading indicator while uploading
       const { error, data: imageMeta } = await uploadImage(
         getImageFileFormData(firstFile, post)
       );

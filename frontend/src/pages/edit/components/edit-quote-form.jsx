@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
 import {
@@ -40,101 +40,71 @@ const QuoteInput = styled(DarkInput)`
   margin: 0 8px;
 `;
 
-export default class EditQuoteForm extends React.Component {
-  menuItems = ['quote', 'author', 'context', 'url'];
+export default React.memo(({ offsetTop, nodeModel, windowEvent, update }) => {
+  const menuItems = ['quote', 'author', 'context', 'url'];
+  const nodeId = nodeModel.get('id');
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      currentIdx: 0,
-      shouldFocusEnd: true,
-    };
-    this.inputRefs = Array(4)
-      .fill(null)
-      .map(() => React.createRef());
-  }
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [shouldFocusEnd, setShouldFocusEnd] = useState(true);
+  const inputRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
-  componentDidMount() {
-    const {
-      props: { nodeModel },
-    } = this;
-    // find first empty value - or first value
-    let [focusRef] = this.inputRefs.filter(
-      (r) => r?.current?.value?.length === 0
-    );
-    focusRef = focusRef || this.inputRefs[0];
-
-    focusAndScrollSmooth(nodeModel.get('id'), focusRef.current);
-  }
-
-  componentDidUpdate(prevProps) {
-    const {
-      state: { currentIdx, shouldFocusEnd },
-      props: { nodeModel, windowEvent },
-    } = this;
-    if (windowEvent && windowEvent !== prevProps.windowEvent) {
-      this.handleKeyDown(windowEvent);
-    }
-
+  useEffect(() => {
     focusAndScrollSmooth(
-      nodeModel.get('id'),
-      this.inputRefs[currentIdx]?.current,
+      nodeId,
+      inputRefs[currentIdx]?.current,
       shouldFocusEnd
     );
-  }
+  }, [currentIdx, shouldFocusEnd, nodeId, inputRefs]);
 
-  handleKeyDown = (evt) => {
-    const {
-      state: { currentIdx },
-    } = this;
-    if (
-      (evt.keyCode === KEYCODE_TAB && evt.shiftKey) ||
-      (evt.keyCode === KEYCODE_LEFT_ARROW && caretIsAtBeginningOfInput())
-    ) {
-      const nextIdx =
-        currentIdx === 0 ? this.inputRefs.length - 1 : currentIdx - 1;
-      this.setState({ currentIdx: nextIdx, shouldFocusEnd: true });
-      stopAndPrevent(evt);
-      return;
+  useEffect(() => {
+    function handleKeyDown(evt) {
+      if (!evt || evt.defaultPrevented) {
+        return;
+      }
+      if (
+        (evt.keyCode === KEYCODE_TAB && evt.shiftKey) ||
+        (evt.keyCode === KEYCODE_LEFT_ARROW && caretIsAtBeginningOfInput())
+      ) {
+        const nextIdx =
+          currentIdx === 0 ? inputRefs.length - 1 : currentIdx - 1;
+        setCurrentIdx(nextIdx);
+        setShouldFocusEnd(true);
+        stopAndPrevent(evt);
+        return;
+      }
+      if (
+        evt.keyCode === KEYCODE_TAB ||
+        (evt.keyCode === KEYCODE_RIGHT_ARROW && caretIsAtEndOfInput())
+      ) {
+        const nextIdx =
+          currentIdx === inputRefs.length - 1 ? 0 : currentIdx + 1;
+        setCurrentIdx(nextIdx);
+        setShouldFocusEnd(false);
+        stopAndPrevent(evt);
+      }
     }
-    if (
-      evt.keyCode === KEYCODE_TAB ||
-      (evt.keyCode === KEYCODE_RIGHT_ARROW && caretIsAtEndOfInput())
-    ) {
-      const nextIdx =
-        currentIdx === this.inputRefs.length - 1 ? 0 : currentIdx + 1;
-      this.setState({ currentIdx: nextIdx, shouldFocusEnd: false });
-      stopAndPrevent(evt);
-    }
-  };
+    handleKeyDown(windowEvent);
+  }, [windowEvent, currentIdx, inputRefs.length]);
 
-  updateMeta = (key, value) => {
-    const {
-      props: { nodeModel, update },
-    } = this;
+  function updateMeta(key, value) {
     update?.(nodeModel.setIn(['meta', key], value));
-  };
-
-  render() {
-    const {
-      props: { offsetTop, nodeModel },
-    } = this;
-    return (
-      <EditQuoteMenu data-is-menu top={offsetTop}>
-        {this.menuItems.map((metaKey, idx) => (
-          <Row key={metaKey}>
-            <QuoteInput
-              ref={this.inputRefs[idx]}
-              placeholder={`Enter ${metaKey.toLocaleUpperCase()} here...`}
-              onChange={(e) => this.updateMeta(metaKey, e.target.value)}
-              value={nodeModel.getIn(['meta', metaKey], '')}
-            />
-          </Row>
-        ))}
-        <PointClip>
-          <Arrow />
-        </PointClip>
-      </EditQuoteMenu>
-    );
   }
-}
+
+  return (
+    <EditQuoteMenu data-is-menu top={offsetTop}>
+      {menuItems.map((metaKey, idx) => (
+        <Row key={metaKey}>
+          <QuoteInput
+            ref={inputRefs[idx]}
+            placeholder={`Enter ${metaKey.toLocaleUpperCase()} here...`}
+            onChange={(e) => updateMeta(metaKey, e.target.value)}
+            value={nodeModel.getIn(['meta', metaKey], '')}
+          />
+        </Row>
+      ))}
+      <PointClip>
+        <Arrow />
+      </PointClip>
+    </EditQuoteMenu>
+  );
+});
