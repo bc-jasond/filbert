@@ -4,6 +4,7 @@ module.exports = {
   fileUploadStagingDirectory: "/tmp/filbert-mysql-backups",
   hourlyBucketName: `${bucketPrefix}-hourly`,
   dailyBucketName: `${bucketPrefix}-daily`,
+  monthlyBucketName: `${bucketPrefix}-monthly`,
   adhocBucketName: "filbert-mysql-backups",
   imageBucketName: "filbert-images",
   objectStorageRegion: "us-east-1",
