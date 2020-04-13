@@ -643,48 +643,8 @@ export default class EditPost extends React.Component {
       stopAndPrevent(evt);
       return;
     }
-    const {
-      state: {
-        formatSelectionNode,
-        formatSelectionModel,
-        editSectionNode,
-        shouldShowEditSectionMenu,
-      },
-    } = this;
-    // HANDOFF conditions
-    // TODO: use `capture: true` on children that set handlers on window (i.e. menus with keyboard navigation)
-    //  capture: true will put the child handlers "in front of" any handlers set here in the editor.
-    //  child handlers can then respond to specific events and call stopPropagation & preventDefault to avoid getting here
-    //  or they can ignore events and let them get handled here
-
-    // format selection menu is open
-    if (
-      formatSelectionNode.get('id') &&
-      // if 'link' is selected, there's an input focused, send all keystrokes up - except
-      (formatSelectionModel.get(SELECTION_ACTION_LINK) ||
-        // don't capture holding down shift so user can resize the selection
-        (!evt.shiftKey &&
-          // but DO allow a double tap on ctrl to open the menu
-          [
-            KEYCODE_CTRL,
-            KEYCODE_LEFT_ARROW,
-            KEYCODE_RIGHT_ARROW,
-            KEYCODE_SPACE,
-            KEYCODE_ESC,
-            KEYCODE_ENTER,
-          ].includes(evt.keyCode)))
-    ) {
-      // pass this event up to the menu to handle
-      this.setState({ windowEventToForward: evt });
-      return;
-    }
-    // END HANDOFF
-
-    if (
-      // ignore shift and option - don't override hard-refresh!
-      evt.metaKey &&
-      evt.shiftKey
-    ) {
+    // ignore shift and option - don't override hard-refresh!
+    if (evt.metaKey && evt.shiftKey) {
       return;
     }
     if (
@@ -1200,7 +1160,6 @@ export default class EditPost extends React.Component {
         nodesById,
         shouldShow404,
         shouldRedirect,
-        windowEventToForward,
         insertMenuNode,
         insertMenuTopOffset,
         insertMenuLeftOffset,
@@ -1270,7 +1229,6 @@ export default class EditPost extends React.Component {
             )}
           {formatSelectionNode.get('id') && (
             <FormatSelectionMenu
-              windowEvent={windowEventToForward}
               offsetTop={formatSelectionMenuTopOffset}
               offsetLeft={formatSelectionMenuLeftOffset}
               nodeModel={formatSelectionNode}
