@@ -678,20 +678,8 @@ export default class EditPost extends React.Component {
       this.setState({ windowEventToForward: evt });
       return;
     }
-    // edit image or quote menu is open
-    if (
-      shouldShowEditSectionMenu &&
-      editSectionNode.get('id') &&
-      ![
-        KEYCODE_ESC,
-        KEYCODE_ENTER,
-        KEYCODE_UP_ARROW,
-        KEYCODE_DOWN_ARROW,
-      ].includes(evt.keyCode)
-    ) {
-      this.setState({ windowEventToForward: evt });
-      return;
-    }
+    // END HANDOFF
+
     if (
       // ignore shift and option - don't override hard-refresh!
       evt.metaKey &&
@@ -1266,7 +1254,6 @@ export default class EditPost extends React.Component {
           {editSectionNode.get('type') === NODE_TYPE_IMAGE &&
             shouldShowEditSectionMenu && (
               <EditImageForm
-                windowEvent={windowEventToForward}
                 offsetTop={editSectionMetaFormTopOffset}
                 post={post}
                 nodeModel={editSectionNode}
@@ -1276,7 +1263,6 @@ export default class EditPost extends React.Component {
           {editSectionNode.get('type') === NODE_TYPE_QUOTE &&
             shouldShowEditSectionMenu && (
               <EditQuoteForm
-                windowEvent={windowEventToForward}
                 offsetTop={editSectionMetaFormTopOffset}
                 nodeModel={editSectionNode}
                 update={this.updateEditSectionNode}

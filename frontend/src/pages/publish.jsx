@@ -105,6 +105,7 @@ export default class Publish extends React.Component {
       postSummary: Map(),
       error: null,
       successMessage: null,
+      imageIsSelected: false,
       shouldShow404: false,
       redirectUrl: false,
     };
@@ -128,6 +129,7 @@ export default class Publish extends React.Component {
       return;
     }
     await this.loadPostAndSummary();
+    this.positionImageMenu();
   }
 
   async componentWillUnmount() {
@@ -361,6 +363,7 @@ export default class Publish extends React.Component {
         shouldShow404,
         imageMenuOffsetTop,
         imageMenuOffsetLeft,
+        imageIsSelected,
       },
     } = this;
     const imageNode = post.getIn(['meta', 'imageNode']) || Map();
@@ -444,13 +447,20 @@ export default class Publish extends React.Component {
               <Col>
                 <ImageContainer
                   id={this.imageContainerId}
-                  shouldHide={post.getIn(['meta', 'syncTopPhoto'])}
+                  shouldHide={syncTopPhoto}
+                  onClick={() =>
+                    this.setState({ imageIsSelected: !imageIsSelected })
+                  }
                 >
                   <Label htmlFor="imageNode" error={error?.imageNode}>
                     image
                   </Label>
                   {imageNode.size > 0 && (
-                    <ImageStyled node={imageNode} hideBorder hideCaption />
+                    <ImageStyled
+                      node={imageNode}
+                      isEditing={!syncTopPhoto && imageIsSelected}
+                      hideCaption
+                    />
                   )}
                 </ImageContainer>
               </Col>
@@ -528,9 +538,8 @@ export default class Publish extends React.Component {
                 </Col9>
               </FlexGrid9>
             </MiddleWrapper>
-            {!syncTopPhoto && (
+            {!syncTopPhoto && imageIsSelected && (
               <EditImageForm
-                windowEvent={null}
                 shouldHideCaption
                 offsetTop={imageMenuOffsetTop}
                 offsetLeft={imageMenuOffsetLeft}

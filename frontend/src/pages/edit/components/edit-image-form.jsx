@@ -71,30 +71,34 @@ const MenuItem = ({ onClick, Styled, isSelected }) => (
 );
 
 export default React.memo(
-  ({
-    offsetTop,
-    offsetLeft,
-    nodeModel,
-    shouldHideCaption,
-    update,
-    post,
-    windowEvent,
-  }) => {
+  ({ offsetTop, offsetLeft, nodeModel, shouldHideCaption, update, post }) => {
     const captionInputIdx = 4;
+    const lastButtonIdx = shouldHideCaption ? 3 : captionInputIdx;
     const nodeId = nodeModel.get('id');
 
     const captionRef = useRef(null);
     const fileInputRef = useRef(null);
-    const [currentIdx, setCurrentIdx] = useState(captionInputIdx);
+    const [currentIdx, setCurrentIdx] = useState(
+      shouldHideCaption ? 0 : captionInputIdx
+    );
     const [shouldFocusEnd, setShouldFocusEnd] = useState(null);
 
     useEffect(() => {
+      if (shouldHideCaption) {
+        return;
+      }
       if (currentIdx === captionInputIdx) {
         focusAndScrollSmooth(nodeId, captionRef?.current, shouldFocusEnd);
         return;
       }
       captionRef?.current?.blur?.();
-    }, [currentIdx, shouldFocusEnd, nodeId, captionInputIdx]);
+    }, [
+      currentIdx,
+      shouldFocusEnd,
+      nodeId,
+      captionInputIdx,
+      shouldHideCaption,
+    ]);
 
     async function replaceImageFile([firstFile]) {
       if (!firstFile) {
@@ -194,14 +198,14 @@ export default React.memo(
 
     useEffect(() => {
       function handleKeyDown(evt) {
-        if (!evt || evt.defaultPrevented) {
+        if (!evt) {
           return;
         }
         if (
           evt.keyCode === KEYCODE_LEFT_ARROW &&
-          (currentIdx < captionInputIdx || caretIsAtBeginningOfInput())
+          (currentIdx < lastButtonIdx || caretIsAtBeginningOfInput())
         ) {
-          const nextIdx = currentIdx === 0 ? captionInputIdx : currentIdx - 1;
+          const nextIdx = currentIdx === 0 ? lastButtonIdx : currentIdx - 1;
           setCurrentIdx(nextIdx);
           setShouldFocusEnd(true);
           stopAndPrevent(evt);
@@ -209,9 +213,9 @@ export default React.memo(
         }
         if (
           evt.keyCode === KEYCODE_RIGHT_ARROW &&
-          (currentIdx < captionInputIdx || caretIsAtEndOfInput())
+          (currentIdx < lastButtonIdx || caretIsAtEndOfInput())
         ) {
-          const nextIdx = currentIdx === captionInputIdx ? 0 : currentIdx + 1;
+          const nextIdx = currentIdx === lastButtonIdx ? 0 : currentIdx + 1;
           setCurrentIdx(nextIdx);
           setShouldFocusEnd(false);
           stopAndPrevent(evt);
@@ -229,8 +233,14 @@ export default React.memo(
         }
       }
 
-      handleKeyDown(windowEvent);
-    }, [windowEvent, currentIdx, menuItems]);
+      // `capture: true` will put this event handler in front of the ones set by edit.jsx
+      window.addEventListener('keydown', handleKeyDown, { capture: true });
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown, {
+          capture: true,
+        });
+      };
+    }, [nodeModel, currentIdx, menuItems]);
 
     return (
       <EditImageMenu
@@ -265,6 +275,10 @@ export default React.memo(
           type="file"
           onChange={(e) => {
             replaceImageFile(e.target.files);
+          }}
+          onClick={(e) => {
+            // NOTE: the "file input click" callback will be called twice without this stopPropagation()
+            e.stopPropagation();
           }}
           accept="image/*"
           ref={fileInputRef}

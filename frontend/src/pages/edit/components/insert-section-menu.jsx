@@ -104,13 +104,6 @@ export default React.memo(
     const [currentIdx, setCurrentIdx] = useState(-1);
     const [menuIsOpen, setMenuIsOpen] = useState(false);
 
-    // HACK: use a ref to work around not understanding how to setup the right hooks dependencies
-    const currentIdxRef = useRef(-1);
-    useEffect(() => {
-      currentIdxRef.current = currentIdx;
-    }, [currentIdx]);
-    // END HACK
-
     const sectionTypes = [
       {
         type: NODE_TYPE_H1,
@@ -193,15 +186,13 @@ export default React.memo(
             break;
           }
           case KEYCODE_LEFT_ARROW: {
-            const nextIdx =
-              currentIdxRef.current <= 0 ? 6 : currentIdxRef.current - 1;
+            const nextIdx = currentIdx <= 0 ? 6 : currentIdx - 1;
             setCurrentIdx(nextIdx);
             stopAndPrevent(evt);
             break;
           }
           case KEYCODE_RIGHT_ARROW: {
-            const nextIdx =
-              currentIdxRef.current === 6 ? 0 : currentIdxRef.current + 1;
+            const nextIdx = currentIdx === 6 ? 0 : currentIdx + 1;
             setCurrentIdx(nextIdx);
             stopAndPrevent(evt);
             break;
@@ -215,8 +206,8 @@ export default React.memo(
           }
           case KEYCODE_SPACE: // fall-through
           case KEYCODE_ENTER: {
-            if (currentIdxRef.current > -1) {
-              sectionTypes[currentIdxRef.current].callback();
+            if (currentIdx > -1) {
+              sectionTypes[currentIdx].callback();
               setCurrentIdx(-1);
               setMenuIsOpen(false);
             }
@@ -234,8 +225,7 @@ export default React.memo(
           capture: true,
         });
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [currentIdx, insertNodeId, sectionTypes]);
 
     function toggleMenu() {
       setMenuIsOpen(!menuIsOpen);

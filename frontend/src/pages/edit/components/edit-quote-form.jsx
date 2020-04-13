@@ -40,7 +40,7 @@ const QuoteInput = styled(DarkInput)`
   margin: 0 8px;
 `;
 
-export default React.memo(({ offsetTop, nodeModel, windowEvent, update }) => {
+export default React.memo(({ offsetTop, nodeModel, update }) => {
   const menuItems = ['quote', 'author', 'context', 'url'];
   const nodeId = nodeModel.get('id');
 
@@ -58,7 +58,7 @@ export default React.memo(({ offsetTop, nodeModel, windowEvent, update }) => {
 
   useEffect(() => {
     function handleKeyDown(evt) {
-      if (!evt || evt.defaultPrevented) {
+      if (!evt) {
         return;
       }
       if (
@@ -83,8 +83,14 @@ export default React.memo(({ offsetTop, nodeModel, windowEvent, update }) => {
         stopAndPrevent(evt);
       }
     }
-    handleKeyDown(windowEvent);
-  }, [windowEvent, currentIdx, inputRefs.length]);
+    // `capture: true` will put this event handler in front of the ones set by edit.jsx
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, {
+        capture: true,
+      });
+    };
+  }, [currentIdx, inputRefs.length]);
 
   function updateMeta(key, value) {
     update?.(nodeModel.setIn(['meta', key], value));
