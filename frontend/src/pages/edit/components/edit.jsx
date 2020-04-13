@@ -148,25 +148,21 @@ export default class EditPost extends React.Component {
   }
 
   registerWindowEventHandlers = () => {
-    window.addEventListener('resize', this.manageInsertMenu, { capture: true });
-    window.addEventListener('keydown', this.handleKeyDown, { capture: true });
-    window.addEventListener('keyup', this.handleKeyUp, { capture: true });
-    window.addEventListener('input', this.handleInput, { capture: true });
-    window.addEventListener('paste', this.handlePaste, { capture: true });
-    window.addEventListener('cut', this.handleCut, { capture: true });
+    window.addEventListener('resize', this.manageInsertMenu);
+    window.addEventListener('keydown', this.handleKeyDown);
+    window.addEventListener('keyup', this.handleKeyUp);
+    window.addEventListener('input', this.handleInput);
+    window.addEventListener('paste', this.handlePaste);
+    window.addEventListener('cut', this.handleCut);
   };
 
   unregisterWindowEventHandlers = () => {
-    window.removeEventListener('resize', this.manageInsertMenu, {
-      capture: true,
-    });
-    window.removeEventListener('keydown', this.handleKeyDown, {
-      capture: true,
-    });
-    window.removeEventListener('keyup', this.handleKeyUp, { capture: true });
-    window.removeEventListener('input', this.handleInput, { capture: true });
-    window.removeEventListener('paste', this.handlePaste, { capture: true });
-    window.removeEventListener('cut', this.handleCut, { capture: true });
+    window.removeEventListener('resize', this.manageInsertMenu);
+    window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('keyup', this.handleKeyUp);
+    window.removeEventListener('input', this.handleInput);
+    window.removeEventListener('paste', this.handlePaste);
+    window.removeEventListener('cut', this.handleCut);
   };
 
   newPost = () => {
@@ -649,30 +645,18 @@ export default class EditPost extends React.Component {
     }
     const {
       state: {
-        insertMenuNode,
         formatSelectionNode,
         formatSelectionModel,
         editSectionNode,
         shouldShowEditSectionMenu,
       },
     } = this;
-    // HANDOFF conditions - should this event be passed down to a child (menu) component?
-    // TODO: use the register/unregister handlers and callbacks for data instead of this pass-through.
-    //  it will be cleaner.  This menu will just unregister all handlers and pass control to the menu and
-    //  when the menu needs to pass control back it will unregister it's handlers and use a callback for any data
-    // insert menu button is displayed (on empty P)
-    if (
-      insertMenuNode.get('id') &&
-      // no range means the menu is closed
-      (!getRange() ||
-        // allow shift through so user can double tap it to open the menu
-        [KEYCODE_CTRL].includes(evt.keyCode))
-    ) {
-      // pass this event up to the menu to handle
-      this.setState({ windowEventToForward: evt });
-      stopAndPrevent(evt);
-      return;
-    }
+    // HANDOFF conditions
+    // TODO: use `capture: true` on children that set handlers on window (i.e. menus with keyboard navigation)
+    //  capture: true will put the child handlers "in front of" any handlers set here in the editor.
+    //  child handlers can then respond to specific events and call stopPropagation & preventDefault to avoid getting here
+    //  or they can ignore events and let them get handled here
+
     // format selection menu is open
     if (
       formatSelectionNode.get('id') &&
@@ -1273,7 +1257,6 @@ export default class EditPost extends React.Component {
           </div>
           {insertMenuNode.get('id') && (
             <InsertSectionMenu
-              windowEvent={windowEventToForward}
               insertNodeId={insertMenuNode.get('id')}
               insertMenuTopOffset={insertMenuTopOffset}
               insertMenuLeftOffset={insertMenuLeftOffset}

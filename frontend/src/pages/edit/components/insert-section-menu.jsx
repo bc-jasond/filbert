@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import { navButtonMixin } from '../../../common/components/shared-styled-components-mixins';
 import {
@@ -68,9 +68,6 @@ const InsertSectionMenuButton = styled.button`
     `}
   }
 `;
-const HiddenForm = styled.form`
-  display: none;
-`;
 const HiddenFileInput = styled.input`
   display: none;
 `;
@@ -94,162 +91,162 @@ const InsertSectionItem = styled.span`
   ${navButtonMixin};
 `;
 
-export default class InsertSectionMenuComponent extends React.Component {
-  fileInputRef = React.createRef();
+export default React.memo(
+  ({
+    insertSection,
+    insertNodeId,
+    insertMenuTopOffset,
+    insertMenuLeftOffset,
+  }) => {
+    const fileInputRef = useRef(null);
+    const didHitShift = useRef(false);
 
-  didHitShift = false;
+    const [currentIdx, setCurrentIdx] = useState(-1);
+    const [menuIsOpen, setMenuIsOpen] = useState(false);
 
-  sectionTypes = [
-    {
-      type: NODE_TYPE_H1,
-      children: 'H1',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_H1),
-    },
-    {
-      type: NODE_TYPE_H2,
-      children: 'H2',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_H2),
-    },
-    {
-      type: NODE_TYPE_PRE,
-      children: 'code',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_PRE),
-    },
-    {
-      type: NODE_TYPE_LI,
-      children: 'list',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_LI),
-    },
-    {
-      type: NODE_TYPE_SPACER,
-      children: 'spacer',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_SPACER),
-    },
-    {
-      type: NODE_TYPE_IMAGE,
-      children: (
-        <>
-          photo
-          <HiddenForm id="" onSubmit={() => alert('Hey!')}>
+    // HACK: use a ref to work around not understanding how to setup the right hooks dependencies
+    const currentIdxRef = useRef(-1);
+    useEffect(() => {
+      currentIdxRef.current = currentIdx;
+    }, [currentIdx]);
+    // END HACK
+
+    const sectionTypes = [
+      {
+        type: NODE_TYPE_H1,
+        children: 'H1',
+        callback: () => insertSection(NODE_TYPE_H1),
+      },
+      {
+        type: NODE_TYPE_H2,
+        children: 'H2',
+        callback: () => insertSection(NODE_TYPE_H2),
+      },
+      {
+        type: NODE_TYPE_PRE,
+        children: 'code',
+        callback: () => insertSection(NODE_TYPE_PRE),
+      },
+      {
+        type: NODE_TYPE_LI,
+        children: 'list',
+        callback: () => insertSection(NODE_TYPE_LI),
+      },
+      {
+        type: NODE_TYPE_SPACER,
+        children: 'spacer',
+        callback: () => insertSection(NODE_TYPE_SPACER),
+      },
+      {
+        type: NODE_TYPE_IMAGE,
+        children: (
+          <>
+            photo
             <HiddenFileInput
               id="edit-image-hidden-file-input"
               type="file"
               onChange={(e) => {
-                this.props?.insertSection?.(NODE_TYPE_IMAGE, e.target.files);
+                insertSection(NODE_TYPE_IMAGE, e.target.files);
+              }}
+              onClick={(e) => {
+                // NOTE: the callback below will be called again without this stopPropagation()
+                e.stopPropagation();
               }}
               accept="image/*"
-              ref={this.fileInputRef}
+              ref={fileInputRef}
             />
-          </HiddenForm>
-        </>
-      ),
-      callback: () => this.fileInputRef.current.click(),
-    },
-    {
-      type: NODE_TYPE_QUOTE,
-      children: 'quote',
-      callback: () => this.props?.insertSection?.(NODE_TYPE_QUOTE),
-    },
-  ];
+          </>
+        ),
+        callback: () => fileInputRef.current.click(),
+      },
+      {
+        type: NODE_TYPE_QUOTE,
+        children: 'quote',
+        callback: () => insertSection(NODE_TYPE_QUOTE),
+      },
+    ];
 
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      currentIdx: -1,
-      menuIsOpen: false,
-    };
-  }
-
-  componentDidUpdate(prevProps) {
-    const {
-      props: { windowEvent },
-    } = this;
-    if (windowEvent && windowEvent !== prevProps.windowEvent) {
-      this.handleKeyDown(windowEvent);
-    }
-  }
-
-  focusInsertNode = () => {
-    const {
-      props: { insertNodeId },
-    } = this;
-    setCaret({ startNodeId: insertNodeId });
-  };
-
-  handleKeyDown = (evt) => {
-    // don't let contenteditable take over!
-    stopAndPrevent(evt);
-
-    const {
-      state: { currentIdx },
-    } = this;
-
-    /* eslint-disable-next-line default-case */
-    switch (evt.keyCode) {
-      case KEYCODE_CTRL: {
-        if (this.didHitShift) {
-          // user double-tapped shift
-          this.setState({ menuIsOpen: true });
-          this.didHitShift = false;
-          // clear the caret, it's just dangling around some random place like a piece of spinach in your teeth
-          removeAllRanges();
+    useEffect(() => {
+      function handleKeyDown(evt) {
+        if (!evt) {
           return;
         }
-        this.didHitShift = true;
-        setTimeout(() => {
-          this.didHitShift = false;
-        }, 500);
-        return;
-      }
-      case KEYCODE_LEFT_ARROW: {
-        const nextIdx = currentIdx <= 0 ? 6 : currentIdx - 1;
-        this.setState({ currentIdx: nextIdx });
-        break;
-      }
-      case KEYCODE_RIGHT_ARROW: {
-        const nextIdx = currentIdx === 6 ? 0 : currentIdx + 1;
-        this.setState({ currentIdx: nextIdx });
-        break;
-      }
-      case KEYCODE_ESC: {
-        this.setState({ currentIdx: -1, menuIsOpen: false });
-        this.focusInsertNode();
-        return;
-      }
-      case KEYCODE_SPACE: // fall-through
-      case KEYCODE_ENTER: {
-        if (currentIdx > -1) {
-          this.setState({ currentIdx: -1, menuIsOpen: false }, () => {
-            this.sectionTypes[currentIdx]?.callback?.();
-          });
+
+        // eslint-disable-next-line default-case
+        switch (evt.keyCode) {
+          case KEYCODE_CTRL: {
+            if (didHitShift.current) {
+              // user double-tapped shift
+              setMenuIsOpen(true);
+              setCurrentIdx(0);
+              didHitShift.current = false;
+              // clear the caret, it's just dangling around some random place like a piece of spinach in your teeth
+              removeAllRanges();
+              stopAndPrevent(evt);
+              break;
+            }
+            didHitShift.current = true;
+            setTimeout(() => {
+              didHitShift.current = false;
+            }, 500);
+            stopAndPrevent(evt);
+            break;
+          }
+          case KEYCODE_LEFT_ARROW: {
+            const nextIdx =
+              currentIdxRef.current <= 0 ? 6 : currentIdxRef.current - 1;
+            setCurrentIdx(nextIdx);
+            stopAndPrevent(evt);
+            break;
+          }
+          case KEYCODE_RIGHT_ARROW: {
+            const nextIdx =
+              currentIdxRef.current === 6 ? 0 : currentIdxRef.current + 1;
+            setCurrentIdx(nextIdx);
+            stopAndPrevent(evt);
+            break;
+          }
+          case KEYCODE_ESC: {
+            setCurrentIdx(-1);
+            setMenuIsOpen(false);
+            setCaret({ startNodeId: insertNodeId });
+            stopAndPrevent(evt);
+            break;
+          }
+          case KEYCODE_SPACE: // fall-through
+          case KEYCODE_ENTER: {
+            if (currentIdxRef.current > -1) {
+              sectionTypes[currentIdxRef.current].callback();
+              setCurrentIdx(-1);
+              setMenuIsOpen(false);
+            }
+            stopAndPrevent(evt);
+            break;
+          }
+          default:
+            break;
         }
       }
-    }
-  };
+      // `capture: true` will put this event handler in front of the ones set by edit.jsx
+      window.addEventListener('keydown', handleKeyDown, { capture: true });
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown, {
+          capture: true,
+        });
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-  toggleMenu = () => {
-    const {
-      props: { insertNodeId },
-      state: { menuIsOpen: menuWasOpen },
-    } = this;
-
-    this.setState({ menuIsOpen: !menuWasOpen }, () => {
-      if (menuWasOpen) {
+    function toggleMenu() {
+      setMenuIsOpen(!menuIsOpen);
+      if (menuIsOpen) {
         // now it will be closed, replace caret
         setCaret({ startNodeId: insertNodeId });
       } else {
         // now it will be open, hide caret
         removeAllRanges();
       }
-    });
-  };
-
-  render() {
-    const {
-      props: { insertMenuTopOffset, insertMenuLeftOffset },
-      state: { currentIdx, menuIsOpen },
-    } = this;
+    }
 
     return (
       <InsertSectionMenu
@@ -257,11 +254,10 @@ export default class InsertSectionMenuComponent extends React.Component {
         isOpen={menuIsOpen}
         topOffset={insertMenuTopOffset}
         leftOffset={insertMenuLeftOffset}
-        onKeyDown={this.handleKeyDown}
       >
         <InsertSectionMenuButton
           id="insert-section-menu-button"
-          onClick={this.toggleMenu}
+          onClick={toggleMenu}
           isOpen={menuIsOpen}
         />
         <InsertSectionMenuItemsContainer
@@ -272,13 +268,13 @@ export default class InsertSectionMenuComponent extends React.Component {
           spellcheck="false"
           isOpen={menuIsOpen}
         >
-          {this.sectionTypes.map(({ type, children, callback }, idx) => (
+          {sectionTypes.map(({ type, children, callback }, idx) => (
             <InsertSectionItem
               id={`insert-section-menu-item-${type}`}
               key={type}
               isOpen={currentIdx === idx}
               onClick={callback}
-              onMouseOver={() => this.setState({ currentIdx: -1 })}
+              onMouseOver={() => setCurrentIdx(-1)}
               onFocus={() => {}}
             >
               {children}
@@ -288,4 +284,4 @@ export default class InsertSectionMenuComponent extends React.Component {
       </InsertSectionMenu>
     );
   }
-}
+);
