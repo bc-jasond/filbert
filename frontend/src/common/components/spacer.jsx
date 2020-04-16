@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import { NODE_TYPE_SPACER } from '../constants';
-import { ContentSection } from './shared-styled-components';
+import { ContentSectionStyled } from './shared-styled-components';
 import { editSectionBorderMixin } from './shared-styled-components-mixins';
 
-const SpacerSection = styled(ContentSection)`
+const SpacerSection = styled(ContentSectionStyled)`
   &::after {
     content: '✎﹏﹏﹏﹏﹏﹏﹏﹏﹏';
     text-align: center;

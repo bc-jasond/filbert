@@ -12,7 +12,11 @@ import {
   NODE_TYPE_ROOT,
   NODE_TYPE_SPACER,
 } from '../constants';
-import { CodeSection, ContentSection, Ol } from './shared-styled-components';
+import {
+  CodeSectionStyled,
+  ContentSectionStyled,
+  Ol,
+} from './shared-styled-components';
 import Quote from './quote';
 import Image from './image';
 import Spacer from './spacer';
@@ -32,133 +36,131 @@ function getChildIds(children) {
   return children.reduce((acc, c) => `${acc}${c.key}`, '');
 }
 
-export default class Document extends React.PureComponent {
-  current;
+export default React.memo(
+  ({ nodesById, currentEditNode = Map(), setEditNodeId = () => {} }) => {
+    let current = DocumentModel.getFirstNode(nodesById);
 
-  getNextPTags() {
-    if (this.current.get('type') !== NODE_TYPE_P) {
-      return null;
+    function next() {
+      current = nodesById?.get?.(current.get('next_sibling_id')) || Map();
     }
-    const children = [];
-    while (this.current.get('type') === NODE_TYPE_P) {
-      children.push(<P key={this.current.get('id')} node={this.current} />);
-      this.next();
-    }
-    return children;
-  }
 
-  getNextLiTags() {
-    if (this.current.get('type') !== NODE_TYPE_LI) {
-      return null;
-    }
-    const children = [];
-    while (this.current.get('type') === NODE_TYPE_LI) {
-      children.push(<Li key={this.current.get('id')} node={this.current} />);
-      this.next();
-    }
-    return <Ol key={getChildIds(children)}>{children}</Ol>;
-  }
-
-  getContentSectionTags() {
-    const children = [];
-    let p;
-    let li;
-    do {
-      p = this.getNextPTags();
-      li = this.getNextLiTags();
-      if (p) {
-        children.push(...p);
+    function getParagraphs() {
+      if (current.get('type') !== NODE_TYPE_P) {
+        return null;
       }
-      if (li) {
-        children.push(li);
+      const paragraphs = [];
+      while (current.get('type') === NODE_TYPE_P) {
+        paragraphs.push(<P key={current.get('id')} node={current} />);
+        next();
       }
-    } while (p || li);
-    return (
-      <ContentSection key={getChildIds(children)}>{children}</ContentSection>
-    );
-  }
-
-  getNextPreTags() {
-    const children = [];
-    while (this.current.get('type') === NODE_TYPE_PRE) {
-      children.push(<Pre key={this.current.get('id')} node={this.current} />);
-      this.next();
+      return paragraphs;
     }
-    return <CodeSection key={getChildIds(children)}>{children}</CodeSection>;
-  }
 
-  next = () => {
-    this.current =
-      this.props?.nodesById?.get?.(this.current.get('next_sibling_id')) ||
-      Map();
-  };
+    function getOrderedList() {
+      if (current.get('type') !== NODE_TYPE_LI) {
+        return null;
+      }
+      const listItems = [];
+      while (current.get('type') === NODE_TYPE_LI) {
+        listItems.push(<Li key={current.get('id')} node={current} />);
+        next();
+      }
+      return <Ol key={getChildIds(listItems)}>{listItems}</Ol>;
+    }
 
-  render() {
-    console.debug('Document RENDER', this);
-    const {
-      props: { nodesById, currentEditNode = Map(), setEditNodeId },
-    } = this;
+    function getContentSection() {
+      const contentNodes = [];
+      let p;
+      let li;
+      do {
+        p = getParagraphs();
+        li = getOrderedList();
+        if (p) {
+          contentNodes.push(...p);
+        }
+        if (li) {
+          contentNodes.push(li);
+        }
+      } while (p || li);
+      return (
+        <ContentSectionStyled key={getChildIds(contentNodes)}>
+          {contentNodes}
+        </ContentSectionStyled>
+      );
+    }
+
+    function getCodeSection() {
+      const preNodes = [];
+      while (current.get('type') === NODE_TYPE_PRE) {
+        preNodes.push(<Pre key={current.get('id')} node={current} />);
+        next();
+      }
+      return (
+        <CodeSectionStyled key={getChildIds(preNodes)}>
+          {preNodes}
+        </CodeSectionStyled>
+      );
+    }
     const children = [];
-    this.current = DocumentModel.getFirstNode(nodesById);
-    while (this.current.get('id')) {
+    while (current.get('id')) {
       let shouldCallNext = true;
-      const currentType = this.current.get('type');
+      const currentType = current.get('type');
       if (currentType === NODE_TYPE_P || currentType === NODE_TYPE_LI) {
-        children.push(this.getContentSectionTags());
+        children.push(getContentSection());
         shouldCallNext = false; // next() already in correct position
       } else if (currentType === NODE_TYPE_PRE) {
-        children.push(this.getNextPreTags());
+        children.push(getCodeSection());
         shouldCallNext = false; // next() already in correct position
       } else if (currentType === NODE_TYPE_H1) {
         children.push(
           <H1
-            key={this.current.get('id')}
-            node={this.current}
+            key={current.get('id')}
+            node={current}
             shouldShowPlaceholder={
               nodesById.size === 1 &&
-              cleanText(this.current.get('content', '')).length === 0
+              cleanText(current.get('content', '')).length === 0
             }
           />
         );
       } else if (currentType === NODE_TYPE_H2) {
-        children.push(<H2 key={this.current.get('id')} node={this.current} />);
+        children.push(<H2 key={current.get('id')} node={current} />);
       } else if (currentType === NODE_TYPE_SPACER) {
         children.push(
           <Spacer
-            key={this.current.get('id')}
-            node={this.current}
-            isEditing={currentEditNode.get('id') === this.current.get('id')}
+            key={current.get('id')}
+            node={current}
+            isEditing={currentEditNode.get('id') === current.get('id')}
             setEditNodeId={setEditNodeId}
           />
         );
       } else if (currentType === NODE_TYPE_IMAGE) {
         children.push(
           <Image
-            key={this.current.get('id')}
-            node={this.current}
-            isEditing={currentEditNode.get('id') === this.current.get('id')}
+            key={current.get('id')}
+            node={current}
+            isEditing={currentEditNode.get('id') === current.get('id')}
             setEditNodeId={setEditNodeId}
           />
         );
       } else if (currentType === NODE_TYPE_QUOTE) {
         children.push(
           <Quote
-            key={this.current.get('id')}
-            node={this.current}
-            isEditing={currentEditNode.get('id') === this.current.get('id')}
+            key={current.get('id')}
+            node={current}
+            isEditing={currentEditNode.get('id') === current.get('id')}
             setEditNodeId={setEditNodeId}
           />
         );
       } else {
-        console.error('Error: Unknown type! ', this.current.get('type'));
+        console.error('Error: Unknown type! ', current.get('type'));
       }
       if (shouldCallNext) {
-        this.next();
+        next();
       }
     }
     return <Root data-type={NODE_TYPE_ROOT}>{children}</Root>;
   }
-}
+);
 
 // these could be interesting in the editor 'add' menu but, they're currently supported with existing node types
 // export const Gotcha = {} // facepalm emoji

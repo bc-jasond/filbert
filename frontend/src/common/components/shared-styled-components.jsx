@@ -110,7 +110,7 @@ export const H3Styled = styled.h3`
   font-style: normal;
   font-family: ${sansSerif}, sans-serif;
 `;
-export const ContentSection = styled.section`
+export const ContentSectionStyled = styled.section`
   ${sectionWidthMixin};
   font-family: ${contentSerif}, serif;
   font-size: 21px;
@@ -118,7 +118,7 @@ export const ContentSection = styled.section`
   letter-spacing: -0.01em;
   margin-bottom: 52px;
 `;
-export const CodeSection = styled(ContentSection)`
+export const CodeSectionStyled = styled(ContentSectionStyled)`
   font-family: ${monospaced}, monospace;
   font-size: 16px;
   max-height: 350px;

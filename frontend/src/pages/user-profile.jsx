@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { Article } from '../common/components/layout-styled-components';
 import {
   Code,
-  ContentSection,
+  ContentSectionStyled,
   H1Styled,
   H2Styled,
   ProfileImg,
@@ -202,7 +202,7 @@ export default React.memo(({ params: { username }, session, setSession }) => {
         <Header session={session} setSession={setSession} userIsMe={userIsMe} />
         <Article>
           <H1Styled>User Profile</H1Styled>
-          <ContentSection>
+          <ContentSectionStyled>
             <Row>
               <Col>
                 {user?.pictureUrl && <BiggerImg src={user.pictureUrl} />}
@@ -218,9 +218,9 @@ export default React.memo(({ params: { username }, session, setSession }) => {
                 </AuthorContainer>
               </ColRight>
             </Row>
-          </ContentSection>
+          </ContentSectionStyled>
           {userIsMe && (
-            <ContentSection>
+            <ContentSectionStyled>
               <H2Styled>Settings</H2Styled>
               <Toggle
                 label="Make my profile public?"
@@ -233,10 +233,10 @@ export default React.memo(({ params: { username }, session, setSession }) => {
                 value={user?.statsArePublic}
                 onUpdate={updateStatsArePublic}
               />
-            </ContentSection>
+            </ContentSectionStyled>
           )}
           {stats?.totalPosts > 0 && (
-            <ContentSection>
+            <ContentSectionStyled>
               <H2Styled>Stats</H2Styled>
               <Table>
                 {statsFormatted.map(({ key, label, figure }) => (
@@ -248,7 +248,7 @@ export default React.memo(({ params: { username }, session, setSession }) => {
                   </React.Fragment>
                 ))}
               </Table>
-            </ContentSection>
+            </ContentSectionStyled>
           )}
         </Article>
         <Footer />

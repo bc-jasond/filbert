@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { NODE_TYPE_QUOTE } from '../constants';
 import {
   A,
-  ContentSection,
+  ContentSectionStyled,
   ItalicText,
   MiniText,
 } from './shared-styled-components';
@@ -25,7 +25,7 @@ export default React.memo(({ node, isEditing, setEditNodeId }) => {
   const author = node.getIn(['meta', 'author'], '');
   const context = node.getIn(['meta', 'context'], '');
   return (
-    <ContentSection data-type={NODE_TYPE_QUOTE} name={id}>
+    <ContentSectionStyled data-type={NODE_TYPE_QUOTE} name={id}>
       <QuoteP
         isEditMode={setEditNodeId}
         isEditing={isEditing}
@@ -40,6 +40,6 @@ export default React.memo(({ node, isEditing, setEditNodeId }) => {
           <MiniText>{context && ` ${context}`}</MiniText>
         </ItalicText>
       </QuoteP>
-    </ContentSection>
+    </ContentSectionStyled>
   );
 });

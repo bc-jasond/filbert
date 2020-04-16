@@ -4,13 +4,13 @@ import styled, { css } from 'styled-components';
 import { NODE_TYPE_IMAGE } from '../constants';
 import { ease } from '../css';
 import { nodeIsValid } from '../utils';
-import { ContentSection } from './shared-styled-components';
+import { ContentSectionStyled } from './shared-styled-components';
 import {
   editSectionBorderMixin,
   miniTextMixin,
 } from './shared-styled-components-mixins';
 
-export const ImageSection = styled(ContentSection)`
+export const ImageSection = styled(ContentSectionStyled)`
   overflow: hidden;
   max-width: 1000px;
   margin: 0 auto 52px;
