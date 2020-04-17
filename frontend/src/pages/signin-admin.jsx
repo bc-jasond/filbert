@@ -17,7 +17,7 @@ import {
   SuccessMessage,
 } from '../common/components/shared-styled-components';
 
-import { signin } from '../common/fetch';
+import { signinAdmin } from '../common/fetch';
 import { getSession } from '../common/session';
 
 const Container = styled.div`
@@ -59,7 +59,7 @@ export default React.memo(({ setSession }) => {
   async function doLogin(event) {
     event.preventDefault();
     try {
-      await signin(username, password);
+      await signinAdmin(username, password);
       setError(null);
       setSuccess('All set 👍');
       setTimeout(() => {

@@ -6,6 +6,7 @@ export const PAGE_NAME_EDIT = 'edit';
 export const PAGE_NAME_PUBLIC = 'public';
 export const PAGE_NAME_PRIVATE = 'private';
 export const PAGE_NAME_PUBLISH = 'publish';
+export const PAGE_NAME_USER_PROFILE = 'profile';
 
 // sections that can have text content
 export const NODE_TYPE_H1 = 'h1';

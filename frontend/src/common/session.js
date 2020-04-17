@@ -8,19 +8,54 @@ import {
 } from './constants';
 import { get, set } from './local-storage';
 
-export function signout() {
-  set(AUTH_TOKEN_KEY, '', false);
-  set(SESSION_KEY, '', false);
+export function initSessionCallbacks() {
+  window.filbertAuthCallbacks = [];
 }
-
+export function registerAuthChangeCallback(fn) {
+  if (!window.filbertAuthCallbacks) {
+    initSessionCallbacks();
+  }
+  if (window.filbertAuthCallbacks.includes(fn)) {
+    return;
+  }
+  window.filbertAuthCallbacks.push(fn);
+}
+export function deregisterAuthChangeCallback(fn) {
+  if (!window.filbertAuthCallbacks) {
+    return;
+  }
+  window.filbertAuthCallbacks = window.filbertAuthCallbacks.filter(
+    (cb) => cb !== fn
+  );
+}
+export function getToken() {
+  return get(AUTH_TOKEN_KEY, '');
+}
 export function getSession() {
   return get(SESSION_KEY, Map());
 }
-
 export function getTheme() {
   return get(SESSION_THEME, LIGHT_MODE_THEME);
 }
 
+function fireAllCallbacks() {
+  if (!window.filbertAuthCallbacks) {
+    return;
+  }
+  window.filbertAuthCallbacks.forEach((cb) => {
+    cb({ token: getToken(), session: getSession() });
+  });
+}
+export function signin(token, session) {
+  set(AUTH_TOKEN_KEY, token, false);
+  set(SESSION_KEY, session, false);
+  fireAllCallbacks();
+}
+export function signout() {
+  set(AUTH_TOKEN_KEY, '', false);
+  set(SESSION_KEY, '', false);
+  fireAllCallbacks();
+}
 export function setTheme(theme) {
   set(SESSION_THEME, theme, false);
 }

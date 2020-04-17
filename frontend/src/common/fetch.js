@@ -1,6 +1,6 @@
-import { API_URL, AUTH_TOKEN_KEY, SESSION_KEY } from './constants';
+import { API_URL } from './constants';
 import { createNextUrl } from './dom';
-import { get, set } from './local-storage';
+import { getToken, signin } from './session';
 import { getGoogleUser, googleGetLoggedInUser } from './google-auth';
 
 function getBaseConfig(abortSignal = null) {
@@ -10,7 +10,7 @@ function getBaseConfig(abortSignal = null) {
     cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
     headers: {
       'Content-Type': 'application/json',
-      Authorization: get(AUTH_TOKEN_KEY),
+      Authorization: getToken(),
     },
     redirect: 'follow', // manual, *follow, error
     referrer: 'no-referrer', // no-referrer, *client
@@ -51,8 +51,7 @@ export async function signinGoogle(googleUser, filbertUsername) {
   if (signupIsIncomplete) {
     return { signupIsIncomplete };
   }
-  set(AUTH_TOKEN_KEY, token, false);
-  set(SESSION_KEY, session, false);
+  signin(token, session);
   return { signupIsIncomplete: false };
 }
 
@@ -79,7 +78,7 @@ async function fetchRefresh(url, config) {
   const res2 = await fetch(url, {
     ...config,
     // reset Authorization header
-    headers: { Authorization: get(AUTH_TOKEN_KEY) },
+    headers: { Authorization: getToken() },
   });
   return handleResponse(res2);
 }
@@ -128,7 +127,7 @@ export async function uploadImage(formData, abortSignal = null) {
   return apiCall('POST', '/image', undefined, undefined, config);
 }
 
-export async function signin(username, password) {
+export async function signinAdmin(username, password) {
   const {
     error,
     data: { session, token },
@@ -137,7 +136,6 @@ export async function signin(username, password) {
     console.error('Admin Signin Error: ', error);
     return { error };
   }
-  set(AUTH_TOKEN_KEY, token, false);
-  set(SESSION_KEY, session, false);
+  signin(token, session);
   return {};
 }
