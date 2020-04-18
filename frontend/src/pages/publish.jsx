@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { fromJS, Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 import styled, { css } from 'styled-components';
@@ -87,156 +87,146 @@ const ToggleLabel = styled.span`
   line-height: 24px;
 `;
 
-export default class Publish extends React.Component {
-  inputRef = React.createRef();
+export default React.memo(({ params, session, setSession }) => {
+  const inputRef = useRef(null);
 
-  backupTitle;
+  const backupTitleRef = useRef(null);
 
-  backupAbstract;
+  const backupAbstractRef = useRef(null);
 
-  backupImageNode;
+  const backupImageNodeRef = useRef(null);
 
-  imageContainerId = 'publish-post-image-container';
+  const imageContainerId = 'publish-post-image-container';
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      post: Map(),
-      postSummary: Map(),
-      error: null,
-      successMessage: null,
-      imageIsSelected: false,
-      shouldShow404: false,
-      redirectUrl: false,
-    };
+  const [post, setPost] = useState(Map());
+  const [postSummary, setPostSummary] = useState(Map());
+  const [errorObj, setErrorObj] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [imageMenuOffsetTop, setImageMenuOffsetTop] = useState(0);
+  const [imageMenuOffsetLeft, setImageMenuOffsetLeft] = useState(0);
+  const [imageIsSelected, setImageIsSelected] = useState(
+    !post.getIn(['meta', 'syncTopPhoto'])
+  );
+  const [shouldShow404, setShouldShow404] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState(false);
+
+  function syncTitleAndAbstract(postLocal, postSummaryLocal) {
+    const current = postLocal.getIn(['meta', 'syncTitleAndAbstract']);
+    if (current) {
+      return postLocal
+        .set('title', postSummaryLocal.get('title'))
+        .set('abstract', postSummaryLocal.get('abstract'));
+    }
+    return postLocal
+      .set('title', backupTitleRef.current)
+      .set('abstract', backupAbstractRef.current);
   }
 
-  async componentDidMount() {
-    await this.loadPostAndSummary();
-    this.positionImageMenu();
-    window.addEventListener('resize', this.positionImageMenu);
-    focusAndScrollSmooth(null, this.inputRef?.current);
+  function syncImage(postLocal, postSummaryLocal) {
+    const current = postLocal.getIn(['meta', 'syncTopPhoto']);
+    if (current) {
+      return postLocal.setIn(
+        ['meta', 'imageNode'],
+        postSummaryLocal.get('imageNode')
+      );
+    }
+    return backupImageNodeRef.current?.size
+      ? postLocal.setIn(['meta', 'imageNode'], backupImageNodeRef.current)
+      : postLocal;
   }
 
-  async componentDidUpdate(prevProps) {
+  async function loadPost(postId) {
     const {
-      state: { post, shouldShow404 },
-    } = this;
-    const params = this.props?.params;
-    const id = params?.id;
-    const prevId = prevProps?.params?.id;
-    if (id === prevId && (post.size > 0 || shouldShow404)) {
-      return;
+      error,
+      data: { post: postLocal },
+    } = await apiGet(`/publish/${postId}`);
+    if (error) {
+      console.error(error);
+      return null;
     }
-    await this.loadPostAndSummary();
-    this.positionImageMenu();
+    return postLocal;
   }
-
-  async componentWillUnmount() {
-    this.state = {
-      post: Map(),
-      postSummary: {},
-    };
-    window.removeEventListener('resize', this.positionImageMenu);
-  }
-
-  // eslint-disable-next-line react/sort-comp
-  async loadPostSummary() {
-    const { error, data: postSummary } = await apiGet(
-      `/post-summary/${this.props?.params?.id}`
+  async function loadPostSummary(postId) {
+    const { error, data: postSummaryLocal } = await apiGet(
+      `/post-summary/${postId}`
     );
     if (error) {
       console.error(error);
-      return {};
+      return null;
     }
-    return postSummary;
+    return postSummaryLocal;
   }
 
-  async loadPostAndSummary() {
-    // eslint-disable-next-line prefer-const
-    let { error, data: { post } = {} } = await apiGet(
-      `/publish/${this.props?.params?.id}`
-    );
-    if (error) {
-      console.error(error);
-      if (error?.status === 404) {
-        this.setState({ shouldShow404: true });
+  useEffect(() => {
+    async function loadPostAndSummary() {
+      // eslint-disable-next-line prefer-const
+      let postLocal = await loadPost(params?.id);
+      if (!postLocal) {
+        setShouldShow404(true);
+        return;
       }
-      return Promise.resolve();
+      postLocal = fromJS(postLocal);
+      backupTitleRef.current = postLocal.get('title', '');
+      backupAbstractRef.current = postLocal.get('abstract', '');
+      backupImageNodeRef.current = postLocal.getIn(
+        ['meta', 'imageNode'],
+        Map()
+      );
+
+      let postSummaryLocal = await loadPostSummary(params?.id);
+      if (!postSummaryLocal) {
+        // TODO: show error message?
+        return;
+      }
+
+      postSummaryLocal = fromJS(postSummaryLocal);
+      postLocal = syncTitleAndAbstract(postLocal, postSummaryLocal);
+      postLocal = syncImage(postLocal, postSummaryLocal);
+      setPost(postLocal);
+      setPostSummary(postSummaryLocal);
+      setShouldShow404(false);
     }
-    post = fromJS(post);
-    this.backupTitle = post.get('title', '');
-    this.backupAbstract = post.get('abstract', '');
-    this.backupImageNode = post.getIn(['meta', 'imageNode'], Map());
-    const postSummary = fromJS(await this.loadPostSummary());
-    post = this.syncTitleAndAbstract(post, postSummary);
-    post = this.syncImage(post, postSummary);
-    return new Promise((resolve) =>
-      this.setState({ post, postSummary, shouldShow404: false }, resolve)
-    );
+    loadPostAndSummary();
+    focusAndScrollSmooth(null, inputRef?.current);
+  }, [params]);
+
+  useEffect(() => {
+    function positionImageMenu() {
+      const elem = document.getElementById(imageContainerId);
+      const imageMenuOffsetTopLocal = elem?.offsetTop - 60;
+      const imageMenuOffsetLeftLocal =
+        elem?.offsetLeft - 8 + elem?.offsetWidth / 2;
+      setImageMenuOffsetTop(imageMenuOffsetTopLocal);
+      setImageMenuOffsetLeft(imageMenuOffsetLeftLocal);
+    }
+    positionImageMenu();
+    window.addEventListener('resize', positionImageMenu);
+    return () => {
+      window.removeEventListener('resize', positionImageMenu);
+    };
+  });
+
+  function updatePost(postLocal) {
+    setPost(postLocal);
+    setErrorObj(null);
+    setSuccessMessage(null);
   }
 
-  syncTitleAndAbstract(post, postSummary) {
-    const current = post.getIn(['meta', 'syncTitleAndAbstract']);
-    if (current) {
-      return post
-        .set('title', postSummary.get('title'))
-        .set('abstract', postSummary.get('abstract'));
-    }
-    return post
-      .set('title', this.backupTitle)
-      .set('abstract', this.backupAbstract);
-  }
-
-  syncImage(post, postSummary) {
-    const current = post.getIn(['meta', 'syncTopPhoto']);
-    if (current) {
-      return post.setIn(['meta', 'imageNode'], postSummary.get('imageNode'));
-    }
-    return this.backupImageNode.size
-      ? post.setIn(['meta', 'imageNode'], this.backupImageNode)
-      : post;
-  }
-
-  positionImageMenu = () => {
-    const elem = document.getElementById(this.imageContainerId);
-    const imageMenuOffsetTop = elem?.offsetTop - 60;
-    const imageMenuOffsetLeft = elem?.offsetLeft - 8 + elem?.offsetWidth / 2;
-    this.setState({ imageMenuOffsetTop, imageMenuOffsetLeft });
-  };
-
-  toggleTitleAndAbstract = () => {
-    const {
-      state: { post, postSummary },
-    } = this;
+  function toggleTitleAndAbstract() {
     const current = post.getIn(['meta', 'syncTitleAndAbstract']);
     let updatedPost = post.setIn(['meta', 'syncTitleAndAbstract'], !current);
-    updatedPost = this.syncTitleAndAbstract(updatedPost, postSummary);
-    this.updatePost(updatedPost);
-  };
+    updatedPost = syncTitleAndAbstract(updatedPost, postSummary);
+    updatePost(updatedPost);
+  }
 
-  toggleImage = () => {
-    const {
-      state: { post, postSummary },
-    } = this;
+  function toggleImage() {
     const current = post.getIn(['meta', 'syncTopPhoto']);
     let updatedPost = post.setIn(['meta', 'syncTopPhoto'], !current);
-    updatedPost = this.syncImage(updatedPost, postSummary);
-    this.updatePost(updatedPost);
-  };
+    updatedPost = syncImage(updatedPost, postSummary);
+    updatePost(updatedPost);
+  }
 
-  updatePost = (post) => {
-    this.setState({
-      post,
-      error: null,
-      successMessage: null,
-    });
-  };
-
-  savePost = async () => {
-    const {
-      state: { post },
-    } = this;
+  async function savePost() {
     const { error } = await apiPatch(`/post/${post.get('id')}`, {
       title: post.get('title'),
       canonical: post.get('canonical'),
@@ -244,70 +234,47 @@ export default class Publish extends React.Component {
       meta: post.get('meta'),
     });
     if (error) {
-      this.setState({
-        successMessage: null,
-        error,
-      });
+      setSuccessMessage(null);
+      setErrorObj(error);
       return { error };
     }
-    this.setState(
-      {
-        successMessage: true,
-        error: null,
-      },
-      () => {
-        setTimeout(
-          () => this.setState({ successMessage: null }),
-          POST_ACTION_REDIRECT_TIMEOUT
-        );
-      }
-    );
+    setSuccessMessage(true);
+    setErrorObj(null);
+    setTimeout(() => setSuccessMessage(null), POST_ACTION_REDIRECT_TIMEOUT);
     return {};
-  };
+  }
 
-  publishPost = async () => {
-    const {
-      state: { post },
-    } = this;
-
+  async function publishPost() {
     const didConfirm = await confirmPromise(
       'Publish this post?  This makes it public.'
     );
     if (!didConfirm) {
       return;
     }
+    // Save the post first
     let error;
-    ({ error } = await this.savePost());
+    ({ error } = await savePost());
     if (error) {
-      this.setState({ error });
+      setErrorObj(error);
       return;
     }
+    // publish second
     ({ error } = await apiPost(`/publish/${post.get('id')}`));
     if (error) {
-      this.setState({ error });
+      setErrorObj(error);
       return;
     }
-    this.setState(
-      {
-        successMessage: true,
-        error: null,
-      },
-      () => {
-        setTimeout(
-          () =>
-            this.setState({
-              redirectUrl: `/p/${post.get('canonical')}`,
-            }),
-          POST_ACTION_REDIRECT_TIMEOUT
-        );
-      }
-    );
-  };
+    setSuccessMessage(true);
+    setErrorObj(null);
 
-  deletePost = async () => {
-    const {
-      state: { post },
-    } = this;
+    setTimeout(
+      () => setRedirectUrl(`/p/${post.get('canonical')}`),
+
+      POST_ACTION_REDIRECT_TIMEOUT
+    );
+  }
+
+  async function deletePost() {
     if (post.get('published')) {
       const didConfim = await confirmPromise(
         `Delete post ${post.get('title')}?`
@@ -320,7 +287,7 @@ export default class Publish extends React.Component {
         console.error('Delete post error:', error);
         return;
       }
-      this.setState({ redirectUrl: '/' });
+      setRedirectUrl('/');
       return;
     }
     const didConfirm = await confirmPromise(
@@ -334,224 +301,195 @@ export default class Publish extends React.Component {
       console.error('Delete draft error:', error);
       return;
     }
-    this.setState({ redirectUrl: '/' });
-  };
+    setRedirectUrl('/');
+  }
 
-  updateImage = (imageNode) => {
-    const {
-      state: { post },
-    } = this;
+  function updateImage(imageNode) {
     let imageNodeUpdated = imageNode;
     if (!nodeIsValid(imageNode)) {
       imageNodeUpdated = imageNode.merge(
         getMapWithId({ type: NODE_TYPE_IMAGE })
       );
     }
-    this.setState({
-      post: post.setIn(['meta', 'imageNode'], imageNodeUpdated),
-    });
-  };
-
-  render() {
-    const {
-      props: { session, setSession },
-      state: {
-        post,
-        redirectUrl,
-        error,
-        successMessage,
-        shouldShow404,
-        imageMenuOffsetTop,
-        imageMenuOffsetLeft,
-        imageIsSelected,
-      },
-    } = this;
-    const imageNode = post.getIn(['meta', 'imageNode']) || Map();
-    const syncTitleAndAbstract = post.getIn(['meta', 'syncTitleAndAbstract']);
-    const syncTopPhoto = post.getIn(['meta', 'syncTopPhoto']);
-
-    if (shouldShow404) return <Page404 session={session} />;
-    if (redirectUrl) return <Redirect to={redirectUrl} />;
-
-    return (
-      post.size > 0 && (
-        <>
-          <Header
-            session={session}
-            setSession={setSession}
-            post={post}
-            pageName={PAGE_NAME_VIEW}
-          />
-          <Article>
-            <H1Styled>
-              Publish{post.get('published') ? ' Post' : ' Draft'}
-            </H1Styled>
-            <H2Styled>Edit Listing Details, Publish & Delete</H2Styled>
-            <FlexGrid>
-              <Col>
-                <InputContainerStyled
-                  shouldHide={post.getIn(['meta', 'syncTitleAndAbstract'])}
-                >
-                  <Label htmlFor="title" error={error?.title}>
-                    title
-                  </Label>
-                  <Input
-                    name="title"
-                    type="text"
-                    value={post.get('title')}
-                    disabled={
-                      post.getIn(['meta', 'syncTitleAndAbstract']) && 'disabled'
-                    }
-                    onChange={(e) => {
-                      this.updatePost(post.set('title', e.target.value));
-                    }}
-                    error={error?.title}
-                    ref={this.inputRef}
-                  />
-                </InputContainerStyled>
-                <InputContainerStyled shouldHide={post.get('published')}>
-                  <Label htmlFor="canonical" error={error?.canonical}>
-                    canonical
-                  </Label>
-                  <Input
-                    name="canonical"
-                    type="text"
-                    value={post.get('canonical')}
-                    disabled={post.get('published') && 'disabled'}
-                    onChange={(e) => {
-                      this.updatePost(post.set('canonical', e.target.value));
-                    }}
-                    error={error?.canonical}
-                  />
-                </InputContainerStyled>
-                <InputContainerStyled
-                  shouldHide={post.getIn(['meta', 'syncTitleAndAbstract'])}
-                >
-                  <Label htmlFor="abstract" error={error?.abstract}>
-                    abstract
-                  </Label>
-                  <TextArea
-                    name="abstract"
-                    type="text"
-                    value={post.get('abstract')}
-                    disabled={
-                      post.getIn(['meta', 'syncTitleAndAbstract']) && 'disabled'
-                    }
-                    onChange={(e) => {
-                      this.updatePost(post.set('abstract', e.target.value));
-                    }}
-                    error={error?.abstract}
-                  />
-                </InputContainerStyled>
-              </Col>
-              <Col>
-                <ImageContainer
-                  id={this.imageContainerId}
-                  shouldHide={syncTopPhoto}
-                  onClick={() =>
-                    this.setState({ imageIsSelected: !imageIsSelected })
-                  }
-                >
-                  <Label htmlFor="imageNode" error={error?.imageNode}>
-                    image
-                  </Label>
-                  {imageNode.size > 0 && (
-                    <ImageStyled
-                      node={imageNode}
-                      isEditing={!syncTopPhoto && imageIsSelected}
-                      hideCaption
-                    />
-                  )}
-                </ImageContainer>
-              </Col>
-            </FlexGrid>
-            <MiddleWrapper>
-              <ToggleWrapper>
-                <Toggle
-                  value={syncTitleAndAbstract}
-                  onUpdate={this.toggleTitleAndAbstract}
-                >
-                  <ToggleLabel>
-                    Keep Title and Abstract in sync with top 2 sections of
-                    content?
-                  </ToggleLabel>
-                </Toggle>
-              </ToggleWrapper>
-              <ToggleWrapper>
-                <Toggle value={syncTopPhoto} onUpdate={this.toggleImage}>
-                  <ToggleLabel>
-                    Keep Image in sync with first Photo in content?
-                  </ToggleLabel>
-                </Toggle>
-              </ToggleWrapper>
-              <MessageContainer>
-                {error && (
-                  <ErrorMessage>
-                    Error:{` ${Object.values(error).join('')}`}
-                    <span role="img" aria-label="woman shrugging">
-                      🤷 ‍
-                    </span>
-                  </ErrorMessage>
-                )}
-                {successMessage && (
-                  <SuccessMessage>
-                    Saved{' '}
-                    <span role="img" aria-label="thumbs up">
-                      👍
-                    </span>
-                  </SuccessMessage>
-                )}
-              </MessageContainer>
-              <FlexGrid9>
-                <Col9>
-                  <Button onClick={this.savePost}>
-                    <ButtonSpan>Save</ButtonSpan>
-                  </Button>
-                </Col9>
-                <Col9>
-                  <Button
-                    onClick={this.publishPost}
-                    disabled={post.get('published') && 'disabled'}
-                  >
-                    <ButtonSpan>{`${
-                      post.get('published')
-                        ? `Published on ${formatPostDate(
-                            post.get('published')
-                          )}`
-                        : 'Publish'
-                    }`}</ButtonSpan>
-                  </Button>
-                </Col9>
-                <Col9>
-                  <DeleteButton onClick={this.deletePost}>
-                    <ButtonSpan>Delete</ButtonSpan>
-                  </DeleteButton>
-                </Col9>
-                <Col9>
-                  <CancelButton
-                    onClick={() => {
-                      this.setState({ redirectUrl: getNextFromUrl() });
-                    }}
-                  >
-                    <ButtonSpan>Done</ButtonSpan>
-                  </CancelButton>
-                </Col9>
-              </FlexGrid9>
-            </MiddleWrapper>
-            {!syncTopPhoto && imageIsSelected && (
-              <EditImageForm
-                shouldHideCaption
-                offsetTop={imageMenuOffsetTop}
-                offsetLeft={imageMenuOffsetLeft}
-                post={post}
-                nodeModel={imageNode}
-                update={this.updateImage}
-              />
-            )}
-          </Article>
-          <Footer />
-        </>
-      )
-    );
+    setPost(post.setIn(['meta', 'imageNode'], imageNodeUpdated));
   }
-}
+
+  const imageNode = post.getIn(['meta', 'imageNode'], Map());
+  const shouldSyncTitleAndAbstract = post.getIn([
+    'meta',
+    'syncTitleAndAbstract',
+  ]);
+  const shouldSyncTopPhoto = post.getIn(['meta', 'syncTopPhoto']);
+
+  if (shouldShow404) return <Page404 session={session} />;
+  if (redirectUrl) return <Redirect to={redirectUrl} />;
+
+  return (
+    post.size > 0 && (
+      <>
+        <Header
+          session={session}
+          setSession={setSession}
+          post={post}
+          pageName={PAGE_NAME_VIEW}
+        />
+        <Article>
+          <H1Styled>
+            Publish{post.get('published') ? ' Post' : ' Draft'}
+          </H1Styled>
+          <H2Styled>Edit Listing Details, Publish & Delete</H2Styled>
+          <FlexGrid>
+            <Col>
+              <InputContainerStyled shouldHide={shouldSyncTitleAndAbstract}>
+                <Label htmlFor="title" error={errorObj?.title}>
+                  title
+                </Label>
+                <Input
+                  name="title"
+                  type="text"
+                  value={post.get('title')}
+                  disabled={shouldSyncTitleAndAbstract && 'disabled'}
+                  onChange={(e) => {
+                    updatePost(post.set('title', e.target.value));
+                  }}
+                  error={errorObj?.title}
+                  ref={inputRef}
+                />
+              </InputContainerStyled>
+              <InputContainerStyled shouldHide={post.get('published')}>
+                <Label htmlFor="canonical" error={errorObj?.canonical}>
+                  canonical
+                </Label>
+                <Input
+                  name="canonical"
+                  type="text"
+                  value={post.get('canonical')}
+                  disabled={post.get('published') && 'disabled'}
+                  onChange={(e) => {
+                    updatePost(post.set('canonical', e.target.value));
+                  }}
+                  error={errorObj?.canonical}
+                />
+              </InputContainerStyled>
+              <InputContainerStyled shouldHide={shouldSyncTitleAndAbstract}>
+                <Label htmlFor="abstract" error={errorObj?.abstract}>
+                  abstract
+                </Label>
+                <TextArea
+                  name="abstract"
+                  type="text"
+                  value={post.get('abstract')}
+                  disabled={shouldSyncTitleAndAbstract && 'disabled'}
+                  onChange={(e) => {
+                    updatePost(post.set('abstract', e.target.value));
+                  }}
+                  error={errorObj?.abstract}
+                />
+              </InputContainerStyled>
+            </Col>
+            <Col>
+              <ImageContainer
+                id={imageContainerId}
+                shouldHide={shouldSyncTopPhoto}
+                onClick={() => setImageIsSelected(!imageIsSelected)}
+              >
+                <Label htmlFor="imageNode" error={errorObj?.imageNode}>
+                  image
+                </Label>
+                {imageNode.size > 0 && (
+                  <ImageStyled
+                    node={imageNode}
+                    isEditing={!shouldSyncTopPhoto && imageIsSelected}
+                    hideCaption
+                  />
+                )}
+              </ImageContainer>
+            </Col>
+          </FlexGrid>
+          <MiddleWrapper>
+            <ToggleWrapper>
+              <Toggle
+                value={shouldSyncTitleAndAbstract}
+                onUpdate={toggleTitleAndAbstract}
+              >
+                <ToggleLabel>
+                  Keep Title and Abstract in sync with top 2 sections of
+                  content?
+                </ToggleLabel>
+              </Toggle>
+            </ToggleWrapper>
+            <ToggleWrapper>
+              <Toggle value={shouldSyncTopPhoto} onUpdate={toggleImage}>
+                <ToggleLabel>
+                  Keep Image in sync with first Photo in content?
+                </ToggleLabel>
+              </Toggle>
+            </ToggleWrapper>
+            <MessageContainer>
+              {errorObj && (
+                <ErrorMessage>
+                  Error:{` ${Object.values(errorObj).join('')}`}
+                  <span role="img" aria-label="woman shrugging">
+                    🤷 ‍
+                  </span>
+                </ErrorMessage>
+              )}
+              {successMessage && (
+                <SuccessMessage>
+                  Saved{' '}
+                  <span role="img" aria-label="thumbs up">
+                    👍
+                  </span>
+                </SuccessMessage>
+              )}
+            </MessageContainer>
+            <FlexGrid9>
+              <Col9>
+                <Button onClick={savePost}>
+                  <ButtonSpan>Save</ButtonSpan>
+                </Button>
+              </Col9>
+              <Col9>
+                <Button
+                  onClick={publishPost}
+                  disabled={post.get('published') && 'disabled'}
+                >
+                  <ButtonSpan>{`${
+                    post.get('published')
+                      ? `Published on ${formatPostDate(post.get('published'))}`
+                      : 'Publish'
+                  }`}</ButtonSpan>
+                </Button>
+              </Col9>
+              <Col9>
+                <DeleteButton onClick={deletePost}>
+                  <ButtonSpan>Delete</ButtonSpan>
+                </DeleteButton>
+              </Col9>
+              <Col9>
+                <CancelButton
+                  onClick={() => {
+                    setRedirectUrl(getNextFromUrl());
+                  }}
+                >
+                  <ButtonSpan>Done</ButtonSpan>
+                </CancelButton>
+              </Col9>
+            </FlexGrid9>
+          </MiddleWrapper>
+          {!shouldSyncTopPhoto && imageIsSelected && (
+            <EditImageForm
+              shouldHideCaption
+              offsetTop={imageMenuOffsetTop}
+              offsetLeft={imageMenuOffsetLeft}
+              post={post}
+              nodeModel={imageNode}
+              update={updateImage}
+            />
+          )}
+        </Article>
+        <Footer />
+      </>
+    )
+  );
+});

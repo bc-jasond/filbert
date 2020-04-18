@@ -240,7 +240,7 @@ export default React.memo(
           capture: true,
         });
       };
-    }, [nodeModel, currentIdx, menuItems]);
+    }, [nodeModel, currentIdx, menuItems, lastButtonIdx]);
 
     return (
       <EditImageMenu
