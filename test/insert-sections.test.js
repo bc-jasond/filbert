@@ -121,6 +121,7 @@ describe('filbert - Insert Menu', () => {
         // https://stackoverflow.com/a/39500300/1991322
         await driver.executeScript(() => {
           HTMLInputElement.prototype.click = () => {
+            // allow all other input types to pass through
             if (this.type !== 'file') {
               HTMLElement.prototype.click.call(this);
             }
@@ -193,6 +194,7 @@ describe('filbert - Insert Menu', () => {
       expect(await newSection.getTagName()).toBe('section');
       expect(await newSection.getAttribute('data-type')).toBe('quote');
       await newSection.sendKeys(
+        // TODO: why doesn't this first line appear?
         'Simple things should be simple and complex things should be possible.\tAlan Kay\tneeds citation\thttps://en.wikipedia.org/wiki/Alan_Kay\n\n'
       );
 
