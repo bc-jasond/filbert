@@ -169,6 +169,7 @@ export default class EditPost extends React.Component {
     this.updateManager.init(postPlaceholder);
     // don't bring forward failed updates to other posts!
     this.updateManager.clearUpdates();
+    this.documentModel = DocumentModel(postPlaceholder);
     const startNodeId = this.documentModel.init(
       postPlaceholder,
       this.updateManager

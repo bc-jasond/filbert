@@ -23,7 +23,7 @@ export function handleBackspaceTextType(documentModel, selectedNodeId) {
     // delete an empty TextType node
     const maybeEmptyNode = documentModel.getNode(selectedNodeId);
     if (maybeEmptyNode.get('content').length === 0) {
-      documentModel.delete(maybeEmptyNode);
+      documentModel.deleteNode(maybeEmptyNode);
     }
     return { startNodeId: prevNodeId, caretStart: 0 };
   }

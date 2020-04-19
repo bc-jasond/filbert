@@ -38,11 +38,6 @@ describe('DocumentModel', () => {
     expect(placeholderTitle.get('type')).toBe(NODE_TYPE_H1);
     expect(nodeIsValid(placeholderTitle)).toBe(true);
   });
-  test('getMapWithId', () => {
-    const result = documentModel.getMapWithId({});
-    expect(nodeIsValid(result)).toBe(true);
-    expect(result.get('post_id')).toBe(175);
-  });
   test('getNode', () => {
     expect(documentModel.getNode(null)).toBe(Map());
     // finds: root -> content -> ol -> list item
