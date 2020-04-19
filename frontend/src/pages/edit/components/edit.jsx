@@ -165,15 +165,11 @@ export default class EditPost extends React.Component {
 
   newPost = () => {
     console.debug('New PostNew PostNew PostNew PostNew PostNew Post');
-    const postPlaceholder = Map({ id: NEW_POST_URL_ID });
-    this.updateManager.init(postPlaceholder);
+    this.updateManager.init(NEW_POST_URL_ID);
     // don't bring forward failed updates to other posts!
     this.updateManager.clearUpdates();
-    this.documentModel = DocumentModel(postPlaceholder);
-    const startNodeId = this.documentModel.init(
-      postPlaceholder,
-      this.updateManager
-    );
+    this.documentModel = DocumentModel(NEW_POST_URL_ID, this.updateManager);
+    const startNodeId = this.documentModel.getFirstNode();
     this.setState({ post: Map() });
     this.commitUpdates(undefined, { startNodeId });
   };

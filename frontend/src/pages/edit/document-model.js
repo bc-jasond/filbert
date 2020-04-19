@@ -1,7 +1,6 @@
 import Immutable, { Map } from 'immutable';
 
 import {
-  NEW_POST_URL_ID,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
@@ -14,10 +13,13 @@ import {
 import { cleanText, getMapWithId, reviver } from '../../common/utils';
 import { concatSelections } from './selection-helpers';
 
-export default (postArg, updateManager = {}, jsonData = null) => {
+export default function DocumentManager(
+  postId,
+  updateManager = {},
+  jsonData = null
+) {
   let nodesById;
 
-  const post = Immutable.fromJS(postArg);
   // TODO: ideally this documentModel class doesn't have to know about the updateManager.
   // But, it's nice to make one call from the consumer (edit.jsx + helpers) that handles the documentModel
   // and the updateManager behind the scenes.  That orchestration would have to move either out into edit.jsx or into another helper class
@@ -27,6 +29,10 @@ export default (postArg, updateManager = {}, jsonData = null) => {
   } else {
     const newTitle = getMapWithId({ type: NODE_TYPE_H1 });
     nodesById = Map().set(newTitle.get('id'), newTitle);
+  }
+
+  function getNodesById() {
+    return nodesById;
   }
 
   function getFirstNode() {
@@ -140,6 +146,7 @@ export default (postArg, updateManager = {}, jsonData = null) => {
     shouldInsertAfter = true
   ) {
     const newNode = getMapWithId({
+      post_id: postId,
       type,
       content: cleanText(content),
       meta,
@@ -216,6 +223,7 @@ export default (postArg, updateManager = {}, jsonData = null) => {
   }
 
   return {
+    getNodesById,
     getFirstNode,
     getLastNode,
     getNode,
@@ -232,4 +240,4 @@ export default (postArg, updateManager = {}, jsonData = null) => {
     deleteNode,
     mergeParagraphs,
   };
-};
+}

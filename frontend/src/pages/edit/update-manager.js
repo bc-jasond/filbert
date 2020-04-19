@@ -7,7 +7,6 @@ import {
   HISTORY_KEY_UNDO,
   HISTORY_KEY_UNDO_OFFSETS,
   HISTORY_KEY_UNDO_UPDATES,
-  NEW_POST_URL_ID,
   NODE_ACTION_DELETE,
   NODE_ACTION_UPDATE,
   NODE_UPDATES,
@@ -18,58 +17,58 @@ import { nodeIsValid, reviver } from '../../common/utils';
 
 export const characterDiffSize = 6;
 
-export default class UpdateManager {
-  commitTimeoutId;
+export default function UpdateManager(postId) {
+  let commitTimeoutId;
+  let lastUndoHistoryOffsets;
+  
+  // side-effectful getters to init from localStorage
+  let nodeUpdates = getNodeUpdates();
+  let historyUndo = getHistoryUndo();
+  let historyRedo = getHistoryRedo();
 
-  lastUndoHistoryOffsets;
-
-  post = Map();
-
-  getKey(key) {
-    return `${this.post.get('id', NEW_POST_URL_ID)}-${key}`;
+  function getKey(key) {
+    return `${postId}-${key}`;
   }
 
-  getPostIdNamespaceValue(key, defaultValue) {
-    // if (this.post.size === 0) return defaultValue;
-    return get(this.getKey(key), defaultValue);
+  function getPostIdNamespaceValue(key, defaultValue) {
+    return get(getKey(key), defaultValue);
   }
 
-  setPostIdNamespaceValue(key, value) {
-    set(this.getKey(key), value);
-    return this;
+  function setPostIdNamespaceValue(key, value) {
+    set(getKey(key), value);
   }
 
-  get [NODE_UPDATES]() {
-    return this.getPostIdNamespaceValue(NODE_UPDATES, Map());
+  function getNodeUpdates() {
+    return getPostIdNamespaceValue(NODE_UPDATES, Map());
   }
 
-  set [NODE_UPDATES](value) {
-    return this.setPostIdNamespaceValue(NODE_UPDATES, value);
+  function setNodeUpdates(value) {
+    return setPostIdNamespaceValue(NODE_UPDATES, value);
   }
 
-  get [HISTORY_KEY_REDO]() {
-    return this.getPostIdNamespaceValue(HISTORY_KEY_REDO, List());
+  function getHistoryRedo() {
+    return getPostIdNamespaceValue(HISTORY_KEY_REDO, List());
   }
 
-  set [HISTORY_KEY_REDO](value) {
-    return this.setPostIdNamespaceValue(HISTORY_KEY_REDO, value.takeLast(100));
+  function setHistoryRedo(value) {
+    return setPostIdNamespaceValue(HISTORY_KEY_REDO, value.takeLast(100));
   }
 
-  get [HISTORY_KEY_UNDO]() {
-    return this.getPostIdNamespaceValue(HISTORY_KEY_UNDO, List());
+  function getHistoryUndo() {
+    return getPostIdNamespaceValue(HISTORY_KEY_UNDO, List());
   }
 
-  set [HISTORY_KEY_UNDO](value) {
-    return this.setPostIdNamespaceValue(HISTORY_KEY_UNDO, value.takeLast(100));
+  function setHistoryUndo(value) {
+    return setPostIdNamespaceValue(HISTORY_KEY_UNDO, value.takeLast(100));
   }
 
-  addPostIdToUpdates(postId) {
-    this[NODE_UPDATES] = this[NODE_UPDATES].map((update) =>
+  function addPostIdToUpdates(postId) {
+    setNodeUpdates(getNodeUpdates().map((update) =>
       update.set('post_id', postId)
-    );
+    ))
   }
 
-  addToUndoHistory(prevNodesById, prevSelectionOffsets, selectionOffsets) {
+  function addToUndoHistory(prevNodesById, prevSelectionOffsets, selectionOffsets) {
     // always clear redoHistory list since it would require a merge strategy to maintain
     this[HISTORY_KEY_REDO] = List();
     // "reverse" the current updates list to get an "undo" list
@@ -117,14 +116,8 @@ export default class UpdateManager {
     this[NODE_UPDATES] = Map();
   }
 
-  init(post) {
-    this.post = fromJS(post);
-    /* eslint-disable prefer-destructuring, no-self-assign */
-    // side-effectful getters to init from localStorage
-    this[NODE_UPDATES] = this[NODE_UPDATES];
-    this[HISTORY_KEY_UNDO] = this[HISTORY_KEY_UNDO];
-    this[HISTORY_KEY_REDO] = this[HISTORY_KEY_REDO];
-    /* eslint-enable prefer-destructuring, no-self-assign */
+  
+  
   }
 
   saveContentBatch = async () => {
@@ -164,7 +157,7 @@ export default class UpdateManager {
     }
     this[NODE_UPDATES] = this[NODE_UPDATES].set(
       nodeId,
-      Map({ action: NODE_ACTION_DELETE, post_id: this.post.get('id') })
+      Map({ action: NODE_ACTION_DELETE, post_id: postId })
     );
     // TODO: check for a previous node to update it's
   }
@@ -185,7 +178,7 @@ export default class UpdateManager {
     }
     this[NODE_UPDATES] = this[NODE_UPDATES].set(
       nodeId,
-      Map({ action: NODE_ACTION_UPDATE, post_id: this.post.get('id'), node })
+      Map({ action: NODE_ACTION_UPDATE, post_id: postId, node })
     );
   }
 
