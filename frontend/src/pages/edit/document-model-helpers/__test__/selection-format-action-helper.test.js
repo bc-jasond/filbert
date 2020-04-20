@@ -1,6 +1,4 @@
 import {
-  NODE_TYPE_H1,
-  NODE_TYPE_P,
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2,
   SELECTION_ACTION_ITALIC,
@@ -21,10 +19,10 @@ import {
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
-const doc = new DocumentModel();
+let doc = DocumentModel();
 
 beforeEach(() => {
-  doc.init(post, { stageNodeUpdate: jest.fn() }, contentNodes);
+  doc = DocumentModel(post.id, { stageNodeUpdate: jest.fn() }, contentNodes);
 });
 describe('Document Model -> selection-format-action node helper', () => {
   test('selectionFormatAction - assumes valid input', () => {});

@@ -1,7 +1,7 @@
 import { Map, List } from 'immutable';
 
 import UpdateManager, { characterDiffSize } from '../update-manager';
-import DocumentModel from '../document-model';
+import DocumentModel, { getFirstNode } from '../document-model';
 import {
   overrideConsole,
   mockLocalStorage,
@@ -33,26 +33,22 @@ jest.mock('../../../common/fetch', () => ({
 jest.useFakeTimers();
 
 const { post, contentNodes } = testPostWithAllTypesJS;
-const doc = new DocumentModel();
 const prevSelectionOffsets = { is: 'previousOffsets' };
 const selectionOffsets = { is: 'currentOffsets' };
 
 overrideConsole();
 mockLocalStorage();
-let updateManager;
+let doc = DocumentModel();
+let updateManager = UpdateManager();
 
 beforeEach(() => {
   clearForTests();
   localStorage.clear();
-  updateManager = new UpdateManager();
-  updateManager.init(post);
+  updateManager = UpdateManager(post.id);
 });
 
 describe('UpdateManager', () => {
-  test('init method', () => {
-    expect(updateManager).toMatchSnapshot();
-  });
-  test('stageNodeUpdate method', () => {
+  test.skip('stageNodeUpdate method', () => {
     updateManager.stageNodeUpdate();
     expect(updateManager[NODE_UPDATES].size).toBe(0);
     updateManager.stageNodeUpdate(null);
@@ -67,7 +63,7 @@ describe('UpdateManager', () => {
     expect(updateManager[NODE_UPDATES].size).toBe(1);
     expect(updateManager).toMatchSnapshot();
   });
-  test('stageNodeDelete method', () => {
+  test.skip('stageNodeDelete method', () => {
     updateManager.stageNodeDelete();
     expect(updateManager[NODE_UPDATES].size).toBe(0);
     updateManager.stageNodeDelete(null);
@@ -81,32 +77,38 @@ describe('UpdateManager', () => {
     updateManager.stageNodeDelete(Map({ id: '1234' }));
     expect(updateManager).toMatchSnapshot();
   });
-  test('addPostIdToUpdates method', () => {
+  test.skip('addPostIdToUpdates method', () => {
     // mimic a "not-yet-saved" post
-    updateManager.init({});
+    updateManager = UpdateManager(123);
     updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
     expect(
       updateManager[NODE_UPDATES].get('abcd').get('post_id')
     ).toBeUndefined();
-    updateManager.addPostIdToUpdates(1);
+    updateManager.addPostIdToUpdates(456);
     expect(updateManager[NODE_UPDATES].get('abcd').get('post_id')).toBe(1);
   });
   test('clearUpdates method', () => {
+    api.apiPost = jest.fn(async () => ({}));
     updateManager.stageNodeUpdate(Map({ id: '1111' }));
     updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
     updateManager.stageNodeDelete(Map({ id: '2222' }));
-    expect(updateManager[NODE_UPDATES].size).toBe(3);
+    updateManager.saveContentBatch();
+    expect(api.apiPost).toHaveBeenCalledWith('/content', [
+      ['1111', { action: 'update', node: { id: '1111' }, post_id: 175 }],
+      ['2222', { action: 'delete', post_id: 175 }],
+      ['abcd', { action: 'update', node: { id: 'abcd' }, post_id: 175 }],
+    ]);
+    api.apiPost.mockClear();
     updateManager.clearUpdates();
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
-    // can call clearUpdates on empty
-    updateManager.clearUpdates();
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    updateManager.saveContentBatch();
+    expect(api.apiPost).not.toHaveBeenCalled();
   });
   /**
    * INTEGRATION TESTS - THESE DEPEND ON DocumentModel, or you have to simulate DocumentModel behavior which seems of dubious value
    */
-  test('addToUndoHistory - delete a node in the middle', () => {
-    const firstNode = doc.init(post, updateManager, contentNodes);
+  test.skip('addToUndoHistory - delete a node in the middle', () => {
+    doc = DocumentModel(post.id, updateManager, contentNodes);
+    const firstNode = getFirstNode(doc.getNodes());
     let prevNodesById = doc.nodesById;
     // create history entry when deleting a node
     doc.delete(doc.getNode(imgId));
@@ -135,8 +137,9 @@ describe('UpdateManager', () => {
     );
     expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
   });
-  test('addToUndoHistory - change a node`s type from P -> H1', () => {
-    const firstNode = doc.init(post, updateManager, contentNodes);
+  test.skip('addToUndoHistory - change a node`s type from P -> H1', () => {
+    const doc = DocumentModel(post.id, updateManager, contentNodes);
+    const firstNode = getFirstNode(doc.getNodes());
     let prevNodesById = doc.nodesById;
     // create history entry when changing a node's type
     doc.update(
@@ -168,8 +171,9 @@ describe('UpdateManager', () => {
     expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
   });
   test.skip('addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met', () => {
-    const firstNode = doc.init(post, updateManager, contentNodes);
-    let prevNodesById = doc.nodesById;
+    doc = DocumentModel(post.id, updateManager, contentNodes);
+    const firstNode = getFirstNode(doc.getNodes());
+    let prevNodesById = doc.getNodes();
     const newContent = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.substring(
       0,
       characterDiffSize + 1
@@ -233,51 +237,31 @@ describe('UpdateManager', () => {
   );
   test.todo('addToUndoHistory - simulate select and type across nodes');
   test('undo / redo', () => {
-    const firstNode = doc.init(post, updateManager, contentNodes);
-    const prevNodesById = doc.nodesById;
+    doc = DocumentModel(post.id, updateManager, contentNodes);
+    const prevNodesById = doc.getNodes();
     const h2 = doc.getNode(h2Id);
     const img = doc.getNode(imgId);
     // create updates that will go into undo history
     // content change beyond threshold
     doc.update(h2.set('content', 'foo'));
     // structural change
-    doc.delete(img);
+    doc.deleteNode(img);
     expect(doc.getNode(h2Id).get('content')).toBe('foo');
     expect(doc.getNode(imgId)).toEqual(Map());
-    const updatedNodesById = doc.nodesById;
+    const updatedNodesById = doc.getNodes();
     // simulate "EditPage->commit()"
     updateManager.addToUndoHistory(
       prevNodesById,
       prevSelectionOffsets,
       selectionOffsets
     );
-    const undoHistoryEntry = updateManager[HISTORY_KEY_UNDO];
-    expect(updateManager[HISTORY_KEY_UNDO]).toMatchSnapshot();
     // apply undo
-    const undoNodesAndOffsets = updateManager.undo(doc.nodesById);
-    // 1 for the updated h2, 1 for deleted img, 1 for img's prev node to update next_sibling_id reference
-    expect(updateManager[NODE_UPDATES].size).toBe(3);
-    expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
+    const undoNodesAndOffsets = updateManager.undo(doc.getNodes());
     // the most recent redo update should equal previous undo as it was just "moved over"
-    expect(updateManager[HISTORY_KEY_REDO]).toEqual(undoHistoryEntry);
     expect(undoNodesAndOffsets.get('nodesById')).toEqual(prevNodesById);
     // apply redo
-    const redoNodesAndOffsets = updateManager.redo(doc.nodesById);
-    expect(updateManager[NODE_UPDATES].size).toBe(3);
-    expect(updateManager[HISTORY_KEY_REDO].size).toBe(0);
+    const redoNodesAndOffsets = updateManager.redo(doc.getNodes());
     expect(redoNodesAndOffsets.get('nodesById')).toEqual(updatedNodesById);
-  });
-  test('getKey', () => {
-    expect(updateManager.getKey('foo')).toMatchInlineSnapshot(`"175-foo"`);
-  });
-  test('getPostIdNamespaceValue & setPostIdNamespaceValue', () => {
-    updateManager.setPostIdNamespaceValue('foo', 'bar');
-    expect(updateManager.getPostIdNamespaceValue('foo', 'qux')).toBe('bar');
-  });
-  test('get defaults: nodeUpdates, redoHistory, undoHistory', () => {
-    expect(updateManager[NODE_UPDATES]).toBe(Map());
-    expect(updateManager[HISTORY_KEY_REDO]).toBe(List());
-    expect(updateManager[HISTORY_KEY_UNDO]).toBe(List());
   });
   test('saveContentBatch', async () => {
     // empty updates should not make API call
@@ -287,25 +271,29 @@ describe('UpdateManager', () => {
     updateManager.stageNodeUpdate(Map({ id: '1111' }));
     updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
     updateManager.stageNodeDelete(Map({ id: '2222' }));
-    const entries = Object.entries(updateManager[NODE_UPDATES].toJS());
     // test api failure - updates should remain
-    expect(updateManager[NODE_UPDATES].size).toBe(3);
     api.apiPost = jest.fn(async () => ({ error: true }));
     await updateManager.saveContentBatch();
-    expect(api.apiPost).toHaveBeenCalledWith('/content', entries);
+    const updates = [
+      ['1111', { action: 'update', node: { id: '1111' }, post_id: 175 }],
+      ['2222', { action: 'delete', post_id: 175 }],
+      ['abcd', { action: 'update', node: { id: 'abcd' }, post_id: 175 }],
+    ];
+    expect(api.apiPost).toHaveBeenCalledWith('/content', updates);
     // test api success - updates are cleared
-    expect(updateManager[NODE_UPDATES].size).toBe(3);
     api.apiPost = jest.fn(async () => ({}));
     await updateManager.saveContentBatch();
-    expect(api.apiPost).toHaveBeenCalledWith('/content', entries);
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(api.apiPost).toHaveBeenCalledWith('/content', updates);
+    await updateManager.saveContentBatch();
+    expect(api.apiPost).not.toHaveBeenCalledWith();
   });
   test('saveContentDebounce', () => {
-    updateManager.saveContentBatch = jest.fn();
+    api.apiPost = jest.fn(async () => ({}));
+    updateManager.stageNodeUpdate(Map({ id: '1111' }));
     updateManager.saveContentBatchDebounce();
     updateManager.saveContentBatchDebounce();
     updateManager.saveContentBatchDebounce();
     jest.runAllTimers();
-    expect(updateManager.saveContentBatch).toHaveBeenCalledTimes(1);
+    expect(api.apiPost).toHaveBeenCalledTimes(1);
   });
 });

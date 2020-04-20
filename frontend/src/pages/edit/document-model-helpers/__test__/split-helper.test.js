@@ -12,7 +12,7 @@ import {
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
-const doc = new DocumentModel();
+let doc = DocumentModel();
 const spyMeta = jest
   .spyOn(handleMeta, 'handleEnterMetaType')
   .mockImplementation(() => {});
@@ -21,7 +21,7 @@ const spyText = jest
   .mockImplementation(() => {});
 
 beforeEach(() => {
-  doc.init(post, {}, contentNodes);
+  doc = DocumentModel(post.id, {}, contentNodes);
 });
 describe('Document Model -> split node helper', () => {
   test('doSplit - validates input', () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Map } from 'immutable';
+import { fromJS, Map } from 'immutable';
 import { Redirect } from 'react-router-dom';
 
 import { apiGet, apiPost, uploadImage } from '../../../common/fetch';
@@ -51,7 +51,7 @@ import {
 
 import Document from '../../../common/components/document.component';
 import { doDelete } from '../document-model-helpers/delete';
-import DocumentModel from '../document-model';
+import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
 import { syncFromDom, syncToDom } from '../document-model-helpers/dom-sync';
 import { doPaste } from '../document-model-helpers/paste';
 import { selectionFormatAction } from '../document-model-helpers/selection-format-action';
@@ -78,10 +78,6 @@ const ArticleStyled = styled(Article)`
 `;
 
 export default class EditPost extends React.Component {
-  documentModel = new DocumentModel();
-
-  updateManager = new UpdateManager();
-
   selectionOffsets = {};
 
   constructor(props) {
@@ -165,11 +161,9 @@ export default class EditPost extends React.Component {
 
   newPost = () => {
     console.debug('New PostNew PostNew PostNew PostNew PostNew Post');
-    this.updateManager.init(NEW_POST_URL_ID);
-    // don't bring forward failed updates to other posts!
-    this.updateManager.clearUpdates();
+    this.updateManager = UpdateManager(NEW_POST_URL_ID);
     this.documentModel = DocumentModel(NEW_POST_URL_ID, this.updateManager);
-    const startNodeId = this.documentModel.getFirstNode();
+    const startNodeId = getFirstNode(this.documentModel.getNodes()).get('id');
     this.setState({ post: Map() });
     this.commitUpdates(undefined, { startNodeId });
   };
@@ -208,17 +202,18 @@ export default class EditPost extends React.Component {
       this.setState({ nodesById: Map(), shouldShow404: true });
       return;
     }
-
-    this.updateManager.init(post);
-    const firstNodeId = this.documentModel.init(
-      post,
+    const postMap = fromJS(post);
+    this.updateManager = UpdateManager(postMap.get('id'));
+    this.documentModel = DocumentModel(
+      postMap.get('id'),
       this.updateManager,
       contentNodes
     );
+    const firstNodeId = getFirstNode(this.documentModel.getNodes());
     this.setState(
       {
-        post: this.documentModel.post,
-        nodesById: this.documentModel.nodesById,
+        post: postMap,
+        nodesById: this.documentModel.getNodes(),
         shouldShow404: false,
       },
       async () => {
@@ -227,9 +222,7 @@ export default class EditPost extends React.Component {
         const queryParams = new URLSearchParams(window.location.search);
         // all this just to advance the cursor for a new post...
         if (queryParams.has('shouldFocusLastNode')) {
-          startNodeId = DocumentModel.getLastNode(
-            this.documentModel.nodesById
-          ).get('id');
+          startNodeId = getLastNode(this.documentModel.getNodes()).get('id');
           caretStart = -1;
           queryParams.delete('shouldFocusLastNode');
           const queryString = queryParams.toString();
@@ -273,7 +266,7 @@ export default class EditPost extends React.Component {
       return;
     }
     console.info(`${shouldUndo ? 'UNDO!' : 'REDO!'}`, historyEntry.toJS());
-    this.documentModel.nodesById = updatedNodesById;
+    this.documentModel.setNodes(updatedNodesById);
     // passing undefined as prevSelectionOffsets will skip adding this operation to history again
     await this.commitUpdates(undefined, historyOffsets.toJS());
   };
@@ -287,7 +280,7 @@ export default class EditPost extends React.Component {
     return new Promise((resolve /* , reject */) => {
       const {
         state: {
-          // these are the "clean" nodes - the updated (dirty) ones are in this.documentModel.nodesById (and this.updateManager.nodeUpdates)
+          // these are the "clean" nodes - the updated (dirty) ones are in this.documentModel.getNodes() (and this.updateManager.nodeUpdates)
           nodesById: prevNodesById,
           post,
         },
@@ -301,7 +294,7 @@ export default class EditPost extends React.Component {
       }
       // roll with state changes TODO: handle errors - roll back?
       const newState = {
-        nodesById: this.documentModel.nodesById,
+        nodesById: this.documentModel.getNodes(),
         insertMenuNode: Map(),
       };
       // on insert,set editSectionNode if not already set.

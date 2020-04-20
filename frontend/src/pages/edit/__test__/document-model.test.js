@@ -1,11 +1,9 @@
 import { Map } from 'immutable';
-import { NODE_TYPE_H1 } from '../../../common/constants';
 import { overrideConsole } from '../../../common/test-helpers';
-import { nodeIsValid } from '../../../common/utils';
 
 import * as SelectionHelpers from '../selection-helpers';
 
-import DocumentModel from '../document-model';
+import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
 import {
   firstNodeIdH1,
   h2Id,
@@ -23,21 +21,10 @@ const { post, contentNodes } = testPostWithAllTypesJS;
 let documentModel;
 
 beforeEach(() => {
-  documentModel = new DocumentModel();
-  documentModel.init(post, updateManagerMock, contentNodes);
+  documentModel = DocumentModel(post.id, updateManagerMock, contentNodes);
 });
 
 describe('DocumentModel', () => {
-  test('init', () => {
-    expect(documentModel).toMatchSnapshot();
-    documentModel.init({}, {});
-    expect(documentModel.nodesById.size).toBe(1);
-    const placeholderTitle = DocumentModel.getFirstNode(
-      documentModel.nodesById
-    );
-    expect(placeholderTitle.get('type')).toBe(NODE_TYPE_H1);
-    expect(nodeIsValid(placeholderTitle)).toBe(true);
-  });
   test('getNode', () => {
     expect(documentModel.getNode(null)).toBe(Map());
     // finds: root -> content -> ol -> list item

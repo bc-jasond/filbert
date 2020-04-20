@@ -29,7 +29,7 @@ import {
 } from '../../../../common/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
-const doc = new DocumentModel();
+let doc = DocumentModel();
 
 const spySplit = jest
   .spyOn(selectionHelpers, 'splitSelectionsAtCaretOffset')
@@ -42,8 +42,8 @@ const spyAdjust = jest
   .mockImplementation((...args) => args[0]);
 
 beforeEach(() => {
-  doc.init(
-    post,
+  doc = DocumentModel(
+    post.id,
     { stageNodeUpdate: jest.fn(), stageNodeDelete: jest.fn() },
     contentNodes
   );

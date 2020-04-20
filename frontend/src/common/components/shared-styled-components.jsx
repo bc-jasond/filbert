@@ -78,9 +78,9 @@ export const H1Styled = styled.h1`
   color: ${getVar(titleColorPrimary)};
   ${(p) =>
     p.shouldShowPlaceholder &&
-    `
+    css`
     &::before {
-      content: ${newPostPlaceholderText};
+      content: "${newPostPlaceholderText}";
       position: absolute;
       color: ${mediumGrey};
     }

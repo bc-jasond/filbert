@@ -13,6 +13,30 @@ import {
 import { cleanText, getMapWithId, reviver } from '../../common/utils';
 import { concatSelections } from './selection-helpers';
 
+export function getFirstNode(nodesById) {
+  const idSeen = new Set();
+  const nextSeen = new Set();
+  nodesById.forEach((node) => {
+    idSeen.add(node.get('id'));
+    if (node.get('next_sibling_id')) {
+      nextSeen.add(node.get('next_sibling_id'));
+    }
+  });
+  const difference = new Set([...idSeen].filter((id) => !nextSeen.has(id)));
+  if (difference.size !== 1) {
+    console.error(
+      "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",
+      difference
+    );
+  }
+  const [firstId] = [...difference];
+  return nodesById.get(firstId);
+}
+
+export function getLastNode(nodesById) {
+  return nodesById.filter((n) => !n.get('next_sibling_id')).first(Map());
+}
+
 export default function DocumentManager(
   postId,
   updateManager = {},
@@ -31,32 +55,12 @@ export default function DocumentManager(
     nodesById = Map().set(newTitle.get('id'), newTitle);
   }
 
-  function getNodesById() {
+  function getNodes() {
     return nodesById;
   }
 
-  function getFirstNode() {
-    const idSeen = new Set();
-    const nextSeen = new Set();
-    nodesById.forEach((node) => {
-      idSeen.add(node.get('id'));
-      if (node.get('next_sibling_id')) {
-        nextSeen.add(node.get('next_sibling_id'));
-      }
-    });
-    const difference = new Set([...idSeen].filter((id) => !nextSeen.has(id)));
-    if (difference.size !== 1) {
-      console.error(
-        "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",
-        difference
-      );
-    }
-    const [firstId] = [...difference];
-    return nodesById.get(firstId);
-  }
-
-  function getLastNode() {
-    return nodesById.filter((n) => !n.get('next_sibling_id')).first(Map());
+  function setNodes(value) {
+    nodesById = value;
   }
 
   function getNode(nodeId) {
@@ -223,9 +227,8 @@ export default function DocumentManager(
   }
 
   return {
-    getNodesById,
-    getFirstNode,
-    getLastNode,
+    getNodes,
+    setNodes,
     getNode,
     getPrevNode,
     getNextNode,

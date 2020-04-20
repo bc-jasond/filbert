@@ -57,7 +57,7 @@ export function getFirstNode(nodesById) {
   const difference = new Set([...idSeen].filter((id) => !nextSeen.has(id)));
   if (difference.size !== 1) {
     error(
-      "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",
+      "DocumentError getFirstNode() - more than one node isn't pointed to by another node!",
       difference
     );
   }
