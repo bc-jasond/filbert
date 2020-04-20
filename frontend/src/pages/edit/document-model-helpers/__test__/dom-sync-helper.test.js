@@ -12,11 +12,11 @@ import {
 } from '../../../../common/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
-const doc = new DocumentModel();
+let doc = DocumentModel();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  doc.init(post, { stageNodeUpdate: jest.fn() }, contentNodes);
+  doc = DocumentModel(post.id, { stageNodeUpdate: jest.fn() }, contentNodes);
 });
 
 describe('Document Model -> DOM sync helper', () => {

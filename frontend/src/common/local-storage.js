@@ -60,17 +60,16 @@ export function set(key, value, debounce = true) {
 export function get(key, defaultValue) {
   const namespacedKey = getNamespacedKey(key);
   try {
-    if (inMemoryCache.has(key)) {
-      return inMemoryCache.get(key) || defaultValue;
-    }
-    const currentLocal = localStorage.getItem(namespacedKey);
-    if (
-      currentLocal &&
-      currentLocal !== 'undefined' &&
-      currentLocal !== 'null'
-    ) {
-      const woke = fromJS(JSON.parse(currentLocal), reviver);
-      inMemoryCache = inMemoryCache.set(key, woke);
+    if (!inMemoryCache.has(key)) {
+      const currentLocal = localStorage.getItem(namespacedKey);
+      if (
+        currentLocal &&
+        currentLocal !== 'undefined' &&
+        currentLocal !== 'null'
+      ) {
+        const woke = fromJS(JSON.parse(currentLocal), reviver);
+        inMemoryCache = inMemoryCache.set(key, woke);
+      }
     }
   } catch (err) {
     console.error(err);

@@ -10,7 +10,7 @@ import {
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
-const doc = new DocumentModel();
+let doc = DocumentModel();
 
 const mockText = 'some sample string';
 const clipboardDataMock = {
@@ -18,7 +18,7 @@ const clipboardDataMock = {
 };
 
 beforeEach(() => {
-  doc.init(post, {}, contentNodes);
+  doc = DocumentModel(post.id, {}, contentNodes);
 });
 describe('Document Model -> paste node helper', () => {
   test('doPaste - validates input', () => {

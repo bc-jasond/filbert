@@ -17,7 +17,7 @@ export function doDelete(
       documentModel.isMetaType(nodeId) ||
       (startIdx === 0 && diffLength >= content.length)
     ) {
-      return documentModel.delete(node);
+      return documentModel.deleteNode(node);
     }
     // only some of endNode's content has been selected, delete that content
     node = node.set(
@@ -59,7 +59,7 @@ export function doDelete(
     const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
     console.info('doDelete() - middle nodes', middle);
     middle.forEach((node) => {
-      documentModel.delete(node);
+      documentModel.deleteNode(node);
     });
   }
 
@@ -113,7 +113,7 @@ export function doDelete(
       startNodeId,
       caretStart
     );
-    // if we deleted the first node in the document, use the node that documentModel.delete() returns
+    // if we deleted the first node in the document, use the node that documentModel.deleteNode() returns
     if (selectedNodeId !== startNodeId) {
       return {
         startNodeId: selectedNodeId,
@@ -155,7 +155,7 @@ export function doDelete(
     // focus end of previous node
     /* eslint-disable-next-line no-param-reassign */
     caretStart = -1;
-    documentModel.delete(documentModel.getNode(selectedNodeId));
+    documentModel.deleteNode(documentModel.getNode(selectedNodeId));
   } else {
     /* eslint-disable-next-line no-param-reassign */
     ({ startNodeId, caretStart } = handleBackspaceTextType(

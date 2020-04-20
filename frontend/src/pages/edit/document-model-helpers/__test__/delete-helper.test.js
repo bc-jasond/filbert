@@ -19,7 +19,7 @@ import { doDelete } from '../delete';
 
 overrideConsole();
 const { post, contentNodes } = testPostWithAllTypesJS;
-const doc = new DocumentModel();
+let doc = DocumentModel();
 
 let originalNodeCount;
 let spyAdjust;
@@ -32,12 +32,12 @@ beforeEach(() => {
   spyBackspace = jest
     .spyOn(handleTextType, 'handleBackspaceTextType')
     .mockImplementation(() => ({}));
-  doc.init(
-    post,
+  doc = DocumentModel(
+    post.id,
     { stageNodeUpdate: jest.fn(), stageNodeDelete: jest.fn() },
     contentNodes
   );
-  originalNodeCount = doc.nodesById.size;
+  originalNodeCount = doc.getNodes().size;
 });
 
 describe('Document Model -> Delete helper - single node', () => {
@@ -148,7 +148,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
     // IRL should have deleted 8 nodes but, in this test we
     // should have deleted 7 nodes: 0 (because we mocked handleBackspaceTextType()
     // which does the merge) for the pre (endNode) and 7 in between
-    expect(originalNodeCount - doc.nodesById.size).toEqual(7);
+    expect(originalNodeCount - doc.getNodes().size).toEqual(7);
   });
   test('doDelete - deletes across nodes - from end of one TextType through end of another TextType', () => {
     doDelete(doc, {
@@ -160,7 +160,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
     expect(spyAdjust).not.toHaveBeenCalled();
     expect(spyBackspace).not.toHaveBeenCalledWith(doc, firstNodeIdH1);
     // again IRL this will be 3 because of mock handleBackspaceTextType()
-    expect(originalNodeCount - doc.nodesById.size).toEqual(2);
+    expect(originalNodeCount - doc.getNodes().size).toEqual(2);
   });
   test.todo('doDelete - deletes across nodes - from Meta ends on Text');
   test.todo('doDelete - deletes across nodes - all Meta Nodes');
@@ -173,7 +173,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
     });
     expect(startNodeId).not.toBe(firstNodeIdH1);
     expect(caretStart).toBe(-1);
-    expect(doc.nodesById.size).toBe(1);
+    expect(doc.getNodes().size).toBe(1);
     expect(spyAdjust).not.toHaveBeenCalled();
   });
 });

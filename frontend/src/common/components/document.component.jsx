@@ -26,7 +26,7 @@ import Pre from './pre';
 import P from './p';
 import Li from './li';
 import { cleanText } from '../utils';
-import DocumentModel from '../../pages/edit/document-model';
+import { getFirstNode } from '../../pages/edit/document-model';
 
 const Root = styled.div`
   margin-bottom: 96px;
@@ -38,7 +38,7 @@ function getChildIds(children) {
 
 export default React.memo(
   ({ nodesById, currentEditNode = Map(), setEditNodeId = () => {} }) => {
-    let current = DocumentModel.getFirstNode(nodesById);
+    let current = getFirstNode(nodesById);
 
     function next() {
       current = nodesById?.get?.(current.get('next_sibling_id')) || Map();

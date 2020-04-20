@@ -10,10 +10,10 @@ import {
 } from '../../../../common/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
-const doc = new DocumentModel();
+let doc = DocumentModel();
 
 beforeEach(() => {
-  doc.init(post, { stageNodeUpdate: jest.fn() }, contentNodes);
+  doc = DocumentModel(post.id, { stageNodeUpdate: jest.fn() }, contentNodes);
 });
 describe('Document Model -> handle MetaType node helper', () => {
   test('handleEnterMetaType - inserts a P when user hits enter on a meta type node', () => {
