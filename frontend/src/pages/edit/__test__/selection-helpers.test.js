@@ -1,3 +1,4 @@
+import { ItalicText } from '../../../common/components/shared-styled-components';
 import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,
@@ -444,7 +445,7 @@ describe('getSelectionByContentOffset', () => {
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
       [2],
-      [11],
+      [11, SELECTION_ACTION_ITALIC, SELECTION_ACTION_CODE],
       [6, SELECTION_ACTION_CODE],
       [],
     ]);
@@ -458,7 +459,7 @@ describe('getSelectionByContentOffset', () => {
   });
   test('creates new selection - replaces first (head) selection', () => {
     const expectedSelections = makeSelections([
-      [8],
+      [8, SELECTION_ACTION_SITEINFO, SELECTION_ACTION_ITALIC],
       [4, SELECTION_ACTION_ITALIC],
       [1],
       [9, SELECTION_ACTION_CODE],
@@ -474,7 +475,7 @@ describe('getSelectionByContentOffset', () => {
   });
   test('creates new selection - replaces part of first (head) selection', () => {
     const expectedSelections = makeSelections([
-      [1],
+      [1, SELECTION_ACTION_SITEINFO],
       [2, SELECTION_ACTION_SITEINFO],
       [3],
       [6, SELECTION_ACTION_ITALIC],
@@ -505,7 +506,7 @@ describe('getSelectionByContentOffset', () => {
       [3, SELECTION_ACTION_SITEINFO],
       [3],
       [6, SELECTION_ACTION_ITALIC],
-      [],
+      [-1, SELECTION_ACTION_CODE],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
       nodeModelWithSelections,
@@ -538,7 +539,7 @@ describe('getSelectionByContentOffset', () => {
       [3, SELECTION_ACTION_SITEINFO],
       [3],
       [6, SELECTION_ACTION_ITALIC],
-      [16],
+      [16, SELECTION_ACTION_CODE],
       [],
     ]);
     const { selections, idx } = getSelectionByContentOffset(
@@ -556,7 +557,7 @@ describe('getSelectionByContentOffset', () => {
       [6, SELECTION_ACTION_ITALIC],
       [1],
       [3, SELECTION_ACTION_CODE],
-      [3],
+      [3, SELECTION_ACTION_CODE],
       [3, SELECTION_ACTION_CODE],
       [],
     ]);
@@ -590,7 +591,7 @@ describe('getSelectionByContentOffset', () => {
   test('creates new selection - replaces more than one selection evenly', () => {
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
-      [10],
+      [10, SELECTION_ACTION_ITALIC],
       [9, SELECTION_ACTION_CODE],
       [],
     ]);

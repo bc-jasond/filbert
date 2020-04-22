@@ -42,11 +42,10 @@ export default function DocumentManager(
   updateManager = {},
   jsonData = null
 ) {
+  // TODO: ideally this documentModel doesn't have to know about the updateManager.
+  //  But, it's nice to make one call from the consumer (edit.jsx + helpers) that handles the documentModel
+  //  and the updateManager behind the scenes.  That orchestration would have to move either out into edit.jsx or into another helper class
   let nodesById;
-
-  // TODO: ideally this documentModel class doesn't have to know about the updateManager.
-  // But, it's nice to make one call from the consumer (edit.jsx + helpers) that handles the documentModel
-  // and the updateManager behind the scenes.  That orchestration would have to move either out into edit.jsx or into another helper class
 
   if (jsonData) {
     nodesById = Immutable.fromJS(jsonData, reviver);
@@ -135,6 +134,10 @@ export default function DocumentManager(
     );
   }
 
+  // TODO: alternatively, create diff between old and new nodes here, or a log of all changes.
+  //  The resolution of these changes will be too small for undo/redo but, maybe there's a way
+  //  to "compact" the data afterward.  Otherwise, undo/redo data can be created and stored in
+  //  commitUpdates() like it is currently.
   function update(node) {
     const nodeId = node.get('id');
     updateManager.stageNodeUpdate(node);
