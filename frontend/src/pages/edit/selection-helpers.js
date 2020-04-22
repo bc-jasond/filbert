@@ -1,6 +1,18 @@
 import { fromJS, Map } from 'immutable';
 
-import { SELECTION_LENGTH, SELECTION_NEXT } from '../../common/constants';
+import {
+  SELECTION_ACTION_BOLD,
+  SELECTION_ACTION_CODE,
+  SELECTION_ACTION_H1,
+  SELECTION_ACTION_H2,
+  SELECTION_ACTION_ITALIC,
+  SELECTION_ACTION_LINK,
+  SELECTION_ACTION_MINI,
+  SELECTION_ACTION_SITEINFO,
+  SELECTION_ACTION_STRIKETHROUGH,
+  SELECTION_LENGTH,
+  SELECTION_NEXT,
+} from '../../common/constants';
 import {
   cleanTextOrZeroLengthPlaceholder,
   reviver,
@@ -78,6 +90,21 @@ function internalGetSelectionAtIndex(head, idx) {
     console.error('Bad selection index: ', idx, head);
   }
   return selection;
+}
+
+function transferFormats(left, right) {
+  [
+    SELECTION_ACTION_BOLD,
+    SELECTION_ACTION_ITALIC,
+    SELECTION_ACTION_CODE,
+    SELECTION_ACTION_SITEINFO,
+    SELECTION_ACTION_MINI,
+    SELECTION_ACTION_STRIKETHROUGH,
+    SELECTION_ACTION_LINK,
+  ].forEach((fmt) => {
+    // eslint-disable-next-line no-param-reassign
+    left[fmt] = left[fmt] || right[fmt];
+  });
 }
 
 /**
@@ -254,109 +281,119 @@ export function adjustSelectionOffsetsAndCleanup(
 export function getSelectionByContentOffset(nodeModel, start, end) {
   // TODO: validation of start & end against nodeModel.get('content')?.length
   const length = end - start;
+  const doesReplaceHead = start === 0;
   const doesReplaceLastSelection = end === nodeModel.get('content', '').length;
   // first see if the exact Selection already exists?
   let head = getSelections(nodeModel);
-  const originalHead = head;
   let current = head;
   let prev;
+  let shouldSkipSetPrev = false;
   let caretPosition = 0;
   let idx = 0;
-  while (
-    current[SELECTION_NEXT] &&
-    caretPosition + current[SELECTION_LENGTH] <= start
-  ) {
-    caretPosition += current[SELECTION_LENGTH];
-    idx += 1;
-    prev = current;
-    // eslint-disable-next-line prefer-destructuring
-    current = current[SELECTION_NEXT];
-  }
-  // found exact match in existing selections ?
-  if (
-    caretPosition === start &&
-    (current[SELECTION_LENGTH] === length ||
-      (doesReplaceLastSelection && !current[SELECTION_NEXT]))
-  ) {
-    return { selections: fromJS(head, reviver), idx };
-  }
-  // if we're here, we didn't find an exact match in existing selections
-  const newSelection = {
-    [SELECTION_LENGTH]: doesReplaceLastSelection ? -1 : length,
-    [SELECTION_NEXT]: undefined,
-  };
-  // capture current length before mutation
-  // eslint-disable-next-line prefer-destructuring
-  const originalLength = current[SELECTION_LENGTH];
-  // eslint-disable-next-line prefer-destructuring
-  const originalNext = current[SELECTION_NEXT];
-  // replace head?
-  if (start === 0) {
-    head = newSelection;
-  } else if (start - caretPosition === 0) {
-    // users selection lines up with end of last selection
-    prev[SELECTION_NEXT] = newSelection;
-  } else if (
-    (!originalNext && !doesReplaceLastSelection) ||
-    originalLength - (start - caretPosition) > length
-  ) {
-    // newSelection is completely inside of current
-    const currentCopy = { ...current };
-    current[SELECTION_LENGTH] = start - caretPosition;
-    current[SELECTION_NEXT] = newSelection;
-    idx += 1;
-    newSelection[SELECTION_NEXT] = currentCopy;
-    currentCopy[SELECTION_LENGTH] = !originalNext
-      ? -1
-      : originalLength - current[SELECTION_LENGTH] - length;
-    return { selections: fromJS(head, reviver), idx };
-  } else {
-    // adjust "left" length
-    current[SELECTION_LENGTH] = start - caretPosition;
-    // no merge (happens on update), set left[next] to new selection
-    current[SELECTION_NEXT] = newSelection;
-    // move index pointer only if head didn't change
-    idx += 1;
-  }
-  if (doesReplaceLastSelection) {
-    return { selections: fromJS(head, reviver), idx };
-  }
-  // add original "left" length to caretPosition to preserve original selection lengths for further comparison
-  caretPosition += originalLength;
-  // advance pointer to continue through original list
-  current = originalNext;
-  // skip any completely overlapped selections
-  while (current && caretPosition + current[SELECTION_LENGTH] <= end) {
-    caretPosition += current[SELECTION_LENGTH];
-    prev = current;
-    // eslint-disable-next-line prefer-destructuring
-    current = current[SELECTION_NEXT];
-  }
-  if (!prev) {
-    // newSelection is new head and is <= the original head length
-    // adjust originalHead length if newSelection length < original
-    if (
-      originalHead[SELECTION_LENGTH] > 0 &&
-      newSelection[SELECTION_LENGTH] < originalHead[SELECTION_LENGTH]
-    ) {
-      originalHead[SELECTION_LENGTH] -= newSelection[SELECTION_LENGTH];
-    }
-    head[SELECTION_NEXT] = originalHead;
-    return { selections: fromJS(head, reviver), idx };
-  }
-  if (!current) {
-    // newSelection is new 2nd to last, prev is last Selection
-    newSelection[SELECTION_NEXT] = prev;
-    return { selections: fromJS(head, reviver), idx };
-  }
-  if (current[SELECTION_NEXT]) {
-    // adjust "right" length (if not -1)
-    current[SELECTION_LENGTH] = caretPosition + current[SELECTION_LENGTH] - end;
-  }
-  // attach new selection to "right"
-  newSelection[SELECTION_NEXT] = current;
+  let newSelection = { [SELECTION_LENGTH]: length };
 
-  // TODO: apply overlapping formats?
+  while (current) {
+    const currentStart = caretPosition;
+    const currentIsLastSelection = !current[SELECTION_NEXT];
+    const currentEnd =
+      current[SELECTION_LENGTH] === -1
+        ? nodeModel.get('content').length
+        : caretPosition + current[SELECTION_LENGTH];
+    // exact match
+    if (start === currentStart && end === currentEnd) {
+      return { selections: fromJS(head, reviver), idx };
+    }
+    // overlap left
+    if (
+      (start === currentStart && end < currentEnd) ||
+      // coming from replace multiple selections below
+      (start < currentStart && end > currentStart && end <= currentEnd)
+    ) {
+      transferFormats(newSelection, current);
+      if (prev && !shouldSkipSetPrev) {
+        prev[SELECTION_NEXT] = newSelection;
+      }
+      if (!currentIsLastSelection) {
+        current[SELECTION_LENGTH] = currentEnd - end;
+      }
+      newSelection[SELECTION_NEXT] =
+        current[SELECTION_LENGTH] > 0 ||
+        doesReplaceHead ||
+        (currentIsLastSelection && !doesReplaceLastSelection)
+          ? current
+          : current[SELECTION_NEXT];
+      return {
+        selections: fromJS(doesReplaceHead ? newSelection : head, reviver),
+        idx: doesReplaceHead ? 0 : idx,
+      };
+    }
+    // overlap completely - middle
+    if (start > currentStart && end < currentEnd) {
+      const currentCopy = { ...current };
+      transferFormats(newSelection, current);
+      current[SELECTION_LENGTH] = start - currentStart;
+      current[SELECTION_NEXT] = newSelection;
+      newSelection[SELECTION_NEXT] = currentCopy;
+      if (!currentIsLastSelection) {
+        currentCopy[SELECTION_LENGTH] = currentEnd - end;
+      }
+      idx += 1;
+      return { selections: fromJS(head, reviver), idx };
+    }
+    // overlap completely - right
+    if (start > currentStart && end === currentEnd) {
+      transferFormats(newSelection, current);
+      // eslint-disable-next-line prefer-destructuring
+      newSelection[SELECTION_NEXT] = current[SELECTION_NEXT];
+      current[SELECTION_LENGTH] = start - currentStart;
+      current[SELECTION_NEXT] = newSelection;
+      idx += 1;
+      if (doesReplaceLastSelection) {
+        newSelection[SELECTION_LENGTH] = -1;
+      }
+      return { selections: fromJS(head, reviver), idx };
+    }
+    // MULTI new selection spans more than one existing selection
+    // overlap left - handled above
+    // contains - new selection contains > 1 existing selection
+    if (start <= currentStart && end >= currentEnd) {
+      transferFormats(newSelection, current);
+      if (doesReplaceHead) {
+        head = newSelection;
+      }
+      if (doesReplaceLastSelection) {
+        newSelection[SELECTION_LENGTH] = -1;
+      }
+      if (prev && !shouldSkipSetPrev) {
+        prev[SELECTION_NEXT] = newSelection;
+        shouldSkipSetPrev = true;
+      }
+    }
+    // overlap right
+    else if (end > currentEnd && start >= currentStart && start < currentEnd) {
+      transferFormats(newSelection, current);
+      const currentTmp = { ...current };
+      current[SELECTION_LENGTH] = start - currentStart;
+      current[SELECTION_NEXT] = newSelection;
+      current = currentTmp;
+      prev = newSelection;
+      idx += 1;
+      shouldSkipSetPrev = true;
+    }
+
+    caretPosition += current[SELECTION_LENGTH];
+    if (!shouldSkipSetPrev) {
+      idx += 1;
+      prev = current;
+    }
+    // eslint-disable-next-line prefer-destructuring
+    current = current[SELECTION_NEXT];
+  }
+
+  // reset tail
+  current[SELECTION_NEXT] = undefined;
+  current[SELECTION_LENGTH] = -1;
+
   return { selections: fromJS(head, reviver), idx };
 }
 

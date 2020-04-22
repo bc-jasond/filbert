@@ -1112,10 +1112,24 @@ export default class EditPost extends React.Component {
       await this.closeFormatSelectionMenu();
       return;
     }
+    // need to refresh the selection after update, as a merge might have occured
+    // with neighboring selections with identical formats
+    const { selections } = getSelectionByContentOffset(
+      updatedNode,
+      selectionOffsets.caretStart,
+      selectionOffsets.caretEnd
+    );
     this.setState(
       {
-        formatSelectionNode: updatedNode,
-        formatSelectionModel: updatedSelection,
+        formatSelectionNode: updatedNode.setIn(
+          ['meta', 'selections'],
+          selections
+        ),
+        // note: this selection index shouldn't have changed.
+        formatSelectionModel: getSelectionAtIdx(
+          selections,
+          formatSelectionModelIdx
+        ),
       },
       async () => {
         await this.commitUpdates(selectionOffsets, selectionOffsets);
