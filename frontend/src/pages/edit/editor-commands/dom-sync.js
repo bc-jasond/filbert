@@ -1,12 +1,10 @@
+import { assertValidDomSelectionOrThrow } from '../../../common/dom';
 import { getCharFromEvent } from '../../../common/utils';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 
 export function syncToDom(documentModel, selectionOffsets, evt) {
+  assertValidDomSelectionOrThrow(selectionOffsets);
   const { caretStart, startNodeId } = selectionOffsets;
-  if (startNodeId === 'null' || !startNodeId) {
-    console.warn('To DOM SYNC - bad selection, no id ', startNodeId);
-    return {};
-  }
   console.debug('To DOM SYNC', startNodeId, 'offset', caretStart);
 
   const newChar = getCharFromEvent(evt);
@@ -41,20 +39,18 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
     caretStart,
     newChar.length
   );
-  documentModel.update(selectedNodeMap);
-
-  return {
+  const executeSelectionOffsets = {
     startNodeId,
     caretStart: caretStart + newChar.length,
   };
+  const historyState = documentModel.update(selectedNodeMap);
+
+  return { executeSelectionOffsets, historyState };
 }
 
 export function syncFromDom(documentModel, selectionOffsets, evt) {
+  assertValidDomSelectionOrThrow(selectionOffsets);
   const { caretStart, startNodeId } = selectionOffsets;
-  if (startNodeId === 'null' || !startNodeId) {
-    console.warn('From DOM SYNC - bad selection, no id ', startNodeId);
-    return {};
-  }
   console.info('From DOM SYNC', startNodeId, 'offset', caretStart);
 
   // NOTE: following for emojis keyboard insert only...
@@ -92,8 +88,9 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
     preUpdateStart,
     emoji.length
   );
-  documentModel.update(selectedNodeMap);
+  const executeSelectionOffsets = { startNodeId, caretStart };
+  const historyState = documentModel.update(selectedNodeMap);
 
   // return original caretStart for correct setCaret() positioning
-  return { startNodeId, caretStart };
+  return { executeSelectionOffsets, historyState };
 }

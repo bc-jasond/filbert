@@ -22,6 +22,7 @@ import {
   getNodeById,
   getRange,
   isControlKey,
+  isValidDomSelection,
   removeAllRanges,
   replaceRange,
   selectionOffsetsAreEqual,
@@ -50,19 +51,20 @@ import {
 } from '../../../common/constants';
 
 import Document from '../../../common/components/document.component';
-import { doDelete } from '../document-model-helpers/delete';
 import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
-import { syncFromDom, syncToDom } from '../document-model-helpers/dom-sync';
-import { doPaste } from '../document-model-helpers/paste';
-import { selectionFormatAction } from '../document-model-helpers/selection-format-action';
-import { doSplit } from '../document-model-helpers/split';
 import UpdateManager from '../update-manager';
+
+import { doDelete, doMerge } from '../editor-commands/delete';
+import { syncFromDom, syncToDom } from '../editor-commands/dom-sync';
+import { doPaste } from '../editor-commands/paste';
+import { doSplit } from '../editor-commands/split';
 
 import {
   getSelectionAtIdx,
   getSelectionByContentOffset,
   replaceSelection,
 } from '../selection-helpers';
+import { selectionFormatAction } from '../editor-commands/selection-format-action';
 
 import InsertSectionMenu from './insert-section-menu';
 import EditImageForm from './edit-image-form';
@@ -271,27 +273,13 @@ export default class EditPost extends React.Component {
     await this.commitUpdates(undefined, historyOffsets.toJS());
   };
 
-  commitUpdates = (prevSelectionOffsets, selectionOffsets) => {
+  commitUpdates = (selectionOffsets) => {
     const { startNodeId, caretStart, caretEnd } = selectionOffsets;
     const {
       state: { editSectionNode, formatSelectionModel },
     } = this;
     // TODO: optimistically saving updated nodes with no error handling - look ma, no errors!
     return new Promise((resolve /* , reject */) => {
-      const {
-        state: {
-          // these are the "clean" nodes - the updated (dirty) ones are in this.documentModel.getNodes() (and this.updateManager.nodeUpdates)
-          nodesById: prevNodesById,
-          post,
-        },
-      } = this;
-      if (post.size > 0 && prevSelectionOffsets) {
-        this.updateManager.addToUndoHistory(
-          prevNodesById,
-          prevSelectionOffsets,
-          selectionOffsets
-        );
-      }
       // roll with state changes TODO: handle errors - roll back?
       const newState = {
         nodesById: this.documentModel.getNodes(),
@@ -501,25 +489,59 @@ export default class EditPost extends React.Component {
     if (
       evt.keyCode !== KEYCODE_BACKSPACE ||
       // don't delete the section while editing its fields :) !
-      this.state?.shouldShowEditSectionMenu
+      this.state?.shouldShowEditSectionMenu ||
+      // invalid selection
+      !isValidDomSelection(selectionOffsets)
     ) {
       return;
     }
 
     stopAndPrevent(evt);
 
-    const { startNodeId, caretStart } = doDelete(
+    const { startNodeId, caretStart, endNodeId, caretEnd } = selectionOffsets;
+    const historyState = [];
+    let executeSelectionOffsets;
+
+    const { executeSelectionOffsetsDelete, historyStateDelete } = doDelete(
       this.documentModel,
       selectionOffsets
     );
-    if (!startNodeId) {
-      return;
+    historyState.push(...historyStateDelete);
+    executeSelectionOffsets = executeSelectionOffsetsDelete;
+
+    // if doDelete() returns a different startNodeId, a merge is required
+    if (executeSelectionOffsets.startNodeId !== startNodeId) {
+      const {
+        executeSelectionOffsets: executeSelectionOffsetsMerge,
+        historyState: historyStateMerge,
+      } = doMerge(this.documentModel, executeSelectionOffsets);
+      historyState.push(...historyStateMerge);
+      executeSelectionOffsets = executeSelectionOffsetsMerge;
+    }
+
+    // backspace deleting one character at a time?
+    if (
+      startNodeId === executeSelectionOffsets.startNodeId &&
+      caretStart - executeSelectionOffsets.caretStart === 1
+    ) {
+      this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+        executeSelectionOffsets,
+        unexecuteSelectionOffsets: selectionOffsets,
+        state: historyState,
+        comparisonPath: ['content'],
+      });
+    } else {
+      this.updateManager.appendToNodeUpdateLog({
+        executeSelectionOffsets,
+        unexecuteSelectionOffsets: selectionOffsets,
+        state: historyState,
+      });
     }
 
     // clear the selected format node when deleting the highlighted selection
-    // NOTE: must wait for state have been set or setCaret will check stale values
+    // NOTE: must wait for state to have been set or setCaret will check stale values
     this.closeAllEditContentMenus();
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    await this.commitUpdates(executeSelectionOffsets);
   };
 
   /**
@@ -529,28 +551,36 @@ export default class EditPost extends React.Component {
    * @returns {Promise<void>}
    */
   handleEnter = async (evt, selectionOffsets) => {
-    if (evt.keyCode !== KEYCODE_ENTER) {
-      return;
-    }
-    // ignore if there's a selected MetaType node's menu is open
-    if (this.state?.shouldShowEditSectionMenu) {
-      return;
-    }
-
-    const startNodeId = doSplit(this.documentModel, selectionOffsets);
-    if (!startNodeId) {
+    if (
+      evt.keyCode !== KEYCODE_ENTER ||
+      // ignore if there's a selected MetaType node's menu is open
+      this.state?.shouldShowEditSectionMenu ||
+      // invalid dom selection
+      !isValidDomSelection(selectionOffsets)
+    ) {
       return;
     }
 
     stopAndPrevent(evt);
 
-    await this.closeAllEditContentMenus();
-
+    // perform editor commands
+    const { executeSelectionOffsets, historyState } = doSplit(
+      this.documentModel,
+      selectionOffsets
+    );
+    // special case for creating a new document on "Enter"
     if (this.props?.params?.id === NEW_POST_URL_ID) {
       await this.createNewPost();
       return;
     }
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart: 0 });
+    // create history log entry
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: selectionOffsets,
+      state: historyState,
+    });
+
+    await this.commitUpdates(executeSelectionOffsets);
   };
 
   /**
@@ -566,9 +596,11 @@ export default class EditPost extends React.Component {
       // contentEditable is not the srcTarget
       evt.target.id !== 'filbert-edit-container' ||
       // ignore "paste" - propagation hasn't been stopped because it would cancel the respective "paste", "cut" events
-      this.didPaste ||
+      this.pasteHistoryState ||
       // ignore "cut"
-      this.didCut
+      this.cutHistoryState ||
+      // invalid selection
+      !isValidDomSelection(selectionOffsets)
     ) {
       return;
     }
@@ -580,25 +612,31 @@ export default class EditPost extends React.Component {
     if (editSectionNode.get('id')) {
       return;
     }
-
+    const historyState = [];
     // select-and-type ?? delete selection first
     if (selectionOffsets.caretStart !== selectionOffsets.caretEnd) {
-      doDelete(this.documentModel, selectionOffsets);
+      const { historyState: historyStateDelete } = doDelete(
+        this.documentModel,
+        selectionOffsets
+      );
+      historyState.push(...historyStateDelete);
     }
-
-    const { startNodeId, caretStart } = syncToDom(
-      this.documentModel,
-      selectionOffsets,
-      evt
-    );
-    if (!startNodeId) {
-      return;
-    }
-
+    // sync keystroke to DOM
+    const {
+      historyState: historyStateSync,
+      executeSelectionOffsets,
+    } = syncToDom(this.documentModel, selectionOffsets, evt);
+    // add history entry
+    this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+      unexecuteSelectionOffsets: selectionOffsets,
+      executeSelectionOffsets,
+      state: historyState.push(...historyStateSync),
+      comparisonPath: ['content'],
+    });
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
-    //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
+    //  The browser will then place the caret at the beginning of the textContent??? 😞 so we place it back with JS...
     await this.closeAllEditContentMenus();
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    await this.commitUpdates(selectionOffsets);
   };
 
   // MAIN "ON" EVENT CALLBACKS
@@ -696,12 +734,12 @@ export default class EditPost extends React.Component {
     if (
       evt.metaKey ||
       // cross-event coordination
-      this.didCut ||
-      this.didPaste
+      this.cutHistoryState ||
+      this.pasteHistoryState
     ) {
       // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
-      this.didPaste = false;
-      this.didCut = false;
+      this.pasteHistoryState = undefined;
+      this.cutHistoryState = undefined;
       return;
     }
     const {
@@ -747,35 +785,44 @@ export default class EditPost extends React.Component {
       return;
     }
     console.debug('CUT', evt.type, evt.metaKey, evt.keyCode);
-    this.didCut = true;
+    this.cutHistoryState = [];
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
-    const { caretStart, caretEnd, startNodeId } = selectionOffsets;
+    const { caretStart, caretEnd } = selectionOffsets;
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "cut" with clipboard data...
     if (evt.type !== 'cut') {
       // save these to pass to commitUpdates for undo history
-      this.selectionOffsets = selectionOffsets;
+      this.unexecuteSelectionOffsets = selectionOffsets;
       if (caretStart !== caretEnd) {
-        doDelete(this.documentModel, selectionOffsets);
+        const { historyState, executeSelectionOffsets } = doDelete(
+          this.documentModel,
+          selectionOffsets
+        );
+        this.executeSelectionOffsets = executeSelectionOffsets;
+        this.cutHistoryState.push(...historyState);
       }
       return;
     }
     // NOTE: have to manually set selection string into clipboard since we're cancelling the event
+    // TODO: how to handle undo history with this clipboard data?  Should we setData() on undo?
+    //  or just manage the delete above?
     const selectionString = document.getSelection().toString();
     console.debug('CUT selection', selectionString);
     evt.clipboardData.setData('text/plain', selectionString);
 
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets: this.executeSelectionOffsets,
+      unexecuteSelectionOffsets: this.unexecuteSelectionOffsets,
+      state: this.cutHistoryState,
+    });
     // NOTE: if we stopPropagation and preventDefault on the 'keydown' event, they'll cancel the 'cut' event too
     // so don't move this up
     stopAndPrevent(evt);
 
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    await this.commitUpdates(this.selectionOffsets, {
-      startNodeId,
-      caretStart,
-    });
+    await this.commitUpdates();
   };
 
   handlePaste = async (evt, selectionOffsetsArg) => {
@@ -798,7 +845,7 @@ export default class EditPost extends React.Component {
     }
 
     // this is to bypass the "keyup" & "input" handlers
-    this.didPaste = true;
+    this.pasteHistoryState = [];
 
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
@@ -806,29 +853,35 @@ export default class EditPost extends React.Component {
     // we'll come back through from "paste" with clipboard data...
     if (evt.type !== 'paste') {
       // for undo history - need to store the "first" selections, aka before the delete operation
-      this.selectionOffsets = selectionOffsets;
+      this.unexecuteSelectionOffsets = selectionOffsets;
       if (selectionOffsets.caretStart !== selectionOffsets.caretEnd) {
-        doDelete(this.documentModel, selectionOffsets);
+        const { historyState } = doDelete(this.documentModel, selectionOffsets);
+        this.pasteHistoryState.push(...historyState);
       }
       return;
     }
     // NOTE: if these get called on the 'keydown' event, they'll cancel the 'paste' event
     stopAndPrevent(evt);
 
-    const { startNodeId, caretStart } = doPaste(
+    const { executeSelectionOffsets, historyState } = doPaste(
       this.documentModel,
       selectionOffsets,
       evt.clipboardData
     );
-    if (!startNodeId) {
+    // TODO: paste into Meta Type nodes isn't supported
+    if (!executeSelectionOffsets) {
       return;
     }
+    // add history entry
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: this.unexecuteSelectionOffsets,
+      state: historyState,
+    });
+
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    await this.commitUpdates(this.selectionOffsets, {
-      startNodeId,
-      caretStart,
-    });
+    await this.commitUpdates(executeSelectionOffsets);
   };
 
   // TODO: this function references the DOM and state.  So, it needs to pass-through values because it always executes - separate the DOM and state checks?

@@ -1,25 +1,29 @@
 import { fromJS, List, Map } from 'immutable';
 
 import {
+  HISTORY_KEY_EXECUTE_OFFSETS,
+  HISTORY_KEY_EXECUTE_STATES,
   HISTORY_KEY_REDO,
-  HISTORY_KEY_REDO_OFFSETS,
-  HISTORY_KEY_REDO_UPDATES,
+  HISTORY_KEY_STATE,
   HISTORY_KEY_UNDO,
-  HISTORY_KEY_UNDO_OFFSETS,
-  HISTORY_KEY_UNDO_UPDATES,
+  HISTORY_KEY_UNEXECUTE_OFFSETS,
+  HISTORY_KEY_UNEXECUTE_STATES,
   NODE_ACTION_DELETE,
   NODE_ACTION_UPDATE,
-  NODE_UPDATES,
+  NODE_UPDATE_HISTORY,
+  NODE_UPDATE_QUEUE,
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
-import { nodeIsValid, reviver } from '../../common/utils';
+import {
+  moreThanNCharsAreDifferent,
+  nodeIsValid,
+  reviver,
+} from '../../common/utils';
 
 export const characterDiffSize = 6;
 
 export default function UpdateManager(postId) {
-  let commitTimeoutId;
-
   function getKey(key) {
     return `${postId}-${key}`;
   }
@@ -32,12 +36,19 @@ export default function UpdateManager(postId) {
     set(getKey(key), value);
   }
 
-  function getNodeUpdates() {
-    return getPostIdNamespaceValue(NODE_UPDATES, Map());
+  function getNodeUpdateQueue() {
+    getPostIdNamespaceValue(NODE_UPDATE_QUEUE, List());
+  }
+  function setNodeUpdateQueue(value) {
+    setPostIdNamespaceValue(NODE_UPDATE_QUEUE, value);
   }
 
-  function setNodeUpdates(value) {
-    return setPostIdNamespaceValue(NODE_UPDATES, value);
+  function getNodeUpdateLog() {
+    return getPostIdNamespaceValue(NODE_UPDATE_HISTORY, List());
+  }
+
+  function setNodeUpdateLog(value) {
+    return setPostIdNamespaceValue(NODE_UPDATE_HISTORY, value);
   }
 
   function getHistoryRedo() {
@@ -57,65 +68,84 @@ export default function UpdateManager(postId) {
   }
 
   function addPostIdToUpdates(postIdInternal) {
-    setNodeUpdates(
-      getNodeUpdates().map((update) => update.set('post_id', postIdInternal))
+    setNodeUpdateLog(
+      getNodeUpdateLog().map((update) => update.set('post_id', postIdInternal))
     );
   }
 
-  function addToUndoHistory(
-    prevNodesById,
-    prevSelectionOffsets,
-    selectionOffsets
-  ) {
-    // always clear redoHistory list since it would require a merge strategy to maintain
-    setHistoryRedo(List());
-    // "reverse" the current updates list to get an "undo" list
-    // for text content changes - only add to history after N characters are different
-    const newHistoryEntry = getNodeUpdates().map((update, nodeId) => {
-      const prevNode = prevNodesById.get(nodeId);
-      // insert (update in nodeUpdates not present in prevNodesById) -> delete
-      // we inserted a new node, delete it (we'll update next_sibling_id for it's previous node in the "structure" check below)
-      if (!prevNode) {
-        return update.set('action', NODE_ACTION_DELETE).delete('node');
-      }
-      // delete -> update
-      // if we just deleted this node, add it back
-      if (update.get('action') === NODE_ACTION_DELETE) {
-        return update.set('action', NODE_ACTION_UPDATE).set('node', prevNode);
-      }
-      // update -> update
-      // Simplify this for now - all updates get history entries.  This means a history entry for every keystroke.
-      // Trying to optimize this for space is causing fundamental issues.  My new stance is to "save too much" and
-      // then have a job merge and delete redundant records (TODO later)
-      return update.set('node', prevNode);
+  function appendToNodeUpdateLog({
+    executeSelectionOffsets,
+    unexecuteSelectionOffsets,
+    state,
+  }) {
+    const historyEntry = Map({
+      [HISTORY_KEY_EXECUTE_OFFSETS]: executeSelectionOffsets,
+      [HISTORY_KEY_UNEXECUTE_OFFSETS]: unexecuteSelectionOffsets,
+      [HISTORY_KEY_STATE]: state,
     });
+    console.info(
+      'HISTORY: adding to node update history log',
+      historyEntry.toJS()
+    );
+    setHistoryUndo(getHistoryUndo().push(historyEntry));
+  }
 
-    if (newHistoryEntry.size > 0) {
-      const historyEntry = Map({
-        // execute == 'undo'
-        [HISTORY_KEY_UNDO_UPDATES]: newHistoryEntry,
-        [HISTORY_KEY_UNDO_OFFSETS]: prevSelectionOffsets,
-        // unexecute == 'redo'
-        [HISTORY_KEY_REDO_UPDATES]: getNodeUpdates(),
-        [HISTORY_KEY_REDO_OFFSETS]: selectionOffsets,
+  let historyCandidateNode = Map();
+  let historyCandidateSelectionOffsets = {};
+  let historyCandidateState = [];
+
+  function appendToNodeUpdateLogWhenNCharsAreDifferent({
+    unexecuteSelectionOffsets,
+    executeSelectionOffsets,
+    state,
+    comparisonPath,
+  }) {
+    const {
+      unexecuteState: nodeBeforeUpdate,
+      executeState: nodeAfterUpdate,
+    } = state;
+    // update history if the node changes or if "more than N chars" have changed in the same node
+    if (historyCandidateNode.get('id') !== nodeAfterUpdate.get('id')) {
+      if (historyCandidateNode.get('id')) {
+        // make history entry for existing changes before tracking new node
+        appendToNodeUpdateLog({
+          unexecuteSelectionOffsets: historyCandidateSelectionOffsets,
+          executeSelectionOffsets,
+          state: historyCandidateState,
+        });
+      }
+      historyCandidateNode = nodeBeforeUpdate; // this node matches the state in state.unexecuteState OR "before" documentModel.update()
+      historyCandidateSelectionOffsets = unexecuteSelectionOffsets;
+      historyCandidateState = state;
+    }
+
+    // TODO: get document state (selectedNodeMap) and add to history list here
+    if (
+      moreThanNCharsAreDifferent(
+        nodeAfterUpdate.getIn(comparisonPath),
+        historyCandidateNode.get(comparisonPath)
+      )
+    ) {
+      appendToNodeUpdateLog({
+        unexecuteSelectionOffsets: historyCandidateSelectionOffsets,
+        executeSelectionOffsets,
+        state: historyCandidateState,
       });
-      console.info('HISTORY: adding to undo history', historyEntry.toJS());
-      setHistoryUndo(getHistoryUndo().push(historyEntry));
     }
   }
 
   function clearUpdates() {
-    if (getNodeUpdates().size > 0) {
+    if (getNodeUpdateLog().size > 0) {
       console.info(
         'clearUpdates - clearing non-empty update pipeline',
-        getNodeUpdates()
+        getNodeUpdateLog()
       );
     }
-    setNodeUpdates(Map());
+    setNodeUpdateLog(Map());
   }
 
   async function saveContentBatch() {
-    const updated = Object.entries(getNodeUpdates().toJS());
+    const updated = Object.entries(getNodeUpdateLog().toJS());
     if (updated.length === 0) return;
     // console.info('Save Batch', updated);
     const { error, data: result } = await apiPost('/content', updated);
@@ -129,34 +159,15 @@ export default function UpdateManager(postId) {
     console.info('Save Batch result', result);
   }
 
+  let commitTimeoutId;
+
   function saveContentBatchDebounce() {
     console.info('Batch Debounce');
     clearTimeout(commitTimeoutId);
     commitTimeoutId = setTimeout(saveContentBatch, 750);
   }
 
-  function stageNodeDelete(node) {
-    if (!nodeIsValid(node)) {
-      console.error('stageNodeDelete - bad node', node);
-      return;
-    }
-    const nodeId = node.get('id');
-    if (
-      getNodeUpdates().get(nodeId, Map()).get('action') === NODE_ACTION_UPDATE
-    ) {
-      // TODO: ensure this is saved in history before replacing it ?
-      console.info('stageNodeDelete - deleting an updated node ', node);
-    } else {
-      console.info('stageNodeDelete ', node);
-    }
-    setNodeUpdates(
-      getNodeUpdates().set(
-        nodeId,
-        Map({ action: NODE_ACTION_DELETE, post_id: postId })
-      )
-    );
-    // TODO: check for a previous node to update it's
-  }
+  function stageNodeDelete() {}
 
   function stageNodeUpdate(node) {
     if (!nodeIsValid(node)) {
@@ -164,16 +175,8 @@ export default function UpdateManager(postId) {
       return;
     }
     const nodeId = node.get('id');
-    if (
-      getNodeUpdates().get(nodeId, Map()).get('action') === NODE_ACTION_DELETE
-    ) {
-      // TODO: ensure this is saved in history before replacing it ?;
-      console.info('stageNodeUpdate - updating a deleted node ', nodeId);
-    } else {
-      console.info('stageNodeUpdate ', nodeId);
-    }
-    setNodeUpdates(
-      getNodeUpdates().set(
+    setNodeUpdateLog(
+      getNodeUpdateLog().set(
         nodeId,
         Map({ action: NODE_ACTION_UPDATE, post_id: postId, node })
       )
@@ -191,7 +194,7 @@ export default function UpdateManager(postId) {
     });
     // TODO: when updates are "append only", then here we'll flush them to the update save queue
     clearUpdates();
-    setNodeUpdates(updates);
+    setNodeUpdateLog(updates);
 
     return fromJS(
       { nodesById: updatedNodesById, selectionOffsets: offsets },
@@ -201,8 +204,8 @@ export default function UpdateManager(postId) {
 
   function undo(currentNodesById) {
     const lastHistoryEntry = getHistoryUndo().last(Map());
-    const updates = lastHistoryEntry.get(HISTORY_KEY_UNDO_UPDATES, Map());
-    const offsets = lastHistoryEntry.get(HISTORY_KEY_UNDO_OFFSETS, Map());
+    const updates = lastHistoryEntry.get(HISTORY_KEY_UNEXECUTE_STATES, Map());
+    const offsets = lastHistoryEntry.get(HISTORY_KEY_UNEXECUTE_OFFSETS, Map());
     setHistoryUndo(getHistoryUndo().pop());
     if (updates.size === 0) {
       return Map();
@@ -217,8 +220,8 @@ export default function UpdateManager(postId) {
 
   function redo(currentNodesById) {
     const lastHistoryEntry = getHistoryRedo().last(Map());
-    const updates = lastHistoryEntry.get(HISTORY_KEY_REDO_UPDATES, Map());
-    const offsets = lastHistoryEntry.get(HISTORY_KEY_REDO_UPDATES, Map());
+    const updates = lastHistoryEntry.get(HISTORY_KEY_EXECUTE_STATES, Map());
+    const offsets = lastHistoryEntry.get(HISTORY_KEY_EXECUTE_STATES, Map());
     setHistoryRedo(getHistoryRedo().pop());
     if (updates.size === 0) {
       return Map();
@@ -233,13 +236,18 @@ export default function UpdateManager(postId) {
 
   return {
     addPostIdToUpdates,
-    addToUndoHistory,
     clearUpdates,
     saveContentBatch,
     saveContentBatchDebounce,
+    appendToNodeUpdateLog,
+    appendToNodeUpdateLogWhenNCharsAreDifferent,
     stageNodeDelete,
     stageNodeUpdate,
     undo,
     redo,
   };
+}
+
+export function getLastExecuteIdFromHistory(history) {
+  return history[history.length]?.executeState?.get?.('id');
 }

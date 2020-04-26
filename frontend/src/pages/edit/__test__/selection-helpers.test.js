@@ -1,4 +1,3 @@
-import { ItalicText } from '../../../common/components/shared-styled-components';
 import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,

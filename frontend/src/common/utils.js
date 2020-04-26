@@ -14,6 +14,7 @@ import {
   SELECTION_LINK_URL,
   SELECTION_NEXT,
   ZERO_LENGTH_CHAR,
+  HISTORY_MIN_NUM_CHARS,
 } from './constants';
 
 export function confirmPromise(msg) {
@@ -136,7 +137,11 @@ export function stopAndPrevent(evt) {
   }
 }
 
-export function moreThanNCharsAreDifferent(left, right, n) {
+export function moreThanNCharsAreDifferent(
+  left,
+  right,
+  n = HISTORY_MIN_NUM_CHARS
+) {
   let numDifferent = 0;
   if (typeof left !== 'string' || typeof right !== 'string') {
     return false;

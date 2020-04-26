@@ -65,10 +65,18 @@ export const KEYCODE_F12 = 123;
 export const KEYCODE_PRINT_SCREEN = 124;
 export const KEYCODE_SPACE_NBSP = 160;
 
-// edit actions
+// edit history actions (Commands)
 export const NODE_ACTION_INSERT = 'insert';
 export const NODE_ACTION_UPDATE = 'update';
 export const NODE_ACTION_DELETE = 'delete';
+export const NODE_ACTION_COMMIT = 'commit';
+// these can be derived from the simpler actions above, should they have their own event and payload to make them atomic?
+export const NODE_ACTION_CUT = 'cut';
+export const NODE_ACTION_COPY = 'copy';
+export const NODE_ACTION_PASTE = 'paste';
+// might be useful to track every time the cursor moved with arrows or mouse click
+export const NODE_ACTION_SELECTION = 'makeSelection';
+
 // selection actions
 export const SELECTION_NEXT = 'next';
 export const SELECTION_LENGTH = 'length';
@@ -101,13 +109,15 @@ export const DOM_TEXT_NODE_TYPE_ID = 3;
 export const DOM_INPUT_TAG_NAME = 'INPUT';
 
 // HISTORY - undo / redo
-export const NODE_UPDATES = 'nodeUpdates';
+export const NODE_UPDATE_HISTORY = 'nodeUpdateHistory';
+export const NODE_UPDATE_QUEUE = 'nodeUpdateQueue';
 export const HISTORY_KEY_UNDO = 'undoHistory';
 export const HISTORY_KEY_REDO = 'redoHistory';
-export const HISTORY_KEY_UNDO_UPDATES = 'executeUpdates';
-export const HISTORY_KEY_UNDO_OFFSETS = 'executeOffsets';
-export const HISTORY_KEY_REDO_UPDATES = 'unexecuteUpdates';
-export const HISTORY_KEY_REDO_OFFSETS = 'unexecuteOffsets';
+export const HISTORY_KEY_STATE = 'historyState';
+export const HISTORY_KEY_UNEXECUTE_OFFSETS = 'executeOffsets';
+export const HISTORY_KEY_EXECUTE_STATES = 'unexecuteUpdates';
+export const HISTORY_KEY_EXECUTE_OFFSETS = 'unexecuteOffsets';
+export const HISTORY_MIN_NUM_CHARS = 6;
 
 // THEME
 export const DARK_MODE_THEME = 'dark';

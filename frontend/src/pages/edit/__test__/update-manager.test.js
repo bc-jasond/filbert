@@ -15,13 +15,13 @@ import {
   testPostWithAllTypesJS,
 } from '../../../common/test-post-with-all-types';
 import {
-  NODE_UPDATES,
+  NODE_UPDATE_HISTORY,
   HISTORY_KEY_UNDO,
   HISTORY_KEY_REDO,
-  HISTORY_KEY_UNDO_OFFSETS,
-  HISTORY_KEY_UNDO_UPDATES,
-  HISTORY_KEY_REDO_OFFSETS,
-  HISTORY_KEY_REDO_UPDATES,
+  HISTORY_KEY_UNEXECUTE_OFFSETS,
+  HISTORY_KEY_UNEXECUTE_STATES,
+  HISTORY_KEY_EXECUTE_OFFSETS,
+  HISTORY_KEY_EXECUTE_STATES,
   NODE_TYPE_H1,
 } from '../../../common/constants';
 import * as api from '../../../common/fetch';
@@ -50,28 +50,28 @@ beforeEach(() => {
 describe('UpdateManager', () => {
   test.skip('stageNodeUpdate method', () => {
     updateManager.stageNodeUpdate();
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
     updateManager.stageNodeUpdate(null);
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
     updateManager.stageNodeUpdate(Map({ id: 'null' }));
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
     updateManager.stageNodeUpdate(Map({ id: 'undefined' }));
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
     // test that last-write-wins, update overwrites delete
     updateManager.stageNodeDelete(Map({ id: '1234' }));
     updateManager.stageNodeUpdate(Map({ id: '1234' }));
-    expect(updateManager[NODE_UPDATES].size).toBe(1);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(1);
     expect(updateManager).toMatchSnapshot();
   });
   test.skip('stageNodeDelete method', () => {
     updateManager.stageNodeDelete();
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
     updateManager.stageNodeDelete(null);
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
     updateManager.stageNodeDelete(Map({ id: 'null' }));
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
     updateManager.stageNodeDelete(Map({ id: 'undefined' }));
-    expect(updateManager[NODE_UPDATES].size).toBe(0);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
     // test that last-write-wins, delete overwrites update
     updateManager.stageNodeUpdate(Map({ id: '1234' }));
     updateManager.stageNodeDelete(Map({ id: '1234' }));
@@ -82,10 +82,12 @@ describe('UpdateManager', () => {
     updateManager = UpdateManager(123);
     updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
     expect(
-      updateManager[NODE_UPDATES].get('abcd').get('post_id')
+      updateManager[NODE_UPDATE_HISTORY].get('abcd').get('post_id')
     ).toBeUndefined();
     updateManager.addPostIdToUpdates(456);
-    expect(updateManager[NODE_UPDATES].get('abcd').get('post_id')).toBe(1);
+    expect(updateManager[NODE_UPDATE_HISTORY].get('abcd').get('post_id')).toBe(
+      1
+    );
   });
   test('clearUpdates method', () => {
     api.apiPost = jest.fn(async () => ({}));
@@ -113,9 +115,9 @@ describe('UpdateManager', () => {
     // create history entry when deleting a node
     doc.delete(doc.getNode(imgId));
     // 1 for the deleted node, 1 for the prev node to update next_sibling_id reference
-    expect(updateManager[NODE_UPDATES].size).toBe(2);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(2);
     expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
-    expect(updateManager[NODE_UPDATES]).toMatchSnapshot();
+    expect(updateManager[NODE_UPDATE_HISTORY]).toMatchSnapshot();
     updateManager.addToUndoHistory(
       prevNodesById,
       prevSelectionOffsets,
@@ -125,17 +127,19 @@ describe('UpdateManager', () => {
     expect(updateManager[HISTORY_KEY_UNDO].size).toBe(1);
     const firstHistory = updateManager[HISTORY_KEY_UNDO].get(0);
     // there should be 2 nodes in the undo
-    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES).size).toBe(2);
-    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES)).toMatchSnapshot();
-    expect(firstHistory.get(HISTORY_KEY_UNDO_OFFSETS)).toBe(
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_STATES).size).toBe(2);
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_STATES)).toMatchSnapshot();
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_OFFSETS)).toBe(
       prevSelectionOffsets
     );
     // and 2 in the redo - they should match the current updates
-    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES).size).toBe(2);
-    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES)).toEqual(
-      updateManager[NODE_UPDATES]
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_STATES).size).toBe(2);
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_STATES)).toEqual(
+      updateManager[NODE_UPDATE_HISTORY]
     );
-    expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_OFFSETS)).toBe(
+      selectionOffsets
+    );
   });
   test.skip('addToUndoHistory - change a node`s type from P -> H1', () => {
     const doc = DocumentModel(post.id, updateManager, contentNodes);
@@ -146,9 +150,9 @@ describe('UpdateManager', () => {
       doc.getNode(formattedPId).set('type', NODE_TYPE_H1).set('meta', Map())
     );
     // 1 for the deleted node, 1 for the prev node to update next_sibling_id reference
-    expect(updateManager[NODE_UPDATES].size).toBe(1);
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(1);
     expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
-    expect(updateManager[NODE_UPDATES]).toMatchSnapshot();
+    expect(updateManager[NODE_UPDATE_HISTORY]).toMatchSnapshot();
     updateManager.addToUndoHistory(
       prevNodesById,
       prevSelectionOffsets,
@@ -158,17 +162,19 @@ describe('UpdateManager', () => {
     expect(updateManager[HISTORY_KEY_UNDO].size).toBe(1);
     const firstHistory = updateManager[HISTORY_KEY_UNDO].get(0);
     // there should be 2 nodes in the undo
-    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES).size).toBe(1);
-    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES)).toMatchSnapshot();
-    expect(firstHistory.get(HISTORY_KEY_UNDO_OFFSETS)).toBe(
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_STATES).size).toBe(1);
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_STATES)).toMatchSnapshot();
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_OFFSETS)).toBe(
       prevSelectionOffsets
     );
     // and 2 in the redo - they should match the current updates
-    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES).size).toBe(1);
-    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES)).toEqual(
-      updateManager[NODE_UPDATES]
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_STATES).size).toBe(1);
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_STATES)).toEqual(
+      updateManager[NODE_UPDATE_HISTORY]
     );
-    expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_OFFSETS)).toBe(
+      selectionOffsets
+    );
   });
   test.skip('addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met', () => {
     doc = DocumentModel(post.id, updateManager, contentNodes);
@@ -189,7 +195,7 @@ describe('UpdateManager', () => {
           )
       );
       // since updates are keyed off of nodeId, there will only be 1 update
-      expect(updateManager[NODE_UPDATES].size).toBe(1);
+      expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(1);
       expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
       updateManager.addToUndoHistory(
         prevNodesById,
@@ -210,8 +216,8 @@ describe('UpdateManager', () => {
         )
     );
     // since updates are keyed off of nodeId, there will only be 1 update
-    expect(updateManager[NODE_UPDATES].size).toBe(1);
-    expect(updateManager[NODE_UPDATES]).toMatchSnapshot();
+    expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(1);
+    expect(updateManager[NODE_UPDATE_HISTORY]).toMatchSnapshot();
     expect(updateManager[HISTORY_KEY_UNDO].size).toBe(0);
     updateManager.addToUndoHistory(
       prevNodesById,
@@ -221,16 +227,18 @@ describe('UpdateManager', () => {
     // we should have hit the threshold now
     expect(updateManager[HISTORY_KEY_UNDO].size).toBe(1);
     const firstHistory = updateManager[HISTORY_KEY_UNDO].get(0);
-    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES).size).toBe(1);
-    expect(firstHistory.get(HISTORY_KEY_UNDO_UPDATES)).toMatchSnapshot();
-    expect(firstHistory.get(HISTORY_KEY_UNDO_OFFSETS)).toBe(
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_STATES).size).toBe(1);
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_STATES)).toMatchSnapshot();
+    expect(firstHistory.get(HISTORY_KEY_UNEXECUTE_OFFSETS)).toBe(
       prevSelectionOffsets
     );
-    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES).size).toBe(1);
-    expect(firstHistory.get(HISTORY_KEY_REDO_UPDATES)).toEqual(
-      updateManager[NODE_UPDATES]
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_STATES).size).toBe(1);
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_STATES)).toEqual(
+      updateManager[NODE_UPDATE_HISTORY]
     );
-    expect(firstHistory.get(HISTORY_KEY_REDO_OFFSETS)).toBe(selectionOffsets);
+    expect(firstHistory.get(HISTORY_KEY_EXECUTE_OFFSETS)).toBe(
+      selectionOffsets
+    );
   });
   test.todo(
     'addToUndoHistory - simulate select and type inside content field of one node'
