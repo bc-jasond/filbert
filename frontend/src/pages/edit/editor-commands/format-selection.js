@@ -13,7 +13,7 @@ import {
 import { Selection } from '../../../common/utils';
 import { replaceSelection } from '../selection-helpers';
 
-export function selectionFormatAction(
+export function doFormatSelection(
   documentModel,
   nodeArg,
   selection,
@@ -43,10 +43,9 @@ export function selectionFormatAction(
   }
   // if we changed the node type (to an H1 or H2 or back to a P) - we're done
   if (!node.equals(nodeArg)) {
-    documentModel.update(node);
     return {
-      startNodeId: node.get('id'),
-      updatedNode: node,
+      historyState: documentModel.update(node),
+      executeSelectionOffsets: { startNodeId: node.get('id'), caretStart: -1 },
       updatedSelection: Selection(),
     };
   }
@@ -81,6 +80,9 @@ export function selectionFormatAction(
     updatedSelectionModel,
     selectionIdx
   );
-  documentModel.update(updatedNode);
-  return { updatedNode, updatedSelection: updatedSelectionModel };
+
+  return {
+    historyState: documentModel.update(updatedNode),
+    updatedSelection: updatedSelectionModel,
+  };
 }

@@ -52,7 +52,7 @@ import {
 
 import Document from '../../../common/components/document.component';
 import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
-import UpdateManager from '../update-manager';
+import UpdateManager, { getLastExecuteIdFromHistory } from '../update-manager';
 
 import { doDelete, doMerge } from '../editor-commands/delete';
 import { syncFromDom, syncToDom } from '../editor-commands/dom-sync';
@@ -64,7 +64,7 @@ import {
   getSelectionByContentOffset,
   replaceSelection,
 } from '../selection-helpers';
-import { selectionFormatAction } from '../editor-commands/selection-format-action';
+import { doFormatSelection } from '../editor-commands/format-selection';
 
 import InsertSectionMenu from './insert-section-menu';
 import EditImageForm from './edit-image-form';
@@ -1154,19 +1154,34 @@ export default class EditPost extends React.Component {
       },
       selectionOffsets,
     } = this;
-    const { updatedNode, updatedSelection } = selectionFormatAction(
+    const {
+      historyState,
+      executeSelectionOffsets,
+      updatedSelection,
+    } = doFormatSelection(
       this.documentModel,
       formatSelectionNode,
       formatSelectionModel,
       formatSelectionModelIdx,
       action
     );
+    this.updateManager.appendToNodeUpdateLog({
+      // doFormatSelection will return new selection offsets if changing node type i.e. P -> H1
+      executeSelectionOffsets: executeSelectionOffsets || selectionOffsets,
+      unexecuteSelectionOffsets: selectionOffsets,
+      state: historyState,
+    });
+    await this.commitUpdates(selectionOffsets, selectionOffsets);
     if (shouldCloseMenu) {
       await this.closeFormatSelectionMenu();
       return;
     }
+
+    const updatedNode = this.documentModel.getNode(
+      getLastExecuteIdFromHistory(historyState)
+    );
     // need to refresh the selection after update, as a merge might have occured
-    // with neighboring selections with identical formats
+    // between neighboring selections that now have identical formats
     const { selections } = getSelectionByContentOffset(
       updatedNode,
       selectionOffsets.caretStart,
@@ -1185,7 +1200,6 @@ export default class EditPost extends React.Component {
         ),
       },
       async () => {
-        await this.commitUpdates(selectionOffsets, selectionOffsets);
         if (updatedSelection.get(SELECTION_ACTION_LINK)) {
           return;
         }
