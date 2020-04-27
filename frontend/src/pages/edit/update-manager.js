@@ -36,13 +36,6 @@ export default function UpdateManager(postId) {
     set(getKey(key), value);
   }
 
-  function getNodeUpdateQueue() {
-    getPostIdNamespaceValue(NODE_UPDATE_QUEUE, List());
-  }
-  function setNodeUpdateQueue(value) {
-    setPostIdNamespaceValue(NODE_UPDATE_QUEUE, value);
-  }
-
   function getNodeUpdateLog() {
     return getPostIdNamespaceValue(NODE_UPDATE_HISTORY, List());
   }

@@ -114,9 +114,10 @@ export const NODE_UPDATE_QUEUE = 'nodeUpdateQueue';
 export const HISTORY_KEY_UNDO = 'undoHistory';
 export const HISTORY_KEY_REDO = 'redoHistory';
 export const HISTORY_KEY_STATE = 'historyState';
-export const HISTORY_KEY_UNEXECUTE_OFFSETS = 'executeOffsets';
-export const HISTORY_KEY_EXECUTE_STATES = 'unexecuteUpdates';
-export const HISTORY_KEY_EXECUTE_OFFSETS = 'unexecuteOffsets';
+export const HISTORY_KEY_UNEXECUTE_OFFSETS = 'unexecuteOffsets';
+export const HISTORY_KEY_UNEXECUTE_STATES = 'unexecuteStates';
+export const HISTORY_KEY_EXECUTE_STATES = 'executeStates';
+export const HISTORY_KEY_EXECUTE_OFFSETS = 'executeOffsets';
 export const HISTORY_MIN_NUM_CHARS = 6;
 
 // THEME

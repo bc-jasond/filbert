@@ -1,8 +1,7 @@
 import Immutable, { Map } from 'immutable';
 
 import {
-  NODE_ACTION_INSERT,
-  NODE_ACTION_UPDATE,
+  NEW_POST_URL_ID,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
@@ -47,6 +46,10 @@ export default function DocumentManager(postId, jsonData = null) {
   } else {
     const newTitle = getMapWithId({ type: NODE_TYPE_H1 });
     nodesById = Map().set(newTitle.get('id'), newTitle);
+  }
+
+  function isUnsavedPost() {
+    return postId === NEW_POST_URL_ID;
   }
 
   function getNodes() {
@@ -253,6 +256,7 @@ export default function DocumentManager(postId, jsonData = null) {
   }
 
   return {
+    isUnsavedPost,
     getNodes,
     setNodes,
     getNode,
