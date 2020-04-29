@@ -110,7 +110,8 @@ export const DOM_INPUT_TAG_NAME = 'INPUT';
 
 // HISTORY - undo / redo
 export const NODE_UPDATE_HISTORY = 'nodeUpdateHistory';
-export const NODE_UPDATE_QUEUE = 'nodeUpdateQueue';
+export const NODE_UPDATE_HISTORY_CURRENT_POSITION =
+  'nodeUpdateHistoryCurrentPosition';
 export const HISTORY_KEY_UNDO = 'undoHistory';
 export const HISTORY_KEY_REDO = 'redoHistory';
 export const HISTORY_KEY_STATE = 'historyState';

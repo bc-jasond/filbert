@@ -69,6 +69,8 @@ const NavLink = styled(Link)`
   ${navButtonMixin};
 `;
 
+const currentTheme = getTheme();
+
 export default function Header({
   session = Map(),
   setSession = () => {},
@@ -77,7 +79,7 @@ export default function Header({
   post = Map(),
 }) {
   const [shouldRedirect, setShouldRedirect] = useState(false);
-  const [theme, setThemeHook] = useState(getTheme());
+  const [theme, setThemeHook] = useState(currentTheme);
 
   useEffect(() => {
     if (theme === DARK_MODE_THEME) {
@@ -85,7 +87,7 @@ export default function Header({
       return;
     }
     document.body.classList.remove(DARK_MODE_THEME);
-  });
+  }, [theme]);
 
   if (shouldRedirect) {
     return <Redirect to="/signout" />;

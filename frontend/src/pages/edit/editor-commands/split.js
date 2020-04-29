@@ -26,7 +26,6 @@ function handleEnterTextType(
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
   let newNodeType = documentModel.getNode(leftNodeId).get('type');
-  let didConvertLeftNodeToP = false;
   // user hits enter on empty list or code item, and it's the last of type, always convert to P
   // to break out of a list or code section
   if (
@@ -47,7 +46,6 @@ function handleEnterTextType(
     [NODE_TYPE_H1, NODE_TYPE_H2].includes(newNodeType) &&
     cleanText(contentLeft).length === 0
   ) {
-    didConvertLeftNodeToP = true;
     historyState.push(
       ...documentModel.update(
         documentModel.getNode(leftNodeId).set('type', NODE_TYPE_P)
@@ -87,13 +85,8 @@ function handleEnterTextType(
     formatSelections(rightNode)
   );
   // NOTE: "focus node" will be the last history entry
-  if (didConvertLeftNodeToP) {
-    historyState.push(...documentModel.update(rightNode));
-    historyState.push(...documentModel.update(leftNode));
-  } else {
-    historyState.push(...documentModel.update(leftNode));
-    historyState.push(...documentModel.update(rightNode));
-  }
+  historyState.push(...documentModel.update(leftNode));
+  historyState.push(...documentModel.update(rightNode));
 
   return historyState;
 }

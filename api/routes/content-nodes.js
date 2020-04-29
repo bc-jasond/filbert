@@ -1,15 +1,48 @@
+const { getKnex } = require("../lib/mysql");
 const {
   bulkContentNodeDelete,
   bulkContentNodeUpsert,
 } = require("../lib/mysql");
 /**
- * takes a list of 1 or more content nodes to update and/or delete for a post during edit
+ * takes a list of 1 or more content nodes to update or delete for a post during edit
  */
 async function postContentNodes(req, res) {
   try {
-    const updates = req.body.filter((change) => change[1].action === "update");
-    const deletes = req.body.filter((change) => change[1].action === "delete");
     // TODO: put in transaction
+    // validate post
+    const {
+      body: { postId, historyLogEntries },
+    } = req;
+    const knex = await getKnex();
+    const [post] = await knex("post").where({
+      id: postId,
+      user_id: req.loggedInUser.id,
+    });
+    if (!post) {
+      res.status(404).send({});
+      return;
+    }
+    // validate first history id in request is next id, ids are sequential
+    // TODO
+
+    // create a map of updates and deletes
+    let updates = [];
+    let deletes = [];
+    let updatesOrDeletes;
+    historyLogEntries.forEach(({ historyState }) => {
+      historyState.forEach(({ executeState: currentNode }) => {
+        // always remove node from updates or deletes first - last wins
+        updates = updates.filter(([nodeId]) => nodeId !== currentNode.id);
+        deletes = deletes.filter(([nodeId]) => nodeId !== currentNode.id);
+        // if executeState is undefined - it's a delete
+        updatesOrDeletes = !currentNode ? deletes : updates;
+        updatesOrDeletes.push([
+          currentNode.id,
+          { post_id: postId, node: currentNode },
+        ]);
+      });
+    });
+
     // TODO: validate updates, trim invalid selections, orphaned nodes, etc.
     const updateResult = await bulkContentNodeUpsert(updates);
     const deleteResult = await bulkContentNodeDelete(deletes);

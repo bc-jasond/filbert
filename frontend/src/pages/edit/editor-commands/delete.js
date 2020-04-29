@@ -53,7 +53,9 @@ function buildDeleteHistory(
     // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
     // end diff length is caretEnd - 0 (implied caretStart for the end node)
     if (caretEnd > 0) {
-      historyState.push(...deleteOrUpdateNode(caretEnd, endNodeId, 0));
+      historyState.push(
+        ...deleteOrUpdateNode(documentModel, caretEnd, endNodeId, 0)
+      );
       selectedNodeId = getLastExecuteIdFromHistory(historyState);
     }
     didDeleteEndNode = selectedNodeId !== endNodeId;
@@ -140,7 +142,12 @@ export function doDelete(documentModel, selectionOffsets) {
     // NOTE: need to distinguish between collapsed caret backspace and highlight 1 char backspace
     //  the former removes a character behind the caret and the latter removes one in front...
     historyState.push(
-      ...deleteOrUpdateNode(startDiffLength, startNodeId, caretStart)
+      ...deleteOrUpdateNode(
+        documentModel,
+        startDiffLength,
+        startNodeId,
+        caretStart
+      )
     );
     selectedNodeId = getLastExecuteIdFromHistory(historyState);
     // if we deleted the first node in the document, use the node that documentModel.deleteNode() returns
