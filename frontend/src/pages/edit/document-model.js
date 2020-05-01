@@ -1,6 +1,7 @@
 import Immutable, { Map } from 'immutable';
 
 import {
+  NEW_POST_URL_ID,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_IMAGE,
@@ -37,14 +38,7 @@ export function getLastNode(nodesById) {
   return nodesById.filter((n) => !n.get('next_sibling_id')).first(Map());
 }
 
-export default function DocumentManager(
-  postId,
-  updateManager = {},
-  jsonData = null
-) {
-  // TODO: ideally this documentModel doesn't have to know about the updateManager.
-  //  But, it's nice to make one call from the consumer (edit.jsx + helpers) that handles the documentModel
-  //  and the updateManager behind the scenes.  That orchestration would have to move either out into edit.jsx or into another helper class
+export default function DocumentManager(postId, jsonData = null) {
   let nodesById;
 
   if (jsonData) {
@@ -52,6 +46,10 @@ export default function DocumentManager(
   } else {
     const newTitle = getMapWithId({ type: NODE_TYPE_H1 });
     nodesById = Map().set(newTitle.get('id'), newTitle);
+  }
+
+  function isUnsavedPost() {
+    return postId === NEW_POST_URL_ID;
   }
 
   function getNodes() {
@@ -140,11 +138,21 @@ export default function DocumentManager(
   //  commitUpdates() like it is currently.
   function update(node) {
     const nodeId = node.get('id');
-    updateManager.stageNodeUpdate(node);
+    const prevState = nodesById.get(nodeId, undefined); // can be undefined on insert
     nodesById = nodesById.set(nodeId, node);
-    return nodeId;
+    return [{ unexecuteState: prevState, executeState: node }];
   }
 
+  /**
+   * last entry in array executeState is the newly inserted node ("currentNode" for focus)
+   *
+   * @param type
+   * @param neighborNodeId
+   * @param content
+   * @param meta
+   * @param shouldInsertAfter
+   * @returns {[]|number}
+   */
   function insert(
     type,
     neighborNodeId = null,
@@ -152,6 +160,7 @@ export default function DocumentManager(
     meta = Map(),
     shouldInsertAfter = true
   ) {
+    const history = [];
     const newNode = getMapWithId({
       post_id: postId,
       type,
@@ -160,7 +169,8 @@ export default function DocumentManager(
     });
     // first node in document
     if (nodesById.size === 0) {
-      return update(newNode);
+      history.push(...update(newNode));
+      return history;
     }
     const neighbor = getNode(neighborNodeId);
     if (!neighbor.get('id')) {
@@ -170,44 +180,58 @@ export default function DocumentManager(
     }
     if (shouldInsertAfter) {
       const oldNeighborNext = getNextNode(neighborNodeId);
-      update(
-        !oldNeighborNext.get('id')
-          ? newNode
-          : newNode.set('next_sibling_id', oldNeighborNext.get('id'))
+      history.push(
+        ...update(neighbor.set('next_sibling_id', newNode.get('id')))
       );
-      update(neighbor.set('next_sibling_id', newNode.get('id')));
-      return newNode.get('id');
+      history.push(
+        ...update(
+          !oldNeighborNext.get('id')
+            ? newNode
+            : newNode.set('next_sibling_id', oldNeighborNext.get('id'))
+        )
+      );
+      return history;
     }
     // insert before
     const oldNeighborPrev = getPrevNode(neighborNodeId);
     if (oldNeighborPrev.get('id')) {
-      update(oldNeighborPrev.set('next_sibling_id', newNode.get('id')));
+      history.push(
+        ...update(oldNeighborPrev.set('next_sibling_id', newNode.get('id')))
+      );
     }
-    return update(newNode.set('next_sibling_id', neighborNodeId));
+    return history.push(
+      ...update(newNode.set('next_sibling_id', neighborNodeId))
+    );
   }
 
   // returns a nodeId to be "focused"
   function deleteNode(node) {
+    const history = [];
     const nodeId = node.get('id');
-    updateManager.stageNodeDelete(node);
     const prevNode = getPrevNode(nodeId);
     const nextNode = getNextNode(nodeId);
     // delete first, then update pointers
+    history.push({ unexecuteState: node, executeState: undefined });
     nodesById = nodesById.delete(nodeId);
+
     // deleting the only node in the document - add back a placeholder
     if (nodesById.size === 0) {
-      return insert(NODE_TYPE_H1);
+      history.push(...insert(NODE_TYPE_H1));
     }
     // deleting somewhere in the middle
-    if (prevNode.get('id') && nextNode.get('id')) {
-      return update(prevNode.set('next_sibling_id', nextNode.get('id')));
+    else if (prevNode.get('id') && nextNode.get('id')) {
+      history.push(
+        ...update(prevNode.set('next_sibling_id', nextNode.get('id')))
+      );
     }
     // deleting last node - unset "next" reference
-    if (!nextNode.get('id')) {
-      return update(prevNode.delete('next_sibling_id'));
+    else if (!nextNode.get('id')) {
+      history.push(...update(prevNode.delete('next_sibling_id')));
+    } else {
+      // deleting first node - no next_sibling_id update necessary
+      history.push({ unexecuteState: nextNode, executeState: nextNode });
     }
-    // else - deleting first node - no next_sibling_id update necessary
-    return nextNode.get('id');
+    return history;
   }
 
   function mergeParagraphs(leftId, rightId) {
@@ -215,6 +239,7 @@ export default function DocumentManager(
       console.error('mergeParagraphs - can`t do it!', leftId, rightId);
       throw new Error('mergeParagraphs - invalid paragraphs');
     }
+    const history = [];
     let left = getNode(leftId);
     const right = getNode(rightId);
     // do selections before concatenating content!
@@ -225,11 +250,13 @@ export default function DocumentManager(
       'content',
       `${left.get('content', '')}${right.get('content', '')}`
     );
-    update(left);
-    deleteNode(right);
+    history.push(...update(left));
+    history.push(...deleteNode(right));
+    return history;
   }
 
   return {
+    isUnsavedPost,
     getNodes,
     setNodes,
     getNode,

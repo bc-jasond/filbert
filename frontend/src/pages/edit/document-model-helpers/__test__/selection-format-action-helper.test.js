@@ -9,7 +9,7 @@ import {
 import { overrideConsole } from '../../../../common/test-helpers';
 import { Selection } from '../../../../common/utils';
 import DocumentModel from '../../document-model';
-import { selectionFormatAction } from '../selection-format-action';
+import { doFormatSelection } from '../selection-format-action';
 
 import * as selectionHelpers from '../../selection-helpers';
 import {
@@ -28,7 +28,7 @@ describe('Document Model -> selection-format-action node helper', () => {
   test('selectionFormatAction - assumes valid input', () => {});
   test('selectionFormatAction - action is SELECTION_ACTION_H1', () => {
     //converts to H1
-    const result = selectionFormatAction(
+    const result = doFormatSelection(
       doc,
       doc.getNode(formattedPId),
       Selection(),
@@ -38,7 +38,7 @@ describe('Document Model -> selection-format-action node helper', () => {
     expect(result).toMatchSnapshot();
     // converts back to P
     expect(
-      selectionFormatAction(
+      doFormatSelection(
         doc,
         result.updatedNode,
         Selection(),
@@ -49,7 +49,7 @@ describe('Document Model -> selection-format-action node helper', () => {
   });
   test('selectionFormatAction - action is SELECTION_ACTION_H2', () => {
     //converts to H2
-    const result = selectionFormatAction(
+    const result = doFormatSelection(
       doc,
       doc.getNode(formattedPId),
       Selection(),
@@ -59,7 +59,7 @@ describe('Document Model -> selection-format-action node helper', () => {
     expect(result).toMatchSnapshot();
     // converts back to P
     expect(
-      selectionFormatAction(
+      doFormatSelection(
         doc,
         result.updatedNode,
         Selection(),
@@ -73,7 +73,7 @@ describe('Document Model -> selection-format-action node helper', () => {
       .spyOn(selectionHelpers, 'replaceSelection')
       .mockImplementation((...args) => args[0]);
     // can't be both siteinfo and italic
-    let result = selectionFormatAction(
+    let result = doFormatSelection(
       doc,
       doc.getNode(formattedPId),
       Selection({ [SELECTION_ACTION_ITALIC]: true }),
@@ -82,7 +82,7 @@ describe('Document Model -> selection-format-action node helper', () => {
     );
     expect(result.updatedSelection.get(SELECTION_ACTION_ITALIC)).toBeFalsy();
     // can't be both italic and siteinfo
-    result = selectionFormatAction(
+    result = doFormatSelection(
       doc,
       doc.getNode(formattedPId),
       Selection({ [SELECTION_ACTION_SITEINFO]: true }),
@@ -91,7 +91,7 @@ describe('Document Model -> selection-format-action node helper', () => {
     );
     expect(result.updatedSelection.get(SELECTION_ACTION_SITEINFO)).toBeFalsy();
     // clears link url if not a link
-    result = selectionFormatAction(
+    result = doFormatSelection(
       doc,
       doc.getNode(formattedPId),
       Selection({

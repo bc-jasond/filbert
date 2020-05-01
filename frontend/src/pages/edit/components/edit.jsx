@@ -22,6 +22,7 @@ import {
   getNodeById,
   getRange,
   isControlKey,
+  isValidDomSelection,
   removeAllRanges,
   replaceRange,
   selectionOffsetsAreEqual,
@@ -50,19 +51,20 @@ import {
 } from '../../../common/constants';
 
 import Document from '../../../common/components/document.component';
-import { doDelete } from '../document-model-helpers/delete';
 import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
+import UpdateManager, { getLastExecuteIdFromHistory } from '../update-manager';
+
+import { doDelete, doMerge } from '../document-model-helpers/delete';
 import { syncFromDom, syncToDom } from '../document-model-helpers/dom-sync';
 import { doPaste } from '../document-model-helpers/paste';
-import { selectionFormatAction } from '../document-model-helpers/selection-format-action';
 import { doSplit } from '../document-model-helpers/split';
-import UpdateManager from '../update-manager';
 
 import {
   getSelectionAtIdx,
   getSelectionByContentOffset,
   replaceSelection,
 } from '../selection-helpers';
+import { doFormatSelection } from '../document-model-helpers/selection-format-action';
 
 import InsertSectionMenu from './insert-section-menu';
 import EditImageForm from './edit-image-form';
@@ -159,13 +161,21 @@ export default class EditPost extends React.Component {
     window.removeEventListener('cut', this.handleCut);
   };
 
+  postHasId = () => {
+    const {
+      state: { post },
+    } = this;
+    const postId = post.get('id');
+    return postId && postId !== NEW_POST_URL_ID;
+  };
+
   newPost = () => {
     console.debug('New PostNew PostNew PostNew PostNew PostNew Post');
     this.updateManager = UpdateManager(NEW_POST_URL_ID);
-    this.documentModel = DocumentModel(NEW_POST_URL_ID, this.updateManager);
+    this.documentModel = DocumentModel(NEW_POST_URL_ID);
     const startNodeId = getFirstNode(this.documentModel.getNodes()).get('id');
     this.setState({ post: Map() });
-    this.commitUpdates(undefined, { startNodeId });
+    this.commitUpdates({ startNodeId });
   };
 
   createNewPost = async () => {
@@ -186,9 +196,11 @@ export default class EditPost extends React.Component {
     if (error) {
       return;
     }
-    // update post id for all updates
-    this.updateManager.addPostIdToUpdates(postId);
-    await this.updateManager.saveContentBatch();
+    // copy placeholder history
+    this.updateManager.copyPlaceholderPostUpdateLogToPostIdNamespace(postId);
+    // re-instantiate UpdateManager with postId for saveContentBatch()
+    this.updateManager = UpdateManager(postId);
+    await this.updateManager.saveContentBatch(true);
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
     this.setState({ shouldRedirect: `/edit/${postId}?shouldFocusLastNode` });
   };
@@ -204,11 +216,7 @@ export default class EditPost extends React.Component {
     }
     const postMap = fromJS(post);
     this.updateManager = UpdateManager(postMap.get('id'));
-    this.documentModel = DocumentModel(
-      postMap.get('id'),
-      this.updateManager,
-      contentNodes
-    );
+    this.documentModel = DocumentModel(postMap.get('id'), contentNodes);
     const firstNodeId = getFirstNode(this.documentModel.getNodes());
     this.setState(
       {
@@ -268,30 +276,16 @@ export default class EditPost extends React.Component {
     console.info(`${shouldUndo ? 'UNDO!' : 'REDO!'}`, historyEntry.toJS());
     this.documentModel.setNodes(updatedNodesById);
     // passing undefined as prevSelectionOffsets will skip adding this operation to history again
-    await this.commitUpdates(undefined, historyOffsets.toJS());
+    await this.commitUpdates(historyOffsets.toJS());
   };
 
-  commitUpdates = (prevSelectionOffsets, selectionOffsets) => {
+  commitUpdates = (selectionOffsets) => {
     const { startNodeId, caretStart, caretEnd } = selectionOffsets;
     const {
       state: { editSectionNode, formatSelectionModel },
     } = this;
     // TODO: optimistically saving updated nodes with no error handling - look ma, no errors!
     return new Promise((resolve /* , reject */) => {
-      const {
-        state: {
-          // these are the "clean" nodes - the updated (dirty) ones are in this.documentModel.getNodes() (and this.updateManager.nodeUpdates)
-          nodesById: prevNodesById,
-          post,
-        },
-      } = this;
-      if (post.size > 0 && prevSelectionOffsets) {
-        this.updateManager.addToUndoHistory(
-          prevNodesById,
-          prevSelectionOffsets,
-          selectionOffsets
-        );
-      }
       // roll with state changes TODO: handle errors - roll back?
       const newState = {
         nodesById: this.documentModel.getNodes(),
@@ -307,7 +301,7 @@ export default class EditPost extends React.Component {
       }
       this.setState(newState, async () => {
         // if we're on /edit/new, we don't save until user hits "enter"
-        if (this.props?.params?.id !== NEW_POST_URL_ID) {
+        if (this.postHasId()) {
           this.updateManager.saveContentBatchDebounce();
         }
         // no more caret work necessary for Meta nodes
@@ -501,25 +495,47 @@ export default class EditPost extends React.Component {
     if (
       evt.keyCode !== KEYCODE_BACKSPACE ||
       // don't delete the section while editing its fields :) !
-      this.state?.shouldShowEditSectionMenu
+      this.state?.shouldShowEditSectionMenu ||
+      // invalid selection
+      !isValidDomSelection(selectionOffsets)
     ) {
       return;
     }
 
     stopAndPrevent(evt);
 
-    const { startNodeId, caretStart } = doDelete(
-      this.documentModel,
-      selectionOffsets
-    );
-    if (!startNodeId) {
-      return;
+    const { startNodeId } = selectionOffsets;
+    const historyState = [];
+    let executeSelectionOffsets;
+
+    const {
+      historyState: historyStateDelete,
+      executeSelectionOffsets: executeSelectionOffsetsDelete,
+    } = doDelete(this.documentModel, selectionOffsets);
+    historyState.push(...historyStateDelete);
+    executeSelectionOffsets = executeSelectionOffsetsDelete;
+
+    // if doDelete() returns a different startNodeId, a merge is required
+    if (executeSelectionOffsets.startNodeId !== startNodeId) {
+      const {
+        executeSelectionOffsets: executeSelectionOffsetsMerge,
+        historyState: historyStateMerge,
+      } = doMerge(this.documentModel, executeSelectionOffsets);
+      historyState.push(...historyStateMerge);
+      executeSelectionOffsets = executeSelectionOffsetsMerge;
     }
 
+    this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: selectionOffsets,
+      state: historyState,
+      comparisonPath: ['content'],
+    });
+
     // clear the selected format node when deleting the highlighted selection
-    // NOTE: must wait for state have been set or setCaret will check stale values
+    // NOTE: must wait for state to have been set or setCaret will check stale values
     this.closeAllEditContentMenus();
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    await this.commitUpdates(executeSelectionOffsets);
   };
 
   /**
@@ -529,28 +545,36 @@ export default class EditPost extends React.Component {
    * @returns {Promise<void>}
    */
   handleEnter = async (evt, selectionOffsets) => {
-    if (evt.keyCode !== KEYCODE_ENTER) {
-      return;
-    }
-    // ignore if there's a selected MetaType node's menu is open
-    if (this.state?.shouldShowEditSectionMenu) {
-      return;
-    }
-
-    const startNodeId = doSplit(this.documentModel, selectionOffsets);
-    if (!startNodeId) {
+    if (
+      evt.keyCode !== KEYCODE_ENTER ||
+      // ignore if there's a selected MetaType node's menu is open
+      this.state?.shouldShowEditSectionMenu ||
+      // invalid dom selection
+      !isValidDomSelection(selectionOffsets)
+    ) {
       return;
     }
 
     stopAndPrevent(evt);
 
-    await this.closeAllEditContentMenus();
-
-    if (this.props?.params?.id === NEW_POST_URL_ID) {
+    // perform editor commands
+    const { executeSelectionOffsets, historyState } = doSplit(
+      this.documentModel,
+      selectionOffsets
+    );
+    // create history log entry
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: selectionOffsets,
+      state: historyState,
+    });
+    // special case for creating a new document on "Enter"
+    if (!this.postHasId()) {
       await this.createNewPost();
       return;
     }
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart: 0 });
+
+    await this.commitUpdates(executeSelectionOffsets);
   };
 
   /**
@@ -566,9 +590,11 @@ export default class EditPost extends React.Component {
       // contentEditable is not the srcTarget
       evt.target.id !== 'filbert-edit-container' ||
       // ignore "paste" - propagation hasn't been stopped because it would cancel the respective "paste", "cut" events
-      this.didPaste ||
+      this.pasteHistoryState ||
       // ignore "cut"
-      this.didCut
+      this.cutHistoryState ||
+      // invalid selection
+      !isValidDomSelection(selectionOffsets)
     ) {
       return;
     }
@@ -580,25 +606,33 @@ export default class EditPost extends React.Component {
     if (editSectionNode.get('id')) {
       return;
     }
-
+    const historyState = [];
     // select-and-type ?? delete selection first
     if (selectionOffsets.caretStart !== selectionOffsets.caretEnd) {
-      doDelete(this.documentModel, selectionOffsets);
+      const { historyState: historyStateDelete } = doDelete(
+        this.documentModel,
+        selectionOffsets
+      );
+      historyState.push(...historyStateDelete);
     }
+    // sync keystroke to DOM
+    const {
+      historyState: historyStateSync,
+      executeSelectionOffsets,
+    } = syncToDom(this.documentModel, selectionOffsets, evt);
+    historyState.push(...historyStateSync);
 
-    const { startNodeId, caretStart } = syncToDom(
-      this.documentModel,
-      selectionOffsets,
-      evt
-    );
-    if (!startNodeId) {
-      return;
-    }
+    this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+      unexecuteSelectionOffsets: selectionOffsets,
+      executeSelectionOffsets,
+      state: historyState,
+      comparisonPath: ['content'],
+    });
 
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
-    //  The browser will then place the caret at the beginning of the textContent... 😞 so we place it back with JS
+    //  The browser will then place the caret at the beginning of the textContent??? 😞 so we place it back with JS...
     await this.closeAllEditContentMenus();
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    await this.commitUpdates(executeSelectionOffsets);
   };
 
   // MAIN "ON" EVENT CALLBACKS
@@ -696,12 +730,12 @@ export default class EditPost extends React.Component {
     if (
       evt.metaKey ||
       // cross-event coordination
-      this.didCut ||
-      this.didPaste
+      this.cutHistoryState ||
+      this.pasteHistoryState
     ) {
       // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
-      this.didPaste = false;
-      this.didCut = false;
+      this.pasteHistoryState = undefined;
+      this.cutHistoryState = undefined;
       return;
     }
     const {
@@ -717,19 +751,21 @@ export default class EditPost extends React.Component {
       return;
     }
     console.debug('INPUT (aka: sync back from DOM)');
-    // for emoji keyboard insert
-    const { startNodeId, caretStart } = syncFromDom(
+    // for emoji keyboard insert & spellcheck correct
+    const { executeSelectionOffsets, historyState } = syncFromDom(
       this.documentModel,
       selectionOffsets,
       evt
     );
-    if (!startNodeId) {
-      return;
-    }
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: selectionOffsets,
+      state: historyState,
+    });
 
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
-    await this.commitUpdates(selectionOffsets, { startNodeId, caretStart });
+    await this.commitUpdates(executeSelectionOffsets);
   };
 
   handleMouseUp = async (evt) => {
@@ -747,35 +783,44 @@ export default class EditPost extends React.Component {
       return;
     }
     console.debug('CUT', evt.type, evt.metaKey, evt.keyCode);
-    this.didCut = true;
+    this.cutHistoryState = [];
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
-    const { caretStart, caretEnd, startNodeId } = selectionOffsets;
+    const { caretStart, caretEnd } = selectionOffsets;
     // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
     // we'll come back through from "cut" with clipboard data...
     if (evt.type !== 'cut') {
       // save these to pass to commitUpdates for undo history
-      this.selectionOffsets = selectionOffsets;
+      this.unexecuteSelectionOffsets = selectionOffsets;
       if (caretStart !== caretEnd) {
-        doDelete(this.documentModel, selectionOffsets);
+        const { historyState, executeSelectionOffsets } = doDelete(
+          this.documentModel,
+          selectionOffsets
+        );
+        this.executeSelectionOffsets = executeSelectionOffsets;
+        this.cutHistoryState.push(...historyState);
       }
       return;
     }
     // NOTE: have to manually set selection string into clipboard since we're cancelling the event
+    // TODO: how to handle undo history with this clipboard data?  Should we setData() on undo?
+    //  or just manage the delete above?
     const selectionString = document.getSelection().toString();
     console.debug('CUT selection', selectionString);
     evt.clipboardData.setData('text/plain', selectionString);
 
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets: this.executeSelectionOffsets,
+      unexecuteSelectionOffsets: this.unexecuteSelectionOffsets,
+      state: this.cutHistoryState,
+    });
     // NOTE: if we stopPropagation and preventDefault on the 'keydown' event, they'll cancel the 'cut' event too
     // so don't move this up
     stopAndPrevent(evt);
 
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    await this.commitUpdates(this.selectionOffsets, {
-      startNodeId,
-      caretStart,
-    });
+    await this.commitUpdates(this.executeSelectionOffsets);
   };
 
   handlePaste = async (evt, selectionOffsetsArg) => {
@@ -798,7 +843,7 @@ export default class EditPost extends React.Component {
     }
 
     // this is to bypass the "keyup" & "input" handlers
-    this.didPaste = true;
+    this.pasteHistoryState = [];
 
     const selectionOffsets =
       selectionOffsetsArg || getHighlightedSelectionOffsets();
@@ -806,29 +851,35 @@ export default class EditPost extends React.Component {
     // we'll come back through from "paste" with clipboard data...
     if (evt.type !== 'paste') {
       // for undo history - need to store the "first" selections, aka before the delete operation
-      this.selectionOffsets = selectionOffsets;
+      this.unexecuteSelectionOffsets = selectionOffsets;
       if (selectionOffsets.caretStart !== selectionOffsets.caretEnd) {
-        doDelete(this.documentModel, selectionOffsets);
+        const { historyState } = doDelete(this.documentModel, selectionOffsets);
+        this.pasteHistoryState.push(...historyState);
       }
       return;
     }
     // NOTE: if these get called on the 'keydown' event, they'll cancel the 'paste' event
     stopAndPrevent(evt);
 
-    const { startNodeId, caretStart } = doPaste(
+    const { executeSelectionOffsets, historyState } = doPaste(
       this.documentModel,
       selectionOffsets,
       evt.clipboardData
     );
-    if (!startNodeId) {
+    this.pasteHistoryState.push(...historyState);
+    // TODO: paste into Meta Type nodes isn't supported
+    if (!executeSelectionOffsets) {
       return;
     }
+    // add history entry
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: this.unexecuteSelectionOffsets,
+      state: this.pasteHistoryState,
+    });
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
-    await this.commitUpdates(this.selectionOffsets, {
-      startNodeId,
-      caretStart,
-    });
+    await this.commitUpdates(executeSelectionOffsets);
   };
 
   // TODO: this function references the DOM and state.  So, it needs to pass-through values because it always executes - separate the DOM and state checks?
@@ -894,12 +945,20 @@ export default class EditPost extends React.Component {
       }
       meta = Map(imageMeta);
     }
-    const newSectionId = this.documentModel.update(
+    const historyState = this.documentModel.update(
       insertMenuNode.set('type', sectionType).set('meta', meta)
     );
-    await this.commitUpdates(this.getSelectionOffsetsOrEditSectionNode(), {
-      startNodeId: newSectionId,
+    const newSectionId = getLastExecuteIdFromHistory(historyState);
+    const executeSelectionOffsets = { startNodeId: newSectionId };
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: {
+        startNodeId: insertMenuNode.get('id'),
+        caretStart: 0,
+      },
+      state: historyState,
     });
+    await this.commitUpdates(executeSelectionOffsets);
     if (
       [NODE_TYPE_IMAGE, NODE_TYPE_QUOTE, NODE_TYPE_SPACER].includes(sectionType)
     ) {
@@ -933,16 +992,20 @@ export default class EditPost extends React.Component {
   };
 
   updateEditSectionNode = (updatedNode) => {
-    this.documentModel.update(updatedNode);
+    const historyState = this.documentModel.update(updatedNode);
+    // TODO: appendToNodeUpdateLogWhenNCharsAreDifferent() for text fields like Image Caption, Quote fields...
+    const offsets = { startNodeId: updatedNode.get('id') };
+    this.updateManager.appendToNodeUpdateLog({
+      executeSelectionOffsets: offsets,
+      unexecuteSelectionOffsets: offsets,
+      state: historyState,
+    });
     this.setState(
       {
         editSectionNode: updatedNode,
       },
       async () => {
-        await this.commitUpdates(
-          this.getSelectionOffsetsOrEditSectionNode(),
-          this.getSelectionOffsetsOrEditSectionNode()
-        );
+        await this.commitUpdates(this.getSelectionOffsetsOrEditSectionNode());
       }
     );
   };
@@ -995,10 +1058,7 @@ export default class EditPost extends React.Component {
         formatSelectionModel: updatedSelectionModel,
       },
       async () => {
-        await this.commitUpdates(
-          this.getSelectionOffsetsOrEditSectionNode(),
-          this.getSelectionOffsetsOrEditSectionNode()
-        );
+        await this.commitUpdates(this.getSelectionOffsetsOrEditSectionNode());
       }
     );
   };
@@ -1101,19 +1161,34 @@ export default class EditPost extends React.Component {
       },
       selectionOffsets,
     } = this;
-    const { updatedNode, updatedSelection } = selectionFormatAction(
+    const {
+      historyState,
+      executeSelectionOffsets,
+      updatedSelection,
+    } = doFormatSelection(
       this.documentModel,
       formatSelectionNode,
       formatSelectionModel,
       formatSelectionModelIdx,
       action
     );
+    this.updateManager.appendToNodeUpdateLog({
+      // doFormatSelection will return new selection offsets if changing node type i.e. P -> H1
+      executeSelectionOffsets: executeSelectionOffsets || selectionOffsets,
+      unexecuteSelectionOffsets: selectionOffsets,
+      state: historyState,
+    });
+    await this.commitUpdates(selectionOffsets);
     if (shouldCloseMenu) {
       await this.closeFormatSelectionMenu();
       return;
     }
+
+    const updatedNode = this.documentModel.getNode(
+      getLastExecuteIdFromHistory(historyState)
+    );
     // need to refresh the selection after update, as a merge might have occured
-    // with neighboring selections with identical formats
+    // between neighboring selections that now have identical formats
     const { selections } = getSelectionByContentOffset(
       updatedNode,
       selectionOffsets.caretStart,
@@ -1132,7 +1207,6 @@ export default class EditPost extends React.Component {
         ),
       },
       async () => {
-        await this.commitUpdates(selectionOffsets, selectionOffsets);
         if (updatedSelection.get(SELECTION_ACTION_LINK)) {
           return;
         }

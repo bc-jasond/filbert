@@ -487,3 +487,18 @@ export function selectionOffsetsAreEqual(left = {}, right = {}) {
   });
   return areEqual;
 }
+
+export function isValidDomSelection({ startNodeId }) {
+  if (startNodeId === 'null' || !startNodeId) {
+    return false;
+  }
+  return true;
+}
+
+export function assertValidDomSelectionOrThrow(selectionOffsets) {
+  if (!isValidDomSelection(selectionOffsets)) {
+    throw new Error(
+      `bad selection, no node id in selection\n${selectionOffsets}`
+    );
+  }
+}

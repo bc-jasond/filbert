@@ -16,7 +16,7 @@ CREATE TABLE `user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `username_UNIQUE` (`username`) USING BTREE,
   UNIQUE KEY `email_UNIQUE` (`email`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 CREATE TABLE `content_node` (
   `post_id` int(11) NOT NULL,
   `id` char(4) COLLATE utf8mb4_unicode_520_ci NOT NULL,
@@ -47,4 +47,12 @@ CREATE TABLE `post` (
   KEY `deleted` (`deleted`),
   FULLTEXT KEY `title_abstract` (`title`,`abstract`),
   CONSTRAINT `user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=216 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+CREATE TABLE `post_history` (
+  `post_id` int(11) NOT NULL,
+  `post_history_id` int(11) unsigned NOT NULL,
+  `meta` json DEFAULT NULL,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted` datetime DEFAULT NULL,
+  PRIMARY KEY (`post_id`,`post_history_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
