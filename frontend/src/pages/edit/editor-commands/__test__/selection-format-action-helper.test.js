@@ -9,7 +9,7 @@ import {
 import { overrideConsole } from '../../../../common/test-helpers';
 import { Selection } from '../../../../common/utils';
 import DocumentModel from '../../document-model';
-import { doFormatSelection } from '../selection-format-action';
+import { doFormatSelection } from '../format-selection';
 
 import * as selectionHelpers from '../../selection-helpers';
 import {

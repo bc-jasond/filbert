@@ -54,17 +54,17 @@ import Document from '../../../common/components/document.component';
 import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
 import UpdateManager, { getLastExecuteIdFromHistory } from '../update-manager';
 
-import { doDelete, doMerge } from '../document-model-helpers/delete';
-import { syncFromDom, syncToDom } from '../document-model-helpers/dom-sync';
-import { doPaste } from '../document-model-helpers/paste';
-import { doSplit } from '../document-model-helpers/split';
+import { doDelete, doMerge } from '../editor-commands/delete';
+import { syncFromDom, syncToDom } from '../editor-commands/dom-sync';
+import { doPaste } from '../editor-commands/paste';
+import { doSplit } from '../editor-commands/split';
 
 import {
   getSelectionAtIdx,
   getSelectionByContentOffset,
   replaceSelection,
 } from '../selection-helpers';
-import { doFormatSelection } from '../document-model-helpers/selection-format-action';
+import { doFormatSelection } from '../editor-commands/format-selection';
 
 import InsertSectionMenu from './insert-section-menu';
 import EditImageForm from './edit-image-form';
