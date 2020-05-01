@@ -22,21 +22,19 @@ async function postContentNodes(req, res) {
       res.status(404).send({});
       return;
     }
-    // validate first history id in request is next id, ids are sequential
+    // validate history: first history id in request is next id, ids are monotonic, ids are sequential
     // TODO
 
     // create a map of updates and deletes
     let updates = [];
     let deletes = [];
-    let updatesOrDeletes;
     historyLogEntries.forEach(({ historyState }) => {
       historyState.forEach(({ executeState: currentNode }) => {
         // always remove node from updates or deletes first - last wins
         updates = updates.filter(([nodeId]) => nodeId !== currentNode.id);
         deletes = deletes.filter(([nodeId]) => nodeId !== currentNode.id);
         // if executeState is undefined - it's a delete
-        updatesOrDeletes = !currentNode ? deletes : updates;
-        updatesOrDeletes.push([
+        (!currentNode ? deletes : updates).push([
           currentNode.id,
           { post_id: postId, node: currentNode },
         ]);
