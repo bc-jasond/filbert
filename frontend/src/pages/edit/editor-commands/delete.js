@@ -1,19 +1,15 @@
 /* eslint-disable import/prefer-default-export */
 import { assertValidDomSelectionOrThrow } from '../../../common/dom';
 import { deleteContentRange } from '../../../common/utils';
+import { getFirstNode } from '../document-model';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 import { getLastExecuteIdFromHistory } from '../update-manager';
 
 // returns a nodeId for node deleted, false for node updated
-function deleteOrUpdateNode(documentModel, diffLength, nodeId, startIdx) {
+function updateNode(documentModel, diffLength, nodeId, startIdx) {
   let node = documentModel.getNode(nodeId);
   const content = node.get('content', '');
-  if (
-    documentModel.isMetaType(nodeId) ||
-    (startIdx === 0 && diffLength >= content.length)
-  ) {
-    return documentModel.deleteNode(node);
-  }
+
   // only some of endNode's content has been selected, delete that content
   node = node.set('content', deleteContentRange(content, startIdx, diffLength));
   node = adjustSelectionOffsetsAndCleanup(
@@ -53,9 +49,7 @@ function buildDeleteHistory(
     // all of the endNode's content has been selected, delete it and set the selectedNodeId to the next sibling
     // end diff length is caretEnd - 0 (implied caretStart for the end node)
     if (caretEnd > 0) {
-      historyState.push(
-        ...deleteOrUpdateNode(documentModel, caretEnd, endNodeId, 0)
-      );
+      historyState.push(...updateNode(documentModel, caretEnd, endNodeId, 0));
       selectedNodeId = getLastExecuteIdFromHistory(historyState);
     }
     didDeleteEndNode = selectedNodeId !== endNodeId;
@@ -77,6 +71,35 @@ function buildDeleteHistory(
   };
 }
 
+export function doDeleteMetaType(documentModel, selectionOffsets) {
+  assertValidDomSelectionOrThrow(selectionOffsets);
+  // eslint-disable-next-line prefer-const
+  let { startNodeId } = selectionOffsets;
+  console.info('doDeleteMetaType()', selectionOffsets);
+
+  // if Meta Type
+  if (!documentModel.isMetaType(startNodeId)) {
+    throw new Error(
+      `Expecting MetaType node\n${JSON.stringify(selectionOffsets, null, 2)}`
+    );
+  }
+  const wasFirstNodeInDocument =
+    getFirstNode(documentModel.getNodes()).get('id') === startNodeId;
+  const historyState = documentModel.deleteNode(
+    documentModel.getNode(startNodeId)
+  );
+
+  return {
+    historyState,
+    executeSelectionOffsets: {
+      startNodeId: wasFirstNodeInDocument
+        ? getFirstNode(documentModel.getNodes()).get('id')
+        : documentModel.getPrevNode(startNodeId).get('id'),
+      caretStart: wasFirstNodeInDocument || documentModel.isMetaType() ? 0 : -1,
+    },
+  };
+}
+
 /**
  *
  * @param documentModel DocumentModel
@@ -91,9 +114,9 @@ function buildDeleteHistory(
 export function doDelete(documentModel, selectionOffsets) {
   assertValidDomSelectionOrThrow(selectionOffsets);
   // eslint-disable-next-line prefer-const
-  let { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
+  let { caretStart, startNodeId, endNodeId } = selectionOffsets;
+  console.info('doDelete()', selectionOffsets);
 
-  console.info('doDelete()', caretStart, caretEnd, startNodeId, endNodeId);
   /**
    * Backspace scenarios:
    *
@@ -109,12 +132,7 @@ export function doDelete(documentModel, selectionOffsets) {
    * 10) startNode and endNode are the same type
    */
   const buildDeleteResult = buildDeleteHistory(documentModel, selectionOffsets);
-  const {
-    didDeleteEndNode,
-    startNodeContent,
-    startDiffLength,
-    historyState,
-  } = buildDeleteResult;
+  const { didDeleteEndNode, startDiffLength, historyState } = buildDeleteResult;
   let { selectedNodeId } = buildDeleteResult;
 
   const getReturnPayload = (executeSelectionOffsets) => {
@@ -122,52 +140,39 @@ export function doDelete(documentModel, selectionOffsets) {
   };
 
   // edge case where user selects from end of line (no selected chars in first line) through a following line (didDeleteEndNode)
-  // code below will interpret don't merge, we're done here
   if (startDiffLength === 0 && didDeleteEndNode) {
     return getReturnPayload({
       startNodeId,
       caretStart,
     });
   }
-  // start diff adjustment
-  // user hit backspace anywhere after the position 0 "beginning" aka - a "regular" backspace
-  // handles collapsed caret or selection range
-  if (
-    // edge case where user starts multi-node selection at the end of the line - only process "backspace" if it's a single node selection
-    (caretStart > 0 && startNodeContent) ||
-    // highlighted selection
-    startDiffLength > 0
-  ) {
-    //
-    // NOTE: need to distinguish between collapsed caret backspace and highlight 1 char backspace
-    //  the former removes a character behind the caret and the latter removes one in front...
-    historyState.push(
-      ...deleteOrUpdateNode(
-        documentModel,
-        startDiffLength,
-        startNodeId,
-        caretStart
-      )
-    );
-    selectedNodeId = getLastExecuteIdFromHistory(historyState);
-    // if we deleted the first node in the document, use the node that documentModel.deleteNode() returns
-    if (selectedNodeId !== startNodeId) {
-      return getReturnPayload({
-        startNodeId: selectedNodeId,
-        caretStart: -1,
-      });
-    }
 
-    // After updating or deleting start/middle/end nodes - are we done (return here)? Or do we need to merge nodes?
-    // We're done if the user deleted the end node:
-    if (!endNodeId || didDeleteEndNode || startDiffLength === 0) {
-      return getReturnPayload({
-        startNodeId: selectedNodeId,
-        // startDiffLength === 0 means a collapsed caret backspace, decrement the caret position by 1
-        caretStart: startDiffLength === 0 ? caretStart - 1 : caretStart,
-      });
-    }
+  // NOTE: need to distinguish between collapsed caret backspace and highlight 1 char backspace
+  //  the former removes a character behind the caret and the latter removes one in front...
+  historyState.push(
+    ...updateNode(documentModel, startDiffLength, startNodeId, caretStart)
+  );
+  // getLastExecuteId == undefined means user selected and deleted all text in the node
+  selectedNodeId = getLastExecuteIdFromHistory(historyState);
+
+  // if we deleted the first node in the document, use the node that documentModel.deleteNode() returns
+  if (selectedNodeId !== startNodeId) {
+    return getReturnPayload({
+      startNodeId: selectedNodeId,
+      caretStart: -1,
+    });
   }
+
+  // After updating or deleting start/middle/end nodes - are we done (return here)? Or do we need to merge nodes?
+  // We're done if the user deleted the end node:
+  if (!endNodeId || didDeleteEndNode || startDiffLength === 0) {
+    return getReturnPayload({
+      startNodeId: selectedNodeId,
+      // startDiffLength === 0 means a collapsed caret backspace, decrement the caret position by 1
+      caretStart: startDiffLength === 0 ? caretStart - 1 : caretStart,
+    });
+  }
+
   // if we're here, the end node needs to be merged into the start node
   return getReturnPayload({ startNodeId: endNodeId, caretStart: 0 });
 }

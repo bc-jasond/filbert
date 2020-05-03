@@ -498,7 +498,11 @@ export function isValidDomSelection({ startNodeId }) {
 export function assertValidDomSelectionOrThrow(selectionOffsets) {
   if (!isValidDomSelection(selectionOffsets)) {
     throw new Error(
-      `bad selection, no node id in selection\n${selectionOffsets}`
+      `bad selection, no node id in selection\n${JSON.stringify(
+        selectionOffsets,
+        null,
+        2
+      )}`
     );
   }
 }

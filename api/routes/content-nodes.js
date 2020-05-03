@@ -3,6 +3,8 @@ const {
   bulkContentNodeDelete,
   bulkContentNodeUpsert,
 } = require("../lib/mysql");
+
+function pruneOrphanedNodesFromUpdates(updates) {}
 /**
  * takes a list of 1 or more content nodes to update or delete for a post during edit
  */
@@ -25,23 +27,31 @@ async function postContentNodes(req, res) {
     // validate history: first history id in request is next id, ids are monotonic, ids are sequential
     // TODO
 
-    // create a map of updates and deletes
+    // create a map of updates and deletes for current document state
     let updates = [];
     let deletes = [];
     historyLogEntries.forEach(({ historyState }) => {
-      historyState.forEach(({ executeState: currentNode }) => {
-        // always remove node from updates or deletes first - last wins
+      historyState.forEach(({ executeState, unexecuteState }) => {
+        // always remove node from updates or deletes first - so that last wins
+        // if executeState is undefined - it's a delete
+        // if unexecuteState is undefined - it's an insert
+        const currentNode = executeState || unexecuteState;
         updates = updates.filter(([nodeId]) => nodeId !== currentNode.id);
         deletes = deletes.filter(([nodeId]) => nodeId !== currentNode.id);
-        // if executeState is undefined - it's a delete
-        (!currentNode ? deletes : updates).push([
+
+        (!executeState ? deletes : updates).push([
           currentNode.id,
           { post_id: postId, node: currentNode },
         ]);
       });
     });
 
-    // TODO: validate updates, trim invalid selections, orphaned nodes, etc.
+    // TODO: validation
+    //  - node fields are correct
+    //  - delete all selections if any are invalid
+    //  - orphaned nodes
+    //    - now: delete them, log it
+    //    - eventually: append to end of document for now <- this requires adding a history entry.
     const updateResult = await bulkContentNodeUpsert(updates);
     const deleteResult = await bulkContentNodeDelete(deletes);
     res.send({ updateResult, deleteResult });

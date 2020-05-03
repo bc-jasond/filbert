@@ -1,4 +1,5 @@
 /* eslint-disable import/prefer-default-export */
+import { Map } from 'immutable';
 import {
   NODE_TYPE_H1,
   NODE_TYPE_H2,
@@ -11,6 +12,7 @@ import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
 } from '../../../common/utils';
+import { getFirstNode } from '../document-model';
 import {
   formatSelections,
   splitSelectionsAtCaretOffset,
@@ -100,7 +102,18 @@ export function doSplit(documentModel, selectionOffsets) {
   const historyState = [];
   if (documentModel.isMetaType(startNodeId)) {
     console.debug('doSplit() MetaType');
-    historyState.push(...documentModel.insert(NODE_TYPE_P, startNodeId));
+    // if this meta node is first section in document put the P in front
+    const shouldInsertAfter =
+      getFirstNode(documentModel.getNodes()).get('id') !== startNodeId;
+    historyState.push(
+      ...documentModel.insert(
+        NODE_TYPE_P,
+        startNodeId,
+        '',
+        Map(),
+        shouldInsertAfter
+      )
+    );
   } else {
     console.debug('doSplit() TextType', startNodeId, caretStart);
     // split selectedNodeContent at caret

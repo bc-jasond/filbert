@@ -54,7 +54,7 @@ import Document from '../../../common/components/document.component';
 import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
 import UpdateManager, { getLastExecuteIdFromHistory } from '../update-manager';
 
-import { doDelete, doMerge } from '../editor-commands/delete';
+import { doDelete, doDeleteMetaType, doMerge } from '../editor-commands/delete';
 import { syncFromDom, syncToDom } from '../editor-commands/dom-sync';
 import { doPaste } from '../editor-commands/paste';
 import { doSplit } from '../editor-commands/split';
@@ -217,7 +217,7 @@ export default class EditPost extends React.Component {
     const postMap = fromJS(post);
     this.updateManager = UpdateManager(postMap.get('id'));
     this.documentModel = DocumentModel(postMap.get('id'), contentNodes);
-    const firstNodeId = getFirstNode(this.documentModel.getNodes());
+    const firstNodeId = getFirstNode(this.documentModel.getNodes()).get('id');
     this.setState(
       {
         post: postMap,
@@ -504,19 +504,47 @@ export default class EditPost extends React.Component {
 
     stopAndPrevent(evt);
 
-    const { startNodeId } = selectionOffsets;
-    const historyState = [];
-    let executeSelectionOffsets;
+    const { startNodeId, endNodeId, caretStart, caretEnd } = selectionOffsets;
 
-    const {
-      historyState: historyStateDelete,
-      executeSelectionOffsets: executeSelectionOffsetsDelete,
-    } = doDelete(this.documentModel, selectionOffsets);
-    historyState.push(...historyStateDelete);
-    executeSelectionOffsets = executeSelectionOffsetsDelete;
+    const historyState = [];
+    let executeSelectionOffsets = selectionOffsets;
+
+    // is this a MetaType node?
+    if (this.documentModel.isMetaType(startNodeId)) {
+      const {
+        historyState: historyStateDeleteMetaType,
+        executeSelectionOffsets: executeSelectionOffsetsDeleteMetaType,
+      } = doDeleteMetaType(this.documentModel, selectionOffsets);
+      historyState.push(...historyStateDeleteMetaType);
+      executeSelectionOffsets = executeSelectionOffsetsDeleteMetaType;
+
+      this.updateManager.appendToNodeUpdateLog({
+        executeSelectionOffsets,
+        unexecuteSelectionOffsets: selectionOffsets,
+        state: historyState,
+      });
+      await this.commitUpdates(executeSelectionOffsets);
+      return;
+    }
+
+    const hasContentToDelete = endNodeId || caretStart > 0 || caretEnd;
+
+    // is there any content to delete?
+    if (hasContentToDelete) {
+      const {
+        historyState: historyStateDelete,
+        executeSelectionOffsets: executeSelectionOffsetsDelete,
+      } = doDelete(this.documentModel, selectionOffsets);
+      historyState.push(...historyStateDelete);
+      executeSelectionOffsets = executeSelectionOffsetsDelete;
+    }
 
     // if doDelete() returns a different startNodeId, a merge is required
-    if (executeSelectionOffsets.startNodeId !== startNodeId) {
+    const needsMergeWithOtherNode =
+      executeSelectionOffsets.startNodeId !== startNodeId ||
+      (!caretStart && !caretEnd);
+
+    if (needsMergeWithOtherNode) {
       const {
         executeSelectionOffsets: executeSelectionOffsetsMerge,
         historyState: historyStateMerge,
@@ -525,12 +553,23 @@ export default class EditPost extends React.Component {
       executeSelectionOffsets = executeSelectionOffsetsMerge;
     }
 
-    this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
-      executeSelectionOffsets,
-      unexecuteSelectionOffsets: selectionOffsets,
-      state: historyState,
-      comparisonPath: ['content'],
-    });
+    // since this handler catches keystrokes *before* DOM updates, deleting one char will look like a diff length of 0
+    const didDeleteContentInOneNode = !endNodeId && hasContentToDelete;
+
+    if (didDeleteContentInOneNode) {
+      this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+        executeSelectionOffsets,
+        unexecuteSelectionOffsets: selectionOffsets,
+        state: historyState,
+        comparisonPath: ['content'],
+      });
+    } else {
+      this.updateManager.appendToNodeUpdateLog({
+        executeSelectionOffsets,
+        unexecuteSelectionOffsets: selectionOffsets,
+        state: historyState,
+      });
+    }
 
     // clear the selected format node when deleting the highlighted selection
     // NOTE: must wait for state to have been set or setCaret will check stale values
