@@ -44,7 +44,8 @@ export async function rmFile(filenameAndPath) {
   return wrapExec(`rm ${filenameAndPath}`);
 }
 
-export function getFirstNode(nodesById) {
+export function getFirstNode(nodesById, postId) {
+  //info("getFirstNode()", JSON.stringify(nodesById, null, 4));
   const idSeen = new Set();
   const nextSeen = new Set();
   for (const nodeId in nodesById) {
@@ -58,7 +59,9 @@ export function getFirstNode(nodesById) {
   if (difference.size !== 1) {
     error(
       "DocumentError getFirstNode() - more than one node isn't pointed to by another node!",
-      difference
+      postId,
+      JSON.stringify(difference, null, 2),
+      JSON.stringify(idSeen, null, 2)
     );
   }
   const [firstId] = [...difference];

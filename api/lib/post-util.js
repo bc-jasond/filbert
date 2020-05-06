@@ -6,18 +6,22 @@ const { getFirstNode } = require("./util");
  *
  * @param contentNodes - a hash of content nodes keyed by id
  */
-function getFirstPhotoAndAbstractFromContent(contentNodes) {
+function getFirstPhotoAndAbstractFromContent(contentNodes, postId) {
   const responseData = {};
   const titleMinLength = 2;
   const titleMaxLength = 75;
   const abstractMinLength = 100;
   const abstractMaxLength = 200;
-  const queue = [getFirstNode(contentNodes)];
+  const queue = [getFirstNode(contentNodes, postId)];
   while (
     queue.length &&
     (!responseData.abstract || !responseData.imageNode || !responseData.title)
   ) {
     const current = queue.shift();
+    if (!current) {
+      console.warn("Falsy node in the queue...");
+      continue;
+    }
     if (!responseData.imageNode && current.type === "image") {
       responseData.imageNode = current;
     }
@@ -73,7 +77,8 @@ async function addFirstPhotoTitleAndAbstractToPosts(posts) {
     if (syncTopPhoto || syncTitleAndAbstract) {
       const contentNodes = await getNodesFlat(knex, draft.id);
       ({ title, abstract, imageNode } = getFirstPhotoAndAbstractFromContent(
-        contentNodes
+        contentNodes,
+        draft.id
       ));
     }
     if (syncTitleAndAbstract) {

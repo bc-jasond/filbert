@@ -27,7 +27,7 @@ async function postContentNodes(req, res) {
     // validate history: first history id in request is next id, ids are monotonic, ids are sequential
     // TODO
 
-    // create a map of updates and deletes for current document state
+    // update current document state snapshot - create a map of updates and deletes
     let updates = [];
     let deletes = [];
     historyLogEntries.forEach(({ historyState }) => {
