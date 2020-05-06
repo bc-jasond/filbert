@@ -3,16 +3,14 @@ import { fromJS, List, Map, is } from 'immutable';
 import {
   HISTORY_KEY_EXECUTE_OFFSETS,
   HISTORY_KEY_EXECUTE_STATES,
-  HISTORY_KEY_REDO,
+  HISTORY_KEY_UNDO_ID,
   HISTORY_KEY_STATE,
-  HISTORY_KEY_UNDO,
+  HISTORY_KEY_LAST_SAVED_ID,
   HISTORY_KEY_UNEXECUTE_OFFSETS,
   HISTORY_KEY_UNEXECUTE_STATES,
   NEW_POST_URL_ID,
   NODE_ACTION_DELETE,
-  NODE_ACTION_UPDATE,
   NODE_UPDATE_HISTORY,
-  NODE_UPDATE_HISTORY_CURRENT_POSITION,
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
 import { get, set } from '../../common/local-storage';
@@ -23,6 +21,12 @@ import {
 } from '../../common/utils';
 
 export const characterDiffSize = 6;
+
+let historyCandidateNode = Map();
+let historyCandidateUnexecuteSelectionOffsets = {};
+let historyCandidateExecuteSelectionOffsets = {};
+let historyCandidateStateEntry = {};
+let historyCandidateTimeout;
 
 export default function UpdateManager(postId) {
   function getKey(key) {
@@ -40,20 +44,52 @@ export default function UpdateManager(postId) {
     set(getKey(key), value);
   }
 
-  function getNodeUpdateLog() {
-    return getPostIdNamespaceValue(NODE_UPDATE_HISTORY, List());
+  function getNodeUpdateLog(shouldIncludeDeletedEntries = true) {
+    const allEntries = getPostIdNamespaceValue(NODE_UPDATE_HISTORY, List());
+    return shouldIncludeDeletedEntries
+      ? allEntries
+      : allEntries.filter((entry) => !entry.get('deleted'));
   }
 
   function setNodeUpdateLog(value) {
     return setPostIdNamespaceValue(NODE_UPDATE_HISTORY, value.takeLast(100));
   }
 
-  function getHistoryCurrentPosition() {
-    return getPostIdNamespaceValue(HISTORY_KEY_REDO, 0);
+  // assume if there's a "created" date it means saved in DB
+  // assume there's always at least one history entry with id 1
+  function getHistoryLastSavedId() {
+    /* TODO: sync with DB, for now just increment (only works with one client)
+    const firstHistoryId = getNodeUpdateLog().first(Map()).get('id', 1);
+    return getNodeUpdateLog()
+      .findLast(({ created }) => created, null, Map())
+      .get('id', firstHistoryId); */
+    return getPostIdNamespaceValue(HISTORY_KEY_LAST_SAVED_ID, 0);
   }
 
-  function setHistoryCurrentPosition(value) {
-    return setPostIdNamespaceValue(HISTORY_KEY_REDO, value);
+  function setHistoryLastSavedId(value) {
+    return setPostIdNamespaceValue(HISTORY_KEY_LAST_SAVED_ID, value);
+  }
+
+  // used to store cursor when using undo/redo.
+  // current > -1 means we're in an undo state
+  function getHistoryUndoId() {
+    const current = getPostIdNamespaceValue(HISTORY_KEY_UNDO_ID, -1);
+    if (current === -1) {
+      return getNodeUpdateLog(false).last(Map()).get('id');
+    }
+    return current;
+  }
+
+  function setHistoryUndoId(value) {
+    return setPostIdNamespaceValue(HISTORY_KEY_UNDO_ID, value);
+  }
+
+  function getLastActionWasUndo() {
+    return getPostIdNamespaceValue('historyLastAction', false);
+  }
+
+  function setLastActionWasUndo(value) {
+    return setPostIdNamespaceValue('historyLastAction', value);
   }
 
   function getNextId() {
@@ -66,8 +102,29 @@ export default function UpdateManager(postId) {
       getKeyOverride(NODE_UPDATE_HISTORY, postIdInternal),
       getNodeUpdateLog()
     );
-    // clear placeholder updates
-    setNodeUpdateLog(List());
+  }
+
+  function flushPendingNodeUpdateLogEntry() {
+    const id = getNextId();
+    const historyEntry = Map({
+      id,
+      [HISTORY_KEY_EXECUTE_OFFSETS]: historyCandidateExecuteSelectionOffsets,
+      [HISTORY_KEY_UNEXECUTE_OFFSETS]: historyCandidateUnexecuteSelectionOffsets,
+      [HISTORY_KEY_STATE]: [historyCandidateStateEntry],
+    });
+    console.info(
+      'HISTORY PENDING: adding to node update history log',
+      historyEntry.toJS()
+    );
+    const historyAfterAppend = getNodeUpdateLog().push(historyEntry);
+    setNodeUpdateLog(historyAfterAppend);
+    // clear cache
+    historyCandidateNode = Map();
+    historyCandidateUnexecuteSelectionOffsets = {};
+    historyCandidateExecuteSelectionOffsets = {};
+    historyCandidateStateEntry = {};
+    clearTimeout(historyCandidateTimeout);
+    return id;
   }
 
   function appendToNodeUpdateLog({
@@ -75,13 +132,18 @@ export default function UpdateManager(postId) {
     unexecuteSelectionOffsets,
     state,
   }) {
+    const id = getNextId();
     const historyEntry = Map({
-      id: getNextId(),
+      id,
       [HISTORY_KEY_EXECUTE_OFFSETS]: executeSelectionOffsets,
       [HISTORY_KEY_UNEXECUTE_OFFSETS]: unexecuteSelectionOffsets,
       [HISTORY_KEY_STATE]: state.filter(
         // remove no-op state entries
-        ({ executeState, unexecuteState }) => !is(executeState, unexecuteState)
+        (entry) =>
+          !is(
+            entry.get('executeState', Map()),
+            entry.get('unexecuteState', Map())
+          )
       ),
     });
     console.info(
@@ -90,18 +152,18 @@ export default function UpdateManager(postId) {
     );
     const historyAfterAppend = getNodeUpdateLog().push(historyEntry);
     setNodeUpdateLog(historyAfterAppend);
-    // use size as history id
-    return historyAfterAppend.size;
+    return id;
   }
 
   async function saveContentBatch() {
-    const lastSavedPosition = getHistoryCurrentPosition();
+    const lastSavedId = getHistoryLastSavedId();
     let updated = getNodeUpdateLog();
-    updated = updated.filter(
-      (logEntry) => logEntry.get('id') > lastSavedPosition
-    );
+    updated = updated.filter((logEntry) => logEntry.get('id') > lastSavedId);
     updated = updated.toJS();
-    if (updated.length === 0) return;
+    if (updated.length === 0) {
+      // we're current, no new updates to save
+      return;
+    }
     // console.info('Save Batch', updated);
     const { error, data: result } = await apiPost('/content', {
       postId,
@@ -113,28 +175,15 @@ export default function UpdateManager(postId) {
       return;
     }
     const { id: newHistoryCurrentPosition } = updated.pop();
-    setHistoryCurrentPosition(newHistoryCurrentPosition);
+    setHistoryLastSavedId(newHistoryCurrentPosition);
     console.info(
       'Save Batch result',
-      lastSavedPosition,
+      lastSavedId,
       updated,
       newHistoryCurrentPosition,
       result
     );
   }
-
-  let commitTimeoutId;
-
-  function saveContentBatchDebounce() {
-    console.info('Batch Debounce');
-    clearTimeout(commitTimeoutId);
-    commitTimeoutId = setTimeout(saveContentBatch, 750);
-  }
-
-  let historyCandidateNode = Map();
-  let historyCandidateSelectionOffsets = {};
-  let historyCandidateState = {};
-  let historyCandidateTimeout;
 
   function appendToNodeUpdateLogWhenNCharsAreDifferent({
     unexecuteSelectionOffsets,
@@ -143,38 +192,28 @@ export default function UpdateManager(postId) {
     comparisonPath,
   }) {
     if (state.length > 1) {
-      throw new Error('how to handle NChars with state.length > 1?');
+      throw new Error("I don't handle state with length > 1");
     }
     // compare last node in history state
-    const {
-      unexecuteState: nodeBeforeUpdate,
-      executeState: nodeAfterUpdate,
-    } = [...state].pop();
+    const lastStateEntry = [...state].pop();
+    const nodeBeforeUpdate = lastStateEntry.get('unexecuteState');
+    const nodeAfterUpdate = lastStateEntry.get('executeState');
+
     // always update the "execute" state
-    historyCandidateState.executeState = nodeAfterUpdate;
+    historyCandidateStateEntry.executeState = nodeAfterUpdate;
+    historyCandidateExecuteSelectionOffsets = executeSelectionOffsets;
     // save when user stops typing after a short wait - to make sure we don't lose the "last few chars"
     clearTimeout(historyCandidateTimeout);
-    historyCandidateTimeout = setTimeout(() => {
-      appendToNodeUpdateLog({
-        unexecuteSelectionOffsets: historyCandidateSelectionOffsets,
-        executeSelectionOffsets,
-        state: [historyCandidateState],
-      });
-      saveContentBatch();
-    }, 3000);
+    historyCandidateTimeout = setTimeout(flushPendingNodeUpdateLogEntry, 3000);
     // update history if the node changes or if "more than N chars" have changed in the same node
     if (historyCandidateNode.get('id') !== nodeAfterUpdate.get('id')) {
       if (historyCandidateNode.get('id')) {
         // make history entry for existing changes before tracking new node
-        appendToNodeUpdateLog({
-          unexecuteSelectionOffsets: historyCandidateSelectionOffsets,
-          executeSelectionOffsets,
-          state: [historyCandidateState],
-        });
+        flushPendingNodeUpdateLogEntry();
       }
-      historyCandidateNode = nodeBeforeUpdate; // this node matches the state in state.unexecuteState OR "before" documentModel.update()
-      historyCandidateSelectionOffsets = unexecuteSelectionOffsets;
-      historyCandidateState = [...state].pop();
+      historyCandidateNode = nodeBeforeUpdate; // this node matches the state in state.unexecuteState AKA "before" documentModel.update()
+      historyCandidateUnexecuteSelectionOffsets = unexecuteSelectionOffsets;
+      historyCandidateStateEntry = lastStateEntry;
     }
 
     // TODO: get document state (selectedNodeMap) and add to history list here
@@ -184,69 +223,144 @@ export default function UpdateManager(postId) {
         historyCandidateNode.getIn(comparisonPath, '')
       )
     ) {
-      appendToNodeUpdateLog({
-        unexecuteSelectionOffsets: historyCandidateSelectionOffsets,
-        executeSelectionOffsets,
-        state: [historyCandidateState],
-      });
-      // unset cached node
-      historyCandidateNode = Map();
+      flushPendingNodeUpdateLogEntry();
     }
   }
 
-  function applyUpdates(updates, offsets, nodesById) {
-    /* let updatedNodesById = nodesById;
-    updates.forEach((update, nodeId) => {
-      if (update.get('action') === NODE_ACTION_DELETE) {
-        updatedNodesById = updatedNodesById.delete(nodeId);
-      } else {
-        updatedNodesById = updatedNodesById.set(nodeId, update.get('node'));
+  function applyStates(updates, offsets, nodesById, isUndo = true) {
+    const seen = new Set();
+    let updatedNodesById = nodesById;
+
+    updates.forEach((update) => {
+      // a "delete" will contain just a node id
+      const currentIsDelete = typeof update === 'string';
+      const updateId = currentIsDelete ? update : update.get('id');
+      if (seen.has(updateId)) {
+        return;
       }
+      seen.add(updateId);
+      if (currentIsDelete) {
+        updatedNodesById = updatedNodesById.delete(updateId);
+        return;
+      }
+      updatedNodesById = updatedNodesById.set(updateId, update);
     });
-    // TODO: when updates are "append only", then here we'll flush them to the update save queue
 
     return fromJS(
       { nodesById: updatedNodesById, selectionOffsets: offsets },
       reviver
-    ); */
+    );
+  }
+
+  function getPrevHistoryId(currentId) {
+    const currentHistoryIdx = getNodeUpdateLog(false).findIndex(
+      (entry) => entry.get('id') === currentId
+    );
+    const noHistoryActionsAreBeingPerformed =
+      currentHistoryIdx === getNodeUpdateLog(false).size - 1;
+    // if switching between undo and redo, need to be careful with off-by-1 errors.
+    // if the last action was 'undo' we need to move to the next history but, if it
+    // was 'redo' we stay and apply the current unexecuteState before moving
+    const nextHistoryIdx =
+      currentHistoryIdx -
+      (getLastActionWasUndo() || noHistoryActionsAreBeingPerformed ? 1 : 0);
+    return getNodeUpdateLog(false).get(Math.max(nextHistoryIdx, 0)).get('id');
   }
 
   function undo(currentNodesById) {
-    /* const lastHistoryEntry = getHistoryUndo().last(Map());
-    const updates = lastHistoryEntry.get(HISTORY_KEY_UNEXECUTE_STATES, Map());
-    const offsets = lastHistoryEntry.get(HISTORY_KEY_UNEXECUTE_OFFSETS, Map());
-    setHistoryUndo(getHistoryUndo().pop());
-    if (updates.size === 0) {
+    const undoHistoryId = getHistoryUndoId();
+    // at beginning?
+    if (getNodeUpdateLog().first().get('id') === undoHistoryId) {
+      return null;
+    }
+    const history = getNodeUpdateLog().find(
+      (entry) => entry.get('id') === undoHistoryId
+    );
+    const unexecuteOffsets = history.get(HISTORY_KEY_UNEXECUTE_OFFSETS, Map());
+    const unexecuteStatesByNodeId = history
+      .get(HISTORY_KEY_STATE)
+      .map((state) => {
+        const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
+        const execute = state.get(HISTORY_KEY_EXECUTE_STATES);
+        if (!unexecute) {
+          return execute.get('id');
+        }
+        // if unexecute is falsy it was an insert - mark node for delete by returning just the id
+        return unexecute || execute.get('id');
+      })
+      .reverse();
+
+    if (unexecuteStatesByNodeId.size === 0) {
       return Map();
     }
-    // since history objects are self-contained with both undo and redo data
-    // we just move them back and forth between undo / redo stacks
-    setHistoryRedo(getHistoryRedo().push(lastHistoryEntry));
+    // update undo cursor position
+    setHistoryUndoId(getPrevHistoryId(undoHistoryId));
+    setLastActionWasUndo(true);
 
     // apply updates
-    return applyUpdates(updates, offsets, currentNodesById); */
+    return applyStates(
+      unexecuteStatesByNodeId,
+      unexecuteOffsets,
+      currentNodesById
+    );
+  }
+
+  function getNextHistoryId(currentId) {
+    const currentHistoryIdx = getNodeUpdateLog(false).findIndex(
+      (entry) => entry.get('id') === currentId
+    );
+    const noHistoryActionsAreBeingPerformed =
+      currentHistoryIdx === getNodeUpdateLog(false).size - 1;
+    // if switching between undo and redo, need to be careful with off-by-1 errors.
+    // if the last action was 'undo' we need to move to the next history but, if it
+    // was 'redo' we stay and apply the current unexecuteState before moving
+    const nextHistoryIdx =
+      currentHistoryIdx +
+      (getLastActionWasUndo() || noHistoryActionsAreBeingPerformed ? 0 : 1);
+    return getNodeUpdateLog(false)
+      .get(Math.min(nextHistoryIdx, getNodeUpdateLog(false).size))
+      .get('id');
   }
 
   function redo(currentNodesById) {
-    /* const lastHistoryEntry = getHistoryRedo().last(Map());
-    const updates = lastHistoryEntry.get(HISTORY_KEY_EXECUTE_STATES, Map());
-    const offsets = lastHistoryEntry.get(HISTORY_KEY_EXECUTE_STATES, Map());
-    setHistoryRedo(getHistoryRedo().pop());
-    if (updates.size === 0) {
+    const undoHistoryId = getHistoryUndoId();
+    // at end?
+    if (getNodeUpdateLog().last().get('id') === undoHistoryId) {
+      return null;
+    }
+    const history = getNodeUpdateLog().find(
+      (entry) => entry.get('id') === undoHistoryId
+    );
+    const executeOffsets = history.get(HISTORY_KEY_EXECUTE_OFFSETS, Map());
+    const executeStatesByNodeId = history
+      .get(HISTORY_KEY_STATE)
+      .map((state) => {
+        const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
+        const execute = state.get(HISTORY_KEY_EXECUTE_STATES);
+        // if execute is falsy, it was a delete operation.  Use the unexecute id to delete
+        return execute || unexecute.get('id');
+      })
+      .reverse();
+
+    if (executeStatesByNodeId.length === 0) {
       return Map();
     }
-    // since history objects are self-contained with both undo and redo data
-    // we just move them back and forth between undo / redo stacks #commandpattern
-    setHistoryUndo(getHistoryUndo().push(lastHistoryEntry));
+    // update undo cursor position
+    setHistoryUndoId(getNextHistoryId(undoHistoryId));
+    setLastActionWasUndo(false);
 
     // apply updates
-    return applyUpdates(updates, offsets, currentNodesById); */
+    return applyStates(executeStatesByNodeId, executeOffsets, currentNodesById);
+  }
+
+  if (postId === NEW_POST_URL_ID) {
+    setNodeUpdateLog(List());
   }
 
   return {
     copyPlaceholderPostUpdateLogToPostIdNamespace,
     saveContentBatch,
-    saveContentBatchDebounce,
+    flushPendingNodeUpdateLogEntry,
     appendToNodeUpdateLog,
     appendToNodeUpdateLogWhenNCharsAreDifferent,
     undo,
@@ -255,5 +369,5 @@ export default function UpdateManager(postId) {
 }
 
 export function getLastExecuteIdFromHistory(history) {
-  return [...history].pop().executeState.get('id');
+  return [...history].pop().get('executeState').get('id');
 }

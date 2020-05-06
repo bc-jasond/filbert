@@ -110,14 +110,12 @@ export const DOM_INPUT_TAG_NAME = 'INPUT';
 
 // HISTORY - undo / redo
 export const NODE_UPDATE_HISTORY = 'nodeUpdateHistory';
-export const NODE_UPDATE_HISTORY_CURRENT_POSITION =
-  'nodeUpdateHistoryCurrentPosition';
-export const HISTORY_KEY_UNDO = 'undoHistory';
-export const HISTORY_KEY_REDO = 'redoHistory';
+export const HISTORY_KEY_LAST_SAVED_ID = 'lastSavedHistoryId';
+export const HISTORY_KEY_UNDO_ID = 'historyUndoId';
 export const HISTORY_KEY_STATE = 'historyState';
 export const HISTORY_KEY_UNEXECUTE_OFFSETS = 'unexecuteOffsets';
-export const HISTORY_KEY_UNEXECUTE_STATES = 'unexecuteStates';
-export const HISTORY_KEY_EXECUTE_STATES = 'executeStates';
+export const HISTORY_KEY_UNEXECUTE_STATES = 'unexecuteState';
+export const HISTORY_KEY_EXECUTE_STATES = 'executeState';
 export const HISTORY_KEY_EXECUTE_OFFSETS = 'executeOffsets';
 export const HISTORY_MIN_NUM_CHARS = 6;
 

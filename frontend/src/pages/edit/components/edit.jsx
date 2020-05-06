@@ -82,6 +82,8 @@ const ArticleStyled = styled(Article)`
 export default class EditPost extends React.Component {
   selectionOffsets = {};
 
+  batchSaveIntervalId;
+
   constructor(props) {
     super(props);
 
@@ -141,6 +143,7 @@ export default class EditPost extends React.Component {
 
   async componentWillUnmount() {
     this.unregisterWindowEventHandlers();
+    clearInterval(this.batchSaveIntervalId);
   }
 
   registerWindowEventHandlers = () => {
@@ -161,12 +164,12 @@ export default class EditPost extends React.Component {
     window.removeEventListener('cut', this.handleCut);
   };
 
-  postHasId = () => {
+  postHasntBeenSavedYet = () => {
     const {
       state: { post },
     } = this;
     const postId = post.get('id');
-    return postId && postId !== NEW_POST_URL_ID;
+    return postId && postId === NEW_POST_URL_ID;
   };
 
   newPost = () => {
@@ -200,7 +203,7 @@ export default class EditPost extends React.Component {
     this.updateManager.copyPlaceholderPostUpdateLogToPostIdNamespace(postId);
     // re-instantiate UpdateManager with postId for saveContentBatch()
     this.updateManager = UpdateManager(postId);
-    await this.updateManager.saveContentBatch(true);
+    await this.updateManager.saveContentBatch();
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
     this.setState({ shouldRedirect: `/edit/${postId}?shouldFocusLastNode` });
   };
@@ -217,6 +220,10 @@ export default class EditPost extends React.Component {
     const postMap = fromJS(post);
     this.updateManager = UpdateManager(postMap.get('id'));
     this.documentModel = DocumentModel(postMap.get('id'), contentNodes);
+    this.batchSaveIntervalId = setInterval(
+      this.updateManager.saveContentBatch,
+      3000
+    );
     const firstNodeId = getFirstNode(this.documentModel.getNodes()).get('id');
     this.setState(
       {
@@ -228,7 +235,8 @@ export default class EditPost extends React.Component {
         let startNodeId = firstNodeId;
         let caretStart = 0;
         const queryParams = new URLSearchParams(window.location.search);
-        // all this just to advance the cursor for a new post...
+        // all this just to advance the cursor for a new post after save...
+        // TODO: this should go away when we save/restore "currentSelectionOffsets" in localstorage / as part of post meta
         if (queryParams.has('shouldFocusLastNode')) {
           startNodeId = getLastNode(this.documentModel.getNodes()).get('id');
           caretStart = -1;
@@ -260,20 +268,47 @@ export default class EditPost extends React.Component {
     });
   };
 
-  undo = async (shouldUndo = true) => {
+  /**
+   * moves the undo cursor position
+   * applies the unexecute state to the document
+   * IF user makes edits after an undo - all history entries after this current one need to be marked deleted before adding another one
+   * @returns {Promise<void>}
+   */
+  undo = async () => {
     const {
       state: { nodesById },
     } = this;
-    // this pops the undo/redo stack AND applies the updates to the document (nodesById)
-    const historyEntry = shouldUndo
-      ? this.updateManager.undo(nodesById)
-      : this.updateManager.redo(nodesById);
+    const historyEntry = this.updateManager.undo(nodesById);
+    // already at beginning of history?
+    if (!historyEntry) {
+      return;
+    }
     const updatedNodesById = historyEntry.get('nodesById', Map());
     const historyOffsets = historyEntry.get('selectionOffsets', Map());
     if (updatedNodesById.size === 0) {
       return;
     }
-    console.info(`${shouldUndo ? 'UNDO!' : 'REDO!'}`, historyEntry.toJS());
+    console.info('UNDO!', historyEntry.toJS());
+    this.documentModel.setNodes(updatedNodesById);
+    // passing undefined as prevSelectionOffsets will skip adding this operation to history again
+    await this.commitUpdates(historyOffsets.toJS());
+  };
+
+  redo = async () => {
+    const {
+      state: { nodesById },
+    } = this;
+    const historyEntry = this.updateManager.redo(nodesById);
+    // already at end of history?
+    if (!historyEntry) {
+      return;
+    }
+    const updatedNodesById = historyEntry.get('nodesById', Map());
+    const historyOffsets = historyEntry.get('selectionOffsets', Map());
+    if (updatedNodesById.size === 0) {
+      return;
+    }
+    console.info('REDO!', historyEntry.toJS());
     this.documentModel.setNodes(updatedNodesById);
     // passing undefined as prevSelectionOffsets will skip adding this operation to history again
     await this.commitUpdates(historyOffsets.toJS());
@@ -300,10 +335,6 @@ export default class EditPost extends React.Component {
         newState.editSectionNode = this.documentModel.getNode(startNodeId);
       }
       this.setState(newState, async () => {
-        // if we're on /edit/new, we don't save until user hits "enter"
-        if (this.postHasId()) {
-          this.updateManager.saveContentBatchDebounce();
-        }
         // no more caret work necessary for Meta nodes
         if (
           this.documentModel.isMetaType(startNodeId) ||
@@ -540,6 +571,7 @@ export default class EditPost extends React.Component {
     }
 
     // if doDelete() returns a different startNodeId, a merge is required
+    // TODO: verify highlight + cut or delete has the right behavior
     const needsMergeWithOtherNode =
       executeSelectionOffsets.startNodeId !== startNodeId ||
       (!caretStart && !caretEnd);
@@ -608,7 +640,7 @@ export default class EditPost extends React.Component {
       state: historyState,
     });
     // special case for creating a new document on "Enter"
-    if (!this.postHasId()) {
+    if (this.postHasntBeenSavedYet()) {
       await this.createNewPost();
       return;
     }
@@ -661,12 +693,22 @@ export default class EditPost extends React.Component {
     } = syncToDom(this.documentModel, selectionOffsets, evt);
     historyState.push(...historyStateSync);
 
-    this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
-      unexecuteSelectionOffsets: selectionOffsets,
-      executeSelectionOffsets,
-      state: historyState,
-      comparisonPath: ['content'],
-    });
+    if (historyState.length === 1) {
+      this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+        unexecuteSelectionOffsets: selectionOffsets,
+        executeSelectionOffsets,
+        state: historyState,
+        comparisonPath: ['content'],
+      });
+    } else {
+      // we did more than a simple content update to one node, save an entry
+      this.updateManager.flushPendingNodeUpdateLogEntry();
+      this.updateManager.appendToNodeUpdateLog({
+        unexecuteSelectionOffsets: selectionOffsets,
+        executeSelectionOffsets,
+        state: historyState,
+      });
+    }
 
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent??? 😞 so we place it back with JS...
@@ -694,7 +736,7 @@ export default class EditPost extends React.Component {
   handleKeyDown = async (evt) => {
     // redo
     if (evt.keyCode === KEYCODE_Z && evt.shiftKey && evt.metaKey) {
-      this.undo(false);
+      this.redo();
       stopAndPrevent(evt);
       return;
     }

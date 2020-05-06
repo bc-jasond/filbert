@@ -9,7 +9,10 @@ import { getLastExecuteIdFromHistory } from '../update-manager';
 function updateNode(documentModel, diffLength, nodeId, startIdx) {
   let node = documentModel.getNode(nodeId);
   const content = node.get('content', '');
-
+  /* TODO: delete node under if all content has been highlighted
+  if (startIdx === 0 && diffLength >= content.length) {
+    return documentModel.deleteNode(node);
+  } */
   // only some of endNode's content has been selected, delete that content
   node = node.set('content', deleteContentRange(content, startIdx, diffLength));
   node = adjustSelectionOffsetsAndCleanup(
