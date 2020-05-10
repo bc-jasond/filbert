@@ -57,7 +57,7 @@ export function set(key, value, debounce = true) {
   writeTimeout[key] = setTimeout(setLocalStorage.bind(null, key), 3000);
 }
 
-export function get(key, defaultValue, shouldUseImmutable = true) {
+export function get(key, defaultValue) {
   const namespacedKey = getNamespacedKey(key);
   try {
     if (!inMemoryCache.has(key)) {
@@ -68,7 +68,7 @@ export function get(key, defaultValue, shouldUseImmutable = true) {
         currentLocal !== 'null'
       ) {
         const jsValue = JSON.parse(currentLocal);
-        const woke = shouldUseImmutable ? fromJS(jsValue, reviver) : jsValue;
+        const woke = fromJS(jsValue, reviver);
         inMemoryCache = inMemoryCache.set(key, woke);
       }
     }

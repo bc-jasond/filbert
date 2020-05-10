@@ -169,7 +169,7 @@ export default class EditPost extends React.Component {
       state: { post },
     } = this;
     const postId = post.get('id');
-    return postId && postId === NEW_POST_URL_ID;
+    return !postId || postId === NEW_POST_URL_ID;
   };
 
   newPost = () => {
@@ -693,6 +693,7 @@ export default class EditPost extends React.Component {
     } = syncToDom(this.documentModel, selectionOffsets, evt);
     historyState.push(...historyStateSync);
 
+    // assumes content update (of one char) on a single node, only create an entry every so often
     if (historyState.length === 1) {
       this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
         unexecuteSelectionOffsets: selectionOffsets,
