@@ -74,55 +74,40 @@ async function markPostUpdated(postId) {}
 /**
  * batch updates, note this is all vanilla JS, so remember to convert from Immutable
  *
- * @param records [
- *                  [
- *                    "ea32", // nodeId
- *                    {
- *                      post_id: 1, // postId - will override one in "node" if present
- *                      node: {} // Map().toJS()
- *                    }
- *                  ],
- *                  ...
- *                ]
  * @returns {Knex.Raw<TResult>}
  */
-export async function bulkContentNodeUpsert(records) {
-  if (records.length === 0) return;
+export async function bulkContentNodeUpsert(postId, nodes) {
+  if (nodes.length === 0) return;
   const knexInstance = await getKnex();
   const query = `
     INSERT INTO content_node (post_id, id, next_sibling_id, type, content, meta) VALUES
-    ${records.map(() => "(?)").join(",")}
+    ${nodes.map(() => "(?)").join(",")}
     ON DUPLICATE KEY UPDATE
     next_sibling_id = VALUES(next_sibling_id),
     type = VALUES(type),
     content = VALUES(content),
     meta = VALUES(meta)`;
 
-  const values = [];
-
-  records.forEach(([nodeId, update]) => {
-    const { post_id, node } = update;
-    values.push([
-      post_id,
-      nodeId,
-      node.next_sibling_id || null,
-      node.type,
-      node.content || "",
-      JSON.stringify(node.meta || {}),
-    ]);
-  });
+  const values = nodes.map(
+    ({
+      // post_id, - note using postId passed as argument instead of post_id from node
+      id,
+      next_sibling_id = null,
+      type,
+      content = "",
+      meta = {},
+    }) => [postId, id, next_sibling_id, type, content, JSON.stringify(meta)]
+  );
 
   return knexInstance.raw(query, values);
 }
 
-export async function bulkContentNodeDelete(records) {
+export async function bulkContentNodeDelete(postId, nodeIds) {
   // delete all records WHERE id IN (...recordIds) OR WHERE parent_id IN (...recordIds)
-  if (records.length === 0) return;
-  const postId = records[0][1].post_id;
-  const recordIds = records.map((r) => r[0]);
+  if (nodeIds.length === 0) return;
   const knexInstance = await getKnex();
   return knexInstance("content_node")
-    .whereIn("id", recordIds)
+    .whereIn("id", nodeIds)
     .andWhere("post_id", postId)
     .del();
 }

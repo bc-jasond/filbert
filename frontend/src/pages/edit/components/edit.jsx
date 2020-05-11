@@ -290,7 +290,6 @@ export default class EditPost extends React.Component {
     }
     console.info('UNDO!', historyEntry.toJS());
     this.documentModel.setNodes(updatedNodesById);
-    // passing undefined as prevSelectionOffsets will skip adding this operation to history again
     await this.commitUpdates(historyOffsets.toJS());
   };
 
@@ -310,7 +309,6 @@ export default class EditPost extends React.Component {
     }
     console.info('REDO!', historyEntry.toJS());
     this.documentModel.setNodes(updatedNodesById);
-    // passing undefined as prevSelectionOffsets will skip adding this operation to history again
     await this.commitUpdates(historyOffsets.toJS());
   };
 

@@ -13,7 +13,7 @@ async function postContentNodes(req, res) {
     // TODO: put in transaction
     // validate post
     const {
-      body: { postId, historyLogEntries },
+      body: { postId, nodeUpdatesByNodeId },
     } = req;
     const knex = await getKnex();
     const [post] = await knex("post").where({
@@ -30,21 +30,32 @@ async function postContentNodes(req, res) {
     // update current document state snapshot - create a map of updates and deletes
     let updates = [];
     let deletes = [];
-    historyLogEntries.forEach(({ historyState }) => {
-      historyState.forEach(({ executeState, unexecuteState }) => {
-        // always remove node from updates or deletes first - so that last wins
-        // if executeState is undefined - it's a delete
-        // if unexecuteState is undefined - it's an insert
-        const currentNode = executeState || unexecuteState;
-        updates = updates.filter(([nodeId]) => nodeId !== currentNode.id);
-        deletes = deletes.filter(([nodeId]) => nodeId !== currentNode.id);
+    nodeUpdatesByNodeId
+      // dedupe - last wins
+      .filter((nodeUpdate, idx, thisList) => {
+        const currentNodeId =
+          typeof nodeUpdate === "string" ? nodeUpdate : nodeUpdate.id;
+        const lastUpdateIndex = [...thisList]
+          .reverse()
+          .findIndex((innerNodeUpdate) => {
+            const innerNodeId =
+              typeof innerNodeUpdate === "string"
+                ? innerNodeUpdate
+                : innerNodeUpdate.id;
+            return innerNodeId === currentNodeId;
+          });
+        return idx === thisList.length - 1 - lastUpdateIndex;
+      })
+      .forEach((nodeUpdate) => {
+        const isDelete = typeof nodeUpdate === "string";
+        const currentNodeId = isDelete ? nodeUpdate : nodeUpdate.id;
 
-        (!executeState ? deletes : updates).push([
-          currentNode.id,
-          { post_id: postId, node: currentNode },
-        ]);
+        if (isDelete) {
+          deletes.push(currentNodeId);
+          return;
+        }
+        updates.push(nodeUpdate);
       });
-    });
 
     // TODO: validation
     //  - node fields are correct
@@ -52,8 +63,8 @@ async function postContentNodes(req, res) {
     //  - orphaned nodes
     //    - now: delete them, log it
     //    - eventually: append to end of document for now <- this requires adding a history entry.
-    const updateResult = await bulkContentNodeUpsert(updates);
-    const deleteResult = await bulkContentNodeDelete(deletes);
+    const updateResult = await bulkContentNodeUpsert(postId, updates);
+    const deleteResult = await bulkContentNodeDelete(postId, deletes);
     res.send({ updateResult, deleteResult });
   } catch (err) {
     console.error("POST /content Error: ", err);

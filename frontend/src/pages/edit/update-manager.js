@@ -161,31 +161,52 @@ export default function UpdateManager(postId) {
     return id;
   }
 
-  async function saveContentBatch() {
+  function historyEntryToNodeUpdate(history, shouldExecute = true) {
+    const statesByNodeId = history.get(HISTORY_KEY_STATE).map((state) => {
+      const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
+      const execute = state.get(HISTORY_KEY_EXECUTE_STATES);
+      return shouldExecute
+        ? // redo: if execute is falsy, it was a delete operation.  Use the unexecute id to delete
+          execute || unexecute.get('id')
+        : // undo: if unexecute is falsy it was an insert - mark node for delete by returning just the id
+          unexecute || execute.get('id');
+    });
+
+    return shouldExecute
+      ? statesByNodeId
+      : // play updates in reverse for undo!
+        statesByNodeId.reverse();
+  }
+
+  async function saveContentBatch(nodeUpdatesArg) {
     const lastSavedId = getHistoryLastSavedId();
-    let updated = getNodeUpdateLog();
-    updated = updated.filter((logEntry) => logEntry.get('id') > lastSavedId);
-    updated = updated.toJS();
-    if (updated.length === 0) {
+    const nodeUpdatesByNodeId =
+      nodeUpdatesArg ||
+      getNodeUpdateLog()
+        .filter((historyEntry) => historyEntry.get('id') > lastSavedId)
+        // de-dupe happens on API
+        .flatMap((historyEntry) => historyEntryToNodeUpdate(historyEntry))
+        .toJS();
+    if (nodeUpdatesByNodeId.length === 0) {
       // we're current, no new updates to save
       return;
     }
-    // console.info('Save Batch', updated);
+    // console.info('Save Batch', nodeUpdates);
     const { error, data: result } = await apiPost('/content', {
       postId,
-      historyLogEntries: updated,
+      nodeUpdatesByNodeId,
     });
     if (error) {
       // TODO: message user after X failures?
       console.error('Content Batch Update Error: ', error);
       return;
     }
-    const { id: newHistoryCurrentPosition } = updated.pop();
+    const { id: newHistoryCurrentPosition } = nodeUpdatesByNodeId.pop();
     setHistoryLastSavedId(newHistoryCurrentPosition);
     console.info(
       'Save Batch result',
       lastSavedId,
-      updated,
+      nodeUpdatesByNodeId,
       newHistoryCurrentPosition,
       result
     );
@@ -235,11 +256,12 @@ export default function UpdateManager(postId) {
     }
   }
 
-  function applyStates(updates, offsets, nodesById) {
+  function applyNodeUpdates(stateUpdatesByNodeId, offsets, nodesById) {
     let updatedNodesById = nodesById;
 
-    updates.forEach((update) => {
-      // a "delete" will contain just a node id
+    stateUpdatesByNodeId.forEach((update) => {
+      // an update will contain a whole node as Map()
+      // a "delete" will contain just a node id string
       const currentIsDelete = typeof update === 'string';
       const updateId = currentIsDelete ? update : update.get('id');
       if (currentIsDelete) {
@@ -250,7 +272,11 @@ export default function UpdateManager(postId) {
     });
 
     return fromJS(
-      { nodesById: updatedNodesById, selectionOffsets: offsets },
+      {
+        stateUpdatesByNodeId,
+        nodesById: updatedNodesById,
+        selectionOffsets: offsets,
+      },
       reviver
     );
   }
@@ -279,18 +305,7 @@ export default function UpdateManager(postId) {
       (entry) => entry.get('id') === currentHistoryId
     );
     const unexecuteOffsets = history.get(HISTORY_KEY_UNEXECUTE_OFFSETS, Map());
-    const unexecuteStatesByNodeId = history
-      .get(HISTORY_KEY_STATE)
-      .map((state) => {
-        const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
-        const execute = state.get(HISTORY_KEY_EXECUTE_STATES);
-        if (!unexecute) {
-          return execute.get('id');
-        }
-        // if unexecute is falsy it was an insert - mark node for delete by returning just the id
-        return unexecute || execute.get('id');
-      })
-      .reverse();
+    const unexecuteStatesByNodeId = historyEntryToNodeUpdate(history, false);
 
     if (unexecuteStatesByNodeId.size === 0) {
       return Map();
@@ -300,7 +315,7 @@ export default function UpdateManager(postId) {
     setLastActionWasUndo(true);
 
     // apply updates
-    return applyStates(
+    return applyNodeUpdates(
       unexecuteStatesByNodeId,
       unexecuteOffsets,
       currentNodesById
@@ -331,14 +346,7 @@ export default function UpdateManager(postId) {
       (entry) => entry.get('id') === currentHistoryId
     );
     const executeOffsets = history.get(HISTORY_KEY_EXECUTE_OFFSETS, Map());
-    const executeStatesByNodeId = history
-      .get(HISTORY_KEY_STATE)
-      .map((state) => {
-        const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
-        const execute = state.get(HISTORY_KEY_EXECUTE_STATES);
-        // if execute is falsy, it was a delete operation.  Use the unexecute id to delete
-        return execute || unexecute.get('id');
-      });
+    const executeStatesByNodeId = historyEntryToNodeUpdate(history);
 
     if (executeStatesByNodeId.length === 0) {
       return Map();
@@ -348,7 +356,11 @@ export default function UpdateManager(postId) {
     setLastActionWasUndo(false);
 
     // apply updates
-    return applyStates(executeStatesByNodeId, executeOffsets, currentNodesById);
+    return applyNodeUpdates(
+      executeStatesByNodeId,
+      executeOffsets,
+      currentNodesById
+    );
   }
 
   if (postId === NEW_POST_URL_ID) {
