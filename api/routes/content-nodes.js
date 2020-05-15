@@ -1,11 +1,11 @@
 const { getKnex } = require("../lib/mysql");
 const {
-  bulkContentNodeDelete,
-  bulkContentNodeUpsert,
-} = require("../lib/mysql");
-const { postContentNodeHistory } = require("./content-node-history");
+  postContentNodeHistory,
+  updateDocumentSnapshot,
+} = require("./content-node-history");
 
 function pruneOrphanedNodesFromUpdates(updates) {}
+
 /**
  * takes a list of 1 or more content nodes to update or delete for a post during edit
  */
@@ -45,43 +45,11 @@ async function postContentNodes(req, res) {
     }
 
     // 3) update current document state snapshot - create a map of updates and deletes
-    let updates = [];
-    let deletes = [];
-    nodeUpdatesByNodeId
-      // dedupe - last wins
-      .filter((nodeUpdate, idx, thisList) => {
-        const currentNodeId =
-          typeof nodeUpdate === "string" ? nodeUpdate : nodeUpdate.id;
-        const lastUpdateIndex = [...thisList]
-          .reverse()
-          .findIndex((innerNodeUpdate) => {
-            const innerNodeId =
-              typeof innerNodeUpdate === "string"
-                ? innerNodeUpdate
-                : innerNodeUpdate.id;
-            return innerNodeId === currentNodeId;
-          });
-        return idx === thisList.length - 1 - lastUpdateIndex;
-      })
-      .forEach((nodeUpdate) => {
-        const isDelete = typeof nodeUpdate === "string";
-        const currentNodeId = isDelete ? nodeUpdate : nodeUpdate.id;
+    const { updateResult, deleteResult } = await updateDocumentSnapshot(
+      postId,
+      nodeUpdatesByNodeId
+    );
 
-        if (isDelete) {
-          deletes.push(currentNodeId);
-          return;
-        }
-        updates.push(nodeUpdate);
-      });
-
-    // TODO: validation
-    //  - node fields are correct
-    //  - delete all selections if any are invalid
-    //  - orphaned nodes
-    //    - now: delete them, log it
-    //    - eventually: append to end of document for now <- this requires adding a history entry.
-    const updateResult = await bulkContentNodeUpsert(postId, updates);
-    const deleteResult = await bulkContentNodeDelete(postId, deletes);
     res.send({
       updateResult,
       deleteResult,
@@ -96,4 +64,5 @@ async function postContentNodes(req, res) {
 
 module.exports = {
   postContentNodes,
+  updateDocumentSnapshot,
 };

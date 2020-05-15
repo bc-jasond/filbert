@@ -48,11 +48,11 @@ CREATE TABLE `post` (
   FULLTEXT KEY `title_abstract` (`title`,`abstract`),
   CONSTRAINT `user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-CREATE TABLE `post_history` (
+CREATE TABLE `content_node_history` (
   `post_id` int(11) NOT NULL,
-  `post_history_id` int(11) unsigned NOT NULL,
+  `content_node_history_id` int(11) unsigned NOT NULL,
   `meta` json DEFAULT NULL,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `deleted` datetime DEFAULT NULL,
-  PRIMARY KEY (`post_id`,`post_history_id`)
+  PRIMARY KEY (`post_id`,`content_node_history_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;

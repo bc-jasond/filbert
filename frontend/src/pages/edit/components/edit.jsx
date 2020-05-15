@@ -208,13 +208,18 @@ export default class EditPost extends React.Component {
     // will save current document state from history
     await this.historyManager.saveContentBatch();
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
-    this.setState({ shouldRedirect: `/edit/${postId}?shouldFocusLastNode` });
+    this.setState({ shouldRedirect: `/edit/${postId}` });
   };
 
   loadPost = async () => {
-    const { error, data: { post, contentNodes } = {} } = await apiGet(
-      `/edit/${this.props?.params?.id}`
-    );
+    const {
+      error,
+      data: {
+        post,
+        contentNodes,
+        selectionOffsets: { startNodeId, caretStart },
+      } = {},
+    } = await apiGet(`/edit/${this.props?.params?.id}`);
     if (error) {
       console.error(error);
       this.setState({ nodesById: Map(), shouldShow404: true });
@@ -229,7 +234,6 @@ export default class EditPost extends React.Component {
         this.setState({ post: fromJS(updatedPost) });
       }
     }, 3000);
-    const firstNodeId = getFirstNode(this.documentModel.getNodes()).get('id');
     this.setState(
       {
         post: postMap,
@@ -237,23 +241,6 @@ export default class EditPost extends React.Component {
         shouldShow404: false,
       },
       async () => {
-        let startNodeId = firstNodeId;
-        let caretStart = 0;
-        const queryParams = new URLSearchParams(window.location.search);
-        // all this just to advance the cursor for a new post after save...
-        // TODO: this should go away when we save/restore "currentSelectionOffsets" in localstorage / as part of post meta
-        if (queryParams.has('shouldFocusLastNode')) {
-          startNodeId = getLastNode(this.documentModel.getNodes()).get('id');
-          caretStart = -1;
-          queryParams.delete('shouldFocusLastNode');
-          const queryString = queryParams.toString();
-          window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname +
-              (queryString.length > 0 ? `?${queryString}` : '')
-          );
-        }
         setCaret({ startNodeId, caretStart });
         await this.manageInsertMenu();
       }
