@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`UpdateManager addToUndoHistory - change a node\`s type from P -> H1 1`] = `
+exports[`HistoryManager addToUndoHistory - change a node\`s type from P -> H1 1`] = `
 Immutable.Map {
   "f677": Immutable.Map {
     "action": "update",
@@ -17,7 +17,7 @@ Immutable.Map {
 }
 `;
 
-exports[`UpdateManager addToUndoHistory - change a node\`s type from P -> H1 2`] = `
+exports[`HistoryManager addToUndoHistory - change a node\`s type from P -> H1 2`] = `
 Immutable.Map {
   "f677": Immutable.Map {
     "action": "update",
@@ -102,7 +102,7 @@ Immutable.Map {
 }
 `;
 
-exports[`UpdateManager addToUndoHistory - delete a node in the middle 1`] = `
+exports[`HistoryManager addToUndoHistory - delete a node in the middle 1`] = `
 Immutable.Map {
   "4add": Immutable.Map {
     "action": "delete",
@@ -123,7 +123,7 @@ Immutable.Map {
 }
 `;
 
-exports[`UpdateManager addToUndoHistory - delete a node in the middle 2`] = `
+exports[`HistoryManager addToUndoHistory - delete a node in the middle 2`] = `
 Immutable.Map {
   "4add": Immutable.Map {
     "action": "update",
@@ -158,7 +158,7 @@ Immutable.Map {
 }
 `;
 
-exports[`UpdateManager addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met 1`] = `
+exports[`HistoryManager addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met 1`] = `
 Immutable.Map {
   "9615": Immutable.Map {
     "action": "update",
@@ -175,7 +175,7 @@ Immutable.Map {
 }
 `;
 
-exports[`UpdateManager addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met 2`] = `
+exports[`HistoryManager addToUndoHistory - simulate typing inside content field of one node, add to history when characterDiffSize threshold is met 2`] = `
 Immutable.Map {
   "9615": Immutable.Map {
     "action": "update",
@@ -192,8 +192,8 @@ Immutable.Map {
 }
 `;
 
-exports[`UpdateManager stageNodeDelete method 1`] = `
-UpdateManager {
+exports[`HistoryManager stageNodeDelete method 1`] = `
+HistoryManager {
   "commitTimeoutId": undefined,
   "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {
@@ -212,8 +212,8 @@ UpdateManager {
 }
 `;
 
-exports[`UpdateManager stageNodeUpdate method 1`] = `
-UpdateManager {
+exports[`HistoryManager stageNodeUpdate method 1`] = `
+HistoryManager {
   "commitTimeoutId": undefined,
   "lastUndoHistoryOffsets": undefined,
   "post": Immutable.Map {

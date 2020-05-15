@@ -43,22 +43,8 @@ export function getMysqlDatetime(date = null) {
   );
 }
 
-export async function getNodes(knex, postId) {
-  const nodesArray = await knex("content_node")
-    .where("post_id", postId)
-    .orderBy(["parent_id", "position"]);
-
-  // group nodes by parent_id, sorted by position
-  return nodesArray.reduce((acc, node) => {
-    if (!acc[node.parent_id]) {
-      acc[node.parent_id] = [];
-    }
-    acc[node.parent_id].push(node);
-    return acc;
-  }, {});
-}
-
-export async function getNodesFlat(knex, postId) {
+export async function getNodesFlat(postId) {
+  const knex = await getKnex();
   const nodesArray = await knex("content_node").where("post_id", postId);
 
   // flat map of nodeId => node

@@ -52,7 +52,9 @@ import {
 
 import Document from '../../../common/components/document.component';
 import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
-import UpdateManager, { getLastExecuteIdFromHistory } from '../update-manager';
+import HistoryManager, {
+  getLastExecuteIdFromHistory,
+} from '../history-manager';
 
 import { doDelete, doDeleteMetaType, doMerge } from '../editor-commands/delete';
 import { syncFromDom, syncToDom } from '../editor-commands/dom-sync';
@@ -174,7 +176,7 @@ export default class EditPost extends React.Component {
 
   newPost = () => {
     console.debug('New PostNew PostNew PostNew PostNew PostNew Post');
-    this.updateManager = UpdateManager(NEW_POST_URL_ID);
+    this.historyManager = HistoryManager(NEW_POST_URL_ID);
     this.documentModel = DocumentModel(NEW_POST_URL_ID);
     const startNodeId = getFirstNode(this.documentModel.getNodes()).get('id');
     this.setState({ post: Map() });
@@ -200,10 +202,11 @@ export default class EditPost extends React.Component {
       return;
     }
     // copy placeholder history
-    this.updateManager.copyPlaceholderPostUpdateLogToPostIdNamespace(postId);
-    // re-instantiate UpdateManager with postId for saveContentBatch()
-    this.updateManager = UpdateManager(postId);
-    await this.updateManager.saveContentBatch();
+    const pendingHistory = this.historyManager.getHistoryQueue();
+    // re-instantiate HistoryManager with pendingHistory for saveContentBatch()
+    this.historyManager = HistoryManager(postId, pendingHistory);
+    // will save current document state from history
+    await this.historyManager.saveContentBatch();
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
     this.setState({ shouldRedirect: `/edit/${postId}?shouldFocusLastNode` });
   };
@@ -218,12 +221,14 @@ export default class EditPost extends React.Component {
       return;
     }
     const postMap = fromJS(post);
-    this.updateManager = UpdateManager(postMap.get('id'));
+    this.historyManager = HistoryManager(postMap.get('id'));
     this.documentModel = DocumentModel(postMap.get('id'), contentNodes);
-    this.batchSaveIntervalId = setInterval(
-      this.updateManager.saveContentBatch,
-      3000
-    );
+    this.batchSaveIntervalId = setInterval(async () => {
+      const { updatedPost } = await this.historyManager.saveContentBatch();
+      if (updatedPost) {
+        this.setState({ post: fromJS(updatedPost) });
+      }
+    }, 3000);
     const firstNodeId = getFirstNode(this.documentModel.getNodes()).get('id');
     this.setState(
       {
@@ -278,17 +283,22 @@ export default class EditPost extends React.Component {
     const {
       state: { nodesById },
     } = this;
-    const historyEntry = this.updateManager.undo(nodesById);
-    // already at beginning of history?
-    if (!historyEntry) {
+    const undoResult = await this.historyManager.undo(nodesById);
+    // already at beginning of history? or error?
+    if (!undoResult) {
       return;
     }
-    const updatedNodesById = historyEntry.get('nodesById', Map());
-    const historyOffsets = historyEntry.get('selectionOffsets', Map());
+    const updatedNodesById = undoResult.get('nodesById', Map());
+    const historyOffsets = undoResult.get('selectionOffsets', Map());
+    const updatedPost = undoResult.get('updatedPost', Map());
     if (updatedNodesById.size === 0) {
       return;
     }
-    console.info('UNDO!', historyEntry.toJS());
+
+    console.info('UNDO!', undoResult.toJS());
+    // Right now, nothing depends on changes to the "post" object but, seems like bad form to
+    // not update it given the meta data will have changed (currentUndoHistoryId)
+    this.setState({ post: updatedPost });
     this.documentModel.setNodes(updatedNodesById);
     await this.commitUpdates(historyOffsets.toJS());
   };
@@ -297,17 +307,20 @@ export default class EditPost extends React.Component {
     const {
       state: { nodesById },
     } = this;
-    const historyEntry = this.updateManager.redo(nodesById);
+    const redoResult = await this.historyManager.redo(nodesById);
     // already at end of history?
-    if (!historyEntry) {
+    if (!redoResult) {
       return;
     }
-    const updatedNodesById = historyEntry.get('nodesById', Map());
-    const historyOffsets = historyEntry.get('selectionOffsets', Map());
+    const updatedNodesById = redoResult.get('nodesById', Map());
+    const historyOffsets = redoResult.get('selectionOffsets', Map());
+    const updatedPost = redoResult.get('updatedPost', Map());
     if (updatedNodesById.size === 0) {
       return;
     }
-    console.info('REDO!', historyEntry.toJS());
+
+    console.info('REDO!', redoResult.toJS());
+    this.setState({ post: updatedPost });
     this.documentModel.setNodes(updatedNodesById);
     await this.commitUpdates(historyOffsets.toJS());
   };
@@ -547,7 +560,7 @@ export default class EditPost extends React.Component {
       historyState.push(...historyStateDeleteMetaType);
       executeSelectionOffsets = executeSelectionOffsetsDeleteMetaType;
 
-      this.updateManager.appendToNodeUpdateLog({
+      this.historyManager.appendToNodeUpdateLog({
         executeSelectionOffsets,
         unexecuteSelectionOffsets: selectionOffsets,
         state: historyState,
@@ -587,14 +600,14 @@ export default class EditPost extends React.Component {
     const didDeleteContentInOneNode = !endNodeId && hasContentToDelete;
 
     if (didDeleteContentInOneNode) {
-      this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+      this.historyManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
         executeSelectionOffsets,
         unexecuteSelectionOffsets: selectionOffsets,
         state: historyState,
         comparisonPath: ['content'],
       });
     } else {
-      this.updateManager.appendToNodeUpdateLog({
+      this.historyManager.appendToNodeUpdateLog({
         executeSelectionOffsets,
         unexecuteSelectionOffsets: selectionOffsets,
         state: historyState,
@@ -632,7 +645,7 @@ export default class EditPost extends React.Component {
       selectionOffsets
     );
     // create history log entry
-    this.updateManager.appendToNodeUpdateLog({
+    this.historyManager.appendToNodeUpdateLog({
       executeSelectionOffsets,
       unexecuteSelectionOffsets: selectionOffsets,
       state: historyState,
@@ -642,7 +655,7 @@ export default class EditPost extends React.Component {
       await this.createNewPost();
       return;
     }
-
+    await this.closeAllEditContentMenus();
     await this.commitUpdates(executeSelectionOffsets);
   };
 
@@ -693,7 +706,7 @@ export default class EditPost extends React.Component {
 
     // assumes content update (of one char) on a single node, only create an entry every so often
     if (historyState.length === 1) {
-      this.updateManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+      this.historyManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
         unexecuteSelectionOffsets: selectionOffsets,
         executeSelectionOffsets,
         state: historyState,
@@ -701,8 +714,8 @@ export default class EditPost extends React.Component {
       });
     } else {
       // we did more than a simple content update to one node, save an entry
-      this.updateManager.flushPendingNodeUpdateLogEntry();
-      this.updateManager.appendToNodeUpdateLog({
+      this.historyManager.flushPendingNodeUpdateLogEntry();
+      this.historyManager.appendToNodeUpdateLog({
         unexecuteSelectionOffsets: selectionOffsets,
         executeSelectionOffsets,
         state: historyState,
@@ -837,7 +850,7 @@ export default class EditPost extends React.Component {
       selectionOffsets,
       evt
     );
-    this.updateManager.appendToNodeUpdateLog({
+    this.historyManager.appendToNodeUpdateLog({
       executeSelectionOffsets,
       unexecuteSelectionOffsets: selectionOffsets,
       state: historyState,
@@ -889,7 +902,7 @@ export default class EditPost extends React.Component {
     console.debug('CUT selection', selectionString);
     evt.clipboardData.setData('text/plain', selectionString);
 
-    this.updateManager.appendToNodeUpdateLog({
+    this.historyManager.appendToNodeUpdateLog({
       executeSelectionOffsets: this.executeSelectionOffsets,
       unexecuteSelectionOffsets: this.unexecuteSelectionOffsets,
       state: this.cutHistoryState,
@@ -952,7 +965,7 @@ export default class EditPost extends React.Component {
       return;
     }
     // add history entry
-    this.updateManager.appendToNodeUpdateLog({
+    this.historyManager.appendToNodeUpdateLog({
       executeSelectionOffsets,
       unexecuteSelectionOffsets: this.unexecuteSelectionOffsets,
       state: this.pasteHistoryState,
@@ -1030,7 +1043,7 @@ export default class EditPost extends React.Component {
     );
     const newSectionId = getLastExecuteIdFromHistory(historyState);
     const executeSelectionOffsets = { startNodeId: newSectionId };
-    this.updateManager.appendToNodeUpdateLog({
+    this.historyManager.appendToNodeUpdateLog({
       executeSelectionOffsets,
       unexecuteSelectionOffsets: {
         startNodeId: insertMenuNode.get('id'),
@@ -1075,7 +1088,7 @@ export default class EditPost extends React.Component {
     const historyState = this.documentModel.update(updatedNode);
     // TODO: appendToNodeUpdateLogWhenNCharsAreDifferent() for text fields like Image Caption, Quote fields...
     const offsets = { startNodeId: updatedNode.get('id') };
-    this.updateManager.appendToNodeUpdateLog({
+    this.historyManager.appendToNodeUpdateLog({
       executeSelectionOffsets: offsets,
       unexecuteSelectionOffsets: offsets,
       state: historyState,
@@ -1252,7 +1265,7 @@ export default class EditPost extends React.Component {
       formatSelectionModelIdx,
       action
     );
-    this.updateManager.appendToNodeUpdateLog({
+    this.historyManager.appendToNodeUpdateLog({
       // doFormatSelection will return new selection offsets if changing node type i.e. P -> H1
       executeSelectionOffsets: executeSelectionOffsets || selectionOffsets,
       unexecuteSelectionOffsets: selectionOffsets,

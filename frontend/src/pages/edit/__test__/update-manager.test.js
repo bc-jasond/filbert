@@ -1,6 +1,6 @@
 import { Map, List } from 'immutable';
 
-import UpdateManager, { characterDiffSize } from '../update-manager';
+import HistoryManager, { characterDiffSize } from '../history-manager';
 import DocumentModel, { getFirstNode } from '../document-model';
 import {
   overrideConsole,
@@ -39,15 +39,15 @@ const selectionOffsets = { is: 'currentOffsets' };
 overrideConsole();
 mockLocalStorage();
 let doc = DocumentModel();
-let updateManager = UpdateManager();
+let updateManager = HistoryManager();
 
 beforeEach(() => {
   clearForTests();
   localStorage.clear();
-  updateManager = UpdateManager(post.id);
+  updateManager = HistoryManager(post.id);
 });
 
-describe('UpdateManager', () => {
+describe('HistoryManager', () => {
   test.skip('stageNodeUpdate method', () => {
     updateManager.stageNodeUpdate();
     expect(updateManager[NODE_UPDATE_HISTORY].size).toBe(0);
@@ -79,7 +79,7 @@ describe('UpdateManager', () => {
   });
   test.skip('addPostIdToUpdates method', () => {
     // mimic a "not-yet-saved" post
-    updateManager = UpdateManager(123);
+    updateManager = HistoryManager(123);
     updateManager.stageNodeUpdate(Map({ id: 'abcd' }));
     expect(
       updateManager[NODE_UPDATE_HISTORY].get('abcd').get('post_id')

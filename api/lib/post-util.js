@@ -75,7 +75,7 @@ async function addFirstPhotoTitleAndAbstractToPosts(posts) {
     let title, abstract, imageNode;
     const { syncTopPhoto, syncTitleAndAbstract } = draft.meta;
     if (syncTopPhoto || syncTitleAndAbstract) {
-      const contentNodes = await getNodesFlat(knex, draft.id);
+      const contentNodes = await getNodesFlat(draft.id);
       ({ title, abstract, imageNode } = getFirstPhotoAndAbstractFromContent(
         contentNodes,
         draft.id
@@ -93,7 +93,31 @@ async function addFirstPhotoTitleAndAbstractToPosts(posts) {
   return draftsModified;
 }
 
+async function assertUserHasPost(req, res, next) {
+  try {
+    const {
+      params: { postId },
+    } = req;
+    const knex = await getKnex();
+    const [post] = await knex("post").where({
+      id: postId,
+      user_id: req.loggedInUser.id,
+    });
+    if (!post) {
+      res.status(404).send({});
+      return;
+    }
+    // make post available to next middlewares
+    req.currentPost = post;
+    next();
+  } catch (err) {
+    console.error("assertUserHasPost Error: ", err);
+    res.status(500).send({});
+  }
+}
+
 module.exports = {
   getFirstPhotoAndAbstractFromContent,
   addFirstPhotoTitleAndAbstractToPosts,
+  assertUserHasPost,
 };
