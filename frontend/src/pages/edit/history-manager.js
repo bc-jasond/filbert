@@ -74,28 +74,21 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     historyQueue.push(historyEntry);
   }
 
-  function historyEntryToNodeUpdate(history, shouldExecute = true) {
-    const statesByNodeId = history.get(HISTORY_KEY_STATE).map((state) => {
-      const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
-      const execute = state.get(HISTORY_KEY_EXECUTE_STATES);
-      return shouldExecute
-        ? // redo: if execute is falsy, it was a delete operation.  Use the unexecute id to delete
-          execute || unexecute.get('id')
-        : // undo: if unexecute is falsy it was an insert - mark node for delete by returning just the id
-          unexecute || execute.get('id');
-    });
-
-    return shouldExecute
-      ? statesByNodeId
-      : // play updates in reverse for undo!
-        statesByNodeId.reverse();
-  }
-
-  // saves current snapshot of document given new history or an undo/redo history
+  // saves current snapshot of document given new history
   async function saveContentBatch() {
     const nodeUpdatesByNodeId = historyQueue
-      // de-dupe happens on API
-      .flatMap((historyEntry) => historyEntryToNodeUpdate(historyEntry).toJS());
+      // TODO: de-dupe happens on API, probably could clean that up here before it goes over the wire
+      .flatMap((historyEntry) =>
+        historyEntry
+          .get(HISTORY_KEY_STATE)
+          .map((state) => {
+            const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
+            const execute = state.get(HISTORY_KEY_EXECUTE_STATES);
+            // if execute is falsy, it was a delete operation.  Use the unexecute id to delete
+            return execute || unexecute.get('id');
+          })
+          .toJS()
+      );
 
     if (nodeUpdatesByNodeId.length === 0) {
       // we're current, no new updates to save
@@ -163,7 +156,7 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     }
   }
 
-  function applyNodeUpdates(stateUpdatesByNodeId, offsets, nodesById) {
+  function applyNodeUpdates(stateUpdatesByNodeId, nodesById) {
     let updatedNodesById = nodesById;
 
     stateUpdatesByNodeId.forEach((update) => {
@@ -178,10 +171,7 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
       updatedNodesById = updatedNodesById.set(updateId, update);
     });
 
-    return {
-      nodesById: updatedNodesById,
-      selectionOffsets: offsets,
-    };
+    return updatedNodesById;
   }
 
   async function undo(currentNodesById) {
@@ -196,21 +186,19 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
       return null;
     }
     const updatedPost = undoResult.get('updatedPost');
-    const history = undoResult.get('history').get('meta');
-    const unexecuteOffsets = history.get(HISTORY_KEY_UNEXECUTE_OFFSETS, Map());
-    const unexecuteStatesByNodeId = historyEntryToNodeUpdate(history, false);
+    const unexecuteOffsets = undoResult.get('selectionOffsets');
+    const unexecuteStatesByNodeId = undoResult.get('nodeUpdatesById', Map());
 
     if (unexecuteStatesByNodeId.size === 0) {
       return Map();
     }
 
     // apply updates to current document state
-    const { nodesById, selectionOffsets } = applyNodeUpdates(
+    const nodesById = applyNodeUpdates(
       unexecuteStatesByNodeId,
-      unexecuteOffsets,
       currentNodesById
     );
-    return Map({ nodesById, selectionOffsets, updatedPost });
+    return Map({ nodesById, selectionOffsets: unexecuteOffsets, updatedPost });
   }
 
   async function redo(currentNodesById) {
@@ -225,21 +213,16 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
       return null;
     }
     const updatedPost = redoResult.get('updatedPost');
-    const history = redoResult.get('history').get('meta');
-    const executeOffsets = history.get(HISTORY_KEY_EXECUTE_OFFSETS, Map());
-    const executeStatesByNodeId = historyEntryToNodeUpdate(history);
+    const executeOffsets = redoResult.get('selectionOffsets');
+    const executeStatesByNodeId = redoResult.get('nodeUpdatesById');
 
     if (executeStatesByNodeId.size === 0) {
       return Map();
     }
 
     // apply updates to current document state
-    const { nodesById, selectionOffsets } = applyNodeUpdates(
-      executeStatesByNodeId,
-      executeOffsets,
-      currentNodesById
-    );
-    return Map({ nodesById, selectionOffsets, updatedPost });
+    const nodesById = applyNodeUpdates(executeStatesByNodeId, currentNodesById);
+    return Map({ nodesById, selectionOffsets: executeOffsets, updatedPost });
   }
 
   // a new placeholder post will have not-yet-saved pending history
