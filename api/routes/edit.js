@@ -14,12 +14,12 @@ async function getPostForEdit(req, res) {
   // if not in an undo/redo state, get most recent history
   const whereClause = { post_id: id };
   // undo/redo state - get history at currentUndoHistoryId
-  if (currentUndoHistoryId !== -1) {
+  if (currentUndoHistoryId && currentUndoHistoryId !== -1) {
     whereClause.content_node_history_id = currentUndoHistoryId;
   }
-  const [{ meta: { executeOffsets = {}, unexecuteOffsets } } = {}] = await knex(
-    "content_node_history"
-  )
+  const [
+    { meta: { executeOffsets = {}, unexecuteOffsets } = {} } = {},
+  ] = await knex("content_node_history")
     .where(whereClause)
     .orderBy("content_node_history_id", "desc")
     .limit(1);
