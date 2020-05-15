@@ -122,25 +122,16 @@ async function getPostByCanonical(req, res) {
     nextPostCanonical,
     loggedInUser
   );
-  const contentNodes = await getNodesFlat(knex, post.id);
+  const contentNodes = await getNodesFlat(post.id);
 
   res.send({ prevPost, nextPost, post, contentNodes });
 }
 
 // returns only post
 async function getPostById(req, res) {
-  const { id } = req.params;
-  const knex = await getKnex();
-  const [post] = await knex("post").where({
-    user_id: req.loggedInUser.id,
-    id,
-  });
-  if (!post) {
-    res.status(404).send({});
-    return;
-  }
-  delete post.user_id;
-  res.send({ post });
+  const { currentPost } = req;
+  // remove user_id...
+  res.send({ post: { ...currentPost, user_id: undefined } });
 }
 
 /**
@@ -148,17 +139,8 @@ async function getPostById(req, res) {
  */
 async function patchPost(req, res, next) {
   try {
-    const { id } = req.params;
+    const { id } = req.currentPost;
     const { title, canonical, abstract, photoUrl, meta } = req.body;
-    const knex = await getKnex();
-    const [post] = await knex("post").where({
-      user_id: req.loggedInUser.id,
-      id,
-    });
-    if (!post) {
-      res.status(404).send({});
-      return;
-    }
     const patchValues = {};
     if (typeof title !== "undefined") {
       patchValues.title = title;
@@ -175,29 +157,21 @@ async function patchPost(req, res, next) {
     if (typeof meta !== "undefined") {
       patchValues.meta = JSON.stringify(meta);
     }
+    const knex = await getKnex();
     const result = await knex("post").update(patchValues).where({
       user_id: req.loggedInUser.id,
       id,
     });
-    res.send({});
+    res.send(result);
   } catch (err) {
     next(err);
   }
 }
 
 async function getSummaryAndPhotoFromContent(req, res) {
-  const { id } = req.params;
-  const knex = await getKnex();
-  const [post] = await knex("post").where({
-    user_id: req.loggedInUser.id,
-    id,
-  });
-  if (!post) {
-    res.status(404).send({});
-    return;
-  }
+  const { id } = req.currentPost;
   const responseData = {};
-  const contentNodes = await getNodesFlat(knex, id);
+  const contentNodes = await getNodesFlat(id);
 
   if (!contentNodes) {
     res.send(responseData);
@@ -209,21 +183,13 @@ async function getSummaryAndPhotoFromContent(req, res) {
  * delete a PUBLISHED post
  */
 async function deletePublishedPost(req, res) {
-  const { id } = req.params;
+  const { id } = req.currentPost;
   const knex = await getKnex();
-  const [post] = await knex("post").whereNotNull("published").andWhere({
-    user_id: req.loggedInUser.id,
-    id,
-  });
-  if (!post) {
-    res.status(404).send({});
-    return;
-  }
   /**
    * DANGER ZONE!!!
    */
-  await knex("content_node").where("post_id", post.id).del();
-  await knex("post").where("id", post.id).del();
+  await knex("content_node").where("post_id", id).del();
+  await knex("post").where("id", id).del();
   res.status(204).send({});
 }
 

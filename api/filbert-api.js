@@ -7,6 +7,7 @@ const multer = require("multer");
 const chalk = require("chalk");
 
 const { saneEnvironmentOrExit } = require("./lib/util");
+const { assertUserHasPost } = require("./lib/post-util");
 
 const {
   parseAuthorizationHeader,
@@ -31,6 +32,7 @@ const {
 const { uploadImage } = require("./routes/image");
 const { getPostForEdit } = require("./routes/edit");
 const { postContentNodes } = require("./routes/content-nodes");
+const { undo, redo } = require("./routes/content-node-history");
 
 async function main() {
   try {
@@ -70,16 +72,26 @@ async function main() {
 
     app.patch("/profile", patchProfile);
     app.post("/post", postDraft);
-    app.patch("/post/:id", patchPost);
-    app.delete("/post/:id", deletePublishedPost);
-    app.get("/publish/:id", getPostById);
-    app.get("/post-summary/:id", getSummaryAndPhotoFromContent);
-    app.get("/edit/:id", getPostForEdit);
-    app.post("/content", postContentNodes);
     app.post("/image", upload.single("fileData"), uploadImage);
     app.get("/draft", getDrafts);
-    app.post("/publish/:id", publishDraft);
-    app.delete("/draft/:id", deleteDraftAndContentNodes);
+
+    // the following routes need to assert user has permission to CRUD post
+    app.post("/content/:postId", [assertUserHasPost, postContentNodes]);
+    app.patch("/post/:postId", [assertUserHasPost, patchPost]);
+    app.delete("/post/:postId", [assertUserHasPost, deletePublishedPost]);
+    app.get("/publish/:postId", [assertUserHasPost, getPostById]);
+    app.get("/post-summary/:postId", [
+      assertUserHasPost,
+      getSummaryAndPhotoFromContent,
+    ]);
+    app.get("/edit/:postId", [assertUserHasPost, getPostForEdit]);
+    app.post("/undo/:postId", [assertUserHasPost, undo]);
+    app.post("/redo/:postId", [assertUserHasPost, redo]);
+    app.post("/publish/:postId", [assertUserHasPost, publishDraft]);
+    app.delete("/draft/:postId", [
+      assertUserHasPost,
+      deleteDraftAndContentNodes,
+    ]);
 
     // STARTUP
     // global error handler to collect all errors here

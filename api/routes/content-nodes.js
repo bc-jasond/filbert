@@ -3,6 +3,7 @@ const {
   bulkContentNodeDelete,
   bulkContentNodeUpsert,
 } = require("../lib/mysql");
+const { postContentNodeHistory } = require("./content-node-history");
 
 function pruneOrphanedNodesFromUpdates(updates) {}
 /**
@@ -10,24 +11,40 @@ function pruneOrphanedNodesFromUpdates(updates) {}
  */
 async function postContentNodes(req, res) {
   try {
-    // TODO: put in transaction
     // validate post
     const {
-      body: { postId, nodeUpdatesByNodeId },
+      body: { nodeUpdatesByNodeId, contentNodeHistory },
+      currentPost,
     } = req;
-    const knex = await getKnex();
-    const [post] = await knex("post").where({
-      id: postId,
-      user_id: req.loggedInUser.id,
-    });
-    if (!post) {
-      res.status(404).send({});
-      return;
-    }
-    // validate history: first history id in request is next id, ids are monotonic, ids are sequential
-    // TODO
+    const { id: postId, meta: postMeta } = currentPost;
+    const { currentUndoHistoryId } = postMeta;
 
-    // update current document state snapshot - create a map of updates and deletes
+    // TODO: put in transaction
+    // 1) save history
+    const contentNodeHistoryResult = await postContentNodeHistory(
+      currentPost,
+      contentNodeHistory
+    );
+
+    // 2) reset post undo history cursor to -1 if in "undo" state
+    let updatedPost;
+    if (currentUndoHistoryId !== -1) {
+      const knex = await getKnex();
+      await knex("post")
+        .update({
+          meta: JSON.stringify({
+            ...postMeta,
+            currentUndoHistoryId: -1,
+            lastActionWasUndo: false,
+          }),
+        })
+        .where({ id: postId });
+
+      // read back updated post
+      [updatedPost] = await knex("post").where({ id: postId });
+    }
+
+    // 3) update current document state snapshot - create a map of updates and deletes
     let updates = [];
     let deletes = [];
     nodeUpdatesByNodeId
@@ -65,7 +82,12 @@ async function postContentNodes(req, res) {
     //    - eventually: append to end of document for now <- this requires adding a history entry.
     const updateResult = await bulkContentNodeUpsert(postId, updates);
     const deleteResult = await bulkContentNodeDelete(postId, deletes);
-    res.send({ updateResult, deleteResult });
+    res.send({
+      updateResult,
+      deleteResult,
+      contentNodeHistoryResult,
+      updatedPost,
+    });
   } catch (err) {
     console.error("POST /content Error: ", err);
     res.status(500).send({});

@@ -1,20 +1,12 @@
-const { getKnex, getNodesFlat } = require("../lib/mysql");
+const { getNodesFlat } = require("../lib/mysql");
 /**
  * get post for editing - signed-in user only
  */
 async function getPostForEdit(req, res) {
-  const { id } = req.params;
-  const knex = await getKnex();
-  const [post] = await knex("post").where({
-    id,
-    user_id: req.loggedInUser.id,
-  });
-  if (!post) {
-    res.status(404).send({});
-    return;
-  }
-  const contentNodes = await getNodesFlat(knex, post.id);
-  res.send({ post, contentNodes });
+  const { currentPost } = req;
+  const { id } = currentPost;
+  const contentNodes = await getNodesFlat(id);
+  res.send({ post: currentPost, contentNodes });
 }
 
 module.exports = {

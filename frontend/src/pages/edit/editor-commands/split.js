@@ -17,7 +17,7 @@ import {
   formatSelections,
   splitSelectionsAtCaretOffset,
 } from '../selection-helpers';
-import { getLastExecuteIdFromHistory } from '../update-manager';
+import { getLastExecuteIdFromHistory } from '../history-manager';
 
 function handleEnterTextType(
   documentModel,

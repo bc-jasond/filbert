@@ -82,25 +82,21 @@ async function getDrafts(req, res, next) {
  * publish a draft - this is a one-time operation
  */
 async function publishDraft(req, res) {
-  const { id } = req.params;
-  const knex = await getKnex();
-  const [post] = await knex("post").whereNull("published").andWhere({
-    user_id: req.loggedInUser.id,
-    id,
-  });
-  if (!post) {
+  const { currentPost } = req;
+  if (currentPost.published) {
     res.status(404).send({});
     return;
   }
-  if (!post.canonical) {
+  if (!currentPost.canonical) {
     res.status(400).send({
-      message: "Error: Can't publish a draft with no canonical URL",
+      message: "Error: Can't publish a draft without a canonical URL",
     });
     return;
   }
+  const knex = await getKnex();
   await knex("post").update({ published: getMysqlDatetime() }).where({
     user_id: req.loggedInUser.id,
-    id,
+    id: currentPost.id,
   });
   res.send({});
 }
@@ -109,17 +105,8 @@ async function publishDraft(req, res) {
  * delete a draft (and content nodes) for logged in user
  */
 async function deleteDraftAndContentNodes(req, res) {
-  const { id } = req.params;
+  const { id } = req.currentPost;
   const knex = await getKnex();
-  const [post] = await knex("post").whereNull("published").andWhere({
-    user_id: req.loggedInUser.id,
-    id,
-  });
-
-  if (!post) {
-    res.status(404).send({});
-    return;
-  }
   /**
    * DANGER ZONE!!!
    */

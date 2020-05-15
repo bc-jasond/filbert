@@ -3,7 +3,7 @@ import { assertValidDomSelectionOrThrow } from '../../../common/dom';
 import { deleteContentRange } from '../../../common/utils';
 import { getFirstNode } from '../document-model';
 import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
-import { getLastExecuteIdFromHistory } from '../update-manager';
+import { getLastExecuteIdFromHistory } from '../history-manager';
 
 // returns a nodeId for node deleted, false for node updated
 function updateNode(documentModel, diffLength, nodeId, startIdx) {
@@ -187,7 +187,7 @@ export function doDelete(documentModel, selectionOffsets) {
  *  it still isn't conducive to an undo/redo workflow, so leaving the TODO
  *
  *  UPDATE 2: this is a lot more stable after grouping handlers by Node Types.
- *  Splitting out the "DocumentModel" and the "UpdateManager" concerns will help enable undo/redo history.
+ *  Splitting out the "DocumentModel" and the "HistoryManager" concerns will help enable undo/redo history.
  *  This will all be revisited during undo/redo.
  *
  *  UPDATE 3: wow, so much easier using a linked list data structure to represent the document, le sigh 🤦‍♀️

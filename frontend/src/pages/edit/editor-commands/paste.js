@@ -4,7 +4,7 @@ import {
   adjustSelectionOffsetsAndCleanup,
   splitSelectionsAtCaretOffset,
 } from '../selection-helpers';
-import { getLastExecuteIdFromHistory } from '../update-manager';
+import { getLastExecuteIdFromHistory } from '../history-manager';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   assertValidDomSelectionOrThrow(selectionOffsets);
