@@ -18,6 +18,7 @@ let historyCandidateExecuteSelectionOffsets = {};
 let historyCandidateStateEntry = {};
 let historyCandidateTimeout;
 let historyQueue = [];
+let hasPendingRequest = false;
 
 export default function HistoryManager(postId, pendingHistoryQueue = []) {
   function getHistoryQueue() {
@@ -62,7 +63,11 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
         [HISTORY_KEY_UNEXECUTE_OFFSETS]: unexecuteSelectionOffsets,
         [HISTORY_KEY_STATE]: state.filter(
           // remove no-op state entries
-          (entry) => !is(entry.executeState, entry.unexecuteState)
+          (entry) =>
+            // use reviver to expand Selections
+            !fromJS(entry.executeState, reviver).equals(
+              fromJS(entry.unexecuteState, reviver)
+            )
         ),
       },
       reviver
@@ -76,6 +81,9 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
 
   // saves current snapshot of document given new history
   async function saveContentBatch() {
+    if (hasPendingRequest) {
+      return;
+    }
     const nodeUpdatesByNodeId = historyQueue
       // TODO: de-dupe happens on API, probably could clean that up here before it goes over the wire
       .flatMap((historyEntry) =>
@@ -95,11 +103,13 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
       return {};
     }
 
+    hasPendingRequest = true;
     const { error, data: result } = await apiPost(`/content/${postId}`, {
       nodeUpdatesByNodeId,
       // save history entries for new history only
       contentNodeHistory: historyQueue,
     });
+    hasPendingRequest = false;
 
     if (error) {
       // TODO: message user after X failures?
@@ -175,7 +185,12 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
   }
 
   async function undo(currentNodesById) {
+    if (hasPendingRequest) {
+      return;
+    }
+    hasPendingRequest = true;
     const { error: undoError, data } = await apiPost(`/undo/${postId}`, {});
+    hasPendingRequest = false;
     if (undoError) {
       console.error(undoError);
       return null;
@@ -202,7 +217,12 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
   }
 
   async function redo(currentNodesById) {
+    if (hasPendingRequest) {
+      return null;
+    }
+    hasPendingRequest = true;
     const { error: redoError, data } = await apiPost(`/redo/${postId}`, {});
+    hasPendingRequest = false;
     if (redoError) {
       console.error(redoError);
       return null;

@@ -3,8 +3,6 @@ import { fromJS, Map } from 'immutable';
 import {
   SELECTION_ACTION_BOLD,
   SELECTION_ACTION_CODE,
-  SELECTION_ACTION_H1,
-  SELECTION_ACTION_H2,
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_MINI,
@@ -113,7 +111,7 @@ function transferFormats(left, right) {
  *
  * Every public export calls this to keep shit on the level.
  * FOR POSTERITY: This has been the single most difficult function to design in the whole codebase
- * bugs and regressions here over and over again finally prompted adding the first tests with jest
+ * bugs and regressions here over and over again finally prompted adding the first tests with jest, there's probably still bugs
  *
  * adjusts selection offsets (and removes selections) after these events: paste, keydown, delete 1 char, delete selection of 1 or more chars
  */

@@ -57,9 +57,13 @@ async function postContentNodeHistory(currentPost, history) {
 
   if (currentUndoHistoryId !== -1) {
     // user has used "Undo" and now starts to edit the document again
+    // get current history to merge with new history if executeState is equal
+    // TODO a merge needs to happen here (conditionally) to remove what seems like a "duplicate" history entry when the user starts typing in the last undo/redo node AKA, if they don't move the caret before continuing to make edits
+
     // clear any history "in front of" the current cursor before adding more history
     await knex("content_node_history")
       .where({ post_id: id })
+      // NOTE: deleting current history too with greater than OR EQUALS.  This assumes the current history has the same executeState as the first entry of the new history AKA, the caret
       .andWhere("content_node_history_id", ">", currentUndoHistoryId)
       .del();
   }

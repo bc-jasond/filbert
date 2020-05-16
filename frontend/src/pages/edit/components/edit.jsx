@@ -51,7 +51,7 @@ import {
 } from '../../../common/constants';
 
 import Document from '../../../common/components/document.component';
-import DocumentModel, { getFirstNode, getLastNode } from '../document-model';
+import DocumentModel, { getFirstNode } from '../document-model';
 import HistoryManager, {
   getLastExecuteIdFromHistory,
 } from '../history-manager';
@@ -211,6 +211,13 @@ export default class EditPost extends React.Component {
     this.setState({ shouldRedirect: `/edit/${postId}` });
   };
 
+  batchSave = async () => {
+    const { updatedPost } = await this.historyManager.saveContentBatch();
+    if (updatedPost) {
+      this.setState({ post: fromJS(updatedPost) });
+    }
+  };
+
   loadPost = async () => {
     const {
       error,
@@ -228,12 +235,7 @@ export default class EditPost extends React.Component {
     const postMap = fromJS(post);
     this.historyManager = HistoryManager(postMap.get('id'));
     this.documentModel = DocumentModel(postMap.get('id'), contentNodes);
-    this.batchSaveIntervalId = setInterval(async () => {
-      const { updatedPost } = await this.historyManager.saveContentBatch();
-      if (updatedPost) {
-        this.setState({ post: fromJS(updatedPost) });
-      }
-    }, 3000);
+    this.batchSaveIntervalId = setInterval(this.batchSave, 3000);
     this.setState(
       {
         post: postMap,
@@ -1349,6 +1351,8 @@ export default class EditPost extends React.Component {
                 contentEditable
                 suppressContentEditableWarning
               >
+                {/*for debugging purposes*/}
+                {/*<button onClick={this.batchSave}>SAVE BATCH</button>*/}
                 <Document
                   nodesById={nodesById}
                   currentEditNode={editSectionNode}
