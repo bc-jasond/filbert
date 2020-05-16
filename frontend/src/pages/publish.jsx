@@ -168,10 +168,8 @@ export default React.memo(({ params, session, setSession }) => {
       postLocal = fromJS(postLocal);
       backupTitleRef.current = postLocal.get('title', '');
       backupAbstractRef.current = postLocal.get('abstract', '');
-      backupImageNodeRef.current = postLocal.getIn(
-        ['meta', 'imageNode'],
-        Map()
-      );
+      backupImageNodeRef.current =
+        postLocal.getIn(['meta', 'imageNode']) || Map();
 
       let postSummaryLocal = await loadPostSummary(params?.id);
       if (!postSummaryLocal) {
@@ -314,7 +312,7 @@ export default React.memo(({ params, session, setSession }) => {
     setPost(post.setIn(['meta', 'imageNode'], imageNodeUpdated));
   }
 
-  const imageNode = post.getIn(['meta', 'imageNode'], Map());
+  const imageNode = post.getIn(['meta', 'imageNode']) || Map();
   const shouldSyncTitleAndAbstract = post.getIn([
     'meta',
     'syncTitleAndAbstract',
