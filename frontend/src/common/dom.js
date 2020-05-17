@@ -61,6 +61,22 @@ export function getNodeById(nodeId) {
   return first;
 }
 
+export function findFirstDifferentWordFromDom(nodeId, beforeContent) {
+  const { textContent: domContent = '' } = getNodeById(nodeId);
+  // regex allows hyphens and apostrophes in words
+  // found at: https://stackoverflow.com/a/31911227/1991322
+  const wordRegEx = /[\w'-]+/g;
+  const beforeWords = beforeContent.match(wordRegEx);
+  const domWords = domContent.match(wordRegEx);
+  // find first different word
+  const firstDifferentWordIdx = beforeWords.findIndex(
+    (word, idx) => domWords[idx] !== word
+  );
+  const beforeWord = beforeWords[firstDifferentWordIdx];
+  const domWord = domWords[firstDifferentWordIdx];
+  return { diffStart: beforeContent.indexOf(beforeWord), beforeWord, domWord };
+}
+
 export function getFirstHeadingContent() {
   const [h1] = document.querySelectorAll(`[data-type='${NODE_TYPE_H1}']`);
   return h1 ? h1.textContent : '';
