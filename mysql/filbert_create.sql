@@ -7,27 +7,32 @@ CREATE TABLE `user` (
   `username` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `email` varchar(150) COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `password` char(60) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deleted` datetime DEFAULT NULL,
   `given_name` varchar(200) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `family_name` varchar(200) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `picture_url` varchar(500) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `iss` varchar(200) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `deleted` datetime DEFAULT NULL,
+  `is_public` tinyint(4) DEFAULT '0',
+  `show_stats` tinyint(4) DEFAULT '0',
+  `meta` json DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username_UNIQUE` (`username`) USING BTREE,
-  UNIQUE KEY `email_UNIQUE` (`email`) USING BTREE
+  UNIQUE KEY `email_UNIQUE` (`email`) USING BTREE,
+  KEY `is_public` (`is_public`),
+  KEY `deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 CREATE TABLE `content_node` (
   `post_id` int(11) NOT NULL,
   `id` char(4) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `next_sibling_id` char(4) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `type` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `content` text COLLATE utf8mb4_unicode_520_ci NOT NULL,
   `meta` json NOT NULL,
+  `content` text COLLATE utf8mb4_unicode_520_ci,
+  `next_sibling_id` char(4) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`post_id`,`id`),
-  KEY `type` (`type`) USING BTREE
+  `deleted` datetime DEFAULT NULL,
+  PRIMARY KEY (`post_id`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 CREATE TABLE `post` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
