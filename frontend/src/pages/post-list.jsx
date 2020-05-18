@@ -26,14 +26,20 @@ import PostListRow from '../common/components/post-list-row';
 import useDebounce from '../common/use-debounce.hook';
 
 export default React.memo(
-  ({ shouldListDrafts = false, session, setSession }) => {
+  ({
+    shouldListDrafts = false,
+    session,
+    setSession,
+    queryString: queryStringProp,
+  }) => {
+    console.log('MATCH?', queryStringProp);
     const getPostsUrl = shouldListDrafts ? '/draft' : '/post';
 
     const inputRef = React.createRef();
     const [loading, setLoading] = useState(false);
     const [posts, setPosts] = useState(List());
 
-    const queryParams = new URLSearchParams(window.location.search);
+    const queryParams = new URLSearchParams(queryStringProp);
     const [oldestFilterIsSelected, setOldestFilterIsSelected] = useState(
       queryParams.has('oldest')
     );
@@ -69,7 +75,7 @@ export default React.memo(
     }
 
     useEffect(() => {
-      const queryParamsInternal = new URLSearchParams(window.location.search);
+      const queryParamsInternal = new URLSearchParams(queryStringProp);
       queryParamsInternal.delete('random');
       queryParamsInternal.delete('oldest');
       if (!containsFilterIsSelected) {
@@ -92,13 +98,14 @@ export default React.memo(
       containsFilterIsSelected,
       usernameFilterIsSelected,
       shouldListDrafts,
+      queryStringProp,
     ]);
 
     useEffect(() => {
       if (!shouldListDrafts) {
         return;
       }
-      const queryParamsInternal = new URLSearchParams(window.location.search);
+      const queryParamsInternal = new URLSearchParams(queryStringProp);
       queryParamsInternal.delete('contains');
       if (containsDebounced.length < 3) {
         return;
@@ -121,6 +128,28 @@ export default React.memo(
       pushHistory(queryParamsInternal);
       setQueryString(queryParamsInternal.toString());
     }, [usernameDebounced, shouldListDrafts]);
+
+    // set the 'username' filter if user clicks a username in a post row.
+    // The post row uses React Router Link to update browser history.
+    // Since the post row is a different component it doesn't share state, so we listen for browser history changes
+    useEffect(() => {
+      if (shouldListDrafts) {
+        return;
+      }
+      const queryParamsInternal = new URLSearchParams(queryStringProp);
+      const usernameFromQueryString = queryParamsInternal.get('username');
+      if (
+        !usernameFromQueryString ||
+        usernameFromQueryString.length < 5 ||
+        usernameFromQueryString.length > 42
+      ) {
+        setUsername('');
+        setUsernameFilterIsSelected(false);
+        return;
+      }
+      setUsername(usernameFromQueryString);
+      setUsernameFilterIsSelected(true);
+    }, [queryStringProp, shouldListDrafts]);
 
     useEffect(() => {
       async function loadPosts(queryStringArg = '') {

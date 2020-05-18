@@ -1,3 +1,5 @@
+import { getMysqlDatetime } from "../lib/mysql";
+
 const {
   getKnex,
   getNodesFlat,
@@ -33,8 +35,8 @@ async function getPosts(req, res) {
       { givenName: "given_name" }
     )
     .innerJoin("user", "post.user_id", "user.id")
-    .whereNotNull("published")
-    .limit(250);
+    .whereRaw("published IS NOT NULL AND post.deleted IS NULL")
+    .limit(1000);
 
   if (username) {
     builder = builder.andWhere("username", "like", `%${username}%`);
@@ -96,7 +98,7 @@ async function getPostByCanonical(req, res) {
     .select("canonical")
     .innerJoin("user", "post.user_id", "user.id")
     .whereNotNull("published")
-    .andWhere({ username: post.username })
+    .andWhere({ username: post.username, "post.deleted": null })
     .orderBy("published", "asc")
     .map(({ canonical }) => canonical);
 
@@ -158,11 +160,14 @@ async function patchPost(req, res, next) {
       patchValues.meta = JSON.stringify(meta);
     }
     const knex = await getKnex();
-    const result = await knex("post").update(patchValues).where({
-      user_id: req.loggedInUser.id,
-      id,
-    });
-    res.send(result);
+    const result = await knex("post")
+      .update(patchValues)
+      .whereNull("deleted")
+      .andWhere({
+        user_id: req.loggedInUser.id,
+        id,
+      });
+    res.send({});
   } catch (err) {
     next(err);
   }
@@ -188,8 +193,10 @@ async function deletePublishedPost(req, res) {
   /**
    * DANGER ZONE!!!
    */
-  await knex("content_node").where("post_id", id).del();
-  await knex("post").where("id", id).del();
+  const deleted = getMysqlDatetime();
+  await knex("content_node_history").update({ deleted }).where("post_id", id);
+  await knex("content_node").update({ deleted }).where("post_id", id);
+  await knex("post").update({ deleted }).where("id", id);
   res.status(204).send({});
 }
 
