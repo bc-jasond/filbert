@@ -47,9 +47,12 @@ async function getDrafts(req, res, next) {
         knex.raw(`1 as 'userProfileIsPublic'`)
       )
       .innerJoin("user", "post.user_id", "user.id")
-      .whereNull("published")
-      .andWhere("post.user_id", loggedInUser.id)
-      .limit(250);
+      .where({
+        "post.user_id": loggedInUser.id,
+        published: null,
+        "post.deleted": null,
+      })
+      .limit(1000);
 
     if (typeof contains === "string") {
       builder = builder.andWhereRaw(
@@ -111,8 +114,10 @@ async function deleteDraftAndContentNodes(req, res) {
    * DANGER ZONE!!!
    */
   // TODO: transaction
-  await knex("content_node").where("post_id", id).del();
-  await knex("post").where("id", id).del();
+  const deleted = getMysqlDatetime();
+  await knex("content_node_history").update({ deleted }).where("post_id", id);
+  await knex("content_node").update({ deleted }).where("post_id", id);
+  await knex("post").update({ deleted }).where("id", id);
 
   res.status(204).send({});
 }

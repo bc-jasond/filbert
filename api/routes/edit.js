@@ -12,7 +12,7 @@ async function getPostForEdit(req, res) {
   // get history for caret positioning on document load
   const knex = await getKnex();
   // if not in an undo/redo state, get most recent history
-  const whereClause = { post_id: id };
+  const whereClause = { post_id: id, deleted: null };
   // undo/redo state - get history at currentUndoHistoryId
   if (currentUndoHistoryId && currentUndoHistoryId !== -1) {
     whereClause.content_node_history_id = currentUndoHistoryId;

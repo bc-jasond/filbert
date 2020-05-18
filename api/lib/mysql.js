@@ -45,7 +45,10 @@ export function getMysqlDatetime(date = null) {
 
 export async function getNodesFlat(postId) {
   const knex = await getKnex();
-  const nodesArray = await knex("content_node").where("post_id", postId);
+  const nodesArray = await knex("content_node").where({
+    post_id: postId,
+    deleted: null,
+  });
 
   // flat map of nodeId => node
   return nodesArray.reduce((acc, node) => {
@@ -93,9 +96,9 @@ export async function bulkContentNodeDelete(postId, nodeIds) {
   if (nodeIds.length === 0) return;
   const knexInstance = await getKnex();
   return knexInstance("content_node")
+    .update({ deleted: getMysqlDatetime() })
     .whereIn("id", nodeIds)
-    .andWhere("post_id", postId)
-    .del();
+    .andWhere("post_id", postId);
 }
 
 export async function makeMysqlDump(now, stagingDirectory) {

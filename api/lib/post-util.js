@@ -68,7 +68,6 @@ function getFirstPhotoAndAbstractFromContent(contentNodes, postId) {
 }
 
 async function addFirstPhotoTitleAndAbstractToPosts(posts) {
-  const knex = await getKnex();
   const draftsModified = [];
   for (let i = 0; i < posts.length; i++) {
     const draft = posts[i];

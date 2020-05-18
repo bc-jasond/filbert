@@ -224,7 +224,7 @@ export default class EditPost extends React.Component {
       data: {
         post,
         contentNodes,
-        selectionOffsets: { startNodeId, caretStart },
+        selectionOffsets: { startNodeId, caretStart } = {},
       } = {},
     } = await apiGet(`/edit/${this.props?.params?.id}`);
     if (error) {

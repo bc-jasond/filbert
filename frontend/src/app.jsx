@@ -38,9 +38,10 @@ export default React.memo(() => {
       <Route
         exact={exact}
         path={path}
-        render={({ match: { params = {} } }) => (
+        render={({ match: { params = {} }, location: { search } = {} }) => (
           <Component
             params={params}
+            queryString={search}
             session={session}
             setSession={setSession}
             shouldListDrafts={shouldListDrafts}

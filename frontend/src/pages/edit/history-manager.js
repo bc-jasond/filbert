@@ -35,6 +35,9 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
   }
 
   async function flushPendingNodeUpdateLogEntry() {
+    if (!historyCandidateStateEntry) {
+      return;
+    }
     const historyEntry = fromJS(
       {
         [HISTORY_KEY_EXECUTE_OFFSETS]: historyCandidateExecuteSelectionOffsets,
@@ -57,6 +60,9 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     state,
   }) {
     clearPending();
+    if (!state) {
+      return;
+    }
     const historyEntry = fromJS(
       {
         [HISTORY_KEY_EXECUTE_OFFSETS]: executeSelectionOffsets,

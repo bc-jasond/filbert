@@ -1,3 +1,5 @@
+import { getMysqlDatetime } from "../lib/mysql";
+
 const {
   getKnex,
   bulkContentNodeUpsert,
@@ -62,10 +64,10 @@ async function postContentNodeHistory(currentPost, history) {
 
     // clear any history "in front of" the current cursor before adding more history
     await knex("content_node_history")
+      .update({ deleted: getMysqlDatetime() })
       .where({ post_id: id })
       // NOTE: deleting current history too with greater than OR EQUALS.  This assumes the current history has the same executeState as the first entry of the new history AKA, the caret
-      .andWhere("content_node_history_id", ">", currentUndoHistoryId)
-      .del();
+      .andWhere("content_node_history_id", ">", currentUndoHistoryId);
   }
   // get last saved history id as starting point for new history batch
   const [{ lastHistoryId = 0 } = {}] = await knex("content_node_history")
@@ -120,7 +122,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
     comparisonOperand = lastActionWasUndo ? ">=" : ">";
   }
   const [history] = await knex("content_node_history")
-    .where({ post_id: id })
+    .where({ post_id: id, deleted: null })
     .andWhere(
       "content_node_history_id",
       comparisonOperand,

@@ -21,10 +21,13 @@ async function postContentNodes(req, res) {
 
     // TODO: put in transaction
     // 1) save history
-    const contentNodeHistoryResult = await postContentNodeHistory(
-      currentPost,
-      contentNodeHistory
-    );
+    let contentNodeHistoryResult;
+    if (contentNodeHistory) {
+      contentNodeHistoryResult = await postContentNodeHistory(
+        currentPost,
+        contentNodeHistory
+      );
+    }
 
     // 2) reset post undo history cursor to -1 if in "undo" state
     let updatedPost;
