@@ -10,10 +10,9 @@ import {
   PAGE_NAME_VIEW,
   POST_ACTION_REDIRECT_TIMEOUT,
 } from '../common/constants';
-import { ease } from '../common/css';
+import { ease } from '../css';
 import { focusAndScrollSmooth, getNextFromUrl } from '../common/dom';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../common/fetch';
-import { monospaced } from '../common/fonts.css';
 import {
   Button,
   ButtonSpan,
@@ -34,7 +33,13 @@ import {
   TextArea,
 } from '../common/components/shared-styled-components';
 import Toggle from '../common/components/toggle';
-import { grey, viewport12, viewport7 } from '../variables.css';
+import {
+  codeFontFamily,
+  getVar,
+  grey,
+  viewport12,
+  viewport7,
+} from '../variables.css';
 import EditImageForm from './edit/components/edit-image-form';
 
 import {
@@ -81,7 +86,7 @@ const ToggleWrapper = styled.div`
 `;
 const ToggleLabel = styled.span`
   flex-grow: 2;
-  font-family: ${monospaced}, monospaced;
+  font-family: ${getVar(codeFontFamily)}, monospaced;
   color: ${grey};
   font-size: 18px;
   line-height: 24px;

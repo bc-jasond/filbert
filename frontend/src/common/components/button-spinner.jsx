@@ -1,11 +1,11 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
 import { darkGrey, mediumGrey } from '../../variables.css';
-import { sansSerif } from '../fonts.css';
+import { sansSerif } from '../../fonts.css';
 import { navButtonMixin } from './shared-styled-components-mixins';
 
 import Spinner from './spinner';
-import { bezier } from '../css';
+import { bezier } from '../../css';
 
 /*!
  * Inspired by: Ladda

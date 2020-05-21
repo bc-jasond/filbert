@@ -26,7 +26,7 @@ module.exports = (env, argv) => {
           exclude: /node_modules/,
         },
         {
-          test: /\.woff$/,
+          test: /\.(woff|woff2)$/,
           use: [
             {
               loader: 'file-loader',
@@ -62,7 +62,7 @@ module.exports = (env, argv) => {
         verbose: true,
         rewrites: [
           {
-            from: /\.woff$/,
+            from: /\.(woff|woff2)$/,
             to: (context) =>
               `/fonts/${context.parsedUrl.pathname.split('/').pop()}`,
           },

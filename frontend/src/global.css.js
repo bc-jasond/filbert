@@ -1,10 +1,9 @@
 import { createGlobalStyle } from 'styled-components';
 
-import { contentSerif } from './common/fonts.css';
-
 import {
   backgroundColorPrimary,
   backgroundColorSecondary,
+  bodyFontFamily,
   getVar,
   textColorPrimary,
 } from './variables.css';
@@ -31,7 +30,7 @@ figure, figcaption, footer, header, hgroup,
 menu, nav, output, ruby, section, summary,
 time, mark, audio, video {
 	color: ${getVar(textColorPrimary)};
-	font-family: ${contentSerif}, serif;
+	font-family: ${getVar(bodyFontFamily)}, serif;
 	/* looks a lot more suavecito with smoothing */
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;

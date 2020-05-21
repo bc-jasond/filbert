@@ -7,7 +7,7 @@ import { getSession } from './common/session';
 import CssVariables from './variables.css';
 import CssGlobals from './global.css';
 import CssReset from './reset.css';
-import CssFonts from './common/fonts.css';
+import CssFonts from './fonts.css';
 import CssPace from './common/pace.css';
 
 import Page404 from './pages/404';

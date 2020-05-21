@@ -5,9 +5,8 @@ import { fromJS, Map } from 'immutable';
 import Image from '../common/components/image';
 import { PAGE_NAME_VIEW } from '../common/constants';
 import { apiGet } from '../common/fetch';
-import { monospaced } from '../common/fonts.css';
 import { formatPostDate, reviver } from '../common/utils';
-import { grey, viewport7 } from '../variables.css';
+import { codeFontFamily, getVar, grey, viewport7 } from '../variables.css';
 
 import Header from './header';
 import Footer from './footer';
@@ -37,7 +36,7 @@ const PrevNextPostSection = styled.section`
   margin-bottom: 16px;
 `;
 const H3Centered = styled(H3Styled)`
-  font-family: ${monospaced};
+  font-family: ${getVar(codeFontFamily)};
   color: ${grey};
   text-align: center;
 `;
