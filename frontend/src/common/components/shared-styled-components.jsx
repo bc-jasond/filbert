@@ -3,11 +3,31 @@ import styled, { css, keyframes } from 'styled-components';
 import {
   accentColorPrimary,
   accentColorSecondary,
+  altFontFamily,
+  altFontSize,
+  altFontWeight,
+  altLetterSpacing,
+  altLineHeight,
   backgroundColorSecondary,
+  codeFontFamily,
+  codeFontSize,
+  codeFontWeight,
+  codeLetterSpacing,
+  codeLineHeight,
   darkGrey,
   error,
   getVar,
   grey,
+  h1FontFamily,
+  h1FontSize,
+  h1FontWeight,
+  h1LetterSpacing,
+  h1LineHeight,
+  h2FontFamily,
+  h2FontSize,
+  h2FontWeight,
+  h2LetterSpacing,
+  h2LineHeight,
   lightError,
   mediumGrey,
   outline,
@@ -18,7 +38,7 @@ import {
   viewport7,
   viewport9,
 } from '../../variables.css';
-import { contentSerif, monospaced, sansSerif, titleSerif } from '../fonts.css';
+import { contentSerif, sansSerif } from '../../fonts.css';
 import {
   authorExpandMixin,
   italicMixin,
@@ -71,9 +91,11 @@ export const Col9 = styled.div`
 export const newPostPlaceholderText = 'Write a title and hit enter...';
 export const H1Styled = styled.h1`
   ${sectionWidthMixin};
-  font-family: ${titleSerif}, serif;
-  font-size: 46px;
-  line-height: 1.25;
+  font-family: ${getVar(h1FontFamily)}, serif;
+  font-size: ${getVar(h1FontSize)};
+  font-weight: ${getVar(h1FontWeight)};
+  line-height: ${getVar(h1LineHeight)};
+  letter-spacing: ${getVar(h1LetterSpacing)};
   margin-bottom: 24px;
   color: ${getVar(titleColorPrimary)};
   ${(p) =>
@@ -91,11 +113,11 @@ export const H2Styled = styled.h2`
   color: ${getVar(titleColorPrimary)};
   margin-top: 30px;
   margin-bottom: 8px;
-  font-weight: 600;
-  font-family: ${sansSerif}, sans-serif;
-  font-size: 32px;
-  line-height: 1.22;
-  letter-spacing: -0.012em;
+  font-family: ${getVar(h2FontFamily)}, sans-serif;
+  font-size: ${getVar(h2FontSize)};
+  font-weight: ${getVar(h2FontWeight)};
+  line-height: ${getVar(h2LineHeight)};
+  letter-spacing: ${getVar(h2LetterSpacing)};
 `;
 export const H3Styled = styled.h3`
   ${sectionWidthMixin};
@@ -108,7 +130,7 @@ export const H3Styled = styled.h3`
   line-height: 28px;
   font-weight: 600;
   font-style: normal;
-  font-family: ${sansSerif}, sans-serif;
+  font-family: ${getVar(h2FontFamily)}, sans-serif;
 `;
 export const ContentSectionStyled = styled.section`
   ${sectionWidthMixin};
@@ -119,12 +141,13 @@ export const ContentSectionStyled = styled.section`
   margin-bottom: 52px;
 `;
 export const CodeSectionStyled = styled(ContentSectionStyled)`
-  font-family: ${monospaced}, monospace;
+  font-family: ${getVar(codeFontFamily)}, monospace;
   font-size: 16px;
+  font-weight: ${getVar(codeFontWeight)};
   max-height: 350px;
-  letter-spacing: -0.03em;
+  letter-spacing: ${getVar(codeLetterSpacing)};
   word-spacing: -0.2em;
-  line-height: 1.75;
+  line-height: ${getVar(codeLineHeight)};
   background: ${getVar(backgroundColorSecondary)};
   padding: 20px;
   overflow: auto;
@@ -143,8 +166,11 @@ export const A = styled.a`
   ${linkMixin}
 `;
 export const Code = styled.code`
-  font-family: ${monospaced}, monospace;
-  font-size: 18px;
+  font-family: ${getVar(codeFontFamily)}, monospace;
+  font-size: ${getVar(codeFontSize)};
+  font-weight: ${getVar(codeFontWeight)};
+  line-height: ${getVar(codeLineHeight)};
+  letter-spacing: ${getVar(codeLetterSpacing)};
   color: ${getVar(textColorSecondary)};
   background: ${getVar(backgroundColorSecondary)};
   padding: 4px;
@@ -152,7 +178,11 @@ export const Code = styled.code`
 `;
 export const SiteInfo = styled.span`
   color: ${getVar(textColorSecondary)};
-  font-family: ${sansSerif}, sans-serif;
+  font-family: ${getVar(altFontFamily)}, sans-serif;
+  font-size: ${getVar(altFontSize)};
+  font-weight: ${getVar(altFontWeight)};
+  line-height: ${getVar(altLineHeight)};
+  letter-spacing: ${getVar(altLetterSpacing)};
 `;
 export const ItalicText = styled.em`
   ${italicMixin};
@@ -181,7 +211,7 @@ export const InputContainer = styled.div`
 export const Input = styled.input`
   font-size: 18px;
   font-weight: 400;
-  font-family: ${monospaced};
+  font-family: ${getVar(codeFontFamily)};
   line-height: 36px;
   border-radius: 2px;
   border: 1px solid ${grey};
@@ -195,7 +225,7 @@ export const Input = styled.input`
 export const TextArea = styled.textarea`
   font-size: 18px;
   font-weight: 400;
-  font-family: ${monospaced};
+  font-family: ${getVar(codeFontFamily)};
   line-height: 36px;
   border-radius: 2px;
   border: 1px solid ${grey};
@@ -210,7 +240,7 @@ export const TextArea = styled.textarea`
 export const Label = styled.label`
   display: block;
   margin-bottom: 4px;
-  font-family: ${sansSerif};
+  font-family: ${getVar(altFontFamily)};
   ${(p) =>
     p.error &&
     css`
@@ -229,7 +259,7 @@ export const MessageContainer = styled.div`
   min-height: 36px;
   margin-bottom: 8px;
   text-align: center;
-  font-family: ${monospaced};
+  font-family: ${getVar(codeFontFamily)};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -269,7 +299,7 @@ export const DeleteButton = styled(Button)`
 `;
 export const ButtonSpan = styled.span`
   color: white;
-  font-family: ${sansSerif};
+  font-family: ${getVar(altFontFamily)};
 `;
 
 // LIL SASSY FORMS with ICONS

@@ -21,7 +21,7 @@ module.exports = (/* env, argv */) => {
           exclude: /node_modules/,
         },
         {
-          test: /\.woff$/,
+          test: /\.(woff|woff2)$/,
           use: [
             {
               loader: 'file-loader',

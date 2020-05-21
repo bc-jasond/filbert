@@ -102,6 +102,7 @@ export const FILBERT_LOCALSTORAGE_NAMESPACE = 'filbert';
 export const AUTH_TOKEN_KEY = 'token';
 export const SESSION_KEY = 'session';
 export const SESSION_THEME = 'theme';
+export const SESSION_FONT = 'font';
 
 // DOM
 export const DOM_ELEMENT_NODE_TYPE_ID = 1;
@@ -121,3 +122,5 @@ export const HISTORY_MIN_NUM_CHARS = 6;
 // THEME
 export const DARK_MODE_THEME = 'dark';
 export const LIGHT_MODE_THEME = 'light';
+export const SANS_FONT_THEME = 'sans';
+export const MIXED_FONT_THEME = 'mixed';

@@ -7,8 +7,7 @@ import {
   LogoLinkStyled,
   SocialIcon,
 } from '../common/components/layout-styled-components';
-import { monospaced } from '../common/fonts.css';
-import { grey, lightGrey } from '../variables.css';
+import { codeFontFamily, getVar, grey, lightGrey } from '../variables.css';
 
 const GitHubStyled = styled(GitHubSvg)`
   cursor: pointer;
@@ -23,7 +22,7 @@ const SocialLinksContainer = styled.div`
   justify-content: center;
 `;
 const FooterStyled = styled.footer`
-  font-family: ${monospaced}, monospaced;
+  font-family: ${getVar(codeFontFamily)}, monospaced;
   background: ${lightGrey};
   padding: 20px;
   text-align: center;

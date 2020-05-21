@@ -2,7 +2,7 @@ import { Map } from 'immutable';
 import React from 'react';
 import styled, { css } from 'styled-components';
 import { NODE_TYPE_IMAGE } from '../constants';
-import { ease } from '../css';
+import { ease } from '../../css';
 import { nodeIsValid } from '../utils';
 import { ContentSectionStyled } from './shared-styled-components';
 import {

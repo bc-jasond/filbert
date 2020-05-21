@@ -8,7 +8,7 @@ import {
   getVar,
   outline,
 } from '../../variables.css';
-import { ease } from '../css';
+import { ease } from '../../css';
 
 const Wrapper = styled.div`
   display: flex;

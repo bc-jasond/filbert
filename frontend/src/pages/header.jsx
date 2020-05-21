@@ -3,16 +3,30 @@ import React, { useEffect, useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
+import { H1Styled } from '../common/components/shared-styled-components';
 import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
 import {
   DARK_MODE_THEME,
   LIGHT_MODE_THEME,
+  MIXED_FONT_THEME,
   PAGE_NAME_EDIT,
   PAGE_NAME_VIEW,
+  SANS_FONT_THEME,
 } from '../common/constants';
 import { createNextUrl } from '../common/dom';
-import { getTheme, setTheme, signout } from '../common/session';
-import { backgroundColorPrimary, getVar, viewport7 } from '../variables.css';
+import {
+  getFont,
+  getTheme,
+  setFont,
+  setTheme,
+  signout,
+} from '../common/session';
+import {
+  backgroundColorPrimary,
+  getVar,
+  h1FontFamily,
+  viewport7,
+} from '../variables.css';
 
 const HeaderStyled = styled.header`
   position: fixed;
@@ -68,8 +82,13 @@ const NavSpan = styled.button`
 const NavLink = styled(Link)`
   ${navButtonMixin};
 `;
+const FontToggle = styled.span`
+  font-family: ${getVar(h1FontFamily)};
+  color: inherit;
+`;
 
 const currentTheme = getTheme();
+const currentFont = getFont();
 
 export default function Header({
   session = Map(),
@@ -80,14 +99,20 @@ export default function Header({
 }) {
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const [theme, setThemeHook] = useState(currentTheme);
+  const [font, setFontHook] = useState(currentFont);
 
   useEffect(() => {
     if (theme === DARK_MODE_THEME) {
       document.body.classList.add(DARK_MODE_THEME);
-      return;
+    } else {
+      document.body.classList.remove(DARK_MODE_THEME);
     }
-    document.body.classList.remove(DARK_MODE_THEME);
-  }, [theme]);
+    if (font === SANS_FONT_THEME) {
+      document.body.classList.add(SANS_FONT_THEME);
+    } else {
+      document.body.classList.remove(SANS_FONT_THEME);
+    }
+  }, [theme, font]);
 
   if (shouldRedirect) {
     return <Redirect to="/signout" />;
@@ -114,6 +139,22 @@ export default function Header({
         <HeaderContentContainer>
           {session.get('userId') ? (
             <>
+              <NavSpan
+                id="font-mode-toggle"
+                onClick={() => {
+                  if (font === SANS_FONT_THEME) {
+                    document.body.classList.remove(SANS_FONT_THEME);
+                    setFont(MIXED_FONT_THEME);
+                    setFontHook(MIXED_FONT_THEME);
+                    return;
+                  }
+                  document.body.classList.add(SANS_FONT_THEME);
+                  setFont(SANS_FONT_THEME);
+                  setFontHook(SANS_FONT_THEME);
+                }}
+              >
+                <FontToggle>Font</FontToggle>
+              </NavSpan>
               <NavSpan
                 id="dark-mode-toggle"
                 onClick={() => {

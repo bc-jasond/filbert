@@ -4,13 +4,19 @@ import {
   accentColorPrimary,
   accentColorSecondary,
   boxShadow,
+  codeFontFamily,
   getVar,
   grey,
+  miniFontFamily,
+  miniFontSize,
+  miniFontWeight,
+  miniLetterSpacing,
+  miniLineHeight,
   textColorPrimary,
   textColorSecondary,
   white,
 } from '../../variables.css';
-import { italicSerif, monospaced, sansSerif } from '../fonts.css';
+import { italicSerif, sansSerif } from '../../fonts.css';
 
 export const sectionWidthMixin = css`
   max-width: 740px;
@@ -63,16 +69,16 @@ export const italicMixin = css`
   color: ${getVar(textColorSecondary)};
 `;
 export const miniTextMixin = css`
-  font-family: ${sansSerif}, sans-serif;
-  font-weight: 300;
+  font-family: ${getVar(miniFontFamily)}, sans-serif;
+  font-weight: ${getVar(miniFontWeight)};
   font-style: normal;
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: ${getVar(miniFontSize)};
+  line-height: ${getVar(miniLineHeight)};
   color: ${getVar(textColorSecondary)};
-  letter-spacing: 0;
+  letter-spacing: ${getVar(miniLetterSpacing)};
 `;
 export const navButtonMixin = css`
-  font-family: ${monospaced}, monospaced;
+  font-family: ${getVar(codeFontFamily)}, monospaced;
   color: ${grey};
   cursor: pointer;
   text-decoration: none;
@@ -125,7 +131,7 @@ export const metaContentMixin = css`
 `;
 export const authorExpandMixin = css`
   position: absolute;
-  font-family: ${monospaced}, monospaced;
+  font-family: ${getVar(codeFontFamily)}, monospaced;
   color: ${grey};
   cursor: pointer;
   text-decoration: none;

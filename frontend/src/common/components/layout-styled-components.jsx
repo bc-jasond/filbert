@@ -1,10 +1,16 @@
 import { Link } from 'react-router-dom';
 import styled, { css } from 'styled-components';
-import { darkGrey, grey, viewport9 } from '../../variables.css';
-import { monospaced, sansSerif } from '../fonts.css';
+import {
+  codeFontFamily,
+  darkGrey,
+  getVar,
+  grey,
+  viewport9,
+} from '../../variables.css';
+import { sansSerif } from '../../fonts.css';
 
 export const LinkStyled = styled(Link)`
-  font-family: ${monospaced}, monospaced;
+  font-family: ${getVar(codeFontFamily)}, monospaced;
   font-size: 24px;
   color: ${grey};
   text-decoration: none;
