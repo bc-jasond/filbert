@@ -1,7 +1,7 @@
-const { promisify } = require("util");
-const fs = require("fs");
-const path = require("path");
-const AWS = require("aws-sdk");
+const { promisify } = require('util');
+const fs = require('fs');
+const path = require('path');
+const AWS = require('aws-sdk');
 const {
   objectStorageRegion,
   objectStorageApiVersion,
@@ -9,7 +9,7 @@ const {
   objectStorageACLPublic,
   objectStorageACLPrivate,
   fileUploadStagingDirectory,
-} = require("./constants");
+} = require('./constants');
 
 const s3Client = new AWS.S3({
   region: objectStorageRegion,
@@ -64,8 +64,8 @@ async function downloadFileFromBucket(bucket, filename) {
 
 async function uploadFileToBucket(bucket, fileNameWithAbsolutePath) {
   const fileStream = fs.createReadStream(fileNameWithAbsolutePath);
-  fileStream.on("error", (err) => {
-    console.log("uploadFileToBucket - File Error", err);
+  fileStream.on('error', (err) => {
+    console.log('uploadFileToBucket - File Error', err);
   });
   // call S3 to retrieve upload file to specified bucket
   return upload({
@@ -93,20 +93,20 @@ async function uploadImageToBucket(
 
 async function listKeysForBucket(
   bucket,
-  { sortOrder } = { sortOrder: "desc" }
+  { sortOrder } = { sortOrder: 'desc' }
 ) {
   const response = await listObjects({ Bucket: bucket });
   const comparisonFn =
-    sortOrder === "desc"
+    sortOrder === 'desc'
       ? (a, b) => (a > b ? -1 : 1)
       : (a, b) => (a > b ? 1 : -1);
 
   if (response.IsTruncated) {
     console.warn(
-      "listKeysForBucket",
-      "local options: ",
+      'listKeysForBucket',
+      'local options: ',
       options,
-      "response ",
+      'response ',
       response
     );
   }

@@ -1,31 +1,31 @@
-const { OAuth2Client } = require("google-auth-library");
+const { OAuth2Client } = require('google-auth-library');
 
-const { getKnex } = require("../lib/mysql");
-const { sendSession } = require("../lib/express-util");
-const { checkPassword } = require("../lib/admin");
+const { getKnex } = require('../lib/mysql');
+const { sendSession } = require('../lib/express-util');
+const { checkPassword } = require('../lib/admin');
 
 async function postSignin(req, res) {
   try {
     const knex = await getKnex();
     const { username, password } = req.body;
-    const [user] = await knex("user").where("username", username);
+    const [user] = await knex('user').where('username', username);
 
     if (!user) {
-      res.status(401).send({ error: "Invalid credentials" });
+      res.status(401).send({ error: 'Invalid credentials' });
       return;
     }
 
     const passwordDoesMatch = await checkPassword(password, user.password);
 
     if (!passwordDoesMatch) {
-      res.status(401).send({ error: "Invalid credentials" });
+      res.status(401).send({ error: 'Invalid credentials' });
       return;
     }
 
     const exp = Date.now() / 1000 + 60 * 60 * 24; // 24 hours
     sendSession(res, { ...user, exp });
   } catch (err) {
-    console.error("Signin Error: ", err);
+    console.error('Signin Error: ', err);
     res.status(401).send({});
   }
 }
@@ -51,7 +51,7 @@ async function postSigninGoogle(req, res) {
     } = ticket.getPayload();
 
     const knex = await getKnex();
-    let [user] = await knex("user").where("email", email);
+    let [user] = await knex('user').where('email', email);
     if (user) {
       sendSession(res, { ...user, exp });
       return;
@@ -74,7 +74,7 @@ async function postSigninGoogle(req, res) {
       return;
     }
 
-    [user] = await knex("user").where("username", filbertUsername);
+    [user] = await knex('user').where('username', filbertUsername);
     if (user) {
       res.status(400).send({
         error: `Invalid Username: ${filbertUsername} - It's already taken!`,
@@ -92,13 +92,13 @@ async function postSigninGoogle(req, res) {
         picture_url: picture,
         iss,
       })
-      .into("user");
+      .into('user');
 
-    [user] = await knex("user").where("id", userId);
+    [user] = await knex('user').where('id', userId);
 
     sendSession(res, { ...user, exp });
   } catch (err) {
-    console.error("Signin Error: ", err);
+    console.error('Signin Error: ', err);
     res.status(401).send({});
   }
 }

@@ -1,19 +1,19 @@
-const knex = require("knex");
+const knex = require('knex');
 
-const { wrapExec } = require("./util");
+const { wrapExec } = require('./util');
 
 let knexConnection;
 
 export async function getKnex() {
   if (!knexConnection) {
-    console.info("Connecting to MySQL...");
+    console.info('Connecting to MySQL...');
     knexConnection = knex({
-      client: "mysql2",
+      client: 'mysql2',
       connection: {
-        host: process.env.NODE_ENV === "production" ? "db" : "localhost", // docker-compose.yml service name
-        user: "root",
+        host: process.env.NODE_ENV === 'production' ? 'db' : 'localhost', // docker-compose.yml service name
+        user: 'root',
         password: process.env.MYSQL_ROOT_PASSWORD,
-        database: "filbert",
+        database: 'filbert',
       },
       asyncStackTraces: true,
       debug: true,
@@ -30,22 +30,22 @@ export function getMysqlDatetime(date = null) {
   // dirty! https://stackoverflow.com/a/15103764/1991322
   return (
     dateInstance.getFullYear() +
-    "-" +
-    ("0" + (dateInstance.getMonth() + 1)).slice(-2) +
-    "-" +
-    ("0" + dateInstance.getDate()).slice(-2) +
-    " " +
-    ("0" + dateInstance.getHours()).slice(-2) +
-    ":" +
-    ("0" + dateInstance.getMinutes()).slice(-2) +
-    ":" +
-    ("0" + dateInstance.getSeconds()).slice(-2)
+    '-' +
+    ('0' + (dateInstance.getMonth() + 1)).slice(-2) +
+    '-' +
+    ('0' + dateInstance.getDate()).slice(-2) +
+    ' ' +
+    ('0' + dateInstance.getHours()).slice(-2) +
+    ':' +
+    ('0' + dateInstance.getMinutes()).slice(-2) +
+    ':' +
+    ('0' + dateInstance.getSeconds()).slice(-2)
   );
 }
 
 export async function getNodesFlat(postId) {
   const knex = await getKnex();
-  const nodesArray = await knex("content_node").where({
+  const nodesArray = await knex('content_node').where({
     post_id: postId,
     deleted: null,
   });
@@ -70,7 +70,7 @@ export async function bulkContentNodeUpsert(postId, nodes) {
   const knexInstance = await getKnex();
   const query = `
     INSERT INTO content_node (post_id, id, next_sibling_id, type, content, meta) VALUES
-    ${nodes.map(() => "(?)").join(",")}
+    ${nodes.map(() => '(?)').join(',')}
     ON DUPLICATE KEY UPDATE
     next_sibling_id = VALUES(next_sibling_id),
     type = VALUES(type),
@@ -83,7 +83,7 @@ export async function bulkContentNodeUpsert(postId, nodes) {
       id,
       next_sibling_id = null,
       type,
-      content = "",
+      content = '',
       meta = {},
     }) => [postId, id, next_sibling_id, type, content, JSON.stringify(meta)]
   );
@@ -95,25 +95,25 @@ export async function bulkContentNodeDelete(postId, nodeIds) {
   // delete all records WHERE id IN (...recordIds) OR WHERE parent_id IN (...recordIds)
   if (nodeIds.length === 0) return;
   const knexInstance = await getKnex();
-  return knexInstance("content_node")
+  return knexInstance('content_node')
     .update({ deleted: getMysqlDatetime() })
-    .whereIn("id", nodeIds)
-    .andWhere("post_id", postId);
+    .whereIn('id', nodeIds)
+    .andWhere('post_id', postId);
 }
 
 export async function makeMysqlDump(now, stagingDirectory) {
   const currentBackupFilename = `${now.getFullYear()}-${(now.getMonth() + 1)
     .toString()
-    .padStart(2, "0")}-${now
+    .padStart(2, '0')}-${now
     .getDate()
     .toString()
-    .padStart(2, "0")}_${now
+    .padStart(2, '0')}_${now
     .getHours()
     .toString()
-    .padStart(2, "0")}${now
+    .padStart(2, '0')}${now
     .getMinutes()
     .toString()
-    .padStart(2, "0")}${now.getSeconds().toString().padStart(2, "0")}.sql`;
+    .padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}.sql`;
   const currentFileAndPath = `${stagingDirectory}/${currentBackupFilename}`;
   // TODO: anyone that can run a `ps -A` can see this password... 🤦‍♀️
   //  use mysql_editor_config to store obfuscated credentials in a .mylogin.cnf
@@ -134,7 +134,7 @@ export async function restoreMysqlFromFile(fileAndPath) {
   if (
     stderr &&
     !stderr.includes(
-      "[Warning] Using a password on the command line interface can be insecure"
+      '[Warning] Using a password on the command line interface can be insecure'
     )
   ) {
     return { stderr };
@@ -144,23 +144,23 @@ export async function restoreMysqlFromFile(fileAndPath) {
 
 export async function getPostByCanonicalHelper(canonical, loggedInUser) {
   const knex = await getKnex();
-  const [post] = await knex("post")
+  const [post] = await knex('post')
     .select(
-      "post.id",
-      { userId: "user.id" },
-      { userProfileIsPublic: "user.is_public" },
-      "canonical",
-      "title",
-      "abstract",
-      "published",
-      "post.meta",
-      "username",
-      { profilePictureUrl: "user.picture_url" },
-      { familyName: "family_name" },
-      { givenName: "given_name" }
+      'post.id',
+      { userId: 'user.id' },
+      { userProfileIsPublic: 'user.is_public' },
+      'canonical',
+      'title',
+      'abstract',
+      'published',
+      'post.meta',
+      'username',
+      { profilePictureUrl: 'user.picture_url' },
+      { familyName: 'family_name' },
+      { givenName: 'given_name' }
     )
-    .innerJoin("user", "post.user_id", "user.id")
-    .whereNotNull("published")
+    .innerJoin('user', 'post.user_id', 'user.id')
+    .whereNotNull('published')
     .andWhere({ canonical });
 
   if (loggedInUser) {

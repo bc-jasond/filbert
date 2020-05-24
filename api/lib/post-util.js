@@ -1,5 +1,5 @@
-const { getKnex, getNodesFlat } = require("./mysql");
-const { getFirstNode } = require("./util");
+const { getKnex, getNodesFlat } = require('./mysql');
+const { getFirstNode } = require('./util');
 
 /**
  * Populates Post Image, Post Title, and Post Abstract from its content
@@ -19,15 +19,15 @@ function getFirstPhotoAndAbstractFromContent(contentNodes, postId) {
   ) {
     const current = queue.shift();
     if (!current) {
-      console.warn("Falsy node in the queue...");
+      console.warn('Falsy node in the queue...');
       continue;
     }
-    if (!responseData.imageNode && current.type === "image") {
+    if (!responseData.imageNode && current.type === 'image') {
       responseData.imageNode = current;
     }
-    if (["p", "li", "pre", "h1", "h2"].includes(current.type)) {
+    if (['p', 'li', 'pre', 'h1', 'h2'].includes(current.type)) {
       // replace all whitespace chars with a single space
-      const currentContent = current.content.replace(/\s\s+/g, " ");
+      const currentContent = current.content.replace(/\s\s+/g, ' ');
       if (currentContent) {
         if (!responseData.title || responseData.title.length < titleMinLength) {
           if (!responseData.title) {
@@ -98,7 +98,7 @@ async function assertUserHasPost(req, res, next) {
       params: { postId },
     } = req;
     const knex = await getKnex();
-    const [post] = await knex("post").where({
+    const [post] = await knex('post').where({
       id: postId,
       user_id: req.loggedInUser.id,
     });
@@ -110,7 +110,7 @@ async function assertUserHasPost(req, res, next) {
     req.currentPost = post;
     next();
   } catch (err) {
-    console.error("assertUserHasPost Error: ", err);
+    console.error('assertUserHasPost Error: ', err);
     res.status(500).send({});
   }
 }

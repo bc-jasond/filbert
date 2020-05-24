@@ -1,10 +1,10 @@
-import { getMysqlDatetime } from "../lib/mysql";
+import { getMysqlDatetime } from '../lib/mysql';
 
 const {
   getKnex,
   bulkContentNodeUpsert,
   bulkContentNodeDelete,
-} = require("../lib/mysql");
+} = require('../lib/mysql');
 
 async function updateDocumentSnapshot(postId, nodeUpdatesByNodeId = []) {
   let updates = [];
@@ -13,12 +13,12 @@ async function updateDocumentSnapshot(postId, nodeUpdatesByNodeId = []) {
     // dedupe - last wins
     .filter((nodeUpdate, idx, thisList) => {
       const currentNodeId =
-        typeof nodeUpdate === "string" ? nodeUpdate : nodeUpdate.id;
+        typeof nodeUpdate === 'string' ? nodeUpdate : nodeUpdate.id;
       const lastUpdateIndex = [...thisList]
         .reverse()
         .findIndex((innerNodeUpdate) => {
           const innerNodeId =
-            typeof innerNodeUpdate === "string"
+            typeof innerNodeUpdate === 'string'
               ? innerNodeUpdate
               : innerNodeUpdate.id;
           return innerNodeId === currentNodeId;
@@ -26,7 +26,7 @@ async function updateDocumentSnapshot(postId, nodeUpdatesByNodeId = []) {
       return idx === thisList.length - 1 - lastUpdateIndex;
     })
     .forEach((nodeUpdate) => {
-      const isDelete = typeof nodeUpdate === "string";
+      const isDelete = typeof nodeUpdate === 'string';
       const currentNodeId = isDelete ? nodeUpdate : nodeUpdate.id;
 
       if (isDelete) {
@@ -63,19 +63,19 @@ async function postContentNodeHistory(currentPost, history) {
     // TODO a merge needs to happen here (conditionally) to remove what seems like a "duplicate" history entry when the user starts typing in the last undo/redo node AKA, if they don't move the caret before continuing to make edits
 
     // clear any history "in front of" the current cursor before adding more history
-    await knex("content_node_history")
+    await knex('content_node_history')
       .update({ deleted: getMysqlDatetime() })
       .where({ post_id: id })
       // NOTE: deleting current history too with greater than OR EQUALS.  This assumes the current history has the same executeState as the first entry of the new history AKA, the caret
-      .andWhere("content_node_history_id", ">", currentUndoHistoryId);
+      .andWhere('content_node_history_id', '>', currentUndoHistoryId);
   }
   // get last saved history id as starting point for new history batch
-  const [{ lastHistoryId = 0 } = {}] = await knex("content_node_history")
-    .max("content_node_history_id", {
-      as: "lastHistoryId",
+  const [{ lastHistoryId = 0 } = {}] = await knex('content_node_history')
+    .max('content_node_history_id', {
+      as: 'lastHistoryId',
     })
     .where({ post_id: id })
-    .groupBy("post_id");
+    .groupBy('post_id');
 
   // add 1 to lastHistoryId since index will start at 0
   const nextHistoryId = lastHistoryId + 1;
@@ -88,7 +88,7 @@ async function postContentNodeHistory(currentPost, history) {
     })
   );
 
-  return knex("content_node_history").insert(insertValues);
+  return knex('content_node_history').insert(insertValues);
 }
 
 async function undoRedoHelper({ currentPost, isUndo = true }) {
@@ -115,20 +115,20 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
   if (isUndo) {
     // UNDO: if the last action was 'undo' we need to move to the previous history but, if it
     // was 'redo' we stay and apply the current "unexecuteState" before moving the cursor
-    comparisonOperand = lastActionWasUndo ? "<" : "<=";
+    comparisonOperand = lastActionWasUndo ? '<' : '<=';
   } else {
     // REDO: if the last action was 'redo' we need to move to the next history but, if it
     // was 'undo' we stay and apply the current "executeState" before moving
-    comparisonOperand = lastActionWasUndo ? ">=" : ">";
+    comparisonOperand = lastActionWasUndo ? '>=' : '>';
   }
-  const [history] = await knex("content_node_history")
+  const [history] = await knex('content_node_history')
     .where({ post_id: id, deleted: null })
     .andWhere(
-      "content_node_history_id",
+      'content_node_history_id',
       comparisonOperand,
       currentUndoHistoryIdExpanded
     )
-    .orderBy("content_node_history_id", isUndo ? "desc" : "asc")
+    .orderBy('content_node_history_id', isUndo ? 'desc' : 'asc')
     .limit(1);
 
   if (!history) {
@@ -156,7 +156,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
   await updateDocumentSnapshot(id, statesByNodeId);
 
   // update undo history cursor in post meta
-  await knex("post")
+  await knex('post')
     .update({
       meta: JSON.stringify({
         ...postMeta,
@@ -167,7 +167,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
     .where({ id });
 
   // read back updated post
-  const [updatedPost] = await knex("post").where({ id });
+  const [updatedPost] = await knex('post').where({ id });
 
   return {
     selectionOffsets: isUndo ? unexecuteOffsets : executeOffsets,

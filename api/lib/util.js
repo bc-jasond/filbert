@@ -1,8 +1,8 @@
-const { promisify } = require("util");
-const { exec: execCb } = require("child_process");
+const { promisify } = require('util');
+const { exec: execCb } = require('child_process');
 const exec = promisify(execCb);
 
-const chalk = require("chalk");
+const chalk = require('chalk');
 
 export const log = (...args) => console.log(chalk.white(...args));
 export const error = (...args) => console.error(chalk.red(...args));
@@ -16,7 +16,7 @@ export function saneEnvironmentOrExit(requiredVars) {
   if (missingEnvVariables.length > 0) {
     error(
       `❌ process.env not sane!\n\nThe following variables are missing:\n${missingEnvVariables.join(
-        "\n"
+        '\n'
       )}`
     );
     process.exit(1);

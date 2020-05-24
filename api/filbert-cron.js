@@ -1,8 +1,8 @@
 // ESM - remove after ECMAScript Module support is past Experimental node v14 ?
-require = require("esm")(module /*, options*/);
+require = require('esm')(module /*, options*/);
 
-const { performance } = require("perf_hooks");
-const cron = require("node-cron");
+const { performance } = require('perf_hooks');
+const cron = require('node-cron');
 
 const {
   assertBucket,
@@ -10,15 +10,15 @@ const {
   listKeysForBucket,
   copyKeyFromBucketToBucket,
   deleteKeysForBucket,
-} = require("./lib/s3");
-const { makeMysqlDump } = require("./lib/mysql");
+} = require('./lib/s3');
+const { makeMysqlDump } = require('./lib/mysql');
 const {
   fileUploadStagingDirectory,
   monthlyBucketName,
   dailyBucketName,
   hourlyBucketName,
-} = require("./lib/constants");
-const { saneEnvironmentOrExit, assertDir, rmFile } = require("./lib/util");
+} = require('./lib/constants');
+const { saneEnvironmentOrExit, assertDir, rmFile } = require('./lib/util');
 
 /**
  * runs once every hour at 0 minutes (add a * to the end (5 stars total) to test in seconds)
@@ -29,7 +29,7 @@ const { saneEnvironmentOrExit, assertDir, rmFile } = require("./lib/util");
 async function filbertMysqldumpToS3Job() {
   try {
     const startTime = performance.now();
-    console.log("starting filbertMysqldumpToS3Job()");
+    console.log('starting filbertMysqldumpToS3Job()');
 
     const numberOfHourlyBackupsToKeep = 24;
     const numberOfDailyBackupsToKeep = 30;
@@ -104,7 +104,7 @@ async function filbertMysqldumpToS3Job() {
         console.log(
           `daily: deleting ${
             dailyBackupsToDelete.length
-          } files:\n${dailyBackupsToDelete.join("\n")}`
+          } files:\n${dailyBackupsToDelete.join('\n')}`
         );
         await deleteKeysForBucket(dailyBucketName, dailyBackupsToDelete);
       }
@@ -117,7 +117,7 @@ async function filbertMysqldumpToS3Job() {
       console.log(
         `hourly: deleting ${
           hourlyBackupsToDelete.length
-        } files:\n${hourlyBackupsToDelete.join("\n")}`
+        } files:\n${hourlyBackupsToDelete.join('\n')}`
       );
       await deleteKeysForBucket(hourlyBucketName, hourlyBackupsToDelete);
     }
@@ -127,18 +127,18 @@ async function filbertMysqldumpToS3Job() {
       } seconds.\n`
     );
   } catch (err) {
-    console.error("filbert cron error: ", err);
+    console.error('filbert cron error: ', err);
   }
 }
 
-console.log("Starting filbert-cron scheduler...");
+console.log('Starting filbert-cron scheduler...');
 saneEnvironmentOrExit([
-  "MYSQL_ROOT_PASSWORD",
-  "PERCONA_CONTAINER_NAME",
-  "LINODE_OBJECT_STORAGE_ACCESS_KEY",
-  "LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY",
+  'MYSQL_ROOT_PASSWORD',
+  'PERCONA_CONTAINER_NAME',
+  'LINODE_OBJECT_STORAGE_ACCESS_KEY',
+  'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY',
 ]);
 
 //filbertMysqldumpToS3Job();
 // run once an hour at 5 minutes i.e. 1:05, 2:05, 11:05...
-cron.schedule("5 * * * *", filbertMysqldumpToS3Job);
+cron.schedule('5 * * * *', filbertMysqldumpToS3Job);

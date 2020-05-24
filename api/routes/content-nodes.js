@@ -1,8 +1,8 @@
-const { getKnex } = require("../lib/mysql");
+const { getKnex } = require('../lib/mysql');
 const {
   postContentNodeHistory,
   updateDocumentSnapshot,
-} = require("./content-node-history");
+} = require('./content-node-history');
 
 function pruneOrphanedNodesFromUpdates(updates) {}
 
@@ -33,7 +33,7 @@ async function postContentNodes(req, res) {
     let updatedPost;
     if (currentUndoHistoryId !== -1) {
       const knex = await getKnex();
-      await knex("post")
+      await knex('post')
         .update({
           meta: JSON.stringify({
             ...postMeta,
@@ -44,7 +44,7 @@ async function postContentNodes(req, res) {
         .where({ id: postId });
 
       // read back updated post
-      [updatedPost] = await knex("post").where({ id: postId });
+      [updatedPost] = await knex('post').where({ id: postId });
     }
 
     // 3) update current document state snapshot - create a map of updates and deletes
@@ -60,7 +60,7 @@ async function postContentNodes(req, res) {
       updatedPost,
     });
   } catch (err) {
-    console.error("POST /content Error: ", err);
+    console.error('POST /content Error: ', err);
     res.status(500).send({});
   }
 }

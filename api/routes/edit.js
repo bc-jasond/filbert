@@ -1,4 +1,4 @@
-const { getKnex, getNodesFlat } = require("../lib/mysql");
+const { getKnex, getNodesFlat } = require('../lib/mysql');
 /**
  * get post for editing - signed-in user only
  */
@@ -19,9 +19,9 @@ async function getPostForEdit(req, res) {
   }
   const [
     { meta: { executeOffsets = {}, unexecuteOffsets } = {} } = {},
-  ] = await knex("content_node_history")
+  ] = await knex('content_node_history')
     .where(whereClause)
-    .orderBy("content_node_history_id", "desc")
+    .orderBy('content_node_history_id', 'desc')
     .limit(1);
 
   res.send({

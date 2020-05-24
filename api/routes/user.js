@@ -1,5 +1,5 @@
-const { performance } = require("perf_hooks");
-const { getKnex } = require("../lib/mysql");
+const { performance } = require('perf_hooks');
+const { getKnex } = require('../lib/mysql');
 
 // for "is username taken?" - add ?forSignup
 async function getUser(req, res) {
@@ -8,7 +8,7 @@ async function getUser(req, res) {
     params: { username },
     loggedInUser,
   } = req;
-  const isCheckingAvailability = typeof forSignup === "string";
+  const isCheckingAvailability = typeof forSignup === 'string';
   if (!username) {
     res.status(404).send({});
     return;
@@ -20,30 +20,30 @@ async function getUser(req, res) {
   const knex = await getKnex();
   // TODO: one-time token to prevent abuse?
   if (isCheckingAvailability) {
-    const [user] = await knex("user")
-      .select("username")
-      .where("username", username);
+    const [user] = await knex('user')
+      .select('username')
+      .where('username', username);
     if (!user) {
       res.status(404).send({});
     }
     res.send({});
     return;
   }
-  let builder = knex("user")
+  let builder = knex('user')
     .column(
-      { userId: "id" },
-      "username",
-      "email",
-      { givenName: "given_name" },
-      { familyName: "family_name" },
-      { pictureUrl: "picture_url" },
-      "created",
-      "iss",
-      { profileIsPublic: "is_public" },
-      { statsArePublic: "show_stats" }
+      { userId: 'id' },
+      'username',
+      'email',
+      { givenName: 'given_name' },
+      { familyName: 'family_name' },
+      { pictureUrl: 'picture_url' },
+      'created',
+      'iss',
+      { profileIsPublic: 'is_public' },
+      { statsArePublic: 'show_stats' }
     )
     .select()
-    .where("username", username);
+    .where('username', username);
 
   if (
     !(
@@ -52,7 +52,7 @@ async function getUser(req, res) {
       loggedInUser.username === username
     )
   ) {
-    builder = builder.where("is_public", true);
+    builder = builder.where('is_public', true);
   }
 
   const [user] = await builder;
@@ -69,17 +69,17 @@ async function patchProfile(req, res) {
   } = req;
   let updateCount = 0;
   const update = {};
-  if (typeof profileIsPublic !== "undefined") {
+  if (typeof profileIsPublic !== 'undefined') {
     updateCount += 1;
     update.is_public = profileIsPublic;
   }
-  if (typeof statsArePublic !== "undefined") {
+  if (typeof statsArePublic !== 'undefined') {
     updateCount += 1;
     update.show_stats = statsArePublic;
   }
   if (updateCount > 0) {
     const knex = await getKnex();
-    const result = await knex("user")
+    const result = await knex('user')
       .update({ is_public: profileIsPublic, show_stats: statsArePublic })
       .where({ id });
   }
@@ -94,7 +94,7 @@ async function getStats(req, res, next) {
     } = req;
     const start = performance.now();
     const knex = await getKnex();
-    let builder = knex("user").where({ username });
+    let builder = knex('user').where({ username });
     if (!loggedInUser || username !== loggedInUser.username) {
       builder = builder.andWhere({ show_stats: 1 });
     }
@@ -125,7 +125,7 @@ async function getStats(req, res, next) {
       matched.forEach((word) => {
         stats.totalWords += 1;
         const lc = word.toLowerCase();
-        if (lc.length > 2 && !["the", "and"].includes(lc)) {
+        if (lc.length > 2 && !['the', 'and'].includes(lc)) {
           if (!allWordsSeen.hasOwnProperty(lc)) {
             allWordsSeen[lc] = 0;
           }
@@ -144,10 +144,10 @@ async function getStats(req, res, next) {
       `${date.getFullYear()}${date
         .getMonth()
         .toString()
-        .padStart(2, "0")}${date.getDate().toString().padStart(2, "0")}`;
+        .padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
 
     const seenDays = new Set();
-    const allPosts = await knex("post").where({ user_id: userId });
+    const allPosts = await knex('post').where({ user_id: userId });
     stats.totalPosts = allPosts.length;
     allPosts.forEach(({ id, created, updated, published, title, abstract }) => {
       if (published) {
@@ -162,38 +162,38 @@ async function getStats(req, res, next) {
       splitAndCount(`${title} ${abstract}`, id);
     });
 
-    const allContentNodes = await knex("content_node")
+    const allContentNodes = await knex('content_node')
       .column(
-        "user_id",
-        "post_id",
-        { created: "content_node.created" },
-        { updated: "content_node.updated" },
-        "type",
-        "content",
-        { meta: "content_node.meta" }
+        'user_id',
+        'post_id',
+        { created: 'content_node.created' },
+        { updated: 'content_node.updated' },
+        'type',
+        'content',
+        { meta: 'content_node.meta' }
       )
-      .innerJoin("post", "post.id", "content_node.post_id")
-      .where({ "post.user_id": userId });
+      .innerJoin('post', 'post.id', 'content_node.post_id')
+      .where({ 'post.user_id': userId });
 
     allContentNodes.forEach(
       ({
         post_id,
         type,
         content,
-        meta: { caption = "", quote = "", author = "", context = "" },
+        meta: { caption = '', quote = '', author = '', context = '' },
         created,
         updated,
       }) => {
         seenDays.add(getFormattedDate(created));
         seenDays.add(getFormattedDate(updated));
-        if (["p", "li", "h1", "h2", "pre"].includes(type)) {
+        if (['p', 'li', 'h1', 'h2', 'pre'].includes(type)) {
           addChars(content);
           splitAndCount(content, post_id);
-        } else if (type === "image") {
+        } else if (type === 'image') {
           stats.totalImages += 1;
           addChars(caption);
           splitAndCount(caption, post_id);
-        } else if (type === "quote") {
+        } else if (type === 'quote') {
           stats.totalQuotes += 1;
           addChars(`${quote}${author}${context}`);
           splitAndCount(`${quote} ${author} ${context}`, post_id);

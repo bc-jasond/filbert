@@ -1,11 +1,11 @@
-const sharp = require("sharp");
-const { getChecksum } = require("../lib/cipher");
-const { bucketHasKey, uploadImageToBucket } = require("../lib/s3");
-const { imageBucketName, objectStorageBaseUrl } = require("../lib/constants");
+const sharp = require('sharp');
+const { getChecksum } = require('../lib/cipher');
+const { bucketHasKey, uploadImageToBucket } = require('../lib/s3');
+const { imageBucketName, objectStorageBaseUrl } = require('../lib/constants');
 
 async function getImageKey(buffer, userId, imgMeta) {
   const checksum = await getChecksum(buffer);
-  return `${process.env.NODE_ENV || "dev"}_${userId}_${checksum}.${
+  return `${process.env.NODE_ENV || 'dev'}_${userId}_${checksum}.${
     imgMeta.format
   }`;
 }
@@ -29,7 +29,7 @@ async function uploadImage(req, res, next) {
         .toBuffer();
       imgMeta = await sharp(fileBuffer).metadata();
     }
-    console.log("IMAGE META", imgMeta);
+    console.log('IMAGE META', imgMeta);
     const imageKey = await getImageKey(file.buffer, body.userId, imgMeta);
     let image;
     let meta = {
@@ -44,7 +44,7 @@ async function uploadImage(req, res, next) {
       image = await bucketHasKey(imageBucketName, imageKey);
       meta = { ...image.Metadata };
     } catch (err) {
-      if (!err.code || err.code !== "NotFound") {
+      if (!err.code || err.code !== 'NotFound') {
         throw err;
       }
     }

@@ -1,14 +1,14 @@
-import { getMysqlDatetime } from "../lib/mysql";
+import { getMysqlDatetime } from '../lib/mysql';
 
 const {
   getKnex,
   getNodesFlat,
   getPostByCanonicalHelper,
-} = require("../lib/mysql");
+} = require('../lib/mysql');
 const {
   getFirstPhotoAndAbstractFromContent,
   addFirstPhotoTitleAndAbstractToPosts,
-} = require("../lib/post-util");
+} = require('../lib/post-util');
 
 async function getPosts(req, res) {
   const {
@@ -16,33 +16,33 @@ async function getPosts(req, res) {
     query: { username, oldest, random },
   } = req;
   const knex = await getKnex();
-  let builder = knex("post")
+  let builder = knex('post')
     .select(
-      "post.id",
-      { userId: "user.id" },
-      { userProfileIsPublic: "user.is_public" },
-      "canonical",
-      "title",
-      "abstract",
-      "post.created",
-      "updated",
-      "published",
-      "post.deleted",
-      "post.meta",
-      "username",
-      { profilePictureUrl: "user.picture_url" },
-      { familyName: "family_name" },
-      { givenName: "given_name" }
+      'post.id',
+      { userId: 'user.id' },
+      { userProfileIsPublic: 'user.is_public' },
+      'canonical',
+      'title',
+      'abstract',
+      'post.created',
+      'updated',
+      'published',
+      'post.deleted',
+      'post.meta',
+      'username',
+      { profilePictureUrl: 'user.picture_url' },
+      { familyName: 'family_name' },
+      { givenName: 'given_name' }
     )
-    .innerJoin("user", "post.user_id", "user.id")
-    .whereRaw("published IS NOT NULL AND post.deleted IS NULL")
+    .innerJoin('user', 'post.user_id', 'user.id')
+    .whereRaw('published IS NOT NULL AND post.deleted IS NULL')
     .limit(1000);
 
   if (username) {
-    builder = builder.andWhere("username", "like", `%${username}%`);
+    builder = builder.andWhere('username', 'like', `%${username}%`);
   }
 
-  if (typeof random === "string") {
+  if (typeof random === 'string') {
     /* TODO: implement
      1) select all published post ids in the the DB
      2) use Fisher Yates to fill up 100 random ids (swap from whole list, break at 100) for a WHERE IN clause
@@ -51,8 +51,8 @@ async function getPosts(req, res) {
   }
 
   builder = builder.orderBy(
-    "published",
-    typeof oldest === "string" ? "asc" : "desc"
+    'published',
+    typeof oldest === 'string' ? 'asc' : 'desc'
   );
 
   let posts = await builder;
@@ -94,12 +94,12 @@ async function getPostByCanonical(req, res) {
 
   const postCanonical = canonical;
   const knex = await getKnex();
-  const allPosts = await knex("post")
-    .select("canonical")
-    .innerJoin("user", "post.user_id", "user.id")
-    .whereNotNull("published")
-    .andWhere({ username: post.username, "post.deleted": null })
-    .orderBy("published", "asc")
+  const allPosts = await knex('post')
+    .select('canonical')
+    .innerJoin('user', 'post.user_id', 'user.id')
+    .whereNotNull('published')
+    .andWhere({ username: post.username, 'post.deleted': null })
+    .orderBy('published', 'asc')
     .map(({ canonical }) => canonical);
 
   let postIdx;
@@ -109,7 +109,7 @@ async function getPostByCanonical(req, res) {
       break;
     }
   }
-  if (typeof postIdx === "undefined") {
+  if (typeof postIdx === 'undefined') {
     // WTF?
   }
   const prevPostCanonical =
@@ -144,25 +144,25 @@ async function patchPost(req, res, next) {
     const { id } = req.currentPost;
     const { title, canonical, abstract, photoUrl, meta } = req.body;
     const patchValues = {};
-    if (typeof title !== "undefined") {
+    if (typeof title !== 'undefined') {
       patchValues.title = title;
     }
-    if (typeof canonical !== "undefined") {
+    if (typeof canonical !== 'undefined') {
       patchValues.canonical = canonical;
     }
-    if (typeof abstract !== "undefined") {
+    if (typeof abstract !== 'undefined') {
       patchValues.abstract = abstract;
     }
-    if (typeof photoUrl !== "undefined") {
+    if (typeof photoUrl !== 'undefined') {
       patchValues.photo_url = photoUrl;
     }
-    if (typeof meta !== "undefined") {
+    if (typeof meta !== 'undefined') {
       patchValues.meta = JSON.stringify(meta);
     }
     const knex = await getKnex();
-    const result = await knex("post")
+    const result = await knex('post')
       .update(patchValues)
-      .whereNull("deleted")
+      .whereNull('deleted')
       .andWhere({
         user_id: req.loggedInUser.id,
         id,
@@ -194,9 +194,9 @@ async function deletePublishedPost(req, res) {
    * DANGER ZONE!!!
    */
   const deleted = getMysqlDatetime();
-  await knex("content_node_history").update({ deleted }).where("post_id", id);
-  await knex("content_node").update({ deleted }).where("post_id", id);
-  await knex("post").update({ deleted }).where("id", id);
+  await knex('content_node_history').update({ deleted }).where('post_id', id);
+  await knex('content_node').update({ deleted }).where('post_id', id);
+  await knex('post').update({ deleted }).where('id', id);
   res.status(204).send({});
 }
 
