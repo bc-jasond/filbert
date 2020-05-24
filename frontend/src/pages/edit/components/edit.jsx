@@ -274,7 +274,7 @@ export default class EditPost extends React.Component {
     } = this;
     const undoResult = await this.historyManager.undo(nodesById);
     // already at beginning of history? or error?
-    if (!undoResult) {
+    if (undoResult.size === 0) {
       return;
     }
     const updatedNodesById = undoResult.get('nodesById', Map());
@@ -298,7 +298,7 @@ export default class EditPost extends React.Component {
     } = this;
     const redoResult = await this.historyManager.redo(nodesById);
     // already at end of history?
-    if (!redoResult) {
+    if (redoResult.size === 0) {
       return;
     }
     const updatedNodesById = redoResult.get('nodesById', Map());
@@ -1351,8 +1351,8 @@ export default class EditPost extends React.Component {
                 contentEditable
                 suppressContentEditableWarning
               >
-                {/*for debugging purposes*/}
-                {/*<button onClick={this.batchSave}>SAVE BATCH</button>*/}
+                {/* for debugging purposes */}
+                {/* <button onClick={this.batchSave}>SAVE BATCH</button> */}
                 <Document
                   nodesById={nodesById}
                   currentEditNode={editSectionNode}

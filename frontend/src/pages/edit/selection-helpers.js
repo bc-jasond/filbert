@@ -288,7 +288,7 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
   let shouldSkipSetPrev = false;
   let caretPosition = 0;
   let idx = 0;
-  let newSelection = { [SELECTION_LENGTH]: length };
+  const newSelection = { [SELECTION_LENGTH]: length };
 
   while (current) {
     const currentStart = caretPosition;

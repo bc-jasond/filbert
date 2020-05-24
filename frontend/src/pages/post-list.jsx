@@ -113,7 +113,7 @@ export default React.memo(
       queryParamsInternal.set('contains', containsDebounced);
       pushHistory(queryParamsInternal);
       setQueryString(queryParamsInternal.toString());
-    }, [containsDebounced, shouldListDrafts]);
+    }, [containsDebounced, shouldListDrafts, queryStringProp]);
 
     useEffect(() => {
       if (shouldListDrafts) {

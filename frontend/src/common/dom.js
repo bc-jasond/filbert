@@ -72,7 +72,9 @@ export function findFirstDifferentWordFromDom(nodeId, beforeContent) {
   const firstDifferentWordIdx = beforeWords.findIndex(
     (word, idx) => domWords[idx] !== word
   );
+  // eslint-disable-next-line prefer-destructuring
   const beforeWord = beforeWords[firstDifferentWordIdx];
+  // eslint-disable-next-line prefer-destructuring
   const domWord = domWords[firstDifferentWordIdx];
   return { diffStart: beforeContent.indexOf(beforeWord), beforeWord, domWord };
 }

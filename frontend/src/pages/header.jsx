@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
-import { H1Styled } from '../common/components/shared-styled-components';
 import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
 import {
   DARK_MODE_THEME,

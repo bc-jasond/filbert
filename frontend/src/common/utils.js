@@ -1,6 +1,7 @@
 import { isKeyed, Map, Record } from 'immutable';
 
 import {
+  HISTORY_MIN_NUM_CHARS,
   KEYCODE_SPACE,
   KEYCODE_SPACE_NBSP,
   SELECTION_ACTION_BOLD,
@@ -14,7 +15,6 @@ import {
   SELECTION_LINK_URL,
   SELECTION_NEXT,
   ZERO_LENGTH_CHAR,
-  HISTORY_MIN_NUM_CHARS,
 } from './constants';
 
 export function confirmPromise(msg) {

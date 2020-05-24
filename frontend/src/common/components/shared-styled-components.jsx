@@ -38,7 +38,7 @@ import {
   viewport7,
   viewport9,
 } from '../../variables.css';
-import { contentSerif, sansSerif } from '../../fonts.css';
+import { contentSerif } from '../../fonts.css';
 import {
   authorExpandMixin,
   italicMixin,

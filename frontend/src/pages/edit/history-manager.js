@@ -88,7 +88,7 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
   // saves current snapshot of document given new history
   async function saveContentBatch() {
     if (hasPendingRequest) {
-      return;
+      return {};
     }
     const nodeUpdatesByNodeId = historyQueue
       // TODO: de-dupe happens on API, probably could clean that up here before it goes over the wire
@@ -192,19 +192,19 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
 
   async function undo(currentNodesById) {
     if (hasPendingRequest) {
-      return;
+      return Map();
     }
     hasPendingRequest = true;
     const { error: undoError, data } = await apiPost(`/undo/${postId}`, {});
     hasPendingRequest = false;
     if (undoError) {
       console.error(undoError);
-      return null;
+      return Map();
     }
     const undoResult = fromJS(data, reviver);
     // at beginning (empty object)?
     if (is(undoResult, Map())) {
-      return null;
+      return Map();
     }
     const updatedPost = undoResult.get('updatedPost');
     const unexecuteOffsets = undoResult.get('selectionOffsets');
@@ -224,19 +224,19 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
 
   async function redo(currentNodesById) {
     if (hasPendingRequest) {
-      return null;
+      return Map();
     }
     hasPendingRequest = true;
     const { error: redoError, data } = await apiPost(`/redo/${postId}`, {});
     hasPendingRequest = false;
     if (redoError) {
       console.error(redoError);
-      return null;
+      return Map();
     }
     const redoResult = fromJS(data, reviver);
     // at beginning (empty object)?
     if (is(redoResult, Map())) {
-      return null;
+      return Map();
     }
     const updatedPost = redoResult.get('updatedPost');
     const executeOffsets = redoResult.get('selectionOffsets');
