@@ -1,5 +1,13 @@
 import { createGlobalStyle } from 'styled-components';
 
+import {
+  backgroundColorPrimary,
+  backgroundColorSecondary,
+  bodyFontFamily,
+  getVar,
+  textColorPrimary,
+} from './variables.css';
+
 export default createGlobalStyle`
 /* http://meyerweb.com/eric/tools/css/reset/ 
    v2.0 | 20110126
@@ -25,6 +33,13 @@ time, mark, audio, video {
 	font-size: 100%;
 	font: inherit;
 	vertical-align: baseline;
+	color: ${getVar(textColorPrimary)};
+  font-family: ${getVar(bodyFontFamily)}, serif;
+  /* looks a lot more suavecito with smoothing */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  vertical-align: baseline;
+  text-rendering: optimizeLegibility;
 }
 /* HTML5 display-role reset for older browsers */
 article, aside, details, figcaption, figure,
@@ -33,6 +48,7 @@ footer, header, hgroup, menu, nav, section {
 }
 body {
 	line-height: 1;
+	background: ${getVar(backgroundColorSecondary)};
 }
 ol, ul {
 	list-style: none;
@@ -51,5 +67,11 @@ table {
 }
 button {
   background-color: transparent;
+}
+[contenteditable="true"] {
+  outline: none;
+}
+#app {
+  background: ${getVar(backgroundColorPrimary)};
 }
 `;

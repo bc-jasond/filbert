@@ -5,7 +5,6 @@ import { getSession } from './common/session';
 
 // GLOBAL CSS HERE
 import CssVariables from './variables.css';
-import CssGlobals from './global.css';
 import CssReset from './reset.css';
 import CssFonts from './fonts.css';
 import CssPace from './common/pace.css';
@@ -96,10 +95,9 @@ export default React.memo(() => {
           <RouteWithSession component={Page404} />
         </Switch>
       </BrowserRouter>
-      <CssReset />
       <CssFonts />
       <CssVariables />
-      <CssGlobals />
+      <CssReset />
       <CssPace />
     </>
   );
