@@ -34,32 +34,31 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     clearTimeout(historyCandidateTimeout);
   }
 
-  async function flushPendingNodeUpdateLogEntry() {
-    if (!historyCandidateStateEntry) {
-      return;
+  function flushPendingNodeUpdateLogEntry() {
+    if (historyCandidateStateEntry) {
+      const historyEntry = fromJS(
+        {
+          [HISTORY_KEY_EXECUTE_OFFSETS]: historyCandidateExecuteSelectionOffsets,
+          [HISTORY_KEY_UNEXECUTE_OFFSETS]: historyCandidateUnexecuteSelectionOffsets,
+          [HISTORY_KEY_STATE]: [historyCandidateStateEntry],
+        },
+        reviver
+      );
+      console.info(
+        'HISTORY PENDING: adding to node update history log',
+        historyEntry.toJS()
+      );
+      historyQueue.push(historyEntry);
     }
-    const historyEntry = fromJS(
-      {
-        [HISTORY_KEY_EXECUTE_OFFSETS]: historyCandidateExecuteSelectionOffsets,
-        [HISTORY_KEY_UNEXECUTE_OFFSETS]: historyCandidateUnexecuteSelectionOffsets,
-        [HISTORY_KEY_STATE]: [historyCandidateStateEntry],
-      },
-      reviver
-    );
-    console.info(
-      'HISTORY PENDING: adding to node update history log',
-      historyEntry.toJS()
-    );
-    historyQueue.push(historyEntry);
     clearPending();
   }
 
-  async function appendToNodeUpdateLog({
+  function appendToNodeUpdateLog({
     executeSelectionOffsets,
     unexecuteSelectionOffsets,
     state,
   }) {
-    clearPending();
+    flushPendingNodeUpdateLogEntry();
     if (!state) {
       return;
     }
@@ -71,6 +70,8 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
           // remove no-op state entries
           (entry) =>
             // use reviver to expand Selections
+            !entry.executeState ||
+            !entry.unexecuteState ||
             !fromJS(entry.executeState, reviver).equals(
               fromJS(entry.unexecuteState, reviver)
             )
@@ -95,6 +96,7 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
       .flatMap((historyEntry) =>
         historyEntry
           .get(HISTORY_KEY_STATE)
+          .filter((state) => state && state.size > 0)
           .map((state) => {
             const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
             const execute = state.get(HISTORY_KEY_EXECUTE_STATES);

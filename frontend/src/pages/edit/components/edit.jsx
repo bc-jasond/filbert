@@ -117,9 +117,9 @@ export default class EditPost extends React.Component {
     } = this;
     if (id === NEW_POST_URL_ID) {
       this.newPost();
-      return;
+      return null;
     }
-    await this.loadPost();
+    return this.loadPost();
   }
 
   async componentDidUpdate(prevProps) {
@@ -809,15 +809,7 @@ export default class EditPost extends React.Component {
 
   handleInput = async (evt) => {
     // any control keys being held down?
-    if (
-      evt.metaKey ||
-      // cross-event coordination
-      this.cutHistoryState ||
-      this.pasteHistoryState
-    ) {
-      // since evt.inputType ('inputFromPaste','deleteFromCut', etc.) isn't compatible with Edge
-      this.pasteHistoryState = undefined;
-      this.cutHistoryState = undefined;
+    if (evt.metaKey) {
       return;
     }
     const {
@@ -899,6 +891,8 @@ export default class EditPost extends React.Component {
     // NOTE: if we stopPropagation and preventDefault on the 'keydown' event, they'll cancel the 'cut' event too
     // so don't move this up
     stopAndPrevent(evt);
+    // now we're done with this state acting as a special 'preventDefault'
+    this.cutHistoryState = undefined;
 
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
@@ -959,6 +953,8 @@ export default class EditPost extends React.Component {
       unexecuteSelectionOffsets: this.unexecuteSelectionOffsets,
       state: this.pasteHistoryState,
     });
+    // now we're done with this state acting as a special 'preventDefault'
+    this.pasteHistoryState = undefined;
     // for commitUpdates() -> setCaret()
     await this.closeAllEditContentMenus();
     await this.commitUpdates(executeSelectionOffsets);
