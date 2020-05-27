@@ -30,6 +30,8 @@ import {
   KEYCODE_RIGHT_ARROW,
   KEYCODE_SHIFT_OR_COMMAND_LEFT,
   KEYCODE_SHIFT_RIGHT,
+  KEYCODE_SPACE,
+  KEYCODE_SPACE_NBSP,
   KEYCODE_TAB,
   KEYCODE_UP_ARROW,
   NODE_TYPE_H1,
@@ -61,22 +63,56 @@ export function getNodeById(nodeId) {
   return first;
 }
 
+function charsAreEqualish(a, b) {
+  const spacesConsideredEqual = [KEYCODE_SPACE, KEYCODE_SPACE_NBSP];
+  if (spacesConsideredEqual.includes(a.charCodeAt(0))) {
+    return spacesConsideredEqual.includes(b.charCodeAt(0));
+  }
+  return a === b;
+}
+
 export function findFirstDifferentWordFromDom(nodeId, beforeContent) {
   const { textContent: domContent = '' } = getNodeById(nodeId);
-  // regex allows hyphens and apostrophes in words
-  // found at: https://stackoverflow.com/a/31911227/1991322
-  const wordRegEx = /[\w'-]+/g;
-  const beforeWords = beforeContent.match(wordRegEx);
-  const domWords = domContent.match(wordRegEx);
-  // find first different word
-  const firstDifferentWordIdx = beforeWords.findIndex(
-    (word, idx) => domWords[idx] !== word
+  // find first different char between "before" and DOM
+  const minLength = Math.min(beforeContent.length, domContent.length);
+  let diffStart = 0;
+  while (diffStart < minLength) {
+    if (
+      !charsAreEqualish(
+        beforeContent.charAt(diffStart),
+        domContent.charAt(diffStart)
+      )
+    ) {
+      break;
+    }
+    diffStart += 1;
+  }
+  if (diffStart === beforeContent.length) {
+    throw new Error('no diff: DOM and JS Model content are the same!');
+  }
+  // find last different char between "before" and DOM
+  let diffEndOffset = 1;
+  while (diffEndOffset < minLength) {
+    if (
+      !charsAreEqualish(
+        beforeContent.charAt(beforeContent.length - diffEndOffset),
+        domContent.charAt(domContent.length - diffEndOffset)
+      )
+    ) {
+      break;
+    }
+    diffEndOffset += 1;
+  }
+
+  const beforeWord = beforeContent.slice(
+    diffStart,
+    beforeContent.length - diffEndOffset + 1
   );
-  // eslint-disable-next-line prefer-destructuring
-  const beforeWord = beforeWords[firstDifferentWordIdx];
-  // eslint-disable-next-line prefer-destructuring
-  const domWord = domWords[firstDifferentWordIdx];
-  return { diffStart: beforeContent.indexOf(beforeWord), beforeWord, domWord };
+  const domWord = domContent.slice(
+    diffStart,
+    domContent.length - diffEndOffset + 1
+  );
+  return { diffStart, beforeWord, domWord };
 }
 
 export function getFirstHeadingContent() {

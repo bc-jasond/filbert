@@ -61,7 +61,8 @@ function replaceWordFromSpellcheck(
     startNodeId,
     contentBeforeUpdate
   );
-  // wholesale replace the word
+  // use the "before" word offsets for beginning and ending content, replace the word itself with the "dom" word
+  // this will handle any case where words are different lengths
   const updatedContent = `${contentBeforeUpdate.slice(
     0,
     diffStart
