@@ -75,7 +75,9 @@ export async function bulkContentNodeUpsert(postId, nodes) {
     next_sibling_id = VALUES(next_sibling_id),
     type = VALUES(type),
     content = VALUES(content),
-    meta = VALUES(meta)`;
+    meta = VALUES(meta),
+    # don't forget to mark "un-deleted" !
+    deleted = NULL`;
 
   const values = nodes.map(
     ({

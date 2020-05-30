@@ -36,8 +36,8 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
 
   function historyStateIsNotEmptyOrNoop(state) {
     return (
-      // XORish - they can't both be falsy
-      !(!state.executeState && !state.unexecuteState) &&
+      // they can't both be falsy
+      (state.executeState || state.unexecuteState) &&
       // use reviver to expand Selections for deep comparison
       !fromJS(state.executeState, reviver).equals(
         fromJS(state.unexecuteState, reviver)

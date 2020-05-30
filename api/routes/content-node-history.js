@@ -8,32 +8,25 @@ const {
 async function updateDocumentSnapshot(postId, nodeUpdatesByNodeId = []) {
   let updates = [];
   let deletes = [];
-  nodeUpdatesByNodeId
-    // dedupe - last wins
-    .filter((nodeUpdate, idx, thisList) => {
-      const currentNodeId =
-        typeof nodeUpdate === 'string' ? nodeUpdate : nodeUpdate.id;
-      const lastUpdateIndex = [...thisList]
-        .reverse()
-        .findIndex((innerNodeUpdate) => {
-          const innerNodeId =
-            typeof innerNodeUpdate === 'string'
-              ? innerNodeUpdate
-              : innerNodeUpdate.id;
-          return innerNodeId === currentNodeId;
-        });
-      return idx === thisList.length - 1 - lastUpdateIndex;
-    })
-    .forEach((nodeUpdate) => {
-      const isDelete = typeof nodeUpdate === 'string';
-      const currentNodeId = isDelete ? nodeUpdate : nodeUpdate.id;
+  // dedupe the state changes - last wins
+  // assuming here that the history is in the correct order - AKA - if this is for an "UNDO" action, the list has been reversed
+  const dedupeMap = {};
+  nodeUpdatesByNodeId.forEach((nodeUpdate) => {
+    const currentNodeId =
+      typeof nodeUpdate === 'string' ? nodeUpdate : nodeUpdate.id;
+    dedupeMap[currentNodeId] = nodeUpdate;
+  });
+  // separate state changes into updates and deletes
+  Object.values(dedupeMap).forEach((nodeUpdate) => {
+    const isDelete = typeof nodeUpdate === 'string';
+    const currentNodeId = isDelete ? nodeUpdate : nodeUpdate.id;
 
-      if (isDelete) {
-        deletes.push(currentNodeId);
-        return;
-      }
-      updates.push(nodeUpdate);
-    });
+    if (isDelete) {
+      deletes.push(currentNodeId);
+      return;
+    }
+    updates.push(nodeUpdate);
+  });
 
   // TODO: validation
   //  - node fields are correct
@@ -141,11 +134,11 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
     meta: { historyState, executeOffsets, unexecuteOffsets },
   } = history;
   let statesByNodeId = historyState.map(({ executeState, unexecuteState }) =>
-    isRedo
-      ? // redo: if execute is falsy, it was a delete operation.  Use the unexecute id to delete
-        executeState || unexecuteState.id
-      : // undo: if unexecute is falsy it was an insert - mark node for delete by returning just the id
+    isUndo
+      ? // undo: if unexecute is falsy it was an insert - mark node for delete by returning just the id
         unexecuteState || executeState.id
+      : // redo: if execute is falsy, it was a delete operation.  Use the unexecute id to delete
+        executeState || unexecuteState.id
   );
   if (isUndo) {
     // play updates in reverse for undo!
@@ -178,7 +171,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
 async function undo(req, res, next) {
   try {
     const { currentPost } = req;
-    res.send(await undoRedoHelper({ currentPost, isUndo: true }));
+    res.send(await undoRedoHelper({ currentPost }));
   } catch (err) {
     next(err);
   }
