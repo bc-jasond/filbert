@@ -34,8 +34,19 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     clearTimeout(historyCandidateTimeout);
   }
 
+  function historyStateIsNotEmptyOrNoop(state) {
+    return (
+      // XORish - they can't both be falsy
+      !(!state.executeState && !state.unexecuteState) &&
+      // use reviver to expand Selections for deep comparison
+      !fromJS(state.executeState, reviver).equals(
+        fromJS(state.unexecuteState, reviver)
+      )
+    );
+  }
+
   function flushPendingNodeUpdateLogEntry() {
-    if (historyCandidateStateEntry) {
+    if (historyStateIsNotEmptyOrNoop(historyCandidateStateEntry)) {
       const historyEntry = fromJS(
         {
           [HISTORY_KEY_EXECUTE_OFFSETS]: historyCandidateExecuteSelectionOffsets,
@@ -62,20 +73,12 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     if (!state) {
       return;
     }
+
     const historyEntry = fromJS(
       {
         [HISTORY_KEY_EXECUTE_OFFSETS]: executeSelectionOffsets,
         [HISTORY_KEY_UNEXECUTE_OFFSETS]: unexecuteSelectionOffsets,
-        [HISTORY_KEY_STATE]: state.filter(
-          // remove no-op state entries
-          (entry) =>
-            // use reviver to expand Selections
-            !entry.executeState ||
-            !entry.unexecuteState ||
-            !fromJS(entry.executeState, reviver).equals(
-              fromJS(entry.unexecuteState, reviver)
-            )
-        ),
+        [HISTORY_KEY_STATE]: state.filter(historyStateIsNotEmptyOrNoop),
       },
       reviver
     );

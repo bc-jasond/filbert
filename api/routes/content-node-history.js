@@ -1,7 +1,6 @@
-import { getMysqlDatetime } from '../lib/mysql';
-
 const {
   getKnex,
+  getMysqlDatetime,
   bulkContentNodeUpsert,
   bulkContentNodeDelete,
 } = require('../lib/mysql');
@@ -80,13 +79,13 @@ async function postContentNodeHistory(currentPost, history) {
   // add 1 to lastHistoryId since index will start at 0
   const nextHistoryId = lastHistoryId + 1;
 
-  const insertValues = history.map(
-    ({ executeOffsets, unexecuteOffsets, historyState }, idx) => ({
+  const insertValues = history
+    // TODO: verify/filter "empty" & "noop" state updates
+    .map(({ executeOffsets, unexecuteOffsets, historyState }, idx) => ({
       post_id: id,
       content_node_history_id: nextHistoryId + idx,
       meta: JSON.stringify({ executeOffsets, unexecuteOffsets, historyState }),
-    })
-  );
+    }));
 
   return knex('content_node_history').insert(insertValues);
 }
