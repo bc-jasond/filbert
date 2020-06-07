@@ -29,7 +29,6 @@ const InsertSectionMenu = styled.div`
   left: ${(p) => p.leftOffset - 68}px;
 `;
 const lineMixin = css`
-  z-index: 2;
   position: absolute;
   display: block;
   content: '';
@@ -41,8 +40,7 @@ const lineMixin = css`
 const InsertSectionMenuButton = styled.button`
   position: absolute;
   top: 15px;
-  z-index: 3;
-  width: 24px;
+  width: 32px;
   height: 24px;
   display: block;
   cursor: pointer;

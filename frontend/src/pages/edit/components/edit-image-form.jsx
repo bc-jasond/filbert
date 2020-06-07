@@ -180,7 +180,10 @@ export default React.memo(
     }
 
     function updateCaption({ target: { value } }) {
-      update?.(nodeModel.setIn(['meta', 'caption'], value));
+      update?.(nodeModel.setIn(['meta', 'caption'], value), [
+        'meta',
+        'caption',
+      ]);
     }
 
     const menuItems = [

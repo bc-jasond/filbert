@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
 import IconBoldSvg from '../../../../assets/icons/bold.svg';
 import IconCodeSvg from '../../../../assets/icons/code.svg';
@@ -87,11 +87,11 @@ const LinkInput = styled(DarkInput)`
   transition: 0.05s height;
   ${(p) =>
     p.checked &&
-    `
-    padding: 12px;
-    padding-top: 0;
-    height: 30px;
-  `}
+    css`
+      padding: 12px;
+      padding-top: 0;
+      height: 30px;
+    `}
 `;
 
 const FormatSelectionMenuItem = ({
@@ -199,7 +199,10 @@ export default React.memo(
         //  probably add UP/DOWN arrow handlers to show/hide the input when cursor is on the link SVG
         //  then add a "is link url input hidden" check here too
         if (evt.shiftKey) {
-          evt.stopPropagation();
+          // NOTE: don't stopPropagation for a REDO!  We want this to continue to edit.jsx
+          if (!evt.metaKey) {
+            evt.stopPropagation();
+          }
           return;
         }
         // if 'link' is selected we need to let keystrokes pass through to the URL input... messy business

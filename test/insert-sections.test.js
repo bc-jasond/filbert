@@ -84,7 +84,7 @@ describe('filbert - Insert Menu', () => {
       await insertMenuToggleButton.click();
       await driver.wait(until.elementIsNotVisible(insertSectionMenuContainer));
       // KEYBOARD: user should be able to double-tap CONTROL to open the menu
-      await firstParagraph.sendKeys(...[Key.CONTROL, Key.CONTROL]);
+      await firstParagraph.sendKeys(Key.CONTROL, Key.CONTROL);
       insertSectionMenuContainer = await driver.wait(
         until.elementLocated(By.id(INSERT_SECTION_MENU_CONTAINER_ID))
       );

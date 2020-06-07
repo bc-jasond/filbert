@@ -270,7 +270,7 @@ export default class EditPost extends React.Component {
    */
   undo = async () => {
     const {
-      state: { nodesById },
+      state: { nodesById, editSectionNode },
     } = this;
     const undoResult = await this.historyManager.undo(nodesById);
     // already at beginning of history? or error?
@@ -285,16 +285,24 @@ export default class EditPost extends React.Component {
     }
 
     console.info('UNDO!', undoResult.toJS());
+    this.documentModel.setNodes(updatedNodesById);
     // Right now, nothing depends on changes to the "post" object but, seems like bad form to
     // not update it given the meta data will have changed (currentUndoHistoryId)
-    this.setState({ post: updatedPost });
-    this.documentModel.setNodes(updatedNodesById);
+    const stateUpdate = { post: updatedPost };
+    if (editSectionNode) {
+      // update this or undo/redo changes won't be reflected in the open menus while editing meta sections!
+      stateUpdate.editSectionNode = this.documentModel.getNode(
+        editSectionNode.get('id')
+      );
+    }
+    this.setState(stateUpdate);
+
     await this.commitUpdates(historyOffsets.toJS());
   };
 
   redo = async () => {
     const {
-      state: { nodesById },
+      state: { nodesById, editSectionNode },
     } = this;
     const redoResult = await this.historyManager.redo(nodesById);
     // already at end of history?
@@ -309,15 +317,24 @@ export default class EditPost extends React.Component {
     }
 
     console.info('REDO!', redoResult.toJS());
-    this.setState({ post: updatedPost });
     this.documentModel.setNodes(updatedNodesById);
+    // Right now, nothing depends on changes to the "post" object but, seems like bad form to
+    // not update it given the meta data will have changed (currentUndoHistoryId)
+    const stateUpdate = { post: updatedPost };
+    if (editSectionNode) {
+      // update this or undo/redo changes won't be reflected in the open menus while editing meta sections!
+      stateUpdate.editSectionNode = this.documentModel.getNode(
+        editSectionNode.get('id')
+      );
+    }
+    this.setState(stateUpdate);
     await this.commitUpdates(historyOffsets.toJS());
   };
 
   commitUpdates = (selectionOffsets) => {
     const { startNodeId, caretStart, caretEnd } = selectionOffsets;
     const {
-      state: { editSectionNode, formatSelectionModel },
+      state: { formatSelectionModel },
     } = this;
     // TODO: optimistically saving updated nodes with no error handling - look ma, no errors!
     return new Promise((resolve /* , reject */) => {
@@ -327,11 +344,7 @@ export default class EditPost extends React.Component {
         insertMenuNode: Map(),
       };
       // on insert,set editSectionNode if not already set.
-      if (
-        startNodeId &&
-        this.documentModel.isMetaType(startNodeId) &&
-        editSectionNode.get('id') !== startNodeId
-      ) {
+      if (startNodeId && this.documentModel.isMetaType(startNodeId)) {
         newState.editSectionNode = this.documentModel.getNode(startNodeId);
       }
       this.setState(newState, async () => {
@@ -1069,15 +1082,26 @@ export default class EditPost extends React.Component {
     await new Promise((resolve) => this.setState(newState, resolve));
   };
 
-  updateEditSectionNode = (updatedNode) => {
+  updateEditSectionNode = (updatedNode, comparisonPath) => {
     const historyState = this.documentModel.update(updatedNode);
     // TODO: appendToNodeUpdateLogWhenNCharsAreDifferent() for text fields like Image Caption, Quote fields...
     const offsets = { startNodeId: updatedNode.get('id') };
-    this.historyManager.appendToNodeUpdateLog({
-      executeSelectionOffsets: offsets,
-      unexecuteSelectionOffsets: offsets,
-      state: historyState,
-    });
+    // some text fields are stored in the node.meta object like image caption, link url, quote fields
+    // these text fields will pass a path to differentiate themselves from other actions like image rotate, zoom, etc
+    if (comparisonPath) {
+      this.historyManager.appendToNodeUpdateLogWhenNCharsAreDifferent({
+        executeSelectionOffsets: offsets,
+        unexecuteSelectionOffsets: offsets,
+        state: historyState,
+        comparisonPath,
+      });
+    } else {
+      this.historyManager.appendToNodeUpdateLog({
+        executeSelectionOffsets: offsets,
+        unexecuteSelectionOffsets: offsets,
+        state: historyState,
+      });
+    }
     this.setState(
       {
         editSectionNode: updatedNode,
@@ -1152,7 +1176,7 @@ export default class EditPost extends React.Component {
     if (
       selectionOffsetsAreEqual(selectionOffsets, formatSelectionLastOffsets)
     ) {
-      return;
+      //return;
     }
     console.debug(
       'SELECTION TEST: ',

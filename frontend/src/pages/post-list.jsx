@@ -32,7 +32,6 @@ export default React.memo(
     setSession,
     queryString: queryStringProp,
   }) => {
-    console.log('MATCH?', queryStringProp);
     const getPostsUrl = shouldListDrafts ? '/draft' : '/post';
 
     const inputRef = React.createRef();

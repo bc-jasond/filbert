@@ -38,9 +38,10 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     return (
       // they can't both be falsy
       (state.executeState || state.unexecuteState) &&
+      // wrap in Map() to use equals()
       // use reviver to expand Selections for deep comparison
-      !fromJS(state.executeState, reviver).equals(
-        fromJS(state.unexecuteState, reviver)
+      !Map(fromJS(state.executeState, reviver)).equals(
+        Map(fromJS(state.unexecuteState, reviver))
       )
     );
   }

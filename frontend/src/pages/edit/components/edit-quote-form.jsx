@@ -93,7 +93,7 @@ export default React.memo(({ offsetTop, nodeModel, update }) => {
   }, [currentIdx, inputRefs.length]);
 
   function updateMeta(key, value) {
-    update?.(nodeModel.setIn(['meta', key], value));
+    update?.(nodeModel.setIn(['meta', key], value), ['meta', key]);
   }
 
   return (
