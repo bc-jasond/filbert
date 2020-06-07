@@ -81,10 +81,6 @@ const NavSpan = styled.button`
 const NavLink = styled(Link)`
   ${navButtonMixin};
 `;
-const FontToggle = styled.span`
-  font-family: ${getVar(h1FontFamily)};
-  color: inherit;
-`;
 
 const currentTheme = getTheme();
 const currentFont = getFont();
@@ -140,6 +136,7 @@ export default function Header({
             <>
               <NavSpan
                 id="font-mode-toggle"
+                title="font style"
                 onClick={() => {
                   if (font === SANS_FONT_THEME) {
                     document.body.classList.remove(SANS_FONT_THEME);
@@ -152,10 +149,11 @@ export default function Header({
                   setFontHook(SANS_FONT_THEME);
                 }}
               >
-                <FontToggle>Font</FontToggle>
+                {font === SANS_FONT_THEME ? '🖋' : '✏️'}
               </NavSpan>
               <NavSpan
                 id="dark-mode-toggle"
+                title="dark mode"
                 onClick={() => {
                   if (theme === DARK_MODE_THEME) {
                     document.body.classList.remove(DARK_MODE_THEME);

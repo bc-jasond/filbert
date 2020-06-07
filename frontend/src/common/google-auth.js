@@ -2,12 +2,14 @@
 import { loadScript } from './dom';
 
 export async function googleAuthInit() {
-  await loadScript('https://apis.google.com/js/platform.js');
-  await new Promise((resolve) => gapi.load('auth2', resolve));
-  await gapi.auth2.init({
+  if (!window.gapi) {
+    await loadScript('https://apis.google.com/js/platform.js');
+  }
+  await new Promise((resolve) => window.gapi.load('auth2', resolve));
+  await window.gapi.auth2.init({
     client_id: process.env.GOOGLE_API_FILBERT_CLIENT_ID,
   });
-  return gapi.auth2.getAuthInstance(); // GoogleAuth
+  return window.gapi.auth2.getAuthInstance(); // GoogleAuth
 }
 
 export function getGoogleUser(user) {
