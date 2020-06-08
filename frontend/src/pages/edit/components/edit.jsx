@@ -1176,7 +1176,7 @@ export default class EditPost extends React.Component {
     if (
       selectionOffsetsAreEqual(selectionOffsets, formatSelectionLastOffsets)
     ) {
-      //return;
+      // return;
     }
     console.debug(
       'SELECTION TEST: ',

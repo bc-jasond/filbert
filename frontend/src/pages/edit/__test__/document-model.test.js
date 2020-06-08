@@ -11,17 +11,13 @@ import {
 } from '../../../common/test-post-with-all-types';
 
 overrideConsole();
-const updateManagerMock = {
-  stageNodeUpdate: jest.fn(),
-  stageNodeDelete: jest.fn(),
-};
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 
 let documentModel;
 
 beforeEach(() => {
-  documentModel = DocumentModel(post.id, updateManagerMock, contentNodes);
+  documentModel = DocumentModel(post.id, contentNodes);
 });
 
 describe('DocumentModel', () => {
@@ -97,6 +93,6 @@ describe('DocumentModel', () => {
     expect(spy).toHaveBeenCalled();
     expect(documentModel.getNode('621e').get('content')).toBe(combinedContent);
   });
-  //test.todo('update() - this is tested in update-manager.test.js');
-  //test.todo('delete() - this is tested in update-manager.test.js');
+  //test.todo('update() - this is tested in history-manager.test.js');
+  //test.todo('delete() - this is tested in history-manager.test.js');
 });

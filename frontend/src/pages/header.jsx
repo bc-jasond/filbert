@@ -20,12 +20,7 @@ import {
   setTheme,
   signout,
 } from '../common/session';
-import {
-  backgroundColorPrimary,
-  getVar,
-  h1FontFamily,
-  viewport7,
-} from '../variables.css';
+import { backgroundColorPrimary, getVar, viewport7 } from '../variables.css';
 
 const HeaderStyled = styled.header`
   position: fixed;

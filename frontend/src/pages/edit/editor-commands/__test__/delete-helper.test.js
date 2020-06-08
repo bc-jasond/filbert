@@ -1,6 +1,5 @@
 import { overrideConsole } from '../../../../common/test-helpers';
 import * as selectionHelpers from '../../selection-helpers';
-import * as handleTextType from '../handle-text-type';
 import DocumentModel from '../../document-model';
 import {
   firstNodeContent,
@@ -13,6 +12,8 @@ import {
   lastNodeContent,
   lastNodeIdP,
   pre2Id,
+  preId,
+  spacerId,
   testPostWithAllTypesJS,
 } from '../../../../common/test-post-with-all-types';
 import { doDelete } from '../delete';
@@ -40,7 +41,7 @@ beforeEach(() => {
   originalNodeCount = doc.getNodes().size;
 });
 
-describe('Document Model -> Delete helper - single node', () => {
+describe.skip('Document Model -> Delete helper - single node', () => {
   test('doDelete - validates minimum input of startNodeId', () => {
     let result = doDelete(doc, { startNodeId: null });
     expect(result).toEqual({});
@@ -124,7 +125,7 @@ describe('Document Model -> Delete helper - single node', () => {
     expect(spyAdjust).not.toHaveBeenCalled();
   });
 });
-describe('Document Model -> Delete helper - across nodes', () => {
+describe.skip('Document Model -> Delete helper - across nodes', () => {
   // is this desired behavior?
   test('doDelete - deletes all content - should merge with TextType', () => {
     doDelete(doc, {
@@ -175,5 +176,26 @@ describe('Document Model -> Delete helper - across nodes', () => {
     expect(caretStart).toBe(-1);
     expect(doc.getNodes().size).toBe(1);
     expect(spyAdjust).not.toHaveBeenCalled();
+  });
+  // TODO: keep these?
+  test('handleBackspaceTextType - noop if selectedNodeId is first node in document', () => {
+    const { startNodeId } = handleBackspaceTextType(doc, firstNodeIdH1);
+    expect(startNodeId).toBe(firstNodeIdH1);
+  });
+  test('handleBackspaceTextType - deletes an empty Text Type node if previous node is a Meta Type', () => {
+    doc.update(doc.getNode(h2Id).set('content', ''));
+    const { startNodeId, caretStart } = handleBackspaceTextType(doc, h2Id);
+    expect(startNodeId).toBe(spacerId);
+    expect(caretStart).toBe(0);
+    expect(doc.getNode(h2Id).size).toBe(0);
+  });
+  test('handleBackspaceTextType - merges content of two Text Type nodes', () => {
+    const spy = jest.spyOn(doc, 'mergeParagraphs').mockImplementation(() => {});
+    const { startNodeId, caretStart } = handleBackspaceTextType(doc, preId);
+    expect(spy).toHaveBeenCalledWith(formattedLiId, preId);
+    expect(startNodeId).toBe(formattedLiId);
+    expect(caretStart).toEqual(
+      doc.getNode(formattedLiId).get('content').length
+    );
   });
 });
