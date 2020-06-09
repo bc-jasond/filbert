@@ -24,6 +24,8 @@ export const formattedPId = 'f677';
 export const formattedPContent = 'Second paragraph with some formats';
 export const formattedLiId = '151c';
 export const formattedLiContent = 'One with a bunch of formats and stuff';
+export const formattedLiIdPrev = '9fa0';
+export const formattedLiIdPrevContent = 'Another item here';
 
 export const testPostWithAllTypesJS = {
   post: {
@@ -99,12 +101,12 @@ export const testPostWithAllTypesJS = {
       content: "Here's a list",
       meta: {},
     },
-    '9fa0': {
+    [formattedLiIdPrev]: {
       post_id: testPostId,
       id: '9fa0',
       next_sibling_id: formattedLiId,
       type: 'li',
-      content: 'Another item here',
+      content: formattedLiIdPrevContent,
       meta: {},
     },
     [formattedLiId]: {

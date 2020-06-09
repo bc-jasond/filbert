@@ -88,6 +88,9 @@ export function doDeleteMetaType(documentModel, selectionOffsets) {
   }
   const wasFirstNodeInDocument =
     getFirstNode(documentModel.getNodes()).get('id') === startNodeId;
+  const prevNodeId = wasFirstNodeInDocument
+    ? getFirstNode(documentModel.getNodes()).get('id')
+    : documentModel.getPrevNode(startNodeId).get('id');
   const historyState = documentModel.deleteNode(
     documentModel.getNode(startNodeId)
   );
@@ -95,9 +98,7 @@ export function doDeleteMetaType(documentModel, selectionOffsets) {
   return {
     historyState,
     executeSelectionOffsets: {
-      startNodeId: wasFirstNodeInDocument
-        ? getFirstNode(documentModel.getNodes()).get('id')
-        : documentModel.getPrevNode(startNodeId).get('id'),
+      startNodeId: prevNodeId,
       caretStart: wasFirstNodeInDocument || documentModel.isMetaType() ? 0 : -1,
     },
   };
