@@ -1,0 +1,175 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Document Model -> paste node helper doPaste() pastes a single line of text 1`] = `
+Array [
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "621e",
+      "type": "h1",
+      "content": "Large Headsome sample stringing",
+      "meta": Immutable.Map {},
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "621e",
+      "type": "h1",
+      "content": "Large Heading",
+      "meta": Immutable.Map {},
+    },
+  },
+]
+`;
+
+exports[`Document Model -> paste node helper doPaste() pastes plain text - multi line paste 1`] = `
+Array [
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "3021",
+      "type": "h1",
+      "content": "Large Heading",
+      "meta": Immutable.Map {},
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "621e",
+      "type": "h1",
+      "content": "Large Heading",
+      "meta": Immutable.Map {},
+    },
+  },
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "type": "h1",
+      "content": "rge Heading",
+      "meta": Immutable.Map {},
+      "id": "3021",
+      "next_sibling_id": "621e",
+    },
+    "unexecuteState": undefined,
+  },
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "3021",
+      "type": "h1",
+      "content": "Labib jibbs",
+      "meta": Immutable.Map {
+        "selections": Immutable.Record {
+          "next": undefined,
+          "length": -1,
+          "selection-bold": false,
+          "selection-italic": false,
+          "selection-code": false,
+          "selection-siteinfo": false,
+          "selection-mini": false,
+          "selection-strikethrough": false,
+          "selection-link": false,
+          "linkUrl": "",
+        },
+      },
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "3021",
+      "type": "h1",
+      "content": "Large Heading",
+      "meta": Immutable.Map {},
+    },
+  },
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "1762",
+      "type": "h1",
+      "content": "Labib jibbs",
+      "meta": Immutable.Map {
+        "selections": Immutable.Record {
+          "next": undefined,
+          "length": -1,
+          "selection-bold": false,
+          "selection-italic": false,
+          "selection-code": false,
+          "selection-siteinfo": false,
+          "selection-mini": false,
+          "selection-strikethrough": false,
+          "selection-link": false,
+          "linkUrl": "",
+        },
+      },
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "3021",
+      "type": "h1",
+      "content": "Labib jibbs",
+      "meta": Immutable.Map {
+        "selections": Immutable.Record {
+          "next": undefined,
+          "length": -1,
+          "selection-bold": false,
+          "selection-italic": false,
+          "selection-code": false,
+          "selection-siteinfo": false,
+          "selection-mini": false,
+          "selection-strikethrough": false,
+          "selection-link": false,
+          "linkUrl": "",
+        },
+      },
+    },
+  },
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "type": "h1",
+      "content": "bab jabs",
+      "meta": Immutable.Map {},
+      "id": "1762",
+      "next_sibling_id": "3021",
+    },
+    "unexecuteState": undefined,
+  },
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "type": "h1",
+      "content": "bubba rubba jubbsonrge Heading",
+      "meta": Immutable.Map {
+        "selections": Immutable.Record {
+          "next": undefined,
+          "length": -1,
+          "selection-bold": false,
+          "selection-italic": false,
+          "selection-code": false,
+          "selection-siteinfo": false,
+          "selection-mini": false,
+          "selection-strikethrough": false,
+          "selection-link": false,
+          "linkUrl": "",
+        },
+      },
+      "id": "3021",
+      "next_sibling_id": "621e",
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "type": "h1",
+      "content": "rge Heading",
+      "meta": Immutable.Map {},
+      "id": "3021",
+      "next_sibling_id": "621e",
+    },
+  },
+]
+`;

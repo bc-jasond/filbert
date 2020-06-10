@@ -1,10 +1,12 @@
 import {
+  NODE_TYPE_H1,
   NODE_TYPE_LI,
   NODE_TYPE_P,
   NODE_TYPE_PRE,
 } from '../../../../common/constants';
 import { overrideConsole } from '../../../../common/test-helpers';
 import DocumentModel from '../../document-model';
+import { getLastExecuteIdFromHistory } from '../../history-manager';
 import * as selectionHelpers from '../../selection-helpers';
 import { doSplit } from '../split';
 import {
@@ -31,98 +33,95 @@ const spySplit = jest
   }));
 
 beforeEach(() => {
-  doc = DocumentModel(post.id, {}, contentNodes);
+  jest.clearAllMocks();
+  doc = DocumentModel(post.id, contentNodes);
 });
-describe.skip('Document Model -> split node helper', () => {
-  test('doSplit - validates input', () => {
-    // bad node id
-    let noopResult = doSplit(doc, {});
-    expect(noopResult).toBeFalsy();
-    noopResult = doSplit(doc, { startNodeId: 'null' });
-    expect(noopResult).toBeFalsy();
-    expect(spyMeta).not.toHaveBeenCalled();
-    expect(spyText).not.toHaveBeenCalled();
+describe('Document Model -> split node helper doSplit()', () => {
+  test('validates input', () => {
+    expect(() => {
+      // missing node id
+      doSplit(doc, {});
+    }).toThrow();
+    expect(() => {
+      // bad node id
+      doSplit(doc, { startNodeId: 'null' });
+    });
+    expect(spySplit).not.toHaveBeenCalled();
   });
-  test('doSplit - calls handleEnterMetaType() for meta type nodes', () => {
-    doSplit(doc, { startNodeId: imgId });
-    expect(spyMeta).toHaveBeenCalledWith(doc, imgId);
-    expect(spyText).not.toHaveBeenCalled();
+  test('adds a P tag after meta type nodes', () => {
+    const {
+      // historyState,
+      executeSelectionOffsets: { startNodeId, caretStart },
+    } = doSplit(doc, { startNodeId: imgId });
+    expect(doc.getNode(startNodeId).get('type')).toBe(NODE_TYPE_P);
+    expect(caretStart).toBe(0);
+    expect(spySplit).not.toHaveBeenCalled();
   });
-  test('doSplit - calls handleEnterTextType() for text type nodes', () => {
-    const caretStart = 5;
-    doSplit(doc, { startNodeId: firstNodeIdH1, caretStart });
-    expect(spyMeta).not.toHaveBeenCalled();
-    expect(spyText).toHaveBeenCalledWith(
-      doc,
-      firstNodeIdH1,
-      caretStart,
-      firstNodeContent
+  test('splits H1 type nodes at a caret position', () => {
+    const caretStartArg = 6;
+    const {
+      // historyState,
+      executeSelectionOffsets: { startNodeId, caretStart },
+    } = doSplit(doc, { startNodeId: firstNodeIdH1, caretStart: caretStartArg });
+    const rightNode = doc.getNode(startNodeId);
+    expect(rightNode.get('type')).toBe(NODE_TYPE_H1);
+    expect(rightNode.get('content')).toBe(
+      firstNodeContent.substring(caretStartArg)
     );
+    expect(caretStart).toBe(0);
+    expect(spySplit).not.toHaveBeenCalled();
   });
-  test('handleEnterTextType - user hits enter on empty PRE or LI to terminate a PRE ("code") or LI section', () => {
-    const newLastPreId = doc.insert(NODE_TYPE_PRE, pre2Id);
-    const nodeId = handleEnterTextType(
-      doc,
-      newLastPreId,
-      0,
-      doc.getNode(newLastPreId).get('content')
-    );
-    expect(nodeId).toEqual(newLastPreId);
+  test('user hits enter on empty PRE or LI to terminate a PRE ("code") or LI section', () => {
+    let history = doc.insert(NODE_TYPE_PRE, pre2Id);
+    const newLastPreId = getLastExecuteIdFromHistory(history);
+    let {
+      // historyState,
+      executeSelectionOffsets: { startNodeId, caretStart },
+    } = doSplit(doc, { startNodeId: newLastPreId, caretStart: 0 });
+    expect(startNodeId).toEqual(newLastPreId);
     expect(doc.getNode(newLastPreId).get('type')).toBe(NODE_TYPE_P);
-    const newLastLiId = doc.insert(NODE_TYPE_LI, formattedLiId);
-    const nodeId2 = handleEnterTextType(
-      doc,
-      newLastLiId,
-      0,
-      doc.getNode(newLastLiId).get('content')
-    );
-    expect(nodeId2).toEqual(newLastLiId);
+    history = doc.insert(NODE_TYPE_LI, formattedLiId);
+    const newLastLiId = getLastExecuteIdFromHistory(history);
+    ({
+      // historyState,
+      executeSelectionOffsets: { startNodeId, caretStart },
+    } = doSplit(doc, { startNodeId: newLastLiId, caretStart: 0 }));
+    expect(startNodeId).toEqual(newLastLiId);
     expect(doc.getNode(newLastLiId).get('type')).toBe(NODE_TYPE_P);
-    expect(nodeId).not.toEqual(nodeId2);
   });
-  test('handleEnterTextType - H1 or H2 - converts to empty P, inserts heading after - when user hits enter at beginning', () => {
+  test('H1 or H2 - remains heading when user hits enter at beginning', () => {
     const originalType = doc.getNode(firstNodeIdH1).get('type');
-    const leftNodeId = handleEnterTextType(
-      doc,
-      firstNodeIdH1,
-      0,
-      firstNodeContent
-    );
-    expect(leftNodeId).toEqual(firstNodeIdH1);
-    expect(doc.getNode(leftNodeId).get('type')).toBe(NODE_TYPE_P);
-    expect(doc.getNextNode(leftNodeId).get('type')).toBe(originalType);
-    expect(doc.getNextNode(leftNodeId).get('content')).toEqual(
-      firstNodeContent
-    );
+    const {
+      // historyState,
+      executeSelectionOffsets: { startNodeId, caretStart },
+    } = doSplit(doc, { startNodeId: firstNodeIdH1, caretStart: 0 });
+    expect(startNodeId).not.toEqual(firstNodeIdH1);
+    expect(doc.getNextNode(firstNodeIdH1).get('type')).toBe(originalType);
+    expect(doc.getNode(startNodeId).get('type')).toBe(NODE_TYPE_H1);
+    expect(doc.getNode(startNodeId).get('content')).toEqual(firstNodeContent);
   });
-  test('handleEnterTextType - H1 or H2 - inserts empty P when user hits enter at end', () => {
-    const newNodeId = handleEnterTextType(
-      doc,
-      h2Id,
-      h2Content.length,
-      h2Content
-    );
-    expect(newNodeId).not.toBe(h2Id);
+  test('H1 or H2 - inserts empty P when user hits enter at end', () => {
+    const {
+      // historyState,
+      executeSelectionOffsets: { startNodeId, caretStart },
+    } = doSplit(doc, { startNodeId: h2Id, caretStart: h2Content.length });
+    expect(startNodeId).not.toBe(h2Id);
     expect(doc.getNode(h2Id).get('content')).toEqual(h2Content);
-    expect(doc.getNextNode(h2Id).get('id')).toEqual(newNodeId);
-    expect(doc.getNode(newNodeId).get('type')).toBe(NODE_TYPE_P);
-    expect(doc.getNode(newNodeId).get('content')).toEqual('');
+    expect(doc.getNextNode(h2Id).get('id')).toEqual(startNodeId);
+    expect(doc.getNode(startNodeId).get('type')).toBe(NODE_TYPE_P);
+    expect(doc.getNode(startNodeId).get('content')).toEqual('');
   });
-  test('handleEnterTextType - LI with Selections - splits correctly in middle', () => {
-    const caretStart = Math.floor(formattedLiContent / 2);
+  test('LI with Selections - splits correctly in middle', () => {
+    const caretStartArg = Math.floor(formattedLiContent / 2);
 
-    const newNodeId = handleEnterTextType(
-      doc,
-      formattedLiId,
-      caretStart,
-      formattedLiContent
-    );
+    const {
+      // historyState,
+      executeSelectionOffsets: { startNodeId, caretStart },
+    } = doSplit(doc, { startNodeId: formattedLiId, caretStart: caretStartArg });
     expect(spySplit).toHaveBeenCalled();
-    expect(doc.getNode(newNodeId).get('content')).toEqual(
-      formattedLiContent.substring(caretStart)
+    expect(doc.getNode(startNodeId).get('content')).toEqual(
+      formattedLiContent.substring(caretStartArg)
     );
-    expect(doc.getNode(newNodeId).get('meta')).not.toEqual(
-      doc.getNode(formattedLiId).get('meta')
-    );
+    expect(doc.getNode(startNodeId).get('type')).toBe(NODE_TYPE_LI);
   });
 });

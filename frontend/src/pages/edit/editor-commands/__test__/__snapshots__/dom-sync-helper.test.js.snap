@@ -1,0 +1,116 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Document Model -> DOM sync helper syncFromDom - adds an emoji 😀 to content at caretStart 1`] = `
+Array [
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small Head🤦🏻‍♂️ing",
+      "meta": Immutable.Map {},
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small Heading",
+      "meta": Immutable.Map {},
+    },
+  },
+]
+`;
+
+exports[`Document Model -> DOM sync helper syncFromDom - adds an emoji 😀 to empty content 1`] = `
+Array [
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "🤦🏻‍♂️",
+      "meta": Immutable.Map {},
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "",
+      "meta": Immutable.Map {},
+    },
+  },
+]
+`;
+
+exports[`Document Model -> DOM sync helper syncToDom - adds a new letter to content at caretStart 1`] = `
+Array [
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small ZHeading",
+      "meta": Immutable.Map {},
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small Heading",
+      "meta": Immutable.Map {},
+    },
+  },
+]
+`;
+
+exports[`Document Model -> DOM sync helper syncToDom - adds a new letter to empty content 1`] = `
+Array [
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Z",
+      "meta": Immutable.Map {},
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "",
+      "meta": Immutable.Map {},
+    },
+  },
+]
+`;
+
+exports[`Document Model -> DOM sync helper syncToDom - warns if new content length > 1 1`] = `
+Array [
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small Headway too much contenting",
+      "meta": Immutable.Map {},
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "9615",
+      "next_sibling_id": "56da",
+      "type": "h2",
+      "content": "Small Heading",
+      "meta": Immutable.Map {},
+    },
+  },
+]
+`;
