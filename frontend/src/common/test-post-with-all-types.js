@@ -11,6 +11,8 @@ import { makeSelections } from './test-helpers';
 export const testPostId = 175;
 export const firstNodeIdH1 = '8e34';
 export const firstNodeContent = 'Large Heading';
+export const firstPId = '621e';
+export const firstPContent = 'First paragraph with no formats';
 export const lastNodeIdP = 'cce3';
 export const lastNodeContent =
   'Make sure we have a P on the end so we can delete';
@@ -43,17 +45,17 @@ export const testPostWithAllTypesJS = {
     [firstNodeIdH1]: {
       post_id: testPostId,
       id: firstNodeIdH1,
-      next_sibling_id: '621e',
+      next_sibling_id: firstPId,
       type: 'h1',
       content: firstNodeContent,
       meta: {},
     },
-    '621e': {
+    [firstPId]: {
       post_id: testPostId,
-      id: '621e',
+      id: firstPId,
       next_sibling_id: formattedPId,
       type: 'p',
-      content: 'First paragraph with no formats',
+      content: firstPContent,
       meta: {},
     },
     [formattedPId]: {

@@ -6,9 +6,8 @@ import {
   testPostWithAllTypesJS,
   imgId,
   firstNodeIdH1,
-  formattedPContent,
-  formattedPId,
   firstNodeContent,
+  firstPId,
 } from '../../../../common/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;
@@ -80,7 +79,10 @@ describe('Document Model -> paste node helper doPaste()', () => {
     );
     expect(startNodeId).not.toBe(firstNodeIdH1);
     expect(caretStart).toBe(lastLine.length);
-    expect(historyState).toMatchSnapshot();
+    expect(historyState.length).toBe(6);
+    expect(historyState.pop().executeState.get('next_sibling_id')).toBe(
+      firstPId
+    );
     expect(spyAdjust).toHaveBeenCalledTimes(2);
     let current = doc.getNode(firstNodeIdH1);
     for (let i = 0; i < textLines.length; i++) {
