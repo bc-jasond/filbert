@@ -409,6 +409,64 @@ Immutable.Map {
 }
 `;
 
+exports[`adjustSelectionOffsetsAndCleanup delete highlighted characters from one whole selection evenly 1`] = `
+Immutable.Map {
+  "type": "p",
+  "parent_id": "39fb",
+  "position": 1,
+  "content": "And a  paragraph because",
+  "id": "6eda",
+  "post_id": 166,
+  "meta": Immutable.Map {
+    "selections": Immutable.Record {
+      "next": Immutable.Record {
+        "next": Immutable.Record {
+          "next": Immutable.Record {
+            "next": undefined,
+            "length": -1,
+            "selection-bold": false,
+            "selection-italic": false,
+            "selection-code": false,
+            "selection-siteinfo": false,
+            "selection-mini": false,
+            "selection-strikethrough": false,
+            "selection-link": false,
+            "linkUrl": "",
+          },
+          "length": 9,
+          "selection-bold": false,
+          "selection-italic": false,
+          "selection-code": true,
+          "selection-siteinfo": false,
+          "selection-mini": false,
+          "selection-strikethrough": false,
+          "selection-link": false,
+          "linkUrl": "",
+        },
+        "length": 4,
+        "selection-bold": false,
+        "selection-italic": false,
+        "selection-code": false,
+        "selection-siteinfo": false,
+        "selection-mini": false,
+        "selection-strikethrough": false,
+        "selection-link": false,
+        "linkUrl": "",
+      },
+      "length": 3,
+      "selection-bold": false,
+      "selection-italic": false,
+      "selection-code": false,
+      "selection-siteinfo": true,
+      "selection-mini": false,
+      "selection-strikethrough": false,
+      "selection-link": false,
+      "linkUrl": "",
+    },
+  },
+}
+`;
+
 exports[`adjustSelectionOffsetsAndCleanup delete last character of last selection with formats, model should have 'selections' unset 1`] = `
 Immutable.Map {
   "type": "p",

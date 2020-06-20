@@ -85,7 +85,7 @@ function internalGetSelectionAtIndex(head, idx) {
     i += 1;
   }
   if (!selection) {
-    console.error('Bad selection index: ', idx, head);
+    throw new Error(`Bad selection index\n${JSON.stringify({ idx, head })}`);
   }
   return selection;
 }
@@ -206,16 +206,11 @@ export function adjustSelectionOffsetsAndCleanup(
       // whole selection was deleted
       didSkip = true;
     } else {
-      // selection completely overlaps?
+      // selection completely overlaps highlight?
       if (
         caretPosition <= deleteCaretStart &&
         caretPosition + currentLength >= start
       ) {
-        const newLength = currentLength + count;
-        if (newLength === 0) {
-          // deleted the selection
-          didDelete = true;
-        }
         current[SELECTION_LENGTH] = currentLength + count; // count is negative
       }
       // selection overlaps to the left?
@@ -308,18 +303,15 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
       (start < currentStart && end > currentStart && end <= currentEnd)
     ) {
       transferFormats(newSelection, current);
-      if (prev && !shouldSkipSetPrev) {
-        prev[SELECTION_NEXT] = newSelection;
-      }
       if (!currentIsLastSelection) {
         current[SELECTION_LENGTH] = currentEnd - end;
       }
-      newSelection[SELECTION_NEXT] =
-        current[SELECTION_LENGTH] > 0 ||
-        doesReplaceHead ||
-        (currentIsLastSelection && !doesReplaceLastSelection)
-          ? current
-          : current[SELECTION_NEXT];
+      if (doesReplaceLastSelection || current[SELECTION_LENGTH] === 0) {
+        // eslint-disable-next-line prefer-destructuring
+        newSelection[SELECTION_NEXT] = current[SELECTION_NEXT];
+      } else {
+        newSelection[SELECTION_NEXT] = current;
+      }
       return {
         selections: fromJS(doesReplaceHead ? newSelection : head, reviver),
         idx: doesReplaceHead ? 0 : idx,
@@ -361,6 +353,7 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
       }
       if (doesReplaceLastSelection) {
         newSelection[SELECTION_LENGTH] = -1;
+        newSelection[SELECTION_NEXT] = undefined;
       }
       if (prev && !shouldSkipSetPrev) {
         prev[SELECTION_NEXT] = newSelection;
@@ -388,13 +381,21 @@ export function getSelectionByContentOffset(nodeModel, start, end) {
     current = current[SELECTION_NEXT];
   }
 
-  // reset tail
-  current[SELECTION_NEXT] = undefined;
-  current[SELECTION_LENGTH] = -1;
-
-  return { selections: fromJS(head, reviver), idx };
+  throw new Error(
+    `Shouldn't ever get here...\n${JSON.stringify({
+      current,
+      prev,
+      idx,
+      nodeModel,
+      start,
+      end,
+    })}`
+  );
 }
 
+/**
+  the same as `internalGetSelectionAtIndex()` above except uses Immutable
+ */
 export function getSelectionAtIdx(head, idx) {
   let selection = head;
   let i = 0;
@@ -403,7 +404,7 @@ export function getSelectionAtIdx(head, idx) {
     i += 1;
   }
   if (!selection) {
-    console.error('Bad selection index: ', idx, head);
+    throw new Error(`Bad selection index\n${JSON.stringify({ idx, head })}`);
   }
   return selection;
 }
@@ -538,15 +539,4 @@ export function getContentBySelections(node) {
     current = current[SELECTION_NEXT];
   }
   return pieces;
-}
-
-export function getSelectionsLength(node) {
-  const head = node.getIn(['meta', 'selections']);
-  let i = 0;
-  let current = head;
-  while (current) {
-    i += 1;
-    current = current.get(SELECTION_NEXT);
-  }
-  return i;
 }

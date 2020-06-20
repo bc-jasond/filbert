@@ -10,6 +10,8 @@ import {
   SELECTION_NEXT,
 } from '../../../common/constants';
 import { makeSelections } from '../../../common/test-helpers';
+import { cleanTextOrZeroLengthPlaceholder } from '../../../common/utils';
+import { getSelectionAtIdx } from '../selection-helpers';
 
 const { fromJS, Map } = require('immutable');
 const { reviver, Selection } = require('../../../common/utils');
@@ -134,6 +136,28 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
       testContent,
       17,
       -13
+    );
+    expect(
+      modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
+    ).toBe(true);
+    expect(modelAdjusted).toMatchSnapshot();
+  });
+  test('delete highlighted characters from one whole selection evenly', () => {
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [4],
+      [9, SELECTION_ACTION_CODE],
+      [],
+    ]);
+    const testModel = nodeModelWithSelections.set(
+      'content',
+      `${testContent.substring(0, 6)}${testContent.substring(12)}`
+    );
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      12,
+      -6
     );
     expect(
       modelAdjusted.getIn(['meta', 'selections']).equals(expectedSelections)
@@ -361,6 +385,21 @@ describe('adjustSelectionOffsetsAndCleanup', () => {
     ).toBe(true);
     expect(modelAdjusted).toMatchSnapshot();
   });
+  test('add a word to the end of content with 1 selection (noop)', () => {
+    const expectedSelections = makeSelections([[, SELECTION_ACTION_SITEINFO]]);
+    const testModel = nodeModelWithSelections
+      .setIn(['meta', 'selections'], expectedSelections)
+      .set('content', `${testContent}Slappy`);
+    const modelAdjusted = adjustSelectionOffsetsAndCleanup(
+      testModel,
+      testContent,
+      30,
+      6
+    );
+    expect(modelAdjusted.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
   test('start or end out of bounds should throw', () => {
     expect(() => {
       adjustSelectionOffsetsAndCleanup(
@@ -440,7 +479,7 @@ describe('getSelectionByContentOffset', () => {
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(5);
   });
-  test('creates new selection somewhere in the middle, replacing other selections', () => {
+  test('creates new selection - somewhere in the middle, replacing other selections', () => {
     const expectedSelections = makeSelections([
       [3, SELECTION_ACTION_SITEINFO],
       [2],
@@ -602,6 +641,42 @@ describe('getSelectionByContentOffset', () => {
     expect(selections).toEqual(expectedSelections);
     expect(idx).toEqual(1);
   });
+  test('creates new selection - replaces all selections evenly', () => {
+    const expectedSelections = makeSelections([
+      [
+        ,
+        SELECTION_ACTION_SITEINFO,
+        SELECTION_ACTION_ITALIC,
+        SELECTION_ACTION_CODE,
+      ],
+    ]);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      0,
+      30
+    );
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(0);
+  });
+  test('creates new selection - replaces 2nd half of head, 1st half of last selection', () => {
+    const expectedSelections = makeSelections([
+      [2, SELECTION_ACTION_SITEINFO],
+      [
+        26,
+        SELECTION_ACTION_SITEINFO,
+        SELECTION_ACTION_ITALIC,
+        SELECTION_ACTION_CODE,
+      ],
+      [],
+    ]);
+    const { selections, idx } = getSelectionByContentOffset(
+      nodeModelWithSelections,
+      2,
+      28
+    );
+    expect(selections).toEqual(expectedSelections);
+    expect(idx).toEqual(1);
+  });
 });
 
 describe('replaceSelection', () => {
@@ -648,7 +723,7 @@ describe('replaceSelection', () => {
       expectedSelections
     );
   });
-  test('replaces a Selection - first (head) selection', () => {
+  test('replaces a Selection (no merge) - first (head) selection', () => {
     const newSelection = Selection({
       [SELECTION_LENGTH]: 3,
       [SELECTION_ACTION_MINI]: true,
@@ -689,6 +764,63 @@ describe('replaceSelection', () => {
     expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
       expectedSelections
     );
+  });
+  test('replaces and merges Selection - last selection', () => {
+    const newSelection = Selection({
+      [SELECTION_ACTION_CODE]: true,
+    });
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [1],
+      [, SELECTION_ACTION_CODE],
+    ]);
+    const updatedModel = replaceSelection(
+      nodeModelWithSelections,
+      newSelection,
+      5
+    );
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
+  test('replaces and merges Selection - 2nd to last selection', () => {
+    const newSelection = Selection({
+      [SELECTION_LENGTH]: 9,
+    });
+    const expectedSelections = makeSelections([
+      [3, SELECTION_ACTION_SITEINFO],
+      [3],
+      [6, SELECTION_ACTION_ITALIC],
+      [],
+    ]);
+    const updatedModel = replaceSelection(
+      nodeModelWithSelections,
+      newSelection,
+      4
+    );
+    expect(updatedModel.getIn(['meta', 'selections'])).toEqual(
+      expectedSelections
+    );
+  });
+  test('should throw with bad idx', () => {
+    expect(() => {
+      replaceSelection(nodeModelWithSelections, Selection(), 100);
+    }).toThrow();
+  });
+});
+
+describe('getSelectionAtIdx', () => {
+  test('gets the right selection', () => {
+    const expectedSelections = makeSelections([[9, SELECTION_ACTION_CODE], []]);
+    const actualSelections = getSelectionAtIdx(testSelections, 4);
+    expect(actualSelections).toEqual(expectedSelections);
+  });
+  test('should throw on bad idx', () => {
+    expect(() => {
+      getSelectionAtIdx(testSelections, 100);
+    }).toThrow();
   });
 });
 
@@ -962,6 +1094,17 @@ describe('getContentBySelections', () => {
       Selection()
     );
     expect(getContentBySelections(testModel)).toEqual([testContent]);
+  });
+  test('returns an array of strings with 1 zero-length char for each Selection if content is null or undefined', () => {
+    const zeroLengthPlaceholders = Array(6)
+      .fill('')
+      .map((s) => cleanTextOrZeroLengthPlaceholder(s));
+    expect(
+      getContentBySelections(nodeModelWithSelections.set('content', null))
+    ).toEqual(zeroLengthPlaceholders);
+    expect(
+      getContentBySelections(nodeModelWithSelections.set('content', undefined))
+    ).toEqual(zeroLengthPlaceholders);
   });
 });
 
