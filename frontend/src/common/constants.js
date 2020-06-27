@@ -111,12 +111,11 @@ export const DOM_INPUT_TAG_NAME = 'INPUT';
 
 // HISTORY - undo / redo
 export const NODE_UPDATE_HISTORY = 'nodeUpdateHistory';
-export const HISTORY_KEY_UNDO_ID = 'historyUndoId';
 export const HISTORY_KEY_STATE = 'historyState';
-export const HISTORY_KEY_UNEXECUTE_OFFSETS = 'unexecuteOffsets';
+export const HISTORY_KEY_UNEXECUTE_OFFSETS = 'unexecuteSelectionOffsets';
 export const HISTORY_KEY_UNEXECUTE_STATES = 'unexecuteState';
 export const HISTORY_KEY_EXECUTE_STATES = 'executeState';
-export const HISTORY_KEY_EXECUTE_OFFSETS = 'executeOffsets';
+export const HISTORY_KEY_EXECUTE_OFFSETS = 'executeSelectionOffsets';
 export const HISTORY_MIN_NUM_CHARS = 6;
 
 // THEME

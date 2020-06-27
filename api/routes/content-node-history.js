@@ -74,11 +74,20 @@ async function postContentNodeHistory(currentPost, history) {
 
   const insertValues = history
     // TODO: verify/filter "empty" & "noop" state updates
-    .map(({ executeOffsets, unexecuteOffsets, historyState }, idx) => ({
-      post_id: id,
-      content_node_history_id: nextHistoryId + idx,
-      meta: JSON.stringify({ executeOffsets, unexecuteOffsets, historyState }),
-    }));
+    .map(
+      (
+        { executeSelectionOffsets, unexecuteSelectionOffsets, historyState },
+        idx
+      ) => ({
+        post_id: id,
+        content_node_history_id: nextHistoryId + idx,
+        meta: JSON.stringify({
+          executeSelectionOffsets,
+          unexecuteSelectionOffsets,
+          historyState,
+        }),
+      })
+    );
 
   return knex('content_node_history').insert(insertValues);
 }
@@ -131,7 +140,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
 
   // process history into a list of updates to update current snapshot and to send to frontend to update the document in memory
   const {
-    meta: { historyState, executeOffsets, unexecuteOffsets },
+    meta: { historyState, executeSelectionOffsets, unexecuteSelectionOffsets },
   } = history;
   let statesByNodeId = historyState.map(({ executeState, unexecuteState }) =>
     isUndo
@@ -162,7 +171,9 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
   const [updatedPost] = await knex('post').where({ id });
 
   return {
-    selectionOffsets: isUndo ? unexecuteOffsets : executeOffsets,
+    selectionOffsets: isUndo
+      ? unexecuteSelectionOffsets
+      : executeSelectionOffsets,
     nodeUpdatesById: statesByNodeId,
     updatedPost,
   };

@@ -1,10 +1,8 @@
-import { fromJS, is, Map } from 'immutable';
+import { fromJS, Map } from 'immutable';
 
 import {
-  HISTORY_KEY_EXECUTE_OFFSETS,
   HISTORY_KEY_EXECUTE_STATES,
   HISTORY_KEY_STATE,
-  HISTORY_KEY_UNEXECUTE_OFFSETS,
   HISTORY_KEY_UNEXECUTE_STATES,
 } from '../../common/constants';
 import { apiPost } from '../../common/fetch';
@@ -12,17 +10,17 @@ import { moreThanNCharsAreDifferent, reviver } from '../../common/utils';
 
 export const characterDiffSize = 6;
 
-let historyCandidateNode = Map();
-let historyCandidateUnexecuteSelectionOffsets = {};
-let historyCandidateExecuteSelectionOffsets = {};
-let historyCandidateStateEntry = {};
-let historyCandidateTimeout;
-let historyQueue = [];
-let hasPendingRequest = false;
+export default function HistoryManager(postId, pendingHistoryLog = []) {
+  let historyCandidateNode = Map();
+  let historyCandidateUnexecuteSelectionOffsets = {};
+  let historyCandidateExecuteSelectionOffsets = {};
+  let historyCandidateStateEntry = {};
+  let historyCandidateTimeout;
+  let historyLog = [];
+  let hasPendingRequest = false;
 
-export default function HistoryManager(postId, pendingHistoryQueue = []) {
-  function getHistoryQueue() {
-    return historyQueue;
+  function getLocalHistoryLog() {
+    return historyLog;
   }
 
   function clearPending() {
@@ -34,24 +32,25 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     clearTimeout(historyCandidateTimeout);
   }
 
-  function historyStateIsNotEmptyOrNoop(state) {
+  function historyStateIsNotEmptyOrNoop(historyState) {
     return (
       // they can't both be falsy
-      (state.executeState || state.unexecuteState) &&
+      (historyState.executeState || historyState.unexecuteState) &&
+      // they can't both be equal
       // wrap in Map() to use equals()
       // use reviver to expand Selections for deep comparison
-      !Map(fromJS(state.executeState, reviver)).equals(
-        Map(fromJS(state.unexecuteState, reviver))
+      !Map(fromJS(historyState.executeState, reviver)).equals(
+        Map(fromJS(historyState.unexecuteState, reviver))
       )
     );
   }
 
-  function flushPendingNodeUpdateLogEntry() {
+  function flushPendingHistoryLogEntry() {
     if (historyStateIsNotEmptyOrNoop(historyCandidateStateEntry)) {
       const historyEntry = fromJS(
         {
-          [HISTORY_KEY_EXECUTE_OFFSETS]: historyCandidateExecuteSelectionOffsets,
-          [HISTORY_KEY_UNEXECUTE_OFFSETS]: historyCandidateUnexecuteSelectionOffsets,
+          executeSelectionOffsets: historyCandidateExecuteSelectionOffsets,
+          unexecuteSelectionOffsets: historyCandidateUnexecuteSelectionOffsets,
           [HISTORY_KEY_STATE]: [historyCandidateStateEntry],
         },
         reviver
@@ -60,26 +59,26 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
         'HISTORY PENDING: adding to node update history log',
         historyEntry.toJS()
       );
-      historyQueue.push(historyEntry);
+      historyLog.push(historyEntry);
     }
     clearPending();
   }
 
-  function appendToNodeUpdateLog({
+  function appendToHistoryLog({
     executeSelectionOffsets,
     unexecuteSelectionOffsets,
-    state,
+    historyState,
   }) {
-    flushPendingNodeUpdateLogEntry();
-    if (!state) {
+    flushPendingHistoryLogEntry();
+    if (!historyState) {
       return;
     }
 
     const historyEntry = fromJS(
       {
-        [HISTORY_KEY_EXECUTE_OFFSETS]: executeSelectionOffsets,
-        [HISTORY_KEY_UNEXECUTE_OFFSETS]: unexecuteSelectionOffsets,
-        [HISTORY_KEY_STATE]: state.filter(historyStateIsNotEmptyOrNoop),
+        executeSelectionOffsets,
+        unexecuteSelectionOffsets,
+        [HISTORY_KEY_STATE]: historyState.filter(historyStateIsNotEmptyOrNoop),
       },
       reviver
     );
@@ -87,23 +86,29 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
       'HISTORY: adding to node update history log',
       historyEntry.toJS()
     );
-    historyQueue.push(historyEntry);
+    historyLog.push(historyEntry);
   }
 
-  // saves current snapshot of document given new history
-  async function saveContentBatch() {
+  /**
+   * This function does 2 things:
+   * 1) derives a list of nodes that have been updated (or deleted) from the local history log
+   * 2) sends both the updated nodes as a map keyed on "nodeId" and the local history log itself
+   *
+   * Thoughts: if the "appendToHistoryLog" functions are smarter then they can generate a diff to add to the log
+   */
+  async function saveAndClearLocalHistoryLog() {
     if (hasPendingRequest) {
-      return {};
+      return { throttled: true };
     }
-    const nodeUpdatesByNodeId = historyQueue
+    const nodeUpdatesByNodeId = historyLog
       // TODO: de-dupe happens on API, probably could clean that up here before it goes over the wire
       .flatMap((historyEntry) =>
         historyEntry
           .get(HISTORY_KEY_STATE)
-          .filter((state) => state && state.size > 0)
-          .map((state) => {
-            const unexecute = state.get(HISTORY_KEY_UNEXECUTE_STATES);
-            const execute = state.get(HISTORY_KEY_EXECUTE_STATES);
+          .filter((historyState) => historyState && historyState.size > 0)
+          .map((historyState) => {
+            const unexecute = historyState.get(HISTORY_KEY_UNEXECUTE_STATES);
+            const execute = historyState.get(HISTORY_KEY_EXECUTE_STATES);
             // if execute is falsy, it was a delete operation.  Use the unexecute id to delete
             return execute || unexecute.get('id');
           })
@@ -119,50 +124,50 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     const { error, data: result } = await apiPost(`/content/${postId}`, {
       nodeUpdatesByNodeId,
       // save history entries for new history only
-      contentNodeHistory: historyQueue,
+      contentNodeHistoryLog: historyLog,
     });
     hasPendingRequest = false;
 
     if (error) {
       // TODO: message user after X failures?
       console.error('Content Batch Update Error: ', error);
-      return {};
+      return { error };
     }
     // clear the pending history queue after successful save
-    historyQueue = [];
+    historyLog = [];
     console.info('Save Batch result', nodeUpdatesByNodeId, result);
     return result;
   }
 
-  function appendToNodeUpdateLogWhenNCharsAreDifferent({
+  function appendToHistoryLogWhenNCharsAreDifferent({
     unexecuteSelectionOffsets,
     executeSelectionOffsets,
-    state,
+    historyState,
     comparisonPath,
   }) {
-    if (state.length > 1) {
-      throw new Error("I don't handle state with length > 1");
+    if (historyState.length > 1) {
+      throw new Error("I don't handle historyState with length > 1");
     }
-    // compare last node in history state
-    const lastStateEntry = [...state].pop();
+    // compare last node in history historyState - there's only one node
+    const [lastStateEntry] = historyState;
     const {
       unexecuteState: nodeBeforeUpdate,
       executeState: nodeAfterUpdate,
     } = lastStateEntry;
 
-    // always update the "execute" state
+    // always update the "execute" historyState
     historyCandidateStateEntry.executeState = nodeAfterUpdate;
     historyCandidateExecuteSelectionOffsets = executeSelectionOffsets;
     // save when user stops typing after a short wait - to make sure we don't lose the "last few chars"
     clearTimeout(historyCandidateTimeout);
-    historyCandidateTimeout = setTimeout(flushPendingNodeUpdateLogEntry, 3000);
+    historyCandidateTimeout = setTimeout(flushPendingHistoryLogEntry, 3000);
     // update history if the node changes or if "more than N chars" have changed in the same node
     if (historyCandidateNode.get('id') !== nodeAfterUpdate.get('id')) {
       if (historyCandidateNode.get('id')) {
         // make history entry for existing changes before tracking new node
-        flushPendingNodeUpdateLogEntry();
+        flushPendingHistoryLogEntry();
       }
-      historyCandidateNode = nodeBeforeUpdate; // this node matches the state in state.unexecuteState AKA "before" documentModel.update()
+      historyCandidateNode = nodeBeforeUpdate; // this node matches the historyState in state.unexecuteState AKA "before" documentModel.update()
       historyCandidateUnexecuteSelectionOffsets = unexecuteSelectionOffsets;
       historyCandidateStateEntry = lastStateEntry;
     }
@@ -174,13 +179,14 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
         historyCandidateNode.getIn(comparisonPath, '')
       )
     ) {
-      flushPendingNodeUpdateLogEntry();
+      flushPendingHistoryLogEntry();
     }
   }
 
   function applyNodeUpdates(stateUpdatesByNodeId, nodesById) {
     let updatedNodesById = nodesById;
-
+    // this loop de-dupes (last wins) and therefore assumes correct historical order of `stateUpdatesByNodeId`
+    // don't forget to reverse it for undo
     stateUpdatesByNodeId.forEach((update) => {
       // an "update" will contain a whole node as Map()
       // a "delete" will contain just a node id as string
@@ -196,76 +202,53 @@ export default function HistoryManager(postId, pendingHistoryQueue = []) {
     return updatedNodesById;
   }
 
-  async function undo(currentNodesById) {
+  async function undoRedoInternal(currentNodesById, isUndo = true) {
+    const apiUrl = `/${isUndo ? 'undo' : 'redo'}/${postId}`;
     if (hasPendingRequest) {
-      return Map();
+      return Map({ throttled: true });
     }
     hasPendingRequest = true;
-    const { error: undoError, data } = await apiPost(`/undo/${postId}`, {});
+    const { error, data } = await apiPost(apiUrl, {});
     hasPendingRequest = false;
-    if (undoError) {
-      console.error(undoError);
-      return Map();
+    if (error) {
+      console.error(error);
+      return Map({ error });
     }
-    const undoResult = fromJS(data, reviver);
-    // at beginning (empty object)?
-    if (is(undoResult, Map())) {
-      return Map();
-    }
-    const updatedPost = undoResult.get('updatedPost');
-    const unexecuteOffsets = undoResult.get('selectionOffsets');
-    const unexecuteStatesByNodeId = undoResult.get('nodeUpdatesById', Map());
+    const result = fromJS(data, reviver);
+    const updatedPost = result.get('updatedPost');
+    const selectionOffsets = result.get('selectionOffsets');
+    const statesByNodeId = result.get('nodeUpdatesById', Map());
 
-    if (unexecuteStatesByNodeId.size === 0) {
+    if (statesByNodeId.size === 0) {
       return Map();
     }
 
     // apply updates to current document state
-    const nodesById = applyNodeUpdates(
-      unexecuteStatesByNodeId,
-      currentNodesById
-    );
-    return Map({ nodesById, selectionOffsets: unexecuteOffsets, updatedPost });
+    const nodesById = applyNodeUpdates(statesByNodeId, currentNodesById);
+    return Map({
+      nodesById,
+      selectionOffsets,
+      updatedPost,
+    });
+  }
+
+  async function undo(currentNodesById) {
+    return undoRedoInternal(currentNodesById);
   }
 
   async function redo(currentNodesById) {
-    if (hasPendingRequest) {
-      return Map();
-    }
-    hasPendingRequest = true;
-    const { error: redoError, data } = await apiPost(`/redo/${postId}`, {});
-    hasPendingRequest = false;
-    if (redoError) {
-      console.error(redoError);
-      return Map();
-    }
-    const redoResult = fromJS(data, reviver);
-    // at beginning (empty object)?
-    if (is(redoResult, Map())) {
-      return Map();
-    }
-    const updatedPost = redoResult.get('updatedPost');
-    const executeOffsets = redoResult.get('selectionOffsets');
-    const executeStatesByNodeId = redoResult.get('nodeUpdatesById');
-
-    if (executeStatesByNodeId.size === 0) {
-      return Map();
-    }
-
-    // apply updates to current document state
-    const nodesById = applyNodeUpdates(executeStatesByNodeId, currentNodesById);
-    return Map({ nodesById, selectionOffsets: executeOffsets, updatedPost });
+    return undoRedoInternal(currentNodesById, false);
   }
 
   // a new placeholder post will have not-yet-saved pending history
-  historyQueue = pendingHistoryQueue;
+  historyLog = pendingHistoryLog;
 
   return {
-    getHistoryQueue,
-    saveContentBatch,
-    flushPendingNodeUpdateLogEntry,
-    appendToNodeUpdateLog,
-    appendToNodeUpdateLogWhenNCharsAreDifferent,
+    getLocalHistoryLog,
+    saveAndClearLocalHistoryLog,
+    flushPendingHistoryLogEntry,
+    appendToHistoryLog,
+    appendToHistoryLogWhenNCharsAreDifferent,
     undo,
     redo,
   };

@@ -7,11 +7,10 @@ let {
     SELENIUM_CHROMEDRIVER_LOCATION: chromedriverLocation = '/usr/local/bin/chromedriver',
     SELENIUM_BASEURL: baseUrl = 'http://localhost:8080',
     SELENIUM_USERNAME: username = 'test',
-    SELENIUM_PASSWORD: password = '1234', // $2b$10$wZfnw2d6XV4cmIMaN0uwy.vHVhBxvXKafo4cH9LbARt5jaNuJVCw2
+    // $2b$10$wZfnw2d6XV4cmIMaN0uwy.vHVhBxvXKafo4cH9LbARt5jaNuJVCw2
+    SELENIUM_PASSWORD: password = '1234',
   },
 } = process;
-
-const dummyDriver = new WebDriver();
 
 function getEnv() {
   return {

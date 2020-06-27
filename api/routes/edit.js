@@ -18,7 +18,7 @@ async function getPostForEdit(req, res) {
     whereClause.content_node_history_id = currentUndoHistoryId;
   }
   const [
-    { meta: { executeOffsets = {}, unexecuteOffsets } = {} } = {},
+    { meta: { executeSelectionOffsets = {}, unexecuteSelectionOffsets } = {} } = {},
   ] = await knex('content_node_history')
     .where(whereClause)
     .orderBy('content_node_history_id', 'desc')
@@ -29,8 +29,8 @@ async function getPostForEdit(req, res) {
     contentNodes,
     selectionOffsets:
       currentUndoHistoryId !== -1 && lastActionWasUndo
-        ? unexecuteOffsets
-        : executeOffsets,
+        ? unexecuteSelectionOffsets
+        : executeSelectionOffsets,
   });
 }
 

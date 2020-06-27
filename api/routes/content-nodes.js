@@ -13,7 +13,7 @@ async function postContentNodes(req, res) {
   try {
     // validate post
     const {
-      body: { nodeUpdatesByNodeId, contentNodeHistory },
+      body: { nodeUpdatesByNodeId, contentNodeHistoryLog },
       currentPost,
     } = req;
     const { id: postId, meta: postMeta } = currentPost;
@@ -21,11 +21,11 @@ async function postContentNodes(req, res) {
 
     // TODO: put in transaction
     // 1) save history
-    let contentNodeHistoryResult;
-    if (contentNodeHistory) {
-      contentNodeHistoryResult = await postContentNodeHistory(
+    let contentNodeHistoryLogResult;
+    if (contentNodeHistoryLog) {
+      contentNodeHistoryLogResult = await postContentNodeHistory(
         currentPost,
-        contentNodeHistory
+        contentNodeHistoryLog
       );
     }
 
@@ -56,7 +56,7 @@ async function postContentNodes(req, res) {
     res.send({
       updateResult,
       deleteResult,
-      contentNodeHistoryResult,
+      contentNodeHistoryLogResult,
       updatedPost,
     });
   } catch (err) {
