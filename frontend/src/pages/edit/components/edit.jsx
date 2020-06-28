@@ -1345,7 +1345,7 @@ export default class EditPost extends React.Component {
         formatSelectionMenuLeftOffset,
         formatSelectionModel,
       },
-      props: { session, setSession },
+      props: { session, setSession, font, toggleFont, theme, toggleTheme },
     } = this;
 
     if (shouldShow404) return <Page404 session={session} />;
@@ -1358,6 +1358,10 @@ export default class EditPost extends React.Component {
             <Header
               session={session}
               setSession={setSession}
+              font={font}
+              toggleFont={toggleFont}
+              theme={theme}
+              toggleTheme={toggleTheme}
               pageName={PAGE_NAME_EDIT}
               post={post}
             />

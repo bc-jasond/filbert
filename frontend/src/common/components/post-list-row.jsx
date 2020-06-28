@@ -120,8 +120,8 @@ export default React.memo(({ post, postIsPrivate }) => {
           </PostActionContainer>
           {post.get('canEdit') && (
             <PostActionContainer>
-              <PostActionLink to={createNextUrl(`/publish/${post.get('id')}`)}>
-                publish
+              <PostActionLink to={createNextUrl(`/manage/${post.get('id')}`)}>
+                manage
               </PostActionLink>
             </PostActionContainer>
           )}

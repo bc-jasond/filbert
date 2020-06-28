@@ -30,6 +30,10 @@ export default React.memo(
     shouldListDrafts = false,
     session,
     setSession,
+    font,
+    toggleFont,
+    theme,
+    toggleTheme,
     queryString: queryStringProp,
   }) => {
     const getPostsUrl = shouldListDrafts ? '/draft' : '/post';
@@ -229,6 +233,10 @@ export default React.memo(
         <Header
           session={session}
           setSession={setSession}
+          font={font}
+          toggleFont={toggleFont}
+          theme={theme}
+          toggleTheme={toggleTheme}
           pageName={shouldListDrafts ? PAGE_NAME_PRIVATE : PAGE_NAME_PUBLIC}
         />
         <Article>

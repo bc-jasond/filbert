@@ -79,7 +79,7 @@ async function main() {
     app.post('/content/:postId', [assertUserHasPost, postContentNodes]);
     app.patch('/post/:postId', [assertUserHasPost, patchPost]);
     app.delete('/post/:postId', [assertUserHasPost, deletePublishedPost]);
-    app.get('/publish/:postId', [assertUserHasPost, getPostById]);
+    app.get('/manage/:postId', [assertUserHasPost, getPostById]);
     app.get('/post-summary/:postId', [
       assertUserHasPost,
       getSummaryAndPhotoFromContent,

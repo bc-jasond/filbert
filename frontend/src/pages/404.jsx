@@ -6,9 +6,15 @@ import {
 import Header from './header';
 import Footer from './footer';
 
-export default ({ session }) => (
+export default ({ session, font, toggleFont, theme, toggleTheme }) => (
   <>
-    <Header session={session} />
+    <Header
+      session={session}
+      font={font}
+      toggleFont={toggleFont}
+      theme={theme}
+      toggleTheme={toggleTheme}
+    />
     <H1Center id="error-message">
       404 Not Found{' '}
       <span role="img" aria-label="girl shrug">

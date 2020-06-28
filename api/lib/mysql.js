@@ -57,7 +57,7 @@ export async function getNodesFlat(postId) {
   }, {});
 }
 
-// TODO: 'touch' post on each update/delete of content or publish
+// TODO: 'touch' post on each update/delete of content or manage
 async function markPostUpdated(postId) {}
 
 /**
@@ -164,6 +164,10 @@ export async function getPostByCanonicalHelper(canonical, loggedInUser) {
     .innerJoin('user', 'post.user_id', 'user.id')
     .whereNotNull('published')
     .andWhere({ canonical });
+
+  if (!post) {
+    return;
+  }
 
   if (loggedInUser) {
     post.canEdit = loggedInUser.id === post.userId;

@@ -7,7 +7,14 @@ import { signout } from '../common/session';
 import Header from './header';
 import Footer from './footer';
 
-export default ({ session, setSession }) => {
+export default ({
+  session,
+  setSession,
+  font,
+  toggleFont,
+  theme,
+  toggleTheme,
+}) => {
   if (session.get('userId')) {
     signout();
     setSession({});
@@ -15,7 +22,12 @@ export default ({ session, setSession }) => {
 
   return (
     <>
-      <Header />
+      <Header
+        font={font}
+        toggleFont={toggleFont}
+        theme={theme}
+        toggleTheme={toggleTheme}
+      />
       <H1Center>
         {"You're logged out "}
         <span role="img" aria-label="hand waving bye">

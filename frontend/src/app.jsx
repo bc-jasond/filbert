@@ -1,7 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
-import { getSession } from './common/session';
+import {
+  DARK_MODE_THEME,
+  LIGHT_MODE_THEME,
+  MIXED_FONT_THEME,
+  SANS_FONT_THEME,
+} from './common/constants';
+import {
+  getFont,
+  getSession,
+  getTheme,
+  setFont,
+  setTheme,
+} from './common/session';
 
 // GLOBAL CSS HERE
 import CssVariables from './variables.css';
@@ -18,10 +30,45 @@ import SignIn from './pages/signin';
 import SignInAdmin from './pages/signin-admin';
 import ViewPost from './pages/view-post';
 import UserProfile from './pages/user-profile';
-import Publish from './pages/publish';
+import ManagePost from './pages/manage';
 
-export default React.memo(() => {
+export default () => {
   const [session, setSession] = useState(getSession());
+  const [theme, setThemeHook] = useState(getTheme());
+  const [font, setFontHook] = useState(getFont());
+  useEffect(() => {
+    if (theme === DARK_MODE_THEME) {
+      document.body.classList.add(DARK_MODE_THEME);
+    } else {
+      document.body.classList.remove(DARK_MODE_THEME);
+    }
+    if (font === SANS_FONT_THEME) {
+      document.body.classList.add(SANS_FONT_THEME);
+    } else {
+      document.body.classList.remove(SANS_FONT_THEME);
+    }
+  }, [theme, font]);
+
+  function toggleFont() {
+    if (font === SANS_FONT_THEME) {
+      setFont(MIXED_FONT_THEME);
+      setFontHook(MIXED_FONT_THEME);
+      return;
+    }
+    setFont(SANS_FONT_THEME);
+    setFontHook(SANS_FONT_THEME);
+  }
+
+  function toggleTheme() {
+    if (theme === DARK_MODE_THEME) {
+      setTheme(LIGHT_MODE_THEME);
+      setThemeHook(LIGHT_MODE_THEME);
+      return;
+    }
+    setTheme(DARK_MODE_THEME);
+    setThemeHook(DARK_MODE_THEME);
+  }
+
   const username = session.get('username');
   const RouteWithSession = ({
     component: Component,
@@ -43,6 +90,10 @@ export default React.memo(() => {
             queryString={search}
             session={session}
             setSession={setSession}
+            font={font}
+            toggleFont={toggleFont}
+            theme={theme}
+            toggleTheme={toggleTheme}
             shouldListDrafts={shouldListDrafts}
           />
         )}
@@ -86,8 +137,8 @@ export default React.memo(() => {
           />
           <RouteWithSession
             exact
-            path="/publish/:id"
-            component={Publish}
+            path="/manage/:id"
+            component={ManagePost}
             requiresAuth
           />
           <RouteWithSession exact path="/:username" component={UserProfile} />
@@ -101,4 +152,4 @@ export default React.memo(() => {
       <CssPace />
     </>
   );
-});
+};

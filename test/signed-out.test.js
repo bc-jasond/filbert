@@ -58,9 +58,9 @@ describe('filbert - When signed out', () => {
       done(err);
     }
   });
-  test("user can't publish", async (done) => {
+  test("user can't manage", async (done) => {
     try {
-      await driver.get(getUrl('/publish'));
+      await driver.get(getUrl('/manage'));
       const errorMessage = driver.findElement(By.id('error-message'));
       expect(await errorMessage.getText()).toContain('404');
       done();

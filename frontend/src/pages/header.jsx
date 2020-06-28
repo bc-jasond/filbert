@@ -1,25 +1,17 @@
 import { Map } from 'immutable';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
 import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
 import {
   DARK_MODE_THEME,
-  LIGHT_MODE_THEME,
-  MIXED_FONT_THEME,
   PAGE_NAME_EDIT,
   PAGE_NAME_VIEW,
   SANS_FONT_THEME,
 } from '../common/constants';
 import { createNextUrl } from '../common/dom';
-import {
-  getFont,
-  getTheme,
-  setFont,
-  setTheme,
-  signout,
-} from '../common/session';
+import { signout } from '../common/session';
 import { backgroundColorPrimary, getVar, viewport7 } from '../variables.css';
 
 const HeaderStyled = styled.header`
@@ -77,32 +69,18 @@ const NavLink = styled(Link)`
   ${navButtonMixin};
 `;
 
-const currentTheme = getTheme();
-const currentFont = getFont();
-
 export default function Header({
   session = Map(),
   setSession = () => {},
+  theme,
+  toggleTheme,
+  font,
+  toggleFont,
   pageName,
   userIsMe,
   post = Map(),
 }) {
   const [shouldRedirect, setShouldRedirect] = useState(false);
-  const [theme, setThemeHook] = useState(currentTheme);
-  const [font, setFontHook] = useState(currentFont);
-
-  useEffect(() => {
-    if (theme === DARK_MODE_THEME) {
-      document.body.classList.add(DARK_MODE_THEME);
-    } else {
-      document.body.classList.remove(DARK_MODE_THEME);
-    }
-    if (font === SANS_FONT_THEME) {
-      document.body.classList.add(SANS_FONT_THEME);
-    } else {
-      document.body.classList.remove(SANS_FONT_THEME);
-    }
-  }, [theme, font]);
 
   if (shouldRedirect) {
     return <Redirect to="/signout" />;
@@ -132,40 +110,20 @@ export default function Header({
               <NavSpan
                 id="font-mode-toggle"
                 title="font style"
-                onClick={() => {
-                  if (font === SANS_FONT_THEME) {
-                    document.body.classList.remove(SANS_FONT_THEME);
-                    setFont(MIXED_FONT_THEME);
-                    setFontHook(MIXED_FONT_THEME);
-                    return;
-                  }
-                  document.body.classList.add(SANS_FONT_THEME);
-                  setFont(SANS_FONT_THEME);
-                  setFontHook(SANS_FONT_THEME);
-                }}
+                onClick={toggleFont}
               >
                 {font === SANS_FONT_THEME ? '🖋' : '✏️'}
               </NavSpan>
               <NavSpan
                 id="dark-mode-toggle"
                 title="dark mode"
-                onClick={() => {
-                  if (theme === DARK_MODE_THEME) {
-                    document.body.classList.remove(DARK_MODE_THEME);
-                    setTheme(LIGHT_MODE_THEME);
-                    setThemeHook(LIGHT_MODE_THEME);
-                    return;
-                  }
-                  document.body.classList.add(DARK_MODE_THEME);
-                  setTheme(DARK_MODE_THEME);
-                  setThemeHook(DARK_MODE_THEME);
-                }}
+                onClick={toggleTheme}
               >
                 {theme === DARK_MODE_THEME ? '☀️' : '🌑'}
               </NavSpan>
               {shouldShowManagePost && (
-                <NavLink to={createNextUrl(`/publish/${post.get('id')}`)}>
-                  publish
+                <NavLink to={createNextUrl(`/manage/${post.get('id')}`)}>
+                  manage
                 </NavLink>
               )}
               {shouldShowEdit && (
@@ -195,6 +153,20 @@ export default function Header({
             </>
           ) : (
             <>
+              <NavSpan
+                id="font-mode-toggle"
+                title="font style"
+                onClick={toggleFont}
+              >
+                {font === SANS_FONT_THEME ? '🖋' : '✏️'}
+              </NavSpan>
+              <NavSpan
+                id="dark-mode-toggle"
+                title="dark mode"
+                onClick={toggleTheme}
+              >
+                {theme === DARK_MODE_THEME ? '☀️' : '🌑'}
+              </NavSpan>
               {shouldShowPublic && <NavLink to="/public">public</NavLink>}
               <NavLink id="signed-in-user" to="/signin">
                 join or sign in

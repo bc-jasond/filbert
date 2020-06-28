@@ -115,72 +115,86 @@ const NextPostNav = React.memo(({ post, isPrevious }) => (
   </Col>
 ));
 
-export default React.memo(({ params: { canonical }, session, setSession }) => {
-  const [prevPost, setPrevPost] = useState(Map());
-  const [nextPost, setNextPost] = useState(Map());
-  const [post, setPost] = useState(Map());
-  const [nodesById, setNodesById] = useState(Map());
-  const [shouldShow404, setShouldShow404] = useState(false);
+export default React.memo(
+  ({
+    params: { canonical },
+    session,
+    setSession,
+    font,
+    toggleFont,
+    theme,
+    toggleTheme,
+  }) => {
+    const [prevPost, setPrevPost] = useState(Map());
+    const [nextPost, setNextPost] = useState(Map());
+    const [post, setPost] = useState(Map());
+    const [nodesById, setNodesById] = useState(Map());
+    const [shouldShow404, setShouldShow404] = useState(false);
 
-  useEffect(() => {
-    async function loadPost() {
-      const {
-        error,
-        data: {
-          prevPost: prevPostData,
-          nextPost: nextPostData,
-          post: postData,
-          contentNodes,
-        } = {},
-      } = await apiGet(`/post/${canonical}`);
-      if (error) {
-        console.error(error);
-        setShouldShow404(true);
-        return;
+    useEffect(() => {
+      async function loadPost() {
+        const {
+          error,
+          data: {
+            prevPost: prevPostData,
+            nextPost: nextPostData,
+            post: postData,
+            contentNodes,
+          } = {},
+        } = await apiGet(`/post/${canonical}`);
+        if (error) {
+          console.error(error);
+          setShouldShow404(true);
+          return;
+        }
+        prevPostData.published = formatPostDate(prevPostData.published);
+        nextPostData.published = formatPostDate(nextPostData.published);
+        postData.published = formatPostDate(postData.published);
+        setPrevPost(fromJS(prevPostData));
+        setNextPost(fromJS(nextPostData));
+        setPost(fromJS(postData));
+        setNodesById(fromJS(contentNodes, reviver));
+        setShouldShow404(false);
       }
-      prevPostData.published = formatPostDate(prevPostData.published);
-      nextPostData.published = formatPostDate(nextPostData.published);
-      postData.published = formatPostDate(postData.published);
-      setPrevPost(fromJS(prevPostData));
-      setNextPost(fromJS(nextPostData));
-      setPost(fromJS(postData));
-      setNodesById(fromJS(contentNodes, reviver));
-      setShouldShow404(false);
-    }
-    loadPost();
-  }, [canonical]);
+      loadPost();
+    }, [canonical]);
 
-  if (shouldShow404) return <Page404 session={session} />;
+    if (shouldShow404) return <Page404 session={session} />;
 
-  return (
-    nodesById.size > 0 && (
-      <>
-        <Header
-          session={session}
-          setSession={setSession}
-          post={post}
-          pageName={PAGE_NAME_VIEW}
-        />
-        <Article>
-          <PostDetailsSection>
-            <PostAvatar post={post} showHandle />
-          </PostDetailsSection>
-          <Document nodesById={nodesById} />
-          <PrevNextPostSection>
-            <SiteInfoStyled>
-              Thanks for reading{' '}
-              <span role="img" aria-label="peace sign">
-                ✌🏼
-              </span>
-            </SiteInfoStyled>
-            <FlexGrid>
-              <NextPostNav post={prevPost} isPrevious />
-              <NextPostNav post={nextPost} />
-            </FlexGrid>
-          </PrevNextPostSection>
-        </Article>
-        <Footer />
-      </>
-    )
-  );
-});
+    return (
+      nodesById.size > 0 && (
+        <>
+          <Header
+            session={session}
+            setSession={setSession}
+            font={font}
+            toggleFont={toggleFont}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            post={post}
+            pageName={PAGE_NAME_VIEW}
+          />
+          <Article>
+            <PostDetailsSection>
+              <PostAvatar post={post} showHandle />
+            </PostDetailsSection>
+            <Document nodesById={nodesById} />
+            <PrevNextPostSection>
+              <SiteInfoStyled>
+                Thanks for reading{' '}
+                <span role="img" aria-label="peace sign">
+                  ✌🏼
+                </span>
+              </SiteInfoStyled>
+              <FlexGrid>
+                <NextPostNav post={prevPost} isPrevious />
+                <NextPostNav post={nextPost} />
+              </FlexGrid>
+            </PrevNextPostSection>
+          </Article>
+          <Footer />
+        </>
+      )
+    );
+  }
+);
