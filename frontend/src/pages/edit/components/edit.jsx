@@ -25,7 +25,6 @@ import {
   isValidDomSelection,
   removeAllRanges,
   replaceRange,
-  selectionOffsetsAreEqual,
   setCaret,
 } from '../../../common/dom';
 
@@ -100,7 +99,6 @@ export default class EditPost extends React.Component {
       editSectionNode: Map(),
       shouldShowEditSectionMenu: false,
       editSectionMetaFormTopOffset: 0,
-      formatSelectionLastOffsets: {},
       formatSelectionNode: Map(),
       formatSelectionModel: Selection(),
       formatSelectionModelIdx: -1,
@@ -428,7 +426,9 @@ export default class EditPost extends React.Component {
         KEYCODE_DOWN_ARROW,
         KEYCODE_LEFT_ARROW,
         KEYCODE_RIGHT_ARROW,
-      ].includes(evt.keyCode)
+      ].includes(evt.keyCode) ||
+      // don't override user adjusting selection with arrows
+      evt.shiftKey
     ) {
       return;
     }
@@ -436,11 +436,7 @@ export default class EditPost extends React.Component {
     const { caretStart, caretEnd } = selectionOffsets;
 
     // collapse range if there's highlighted selection and the user hits an arrow
-    if (
-      caretStart !== caretEnd &&
-      // ignore shift key because user could be in the middle of adjusting a selection
-      !evt.shiftKey
-    ) {
+    if (caretStart !== caretEnd) {
       if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
         // up or left - collapse to start
         getRange().collapse(true);
@@ -811,6 +807,12 @@ export default class EditPost extends React.Component {
     ) {
       return;
     }
+    // this is to coordinate with closing the Format Selection menu
+    // without it, the menu would reopen after the user hits ESC
+    if (this.shouldSkipKeyUp) {
+      this.shouldSkipKeyUp = undefined;
+      return;
+    }
     console.debug('KEYUP');
     const selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
     await this.manageFormatSelectionMenu(evt, selectionOffsets);
@@ -1108,27 +1110,15 @@ export default class EditPost extends React.Component {
     );
   };
 
-  closeFormatSelectionMenu = async () => {
-    const {
-      state: { formatSelectionNode },
-      selectionOffsets: { startNodeId, caretEnd },
-    } = this;
-    if (formatSelectionNode.get('id')) {
-      await new Promise((resolve) => {
-        this.setState(
-          {
-            formatSelectionNode: Map(),
-            formatSelectionModel: Selection(),
-            formatSelectionModelIdx: -1,
-            formatSelectionMenuTopOffset: 0,
-            formatSelectionMenuLeftOffset: 0,
-          },
-          resolve
-        );
-      });
-      // caretStart: caretEnd - collapse range and place caret at end
-      setCaret({ startNodeId, caretStart: caretEnd });
-    }
+  closeFormatSelectionMenu = () => {
+    this.setState({
+      formatSelectionNode: Map(),
+      formatSelectionModel: Selection(),
+      formatSelectionModelIdx: -1,
+      formatSelectionMenuTopOffset: 0,
+      formatSelectionMenuLeftOffset: 0,
+    });
+    this.shouldSkipKeyUp = true;
   };
 
   updateLinkUrl = (value) => {
@@ -1161,27 +1151,13 @@ export default class EditPost extends React.Component {
     );
   };
 
-  // TODO: add history entry for change in selection.  When user moves caret either collapsed or a selection range
-  // it's nice during undo/redo to show the change in caret placement.  Currently, when doing an undo - if the caret
-  // had changed place - all of a sudden a character "somewhere else" disappears/reappears and it's kinda WTF?
+  // TODO: show/hide logic for this menu is split up and difficult to understand.
+  //  It should be split up based on type of event instead of trying to overload the handlers with too much logic
   manageFormatSelectionMenu = async (evt, selectionOffsets) => {
     const {
-      state: { formatSelectionLastOffsets, formatSelectionNode },
+      state: { formatSelectionNode },
     } = this;
     const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
-    if (
-      selectionOffsetsAreEqual(selectionOffsets, formatSelectionLastOffsets)
-    ) {
-      // return;
-    }
-    console.debug(
-      'SELECTION TEST: ',
-      formatSelectionLastOffsets,
-      selectionOffsets
-    );
-    await new Promise((resolve) =>
-      this.setState({ formatSelectionLastOffsets: selectionOffsets }, resolve)
-    );
     if (
       // no node
       !startNodeId ||
@@ -1190,7 +1166,7 @@ export default class EditPost extends React.Component {
       caretStart === caretEnd
     ) {
       if (formatSelectionNode.size > 0) {
-        await this.closeFormatSelectionMenu();
+        this.closeFormatSelectionMenu();
       }
       return;
     }
@@ -1201,6 +1177,7 @@ export default class EditPost extends React.Component {
         '// TODO: format selection across nodes: ',
         selectionOffsets
       );
+      this.closeFormatSelectionMenu();
       return;
     }
 
@@ -1250,7 +1227,7 @@ export default class EditPost extends React.Component {
     );
   };
 
-  handleSelectionAction = async (action, shouldCloseMenu = false) => {
+  handleSelectionAction = async (action) => {
     const {
       state: {
         formatSelectionModel,
@@ -1259,28 +1236,21 @@ export default class EditPost extends React.Component {
       },
       selectionOffsets,
     } = this;
-    const {
-      historyState,
-      executeSelectionOffsets,
-      updatedSelection,
-    } = doFormatSelection(
+    const { historyState, updatedSelection } = doFormatSelection(
       this.documentModel,
       formatSelectionNode,
       formatSelectionModel,
       formatSelectionModelIdx,
       action
     );
+    // formatting doesn't change the SelectionOffsets
+    // seems like it could conditionally collapse the selection only when moving from P -> H1 or H2 but, idk???
     this.historyManager.appendToHistoryLog({
-      // doFormatSelection will return new selection offsets if changing node type i.e. P -> H1
-      executeSelectionOffsets: executeSelectionOffsets || selectionOffsets,
+      executeSelectionOffsets: selectionOffsets,
       unexecuteSelectionOffsets: selectionOffsets,
       historyState,
     });
     await this.commitUpdates(selectionOffsets);
-    if (shouldCloseMenu) {
-      await this.closeFormatSelectionMenu();
-      return;
-    }
 
     const updatedNode = this.documentModel.getNode(
       getLastExecuteIdFromHistory(historyState)

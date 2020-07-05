@@ -243,6 +243,8 @@ export default React.memo(
           }
         }
 
+        const currentType = sectionTypes[currentIdx]?.type;
+
         switch (evt.keyCode) {
           case KEYCODE_CTRL: {
             stopAndPrevent(evt);
@@ -284,7 +286,7 @@ export default React.memo(
           case KEYCODE_SPACE: {
             stopAndPrevent(evt);
             if (currentIdx > -1) {
-              selectionAction?.(sectionTypes[currentIdx]?.type);
+              selectionAction?.(currentType);
             }
             return;
           }
@@ -302,11 +304,12 @@ export default React.memo(
             if (currentIdx > -1) {
               setCurrentIdx(-1);
               setIsMenuOpen(false);
-              if (selectionModel.get(sectionTypes[currentIdx]?.type)) {
+              if (selectionModel.get(currentType)) {
                 // this value is currently selected, don't unselect it. just close the menu
                 return;
               }
-              selectionAction?.(sectionTypes[currentIdx]?.type, true);
+              closeMenu?.();
+              selectionAction?.(currentType);
             }
             break;
           }

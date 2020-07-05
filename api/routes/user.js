@@ -125,7 +125,10 @@ async function getStats(req, res, next) {
       matched.forEach((word) => {
         stats.totalWords += 1;
         const lc = word.toLowerCase();
-        if (lc.length > 2 && !['the', 'and'].includes(lc)) {
+        if (
+          lc.length > 3 &&
+          !['that', 'this', 'with', 'have', 'what'].includes(lc)
+        ) {
           if (!allWordsSeen.hasOwnProperty(lc)) {
             allWordsSeen[lc] = 0;
           }

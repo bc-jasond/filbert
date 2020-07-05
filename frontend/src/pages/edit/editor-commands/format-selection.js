@@ -45,7 +45,6 @@ export function doFormatSelection(
   if (!node.equals(nodeArg)) {
     return {
       historyState: documentModel.update(node),
-      executeSelectionOffsets: { startNodeId: node.get('id'), caretStart: -1 },
       updatedSelection: Selection(),
     };
   }
