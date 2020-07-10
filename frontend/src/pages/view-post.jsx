@@ -27,13 +27,15 @@ import {
 import Document from '../common/components/document.component';
 import PostAvatar from '../common/components/post-avatar';
 
+const ColStyled = styled(Col)`
+  margin-bottom: 32px;
+`;
 const PostDetailsSection = styled.section`
   ${sectionWidthMixin};
   margin-bottom: 16px;
 `;
 const PrevNextPostSection = styled.section`
   ${sectionWidthMixin};
-  margin-bottom: 16px;
 `;
 const H3Centered = styled(H3Styled)`
   font-family: ${getVar(codeFontFamily)};
@@ -68,13 +70,16 @@ const SiteInfoStyled = styled(SiteInfo)`
   text-align: center;
   margin: 48px 0 32px 0;
 `;
+const ThanksForReading = styled.span`
+  letter-spacing: 0.6rem;
+`;
 
 const NextPostNav = React.memo(({ post, isPrevious }) => (
-  <Col>
+  <ColStyled>
     {isPrevious ? (
       <H3Centered>
         <span role="img" aria-label="finger pointing left">
-          👈
+          👈👈👈
         </span>{' '}
         previous
       </H3Centered>
@@ -82,7 +87,7 @@ const NextPostNav = React.memo(({ post, isPrevious }) => (
       <H3Centered>
         next{' '}
         <span role="img" aria-label="finger pointing right">
-          👉
+          👉👉👉
         </span>
       </H3Centered>
     )}
@@ -112,7 +117,7 @@ const NextPostNav = React.memo(({ post, isPrevious }) => (
     <PostAvatarContainer>
       <PostAvatar post={post} showHandle />
     </PostAvatarContainer>
-  </Col>
+  </ColStyled>
 ));
 
 export default React.memo(
@@ -181,7 +186,7 @@ export default React.memo(
             <Document nodesById={nodesById} />
             <PrevNextPostSection>
               <SiteInfoStyled>
-                Thanks for reading{' '}
+                <ThanksForReading>Thanks for reading</ThanksForReading>
                 <span role="img" aria-label="peace sign">
                   ✌🏼
                 </span>

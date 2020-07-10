@@ -8,6 +8,11 @@ async function getPostForEdit(req, res) {
     meta: { currentUndoHistoryId, lastActionWasUndo },
     id,
   } = currentPost;
+  // can't edit a deleted post!
+  if (currentPost.deleted) {
+    res.status(404).send({});
+    return;
+  }
   const contentNodes = await getNodesFlat(id);
   // get history for caret positioning on document load
   const knex = await getKnex();
@@ -18,7 +23,9 @@ async function getPostForEdit(req, res) {
     whereClause.content_node_history_id = currentUndoHistoryId;
   }
   const [
-    { meta: { executeSelectionOffsets = {}, unexecuteSelectionOffsets } = {} } = {},
+    {
+      meta: { executeSelectionOffsets = {}, unexecuteSelectionOffsets } = {},
+    } = {},
   ] = await knex('content_node_history')
     .where(whereClause)
     .orderBy('content_node_history_id', 'desc')

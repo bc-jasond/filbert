@@ -279,33 +279,23 @@ export default React.memo(
     }
 
     async function deletePost() {
-      if (post.get('published')) {
-        const didConfim = await confirmPromise(
-          `Delete post ${post.get('title')}?`
-        );
-        if (!didConfim) {
-          return;
-        }
-        const { error } = await apiDelete(`/post/${post.get('id')}`);
-        if (error) {
-          console.error('Delete post error:', error);
-          return;
-        }
-        setRedirectUrl('/');
-        return;
-      }
-      const didConfirm = await confirmPromise(
-        `Delete draft ${post.get('title')}?`
+      const draftType = post.get('published') ? 'post' : 'draft';
+      const didConfim = await confirmPromise(
+        `Delete ${draftType} ${post.get('title')}?`
       );
-      if (!didConfirm) {
+      if (!didConfim) {
         return;
       }
-      const { error } = await apiDelete(`/draft/${post.get('id')}`);
+      const { error } = await apiDelete(`/${draftType}/${post.get('id')}`);
       if (error) {
-        console.error('Delete draft error:', error);
+        console.error(`Delete ${draftType} error:`, error);
         return;
       }
-      setRedirectUrl('/');
+      if (post.get('published')) {
+        setRedirectUrl('/public');
+        return;
+      }
+      setRedirectUrl(getNextFromUrl());
     }
 
     function updateImage(imageNode) {
