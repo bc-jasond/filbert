@@ -6,7 +6,13 @@ import Image from '../common/components/image';
 import { PAGE_NAME_VIEW } from '../common/constants';
 import { apiGet } from '../common/fetch';
 import { formatPostDate, reviver } from '../common/utils';
-import { codeFontFamily, getVar, grey, viewport7 } from '../variables.css';
+import {
+  codeFontFamily,
+  getVar,
+  grey,
+  viewport7,
+  viewport9,
+} from '../variables.css';
 
 import Header from './header';
 import Footer from './footer';
@@ -36,6 +42,8 @@ const PostDetailsSection = styled.section`
 `;
 const PrevNextPostSection = styled.section`
   ${sectionWidthMixin};
+  margin-bottom: 16px;
+  max-width: ${viewport9};
 `;
 const H3Centered = styled(H3Styled)`
   font-family: ${getVar(codeFontFamily)};
@@ -44,10 +52,10 @@ const H3Centered = styled(H3Styled)`
 `;
 const ImageContainer = styled.div`
   margin-bottom: 4px;
-  max-height: 300px;
+  max-height: 550px;
   overflow: hidden;
   @media (min-width: ${viewport7}) {
-    max-height: 200px;
+    max-height: 250px;
   }
 `;
 const TitleContainer = styled.div`
