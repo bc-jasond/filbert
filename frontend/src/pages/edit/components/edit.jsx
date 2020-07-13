@@ -1110,15 +1110,30 @@ export default class EditPost extends React.Component {
     );
   };
 
-  closeFormatSelectionMenu = () => {
-    this.setState({
-      formatSelectionNode: Map(),
-      formatSelectionModel: Selection(),
-      formatSelectionModelIdx: -1,
-      formatSelectionMenuTopOffset: 0,
-      formatSelectionMenuLeftOffset: 0,
-    });
-    this.shouldSkipKeyUp = true;
+  closeFormatSelectionMenu = async (selectionOffsets) => {
+    const {
+      state: { formatSelectionNode },
+    } = this;
+    const { startNodeId, endNodeId, caretEnd } = selectionOffsets;
+    if (formatSelectionNode.get('id')) {
+      await new Promise((resolve) => {
+        this.setState(
+          {
+            formatSelectionNode: Map(),
+            formatSelectionModel: Selection(),
+            formatSelectionModelIdx: -1,
+            formatSelectionMenuTopOffset: 0,
+            formatSelectionMenuLeftOffset: 0,
+          },
+          resolve
+        );
+      });
+      // if we're highlighting across nodes, don't setCaret because user is changing selection size with arrows keys while holding shift
+      if (!endNodeId) {
+        // caretStart: caretEnd - collapse range and place caret at end
+        setCaret({ startNodeId, caretStart: caretEnd });
+      }
+    }
   };
 
   updateLinkUrl = (value) => {
@@ -1166,7 +1181,7 @@ export default class EditPost extends React.Component {
       caretStart === caretEnd
     ) {
       if (formatSelectionNode.size > 0) {
-        this.closeFormatSelectionMenu();
+        await this.closeFormatSelectionMenu(selectionOffsets);
       }
       return;
     }

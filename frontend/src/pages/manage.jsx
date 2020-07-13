@@ -250,7 +250,7 @@ export default React.memo(
 
     async function publishPost() {
       const didConfirm = await confirmPromise(
-        'Publish this post?  This makes it public.'
+        'Publish this draft?  This makes it public.'
       );
       if (!didConfirm) {
         return;
@@ -276,6 +276,21 @@ export default React.memo(
 
         POST_ACTION_REDIRECT_TIMEOUT
       );
+    }
+
+    async function duplicatePost() {
+      const didConfim = await confirmPromise(
+        `Duplicate? \n\n${post.get('title')}`
+      );
+      if (!didConfim) {
+        return;
+      }
+      const { error, data } = await apiPost(`/duplicate/${post.get('id')}`);
+      if (error) {
+        console.error('Duplicate post error:', error);
+        return;
+      }
+      setRedirectUrl(`/edit/${data.id}`);
     }
 
     async function deletePost() {
@@ -335,7 +350,9 @@ export default React.memo(
             <H1Styled>
               Manage{post.get('published') ? ' Post' : ' Draft'}
             </H1Styled>
-            <H2Styled>Edit Listing Details, Publish & Delete</H2Styled>
+            <H2Styled>
+              Edit Listing Details, Publish, Duplicate & Delete
+            </H2Styled>
             <FlexGrid>
               <Col>
                 <InputContainerStyled shouldHide={shouldSyncTitleAndAbstract}>
@@ -459,6 +476,11 @@ export default React.memo(
                           )}`
                         : 'Publish'
                     }`}</ButtonSpan>
+                  </Button>
+                </Col9>
+                <Col9>
+                  <Button onClick={duplicatePost}>
+                    <ButtonSpan>Duplicate</ButtonSpan>
                   </Button>
                 </Col9>
                 <Col9>
