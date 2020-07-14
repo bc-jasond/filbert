@@ -33,6 +33,7 @@ const { uploadImage } = require('./routes/image');
 const { getPostForEdit } = require('./routes/edit');
 const { postContentNodes } = require('./routes/content-nodes');
 const { undo, redo } = require('./routes/content-node-history');
+const { duplicatePost } = require('./routes/duplicate');
 
 async function main() {
   try {
@@ -88,6 +89,7 @@ async function main() {
     app.post('/undo/:postId', [assertUserHasPost, undo]);
     app.post('/redo/:postId', [assertUserHasPost, redo]);
     app.post('/publish/:postId', [assertUserHasPost, publishDraft]);
+    app.post('/duplicate/:postId', [assertUserHasPost, duplicatePost]);
     app.delete('/draft/:postId', [
       assertUserHasPost,
       deleteDraftAndContentNodes,
