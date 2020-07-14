@@ -285,12 +285,14 @@ export default React.memo(
       if (!didConfim) {
         return;
       }
-      const { error, data } = await apiPost(`/duplicate/${post.get('id')}`);
+      const { error, data: { newPostId } = {} } = await apiPost(
+        `/duplicate/${post.get('id')}`
+      );
       if (error) {
         console.error('Duplicate post error:', error);
         return;
       }
-      setRedirectUrl(`/edit/${data.id}`);
+      setRedirectUrl(`/edit/${newPostId}`);
     }
 
     async function deletePost() {
