@@ -17,7 +17,7 @@ COPY assets/favicons /work/dist/favicons/
 # vanilla CSS isn't bundled by webpack...
 COPY assets/*.css /work/dist/
 # fonts aren't either...
-COPY assets/fonts /work/dist/
+COPY assets/fonts /work/dist/fonts/
 
 # multi-staged builds save space!
 FROM nginx:alpine
