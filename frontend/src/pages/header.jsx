@@ -92,16 +92,22 @@ function HeaderLogo({ loading }) {
     if (loading) {
       timeoutRef.current = setTimeout(() => {
         if (frameCount < 8) {
-          setLoadingText(`${baseText}`);
+          setLoadingText(`${baseText.slice(0, 1)}`);
         } else if (frameCount < 16) {
-          setLoadingText(`${baseText}.`);
+          setLoadingText(`${baseText.slice(0, 2)}`);
         } else if (frameCount < 24) {
-          setLoadingText(`${baseText}..`);
+          setLoadingText(`${baseText.slice(0, 3)}`);
         } else if (frameCount < 32) {
-          setLoadingText(`${baseText}...`);
+          setLoadingText(`${baseText.slice(0, 4)}`);
+        } else if (frameCount < 40) {
+          setLoadingText(`${baseText.slice(0, 5)}`);
+        } else if (frameCount < 48) {
+          setLoadingText(`${baseText.slice(0, 6)}`);
+        } else if (frameCount < 56) {
+          setLoadingText(`${baseText}`);
         }
         setFrameCount(frameCount + 1 > 60 ? 0 : frameCount + 1);
-      }, 28);
+      }, 20);
     }
     return () => {
       clearTimeout(timeoutRef.current);

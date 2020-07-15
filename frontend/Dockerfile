@@ -16,6 +16,8 @@ COPY ["src/jason.html","assets/site.webmanifest","/work/dist/"]
 COPY assets/favicons /work/dist/favicons/
 # vanilla CSS isn't bundled by webpack...
 COPY assets/*.css /work/dist/
+# fonts aren't either...
+COPY assets/fonts /work/dist/
 
 # multi-staged builds save space!
 FROM nginx:alpine
