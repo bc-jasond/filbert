@@ -1,7 +1,7 @@
 import { Map } from 'immutable';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, Redirect } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { LogoLinkStyled } from '../common/components/layout-styled-components';
 import { navButtonMixin } from '../common/components/shared-styled-components-mixins';
 import {
@@ -12,6 +12,7 @@ import {
 } from '../common/constants';
 import { createNextUrl } from '../common/dom';
 import { signout } from '../common/session';
+import { useLoading } from '../common/use-loading.hook';
 import { backgroundColorPrimary, getVar, viewport7 } from '../variables.css';
 
 const HeaderStyled = styled.header`
@@ -69,6 +70,53 @@ const NavLink = styled(Link)`
   ${navButtonMixin};
 `;
 
+const pulse = keyframes`
+  0%, 100% {
+    opacity: 0.30;
+  }
+  60% {
+    opacity: 1;
+  }
+`;
+const Loader = styled.span`
+  font: inherit;
+  color: inherit;
+  animation: 2s ${pulse} linear infinite;
+`;
+function HeaderLogo({ loading }) {
+  const timeoutRef = useRef();
+  const baseText = 'filbert';
+  const [frameCount, setFrameCount] = useState(0);
+  const [loadingText, setLoadingText] = useState(baseText);
+  useEffect(() => {
+    if (loading) {
+      timeoutRef.current = setTimeout(() => {
+        if (frameCount < 8) {
+          setLoadingText(`${baseText}`);
+        } else if (frameCount < 16) {
+          setLoadingText(`${baseText}.`);
+        } else if (frameCount < 24) {
+          setLoadingText(`${baseText}..`);
+        } else if (frameCount < 32) {
+          setLoadingText(`${baseText}...`);
+        }
+        setFrameCount(frameCount + 1 > 60 ? 0 : frameCount + 1);
+      }, 28);
+    }
+    return () => {
+      clearTimeout(timeoutRef.current);
+    };
+  }, [loading, frameCount]);
+  return (
+    <LogoLinkStyled to="/p/homepage">
+      <span role="img" aria-label="hand writing with a pen">
+        ✍️
+      </span>{' '}
+      {loading ? <Loader>{loadingText}</Loader> : 'filbert'}
+    </LogoLinkStyled>
+  );
+}
+
 export default function Header({
   session = Map(),
   setSession = () => {},
@@ -81,6 +129,8 @@ export default function Header({
   post = Map(),
 }) {
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const { loading } = useLoading();
+  console.log('Header loading: ', loading);
 
   if (shouldRedirect) {
     return <Redirect to="/signout" />;
@@ -96,12 +146,7 @@ export default function Header({
       <HeaderStyled>
         <HeaderContentContainer>
           <LogoContainer>
-            <LogoLinkStyled to="/">
-              <span role="img" aria-label="hand writing with a pen">
-                ✍️
-              </span>{' '}
-              filbert
-            </LogoLinkStyled>
+            <HeaderLogo loading={loading} />
           </LogoContainer>
         </HeaderContentContainer>
         <HeaderContentContainer>

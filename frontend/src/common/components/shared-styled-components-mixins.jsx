@@ -7,16 +7,17 @@ import {
   codeFontFamily,
   getVar,
   grey,
+  italicSerif,
   miniFontFamily,
   miniFontSize,
   miniFontWeight,
   miniLetterSpacing,
   miniLineHeight,
+  sansSerif,
   textColorPrimary,
   textColorSecondary,
   white,
 } from '../../variables.css';
-import { italicSerif, sansSerif } from '../../fonts.css';
 
 export const sectionWidthMixin = css`
   max-width: 740px;

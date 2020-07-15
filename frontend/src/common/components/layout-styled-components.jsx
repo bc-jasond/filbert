@@ -5,9 +5,9 @@ import {
   darkGrey,
   getVar,
   grey,
+  sansSerif,
   viewport9,
 } from '../../variables.css';
-import { sansSerif } from '../../fonts.css';
 
 export const LinkStyled = styled(Link)`
   font-family: ${getVar(codeFontFamily)}, monospaced;

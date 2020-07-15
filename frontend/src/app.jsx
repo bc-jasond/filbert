@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
+
 import {
   DARK_MODE_THEME,
   LIGHT_MODE_THEME,
@@ -18,8 +19,6 @@ import {
 // GLOBAL CSS HERE
 import CssVariables from './variables.css';
 import CssReset from './reset.css';
-import CssFonts from './fonts.css';
-import CssPace from './common/pace.css';
 
 import Page404 from './pages/404';
 import Signout from './pages/signout';
@@ -36,6 +35,7 @@ export default () => {
   const [session, setSession] = useState(getSession());
   const [theme, setThemeHook] = useState(getTheme());
   const [font, setFontHook] = useState(getFont());
+
   useEffect(() => {
     if (theme === DARK_MODE_THEME) {
       document.body.classList.add(DARK_MODE_THEME);
@@ -102,6 +102,9 @@ export default () => {
   };
   return (
     <>
+      <CssVariables />
+      <CssReset />
+
       <BrowserRouter>
         <Switch>
           <Redirect push exact from="/p" to="/public" />
@@ -146,10 +149,6 @@ export default () => {
           <RouteWithSession component={Page404} />
         </Switch>
       </BrowserRouter>
-      <CssFonts />
-      <CssVariables />
-      <CssReset />
-      <CssPace />
     </>
   );
 };

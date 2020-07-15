@@ -14,6 +14,8 @@ RUN yarn --prod; \
 COPY ["src/jason.html","assets/site.webmanifest","/work/dist/"]
 # favicons aren't bundled by webpack...
 COPY assets/favicons /work/dist/favicons/
+# vanilla CSS isn't bundled by webpack...
+COPY assets/*.css /work/dist/
 
 # multi-staged builds save space!
 FROM nginx:alpine

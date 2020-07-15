@@ -4,10 +4,6 @@ import React from 'react';
 import App from './app';
 import AppWithHot from './app-hot';
 
-import Pace from './common/pace';
-
-Pace();
-
 if (process.env.isProduction) {
   console.debug = () => {};
   console.info = () => {};

@@ -3,10 +3,6 @@ import React from 'react';
 
 import App from './app';
 
-import Pace from './common/pace';
-
-Pace();
-
 console.debug = () => {};
 console.info = () => {};
 console.log = () => {};

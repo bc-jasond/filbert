@@ -1,16 +1,4 @@
 import { createGlobalStyle } from 'styled-components';
-import {
-  contentSerif,
-  contentSerifAlt,
-  italicSerif,
-  italicSerifAlt,
-  monospaced,
-  monospacedAlt,
-  sansSerif,
-  sansSerifAlt,
-  titleSerif,
-  titleSerifAlt,
-} from './fonts.css';
 
 export const white = '#fff';
 export const abramovTextWhite = 'hsla(0,0%,100%,0.88)';
@@ -83,6 +71,20 @@ export const miniLetterSpacing = '--mini-letter-spacing';
 export function getVar(name, fallback) {
   return `var(${name}${fallback ? `, ${fallback}` : ''})`;
 }
+
+// Medium style
+export const titleSerif = 'filbert-title-serif';
+export const contentSerif = 'filbert-content-serif';
+export const italicSerif = 'filbert-italic-serif';
+export const sansSerif = 'filbert-sans-serif';
+export const monospaced = 'filbert-monospace';
+
+// Apple style
+export const titleSerifAlt = 'filbert-title-alt';
+export const contentSerifAlt = 'filbert-content-alt';
+export const italicSerifAlt = 'filbert-italic-alt';
+export const sansSerifAlt = 'filbert-sans-alt';
+export const monospacedAlt = 'filbert-monospace-alt';
 
 export default createGlobalStyle`
 body {

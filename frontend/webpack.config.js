@@ -67,7 +67,7 @@ module.exports = (env, argv) => {
               `/fonts/${context.parsedUrl.pathname.split('/').pop()}`,
           },
           {
-            from: /\.js$/,
+            from: /\.(js|css)$/,
             to: (context) => `/${context.parsedUrl.pathname.split('/').pop()}`,
           },
         ],

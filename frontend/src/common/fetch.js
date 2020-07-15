@@ -2,6 +2,7 @@ import { API_URL } from './constants';
 import { createNextUrl } from './dom';
 import { getToken, signin } from './session';
 import { getGoogleUser, googleGetLoggedInUser } from './google-auth';
+import { loadingStart, loadingStop } from './use-loading.hook';
 
 function getBaseConfig(abortSignal = null) {
   const config = {
@@ -25,25 +26,23 @@ async function handleResponse(res) {
   const data = res?.status === 204 ? {} : await res.json();
   // TODO: don't use throw for control flow.  Return the whole response and let the client figure it out
   if (res.status < 200 || res.status > 299) {
-    Pace.stop();
     return {
       error: { ...data, status: res.status, statusText: res.statusText },
     };
   }
-  Pace.stop();
   return { error: null, data };
 }
 
 export async function signinGoogle(googleUser, filbertUsername) {
-  Pace.start();
+  loadingStart();
   const config = getBaseConfig();
   delete config.headers.Authorization;
   config.method = 'POST';
   config.body = JSON.stringify({ googleUser, filbertUsername }); // body data type must match "Content-Type" header
   const response = await fetch(`${API_URL}/signin-google`, config);
   const { error, data } = await handleResponse(response);
+  loadingStop();
   if (error) {
-    Pace.stop();
     console.error('Google Signin Error: ', error);
     return { error };
   }
@@ -68,7 +67,7 @@ async function fetchRefresh(url, config) {
   let signupIsIncomplete;
   if (user) {
     ({ signupIsIncomplete } = await signinGoogle(getGoogleUser(user)));
-    // !signupIsIncomplete means the signin succeeded!
+    // Overload FTW - !signupIsIncomplete means the signin succeeded!
     console.info('SUCCESS: Google Auth refresh');
   }
   if (!user || signupIsIncomplete) {
@@ -90,14 +89,14 @@ async function apiCall(
   abortSignal = null,
   config = getBaseConfig(abortSignal)
 ) {
-  Pace.start();
+  loadingStart();
   const configInternal = { ...config };
   configInternal.method = method;
   if (data) {
     configInternal.body = JSON.stringify(data); // body data type must match "Content-Type" header
   }
   const response = await fetchRefresh(`${API_URL}${url}`, configInternal);
-  Pace.stop();
+  loadingStop();
   return response;
 }
 

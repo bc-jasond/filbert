@@ -20,7 +20,6 @@ import {
 import { loadScript } from '../common/dom';
 import { apiGet, signinGoogle } from '../common/fetch';
 import ButtonSpinner from '../common/components/button-spinner';
-import { sansSerif } from '../fonts.css';
 
 import { getSession, signout } from '../common/session';
 import { getGoogleUser, googleAuthInit } from '../common/google-auth';
@@ -29,6 +28,7 @@ import { stopAndPrevent } from '../common/utils';
 import {
   backgroundColorPrimary,
   getVar,
+  sansSerif,
   titleColorPrimary,
 } from '../variables.css';
 

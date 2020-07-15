@@ -27,7 +27,9 @@ export function getGoogleUser(user) {
 }
 
 export async function googleGetLoggedInUser() {
+  // Pace.start();
   const GoogleAuth = await googleAuthInit();
+  // Pace.stop();
   if (!GoogleAuth.isSignedIn.get()) {
     return false;
   }
