@@ -54,7 +54,7 @@
   }
 </style>
 
-<a class="logo-link" href="/p/homepage">
+<a class="logo-link" href="/">
 <span role="img" aria-label="hand writing with a pen">
 ✍️
 </span>{' '}

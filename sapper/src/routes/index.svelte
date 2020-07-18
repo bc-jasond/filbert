@@ -34,14 +34,16 @@
 
 <svelte:head>
 	<title>filbert</title>
-
 </svelte:head>
 
 <h1>Great success!</h1>
 
 <figure>
-	<img alt='Success Kid' src='successkid.jpg'>
-	<figcaption>Have fun with Sapper!</figcaption>
+	<img alt='Success Kids' src='kids1.jpg'>
+	<img alt="Success Kids 2" src="kids2.jpg">
+	<figcaption>Have fun with Life!</figcaption>
 </figure>
 
-<p><strong>Try editing this file (src/routes/index.svelte) to test live reloading.</strong></p>
+<a href="/p/homepage">Homepage Post</a>
+<a href="/about">About</a>
+<a href="/blog">Blog</a>
