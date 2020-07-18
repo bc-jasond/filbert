@@ -1,0 +1,124 @@
+:root {
+    /* colors */
+    --filbert-white: #fff;
+    --filbert-abramovTextWhite: hsla(0,0%,100%,0.88);
+    --filbert-lightGrey: #DEDEDF;
+    --filbert-mediumGrey: #C7C7C8;
+    --filbert-grey: #7C7C7C;
+    --filbert-darkGrey: #292929;
+    --filbert-lightBlue: #A0CFE1;
+    --filbert-blue: #79bbd5;
+    --filbert-darkBlue: #1F7596;
+    --filbert-lightError: #ff6565;
+    --filbert-error: #cc0000;
+    --filbert-success: #5CB85C;
+    /* breakpoints */
+    --filbert-viewport7: 768px;
+    --filbert-viewport9: 992px;
+    --filbert-viewport12: 1200px;
+    /* Medium style fonts */
+    --filbert-title-serif: 'filbert-title-serif';
+    --filbert-content-serif: 'filbert-content-serif';
+    --filbert-italic-serif: 'filbert-italic-serif';
+    --filbert-sans-serif: 'filbert-sans-serif';
+    --filbert-monospaced: 'filbert-monospace';
+    /* Apple style fonts */
+    --filbert-title-serif-alt: 'filbert-title-alt';
+    --filbert-content-serif-alt: 'filbert-content-alt';
+    --filbert-italic-serif-alt: 'filbert-italic-alt';
+    --filbert-sans-serif-alt: 'filbert-sans-alt';
+    --filbert-monospaced-alt: 'filbert-monospace-alt';
+}
+body {
+    /* default light theme */
+    --background-color-primary: var(--filbert-white);
+    --background-color-secondary: var(--filbert-lightGrey);
+    --text-color-primary: var(--filbert-darkGrey);
+    --text-color-secondary: var(--filbert-darkGrey);
+    --title-color-primary: var(--filbert-darkGrey);
+    --title-color-secondary: var(--filbert-grey);
+    --accent-color-primary: var(--filbert-blue);
+    --accent-color-secondary: var(--filbert-darkBlue);
+    --filbert-box-shadow: 0 2px 4px 0 var(--filbert-mediumGrey);
+    --filbert-outline: 3px solid var(--filbert-blue);
+    /* default mixed sans & serif style typography */
+    --italic-font-family: var(--filbert-italic-serif);
+    --h1-font-family: var(--filbert-title-serif);
+    --h1-font-size: 46px;
+    --h1-font-weight: 400;
+    --h1-line-height: 1.25;
+    --h1-letter-spacing: normal;
+    --h2-font-family: var(--filbert-sans-serif);
+    --h2-font-size: 32px;
+    --h2-font-weight: 600;
+    --h2-line-height: 1.22;
+    --h2-letter-spacing: -0.012em;
+    --body-font-family: var(--filbert-content-serif);
+    --body-font-size: 16px;
+    --body-font-weight: 400;
+    --body-line-height: 1.5;
+    --body-letter-spacing: normal;
+    --alt-font-family: var(--filbert-sans-serif);
+    --alt-font-size: 21px;
+    --alt-font-weight: 400;
+    --alt-line-height: 1.58;
+    --alt-letter-spacing: -0.01em;
+    --code-font-family: var(--filbert-monospaced);;
+    --code-font-size: 18px;
+    --code-font-weight: 400;
+    --code-line-height: 28px;
+    --code-letter-spacing: -0.03em;
+    --mini-font-family: var(--filbert-sans-serif);
+    --mini-font-size: 16px;
+    --mini-font-weight: 300;
+    --mini-line-height: 1.4;
+    --mini-letter-spacing: 0;
+}
+
+body.dark {
+    --background-color-primary: var(--filbert-darkGrey);
+    --background-color-secondary: var(--filbert-grey);
+    --text-color-primary: var(--filbert-abramovTextWhite);
+    --text-color-secondary: var(--filbert-white);
+    --title-color-primary: var(--filbert-white);
+    --title-color-secondary: var(--filbert-abramovTextWhite);
+    --accent-color-primary: var(--filbert-darkBlue);
+    --accent-color-secondary: var(--filbert-blue);
+    --filbert-box-shadow: 0 2px 4px 0 var(--filbert-darkGrey);
+    --filbert-outline: 3px solid var(--filbert-blue);
+}
+
+body.sans {
+    /* sans-serif modern typography */
+    --italic-font-family: var(--filbert-italic-serif-alt);
+    --h1-font-family: var(--filbert-title-serif-alt);
+    --h1-font-size: 48px;
+    --h1-font-weight: 600;
+    --h1-line-height: 1.1;
+    --h1-letter-spacing: 0.003em;
+    --h2-font-family: var(--filbert-title-serif-alt);
+    --h2-font-size: 34px;
+    --h2-font-weight: 600;
+    --h2-line-height: 1.1;
+    --h2-letter-spacing: 0.01em;
+    --body-font-family: var(--filbert-content-serif-alt);
+    --body-font-size: 17px;
+    --body-font-weight: 400;
+    --body-line-height: 1.52947;
+    --body-letter-spacing: -0.021em;
+    --alt-font-family: var(--filbert-sans-serif-alt);
+    --alt-font-size: 22px;
+    --alt-font-weight: 300;
+    --alt-line-height: 1.45455;
+    --alt-letter-spacing: 0.016em;
+    --code-font-family: var(--filbert-monospaced-alt);
+    --code-font-size: 18px;
+    --code-font-weight: 400;
+    --code-line-height: 28px;
+    --code-letter-spacing: -0.027em;
+    --mini-font-family: var(--filbert-content-serif-alt);
+    --mini-font-size: 14px;
+    --mini-font-weight: 400;
+    --mini-line-height: 1.4;
+    --mini-letter-spacing: -0.01em;
+}

@@ -1,6 +1,6 @@
 {
-  "name": "TODO",
-  "description": "TODO",
+  "name": "filbert-web",
+  "description": "filbert - A nice place to write.",
   "version": "0.0.1",
   "scripts": {
     "dev": "sapper dev",
