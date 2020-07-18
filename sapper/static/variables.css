@@ -12,7 +12,8 @@
     --filbert-lightError: #ff6565;
     --filbert-error: #cc0000;
     --filbert-success: #5CB85C;
-    /* breakpoints */
+    /* TODO: breakpoints
+         CSS Custom Properties can't be used in @media queries */
     --filbert-viewport7: 768px;
     --filbert-viewport9: 992px;
     --filbert-viewport12: 1200px;

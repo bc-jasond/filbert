@@ -1,60 +1,56 @@
 <script>
-	export let segment;
+  export let segment;
+
+  import HeaderLogo from './HeaderLogo.svelte';
+
+  let loading = true;
+  setInterval(() => loading = !loading, 10000);
 </script>
 
 <style>
-	nav {
-		border-bottom: 1px solid rgba(255,62,0,0.1);
-		font-weight: 300;
-		padding: 0 1em;
-	}
+  header {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    z-index: 12;
+    width: 100%;
+    background: var(--background-color-primary);
+    opacity: 0.97;
+    letter-spacing: 0;
+    font-weight: 400;
+    font-style: normal;
+    top: 0;
+  }
+  /* used as a container for the left logo and menu items on the right */
+  nav {
+    position: relative;
+    min-height: var(--filbert-nav-height);
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: 0 auto 8px auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+  }
 
-	ul {
-		margin: 0;
-		padding: 0;
-	}
-
-	/* clearfix */
-	ul::after {
-		content: '';
-		display: block;
-		clear: both;
-	}
-
-	li {
-		display: block;
-		float: left;
-	}
-
-	[aria-current] {
-		position: relative;
-		display: inline-block;
-	}
-
-	[aria-current]::after {
-		position: absolute;
-		content: '';
-		width: calc(100% - 1em);
-		height: 2px;
-		background-color: rgb(255,62,0);
-		display: block;
-		bottom: -1px;
-	}
-
-	a {
-		text-decoration: none;
-		padding: 1em 0.5em;
-		display: block;
-	}
+  @media (min-width: 768px) {
+    header {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    nav {
+      margin: 0;
+    }
+  }
 </style>
 
-<nav>
-	<ul>
-		<li><a aria-current="{segment === undefined ? 'page' : undefined}" href=".">home</a></li>
-		<li><a aria-current="{segment === 'about' ? 'page' : undefined}" href="about">about</a></li>
+<header>
+  <nav>
+    <HeaderLogo loading={loading} />
+  </nav>
+  <nav>
 
-		<!-- for the blog link, we're using rel=prefetch so that Sapper prefetches
-		     the blog data when we hover over the link or tap it on a touchscreen -->
-		<li><a rel=prefetch aria-current="{segment === 'blog' ? 'page' : undefined}" href="blog">blog</a></li>
-	</ul>
-</nav>
+  </nav>
+</header>

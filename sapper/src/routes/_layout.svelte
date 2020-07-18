@@ -5,12 +5,15 @@
 </script>
 
 <style>
+	:global(body) {
+		--filbert-nav-height: 64px;
+	}
 	main {
 		position: relative;
 		max-width: 56em;
 		background-color: white;
 		padding: 2em;
-		margin: 0 auto;
+		margin: var(--filbert-nav-height) auto;
 		box-sizing: border-box;
 	}
 </style>
