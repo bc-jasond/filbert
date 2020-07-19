@@ -16,7 +16,9 @@ services:
         target: /var/www/certbot
 
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
     environment:
       - MYSQL_ROOT_PASSWORD
       - ENCRYPTION_KEY

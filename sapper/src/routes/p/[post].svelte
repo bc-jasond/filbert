@@ -1,12 +1,12 @@
 <script context="module">
   export async function preload(page, session) {
     const {path, params, query} = page;
-    return { post: page };
+    return { routeInfo: page };
   }
 </script>
 
 <script>
-  export let post;
+  export let routeInfo;
 </script>
 
-<h1>{post.params.post}</h1>
+<h1>{routeInfo.params.post}</h1>

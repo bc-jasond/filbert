@@ -5,7 +5,7 @@
   import { Map } from 'immutable';
 
   import HeaderLogo from './HeaderLogo.svelte';
-  import {SANS_FONT_THEME, DARK_MODE_THEME, PAGE_NAME_EDIT, PAGE_NAME_VIEW} from '../constants';
+  import { SANS_FONT_THEME, DARK_MODE_THEME, PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../constants';
 
   // workaround for SSR to avoid calling "window" global on the server
   // onMount won't run on the server
@@ -34,9 +34,9 @@
   const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
 
   function handleSignout() {
-      if (confirm('Sign out?')) {
-        window.location = '/signout';
-      }
+    if (confirm('Sign out?')) {
+      window.location = '/signout';
+    }
   }
 </script>
 

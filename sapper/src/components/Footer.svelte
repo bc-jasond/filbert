@@ -1,6 +1,4 @@
 <script>
-  export let segment;
-
   import GitHubIcon from '../icons/github-mark.svelte';
   import InfoIcon from '../icons/info.svelte';
 </script>

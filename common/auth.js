@@ -1,4 +1,4 @@
-const { decrypt } = require('../lib/cipher');
+const { decrypt } = require('./cipher');
 /**
  * TODO: implement refresh_token hybrid frontend/server-side flow
  *  https://developers.google.com/identity/sign-in/web/server-side-flow

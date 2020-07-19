@@ -1,5 +1,5 @@
 <style>
-	h1, figure, p {
+	h1, figure {
 		text-align: center;
 		margin: 0 auto;
 	}
@@ -19,10 +19,6 @@
 		width: 100%;
 		max-width: 400px;
 		margin: 0 0 1em 0;
-	}
-
-	p {
-		margin: 1em auto;
 	}
 
 	@media (min-width: 480px) {

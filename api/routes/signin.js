@@ -52,6 +52,7 @@ async function postSigninGoogle(req, res) {
 
     const knex = await getKnex();
     let [user] = await knex('user').where('email', email);
+    // TODO: update filbert db if any values are different
     if (user) {
       sendSession(res, { ...user, exp });
       return;

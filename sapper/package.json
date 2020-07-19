@@ -4,8 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "sapper dev",
-    "build": "sapper build --legacy",
-    "export": "sapper export --legacy",
+    "build": "sapper build",
+    "export": "sapper export",
     "start": "node __sapper__/build",
     "cy:run": "cypress run",
     "cy:open": "cypress open",
@@ -22,6 +22,7 @@
     "sapper": "^0.27.0",
     "svelte": "^3.0.0",
     "@babel/core": "^7.0.0",
+    "@babel/plugin-proposal-optional-chaining": "^7.10.4",
     "@babel/plugin-syntax-dynamic-import": "^7.0.0",
     "@babel/plugin-transform-runtime": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
