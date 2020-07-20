@@ -40,6 +40,6 @@
 	<figcaption>Have fun with Life!</figcaption>
 </figure>
 
-<a href="/p/homepage">Homepage Post</a>
+<a class="filbert-link" href="/p/homepage">Homepage Post</a>
 <a href="/about">About</a>
 <a href="/blog">Blog</a>

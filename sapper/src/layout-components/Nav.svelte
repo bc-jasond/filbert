@@ -2,16 +2,17 @@
   export let segment;
 
   import { onMount } from 'svelte';
+  import { goto } from '@sapper/app';
   import { Map } from 'immutable';
 
   import HeaderLogo from './HeaderLogo.svelte';
-  import { SANS_FONT_THEME, DARK_MODE_THEME, PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../constants';
+  import { SANS_FONT_THEME, DARK_MODE_THEME, PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../common/constants';
 
   // workaround for SSR to avoid calling "window" global on the server
   // onMount won't run on the server
   let manageUrl;
   onMount(async () => {
-    const { createNextUrl } = await import('../dom.js');
+    const { createNextUrl } = await import('../common/dom.js');
     manageUrl = createNextUrl(`/manage/${post.get('id')}`);
   });
 
@@ -35,7 +36,7 @@
 
   function handleSignout() {
     if (confirm('Sign out?')) {
-      window.location = '/signout';
+      goto('/signout');
     }
   }
 </script>

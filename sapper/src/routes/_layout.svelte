@@ -1,6 +1,7 @@
 <script>
-	import Nav from '../components/Nav.svelte';
-	import Footer from '../components/Footer.svelte';
+	import Theme from './theme.svelte';
+	import Nav from '../layout-components/Nav.svelte';
+	import Footer from '../layout-components/Footer.svelte';
 
 	export let segment;
 </script>
@@ -19,10 +20,11 @@
 	}
 </style>
 
+<Theme />
 <Nav {segment}/>
 
 <main>
 	<slot></slot>
 </main>
 
-<Footer {segment}/>
+<Footer/>

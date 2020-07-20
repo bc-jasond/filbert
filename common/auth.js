@@ -33,7 +33,7 @@ async function parseAuthorizationHeader(req, res, next) {
       }
       req.loggedInUser = decryptedToken;
     }
-    //console.info("no Authorization header found.")
+    //console.info("no Authorization header found, continuing...")
     next();
   } catch (err) {
     console.error('Authorization header Error, continuing anyway...', err);

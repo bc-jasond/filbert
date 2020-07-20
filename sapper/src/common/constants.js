@@ -95,7 +95,7 @@ export const POST_ACTION_REDIRECT_TIMEOUT = 1000;
 
 // ENV
 /* eslint-disable-next-line prefer-destructuring */
-//export const API_URL = process.env.API_URL;
+export const API_URL = process.env.API_URL || 'http://localhost:3001';
 
 // AUTH
 export const FILBERT_LOCALSTORAGE_NAMESPACE = 'filbert';
