@@ -42,11 +42,11 @@
         {post.get('givenName')} {post.get('familyName')}
       </a></div>
     {/if}
-    <div class="meta-font-mixin list-avatar-content-row italic">
+    <div class="meta-font list-avatar-content-row italic">
       {postIsPrivate ? post.get('updated') : post.get('published')}
     </div>
     {#if showHandle}
-      <div class="meta-font-mixin list-avatar-content-row">
+      <div class="meta-font list-avatar-content-row">
         <AuthorExpand username={post.get('username')} />
       </div>
     {/if}

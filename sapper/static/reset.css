@@ -36,7 +36,7 @@ footer, header, hgroup, menu, nav, section {
 }
 body {
     line-height: 1;
-    background: var(--background-color-secondary);
+    /* background: var(--background-color-secondary); */
 }
 ol, ul {
     list-style: none;

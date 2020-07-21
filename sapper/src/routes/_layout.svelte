@@ -11,12 +11,18 @@
 		--filbert-nav-height: 64px;
 	}
 	main {
-		position: relative;
-		max-width: 56em;
-		background-color: white;
-		padding: 2em;
-		margin: var(--filbert-nav-height) auto;
+		width: 100%;
+		min-height: 80vh;
+		padding: 16px 24px 48px 24px;
+		margin: var(--filbert-nav-height) auto 0;
 		box-sizing: border-box;
+		position: relative;
+	}
+
+	@media (min-width: 992px) {
+	  main {
+			padding: 48px 80px;
+		}
 	}
 </style>
 

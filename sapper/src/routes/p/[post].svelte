@@ -21,37 +21,23 @@
   // export let routeInfo;
   // export let session;
   export let post;
-  // export let nodesById;
+  export let nodesById;
   // export let prevPost;
   // export let nextPost;
 
-  import PostDetailsSection from '../../post-components/post-details.svelte';
-  import PostAvatar from '../../post-components/post-avatar.svelte';
+  import PostDetailsSection from '../../post-components/PostDetails.svelte';
+  import PostAvatar from '../../post-components/PostAvatar.svelte';
+  import Document from '../../document-components/Document.svelte';
 </script>
 
 <style>
-  article {
-    width: 100%;
-    min-height: 80vh;
-    padding: 16px 24px 48px 24px;
-    margin: 0 auto;
-    box-sizing: border-box;
-    position: relative;
-  }
 
-  @media (min-width: 992px) {
-    article {
-      padding: 48px 80px;
-    }
-  }
 </style>
 
-<article>
   <PostDetailsSection>
     <PostAvatar {post} showHandle />
   </PostDetailsSection>
-
-  <!--&lt;!&ndash;  <Document nodesById={nodesById} />&ndash;&gt;-->
+  <Document nodesById={nodesById} />
   <!--  <PrevNextPostSection>-->
   <!--  <SiteInfoStyled>-->
   <!--  <ThanksForReading>Thanks for reading</ThanksForReading>-->
@@ -64,4 +50,3 @@
   <!--  <NextPostNav post={nextPost} />-->
   <!--  </FlexGrid>-->
   <!--  </PrevNextPostSection>-->
-</article>

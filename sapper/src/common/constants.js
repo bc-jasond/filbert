@@ -20,6 +20,11 @@ export const NODE_TYPE_SPACER = 'spacer';
 export const NODE_TYPE_IMAGE = 'image';
 export const NODE_TYPE_QUOTE = 'quote';
 
+// sections that are containers only - no content
+export const NODE_TYPE_CONTENT = 'content';
+export const NODE_TYPE_OL = 'ol';
+export const NODE_TYPE_CODE = 'code';
+
 // EDITOR
 // TODO: this is a placeholder to be able to set the caret in an empty tag
 export const NEW_POST_URL_ID = 'new';

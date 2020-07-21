@@ -1,10 +1,9 @@
 <style>
   section {
-    max-width: 740px;
-    margin: 0 auto 16px;
+    margin-bottom: 16px;
   }
 </style>
 
-<section>
+<section class="filbert-section">
   <slot></slot>
 </section>

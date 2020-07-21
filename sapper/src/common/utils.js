@@ -64,6 +64,7 @@ export function getMapWithId(obj) {
   const { id } = obj;
   return Map({ ...obj, id: id || s4() });
 }
+
 // TODO: use KEYCODE_SPACE to fix word-wrap issue, not sure what's going on but sometimes formatted lines don't break on wordsolllllllllllllllllll;
 export function cleanText(text = '') {
   // ensure no more than 1 space in a row
@@ -208,4 +209,24 @@ export function reviver(key, value) {
   }
   // ImmutableJS default behavior
   return isKeyed(value) ? value.toMap() : value.toList();
+}
+
+export function getFirstNode(nodesById) {
+  const idSeen = new Set();
+  const nextSeen = new Set();
+  nodesById.forEach((node) => {
+    idSeen.add(node.get('id'));
+    if (node.get('next_sibling_id')) {
+      nextSeen.add(node.get('next_sibling_id'));
+    }
+  });
+  const difference = new Set([...idSeen].filter((id) => !nextSeen.has(id)));
+  if (difference.size !== 1) {
+    console.error(
+      "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",
+      difference
+    );
+  }
+  const [firstId] = [...difference];
+  return nodesById.get(firstId);
 }
