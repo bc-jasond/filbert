@@ -1,12 +1,12 @@
 <script>
-  export let loading;
+  import {loading} from '../stores';
 
   const baseText = 'filbert';
   let frameCount = 0;
   let loadingText = baseText;
   let intervalId;
 
-  if (loading) {
+  if ($loading) {
     intervalId = setInterval(() => {
       // writes "filbert" one char at a time
       loadingText = `${baseText.slice(0, Math.floor(frameCount / 8))}`;
@@ -58,7 +58,7 @@
 <span role="img" aria-label="hand writing with a pen">
 ✍️
 </span>{' '}
-  {#if loading}
+  {#if $loading}
     <span id="filbert-logo-loader">{loadingText}</span>
   {:else}
     filbert

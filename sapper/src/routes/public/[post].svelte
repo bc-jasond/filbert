@@ -3,17 +3,19 @@
 
   import { API_URL } from '../../common/constants';
   import { formatPostDate, reviver } from '../../common/utils';
+  import { loading } from '../../stores';
 
-  export async function preload(page, session) {
+  export async function preload(page, session, preloading) {
     const { path, params, query } = page;
-
+    loading.set(true);
     const response = await this.fetch(`${API_URL}/post/${params.post}`)
     const payload = await response.json();
+    loading.set(false);
     const { prevPost, nextPost, post, contentNodes } = payload;
     prevPost.published = formatPostDate(prevPost.published);
     nextPost.published = formatPostDate(nextPost.published);
     post.published = formatPostDate(post.published);
-    return { routeInfo: page, session, post: fromJS(post), nodesById: fromJS(contentNodes, reviver), prevPost, nextPost };
+    return { post: fromJS(post), nodesById: fromJS(contentNodes, reviver) };
   }
 </script>
 

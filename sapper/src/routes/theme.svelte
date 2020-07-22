@@ -37,6 +37,29 @@
     letter-spacing: var(--mini-letter-spacing);
   }
 
+  :global(.filbert-nav-button) {
+    font-family: var(--code-font-family), monospaced;
+    color: var(--filbert-grey);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 18px;
+    line-height: 24px;
+    padding: 14px 18px;
+    border-radius: 26px;
+    border: 1px solid transparent;
+    transition: background-color 0.125s, color 0.125s;
+    flex-grow: 0;
+  }
+  :global(.filbert-nav-button):hover {
+     color: var(--filbert-abramovTextWhite);
+     background-color: var(--accent-color-primary);
+     box-shadow: var(--filbert-box-shadow);
+   }
+  :global(.filbert-nav-button.open) {
+    color: var(--filbert-abramovTextWhite);
+    background-color: var(--accent-color-primary);
+  }
+
   :global(.filbert-link) {
     color: var(--accent-color-secondary);
     cursor: pointer;
@@ -63,5 +86,60 @@
 
   :global(.filbert-link):visited {
     color: mediumpurple;
+  }
+
+  :global(.filbert-link-alt) {
+    text-decoration: none;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    font-style: normal;
+    font-family: var(--filbert-sans-serif), sans-serif;
+  }
+
+  :global(.filbert-flex-grid), :global(.filbert-flex-grid-9) {
+    display: block;
+  }
+
+  :global(.filbert-col) {
+    padding: 0;
+    flex: 1;
+  }
+
+  :global(.filbert-col-9) {
+    padding: 0;
+    flex: 1;
+    white-space: nowrap;
+  }
+
+  @media (min-width: 768px) {
+    :global(.filbert-flex-grid) {
+      display: flex;
+    }
+
+    :global(.filbert-col) {
+      padding-left: 24px;
+    }
+
+    :global(.filbert-col):first-of-type {
+      padding: 0;
+    }
+  }
+
+  @media (min-width: 992px) {
+    :global(.filbert-flex-grid-9) {
+      display: flex;
+    }
+
+    :global(.filbert-col), :global(.filbert-col):first-of-type {
+      padding: 16px;
+    }
+
+    :global(.filbert-col-9) {
+      padding-left: 24px;
+    }
+
+    :global(.filbert-col-9) {
+      padding: 0;
+    }
   }
 </style>

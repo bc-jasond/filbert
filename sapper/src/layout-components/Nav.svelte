@@ -16,12 +16,7 @@
     manageUrl = createNextUrl(`/manage/${post.get('id')}`);
   });
 
-  let loading = true;
-  setInterval(() => loading = !loading, 10000);
-
   let session = Map();
-  setInterval(() => session ? session = undefined : session = Map(), 20000);
-
   let post = Map();
   let userIsMe = false;
   let theme = '';
@@ -104,7 +99,7 @@
 
 <header>
   <nav>
-    <HeaderLogo loading={loading} />
+    <HeaderLogo />
   </nav>
   <nav>
     <button title="font style"
@@ -117,7 +112,7 @@
     >
       {themeButtonDisplay}
     </button>
-    {#if session}
+    {#if session.size}
       {#if shouldShowManagePost}
         <a href="{manageUrl}">
           manage
@@ -130,7 +125,7 @@
         <a href="/edit/new">new</a>
       {/if}
       {#if shouldShowPublic}
-        <a href="/p">public</a>
+        <a rel=prefetch href="/p">public</a>
       {/if}
       <a href="/private">private</a>
       {#if userIsMe}
@@ -146,7 +141,7 @@
         </a>
       {/if}
     {:else}
-      <a href="/p">public</a>
+      <a href="/public">public</a>
       <a data-test-id="signed-in-user" href="/signin">join or sign in</a>
     {/if}
   </nav>

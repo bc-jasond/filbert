@@ -16,14 +16,6 @@
     margin: 16px;
   }
 
-  a {
-    text-decoration: none;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    font-style: normal;
-    font-family: var(--filbert-sans-serif), sans-serif;
-  }
-
   .social-links-container {
     display: flex;
     justify-content: center;
@@ -55,10 +47,10 @@
     </span>{' '}
   1/4/2019
   <div class="social-links-container">
-    <a href="https://github.com/bc-jasond/filbert">
+    <a class="filbert-link-alt" href="https://github.com/bc-jasond/filbert">
       <GitHubIcon/>
     </a>
-    <a href="/help">
+    <a class="filbert-link-alt" href="/help">
       <InfoIcon/>
     </a>
   </div>

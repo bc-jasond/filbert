@@ -1,10 +1,10 @@
 <script>
   export let post;
-  export let showHandle;
-  export let postIsPrivate;
+  export let showHandle = false;
+  export let postIsPrivate = false;
 
-  import ProfileImg from '../user-components/profile-img.svelte';
-  import AuthorExpand from '../user-components/author-expand.svelte';
+  import ProfileImg from '../user-components/ProfileImg.svelte';
+  import AuthorExpand from '../user-components/AuthorExpand.svelte';
 </script>
 
 <style>
