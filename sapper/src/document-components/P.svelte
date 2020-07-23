@@ -2,7 +2,7 @@
   export let node;
 
   import { NODE_TYPE_P } from '../common/constants';
-  // import FormattedSelections from './formatted-selections';
+  import FormattedText from './format-components/NodeSelectionsFormatted.svelte';
 </script>
 
 <style>
@@ -14,6 +14,5 @@
 </style>
 
 <p data-type={NODE_TYPE_P} name={node.get('id')}>
-  <!--<FormattedSelections node={node} />-->
-  {node.get('content')}
+  <FormattedText {node} />
 </p>
