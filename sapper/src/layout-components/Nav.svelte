@@ -141,7 +141,7 @@
         </a>
       {/if}
     {:else}
-      <a href="/public">public</a>
+      <a rel=prefetch href="/public">public</a>
       <a data-test-id="signed-in-user" href="/signin">join or sign in</a>
     {/if}
   </nav>

@@ -1,5 +1,6 @@
 <script>
-  import {loading} from '../stores';
+  import { loading } from '../stores';
+  import { onInterval } from '../common/utils-svelte';
 
   const baseText = 'filbert';
   let frameCount = 0;
@@ -7,13 +8,12 @@
   let intervalId;
 
   if ($loading) {
-    intervalId = setInterval(() => {
+    onInterval(() => {
       // writes "filbert" one char at a time
       loadingText = `${baseText.slice(0, Math.floor(frameCount / 8))}`;
       frameCount = frameCount + 1 > 80 ? 0 : frameCount + 1;
     }, 20);
   }
-  // TODO: clearInterval()
 </script>
 
 <style>

@@ -5,41 +5,46 @@
   import { formatPostDate, reviver } from '../../common/utils';
   import { loading } from '../../stores';
 
-  export async function preload(page, session, preloading) {
+  export function preload(page, session, preloading) {
     const { path, params, query } = page;
     loading.set(true);
-    const response = await this.fetch(`${API_URL}/post/${params.post}`)
-    const payload = await response.json();
-    loading.set(false);
-    const { prevPost, nextPost, post, contentNodes } = payload;
-    prevPost.published = formatPostDate(prevPost.published);
-    nextPost.published = formatPostDate(nextPost.published);
-    post.published = formatPostDate(post.published);
-    return { post: fromJS(post), nodesById: fromJS(contentNodes, reviver) };
+
+    const responsePromise = this.fetch(`${API_URL}/post/${params.post}`)
+        .then(response => response.json())
+        .then(( { prevPost, nextPost, post, contentNodes } ) => {
+          prevPost.published = formatPostDate(prevPost.published);
+          nextPost.published = formatPostDate(nextPost.published);
+          post.published = formatPostDate(post.published);
+          return { post: fromJS(post), nodesById: fromJS(contentNodes, reviver) };
+        })
+        .finally(() => loading.set(false))
+
+    return {
+      responsePromise,
+    };
   }
 </script>
 
 <script>
-  // export let routeInfo;
-  // export let session;
-  export let post;
-  export let nodesById;
-  // export let prevPost;
-  // export let nextPost;
+  export let responsePromise;
 
   import PostDetailsSection from '../../post-components/PostDetails.svelte';
   import PostAvatar from '../../post-components/PostAvatar.svelte';
   import Document from '../../document-components/Document.svelte';
 </script>
 
-<style>
-
-</style>
-
+{#await responsePromise}
+  <p>...post</p>
+{:then {post, nodesById}}
   <PostDetailsSection>
     <PostAvatar {post} showHandle />
   </PostDetailsSection>
   <Document nodesById={nodesById} />
+{:catch error}
+  <p style="color: red">{error.message}</p>
+{/await}
+
+
   <!--  <PrevNextPostSection>-->
   <!--  <SiteInfoStyled>-->
   <!--  <ThanksForReading>Thanks for reading</ThanksForReading>-->

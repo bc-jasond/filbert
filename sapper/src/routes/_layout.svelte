@@ -1,5 +1,5 @@
 <script>
-	import Theme from './theme.svelte';
+	import Theme from './_theme.svelte';
 	import Nav from '../layout-components/Nav.svelte';
 	import Footer from '../layout-components/Footer.svelte';
 

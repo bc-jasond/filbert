@@ -5,35 +5,41 @@
   import { formatPostDate } from '../../common/utils';
   import { loading } from '../../stores';
 
-  export async function preload(page, session, preloading) {
+  export function preload(page, session, preloading) {
     const { path, params, query } = page;
     loading.set(true);
-    const response = await this.fetch(`${API_URL}/post`)
-    const postsData = await response.json();
-    loading.set(false);
+
+    const responsePromise = this.fetch(`${API_URL}/post`)
+        .then(response => response.json())
+        .then(postsData => {
+          return {
+            posts: postsData.map((post) => fromJS({
+              ...post,
+              published: formatPostDate(post.published),
+              updated: formatPostDate(post.updated),
+            }))
+          }
+        })
+        .finally(() => loading.set(false))
+
     return {
-      posts: postsData.map((post) => fromJS({
-            ...post,
-            published: formatPostDate(post.published),
-            updated: formatPostDate(post.updated),
-          })
-      )
+      responsePromise,
     };
   }
 </script>
 
 <script>
-  // export let routeInfo;
-  // export let session;
-  export let posts;
+  export let responsePromise;
 
   import PostListRow from '../../post-components/PostListRow.svelte';
 </script>
 
-<style>
-
-</style>
-
-{#each posts as post}
-  <PostListRow {post} />
-{/each}
+{#await responsePromise}
+  <p>...public</p>
+{:then {posts}}
+  {#each posts as post}
+    <PostListRow {post} />
+  {/each}
+{:catch error}
+  <p style="color: red">{error.message}</p>
+{/await}

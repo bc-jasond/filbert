@@ -4,13 +4,13 @@
 
   import {onMount} from 'svelte';
 
-  import { createNextUrl } from '../common/dom';
   import PostAvatar from './PostAvatar.svelte';
   import Image from '../document-components/Image.svelte';
   import AuthorExpand from '../user-components/AuthorExpand.svelte';
 
   let nextUrl;
-  onMount(() => {
+  onMount(async () => {
+    const { createNextUrl } = await import('../common/dom');
     nextUrl = createNextUrl(`/manage/${post.get('id')}`);
   })
 </script>
