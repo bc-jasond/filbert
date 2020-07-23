@@ -1,12 +1,18 @@
 <script>
   export let segment;
+  export let navHeight;
 
   import { onMount } from 'svelte';
   import { goto } from '@sapper/app';
   import { Map } from 'immutable';
 
   import HeaderLogo from './HeaderLogo.svelte';
-  import { SANS_FONT_THEME, DARK_MODE_THEME, PAGE_NAME_EDIT, PAGE_NAME_VIEW } from '../common/constants';
+  import {
+    SANS_FONT_THEME,
+    DARK_MODE_THEME,
+    PAGE_NAME_EDIT,
+    PAGE_NAME_VIEW,
+  } from '../common/constants';
 
   // workaround for SSR to avoid calling "window" global on the server
   // onMount won't run on the server
@@ -39,9 +45,6 @@
 <style>
   header {
     position: fixed;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     box-sizing: border-box;
     z-index: 12;
     width: 100%;
@@ -55,17 +58,27 @@
 
   /* used as a container for the left logo and menu items on the right */
   nav {
-    position: relative;
     min-height: var(--filbert-nav-height);
     padding-left: 20px;
     padding-right: 20px;
-    margin: 0 auto 8px auto;
+    margin: 0 auto;
+  }
+  .nav-logo {
     display: flex;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: center;
+  }
+  .nav-scroll {
+    overflow-x: auto;
+  }
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
   }
 
-  button, a {
+  button,
+  a {
     font-family: var(--code-font-family), monospaced;
     color: var(--filbert-grey);
     cursor: pointer;
@@ -79,7 +92,8 @@
     flex-grow: 0;
   }
 
-  button:hover, a:hover {
+  button:hover,
+  a:hover {
     color: var(--filbert-abramovTextWhite);
     background-color: var(--accent-color-primary);
     box-shadow: var(--filbert-box-shadow);
@@ -87,62 +101,58 @@
 
   @media (min-width: 768px) {
     header {
+      display: flex;
+      align-items: center;
       flex-direction: row;
       justify-content: space-between;
     }
 
     nav {
+      display: flex;
       margin: 0;
     }
   }
 </style>
 
-<header>
-  <nav>
+<header bind:clientHeight="{navHeight}">
+  <nav class="nav-logo">
     <HeaderLogo />
   </nav>
-  <nav>
-    <button title="font style"
-            on:click="{()=>{}}"
-    >
-      {fontButtonDisplay}
-    </button>
-    <button title="dark mode"
-            on:click="{()=>{}}"
-    >
-      {themeButtonDisplay}
-    </button>
-    {#if session.size}
-      {#if shouldShowManagePost}
-        <a href="{manageUrl}">
-          manage
-        </a>
-      {/if}
-      {#if shouldShowEdit}
-        <a href="/edit/{post.get('id')}">edit</a>
-      {/if}
-      {#if shouldShowNew}
-        <a href="/edit/new">new</a>
-      {/if}
-      {#if shouldShowPublic}
-        <a rel=prefetch href="/p">public</a>
-      {/if}
-      <a href="/private">private</a>
-      {#if userIsMe}
-        <button
-            id="signed-in-user"
-            on:click={handleSignout}
-        >
-          sign out
-        </button>
+  <nav class="nav-scroll">
+    <div class="nav-actions">
+      <button title="font style" on:click="{() => {}}">
+        {fontButtonDisplay}
+      </button>
+      <button title="dark mode" on:click="{() => {}}">
+        {themeButtonDisplay}
+      </button>
+      {#if session.size}
+        {#if shouldShowManagePost}
+          <a href="{manageUrl}">manage</a>
+        {/if}
+        {#if shouldShowEdit}
+          <a href="/edit/{post.get('id')}">edit</a>
+        {/if}
+        {#if shouldShowNew}
+          <a href="/edit/new">new</a>
+        {/if}
+        {#if shouldShowPublic}
+          <a rel="prefetch" href="/p">public</a>
+        {/if}
+        <a href="/private">private</a>
+        {#if userIsMe}
+          <button id="signed-in-user" on:click="{handleSignout}">
+            sign out
+          </button>
+        {:else}
+          <a data-test-id="signed-in-user" href="/me">
+            {session.get('username')}
+          </a>
+        {/if}
       {:else}
-        <a data-test-id="signed-in-user" href="/me">
-          {session.get('username')}
-        </a>
+        <a rel="prefetch" href="/public">public</a>
+        <a data-test-id="signed-in-user" href="/signin">join or sign in</a>
       {/if}
-    {:else}
-      <a rel=prefetch href="/public">public</a>
-      <a data-test-id="signed-in-user" href="/signin">join or sign in</a>
-    {/if}
+    </div>
   </nav>
 </header>

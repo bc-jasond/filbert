@@ -18,8 +18,9 @@
 
 <style>
   @keyframes pulse {
-    0%, 100% {
-      opacity: 0.30;
+    0%,
+    100% {
+      opacity: 0.3;
     }
     60% {
       opacity: 1;
@@ -38,9 +39,7 @@
     font-family: var(--code-font-family), monospaced;
     color: var(--filbert-grey);
     text-decoration: none;
-    flex-grow: 2;
     flex-shrink: 0;
-    align-self: flex-end;
   }
 
   .logo-link:hover {
@@ -55,12 +54,9 @@
 </style>
 
 <a class="logo-link" href="/">
-<span role="img" aria-label="hand writing with a pen">
-✍️
-</span>{' '}
+  <span role="img" aria-label="hand writing with a pen">✍️</span>
+  {' '}
   {#if $loading}
     <span id="filbert-logo-loader">{loadingText}</span>
-  {:else}
-    filbert
-  {/if}
+  {:else}filbert{/if}
 </a>
