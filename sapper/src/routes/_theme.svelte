@@ -96,6 +96,22 @@
     font-family: var(--filbert-sans-serif), sans-serif;
   }
 
+  :global(.abstract-link) {
+    max-height: 48px;
+    font-size: 19px;
+    line-height: 24px;
+    color: var(--filbert-grey);
+    letter-spacing: 0px;
+  }
+
+  :global(.heading-link) {
+    max-height: 56px;
+    letter-spacing: -0.5px;
+    font-size: 25px;
+    line-height: 28px;
+    font-weight: 600;
+  }
+
   :global(.filbert-flex-grid),
   :global(.filbert-flex-grid-9) {
     display: block;

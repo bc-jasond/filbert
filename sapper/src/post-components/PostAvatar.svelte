@@ -4,7 +4,7 @@
   export let postIsPrivate = false;
 
   import ProfileImg from '../user-components/ProfileImg.svelte';
-  import AuthorExpand from '../user-components/AuthorExpand.svelte';
+  import ExpandLink from '../layout-components/ExpandLink.svelte';
 </script>
 
 <style>
@@ -56,7 +56,9 @@
     </div>
     {#if showHandle}
       <div class="meta-font list-avatar-content-row">
-        <AuthorExpand username="{post.get('username')}" />
+        <ExpandLink url="/public/?username={post.get('username')}">
+          @{post.get('username')}
+        </ExpandLink>
       </div>
     {/if}
   </div>

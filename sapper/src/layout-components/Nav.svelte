@@ -1,6 +1,6 @@
 <script>
   export let segment;
-  export let navHeight;
+  export let navHeight = 0; // will be bound to in _layout.svelte via "bind:navHeight".  Initializing here so svelte doesn't complain
 
   import { onMount } from 'svelte';
   import { goto } from '@sapper/app';

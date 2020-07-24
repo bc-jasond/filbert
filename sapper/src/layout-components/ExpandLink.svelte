@@ -1,9 +1,10 @@
 <script>
-  export let username;
+  export let url;
 </script>
 
 <style>
-  a {
+  a,
+  a :global(*) {
     font-family: var(--code-font-family), monospaced;
     color: var(--filbert-grey);
     cursor: pointer;
@@ -11,11 +12,14 @@
     transition: letter-spacing 0.125s, color 0.125s;
   }
 
-  a:hover {
+  a:hover,
+  a :global(*):hover {
     letter-spacing: 8px;
     color: var(--text-color-secondary);
     cursor: pointer;
   }
 </style>
 
-<a class="meta-font" href="/public/?username={username}">@{username}</a>
+<a class="meta-font" href="{url}">
+  <slot />
+</a>

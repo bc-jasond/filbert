@@ -78,4 +78,4 @@ module.exports = {
   mockLocalStorage,
   makeSelections,
   makeHistoryLogEntries,
-}
+};

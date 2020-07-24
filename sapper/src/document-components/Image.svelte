@@ -3,6 +3,7 @@
   export let hideBorder = true;
   export let hideCaption = false;
   export let postListOverride = false;
+  export let viewPostOverride = false;
 
   import { beforeUpdate } from 'svelte';
   import { Map } from 'immutable';
@@ -101,6 +102,11 @@
     max-width: 300px;
     max-height: 300px;
   }
+  .view-post-override {
+    margin: 0 auto;
+    min-width: 300px;
+    min-height: 200px;
+  }
 
   @media (min-width: 768px) {
     .post-list-override {
@@ -113,6 +119,7 @@
 <section
   class="filbert-section"
   class:post-list-override="{postListOverride}"
+  class:view-post-override="{viewPostOverride}"
   data-type="{NODE_TYPE_IMAGE}"
   name="{id}"
 >

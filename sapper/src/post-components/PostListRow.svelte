@@ -6,7 +6,7 @@
 
   import PostAvatar from './PostAvatar.svelte';
   import Image from '../document-components/Image.svelte';
-  import AuthorExpand from '../user-components/AuthorExpand.svelte';
+  import ExpandLink from '../layout-components/ExpandLink.svelte';
 
   let nextUrl;
   onMount(async () => {
@@ -16,22 +16,6 @@
 </script>
 
 <style>
-  .abstract-link {
-    max-height: 48px;
-    font-size: 19px;
-    line-height: 24px;
-    color: var(--filbert-grey);
-    letter-spacing: 0px;
-  }
-
-  .heading-link {
-    max-height: 56px;
-    letter-spacing: -0.5px;
-    font-size: 25px;
-    line-height: 28px;
-    font-weight: 600;
-  }
-
   .post-row {
     max-width: var(--filbert-viewport7);
     padding: 16px 0;
@@ -156,7 +140,9 @@
         </div>
       {/if}
       <div class="post-action-container">
-        <AuthorExpand username="{post.get('username')}" />
+        <ExpandLink url="/public/?username={post.get('username')}">
+          @{post.get('username')}
+        </ExpandLink>
       </div>
     </div>
   </div>
