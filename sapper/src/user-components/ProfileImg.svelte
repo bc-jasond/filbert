@@ -1,8 +1,8 @@
 <script>
   export let src;
-  export let alt = "profile avatar";
-  export let width = "72px";
-  export let height = "72px";
+  export let alt = 'profile avatar';
+  export let width = '72px';
+  export let height = '72px';
   export let shouldApplyHoverStyle = false;
 </script>
 
@@ -21,5 +21,5 @@
 </style>
 
 <div>
-  <img {src} {alt} {height} {width} class:hover={shouldApplyHoverStyle} />
+  <img {src} {alt} {height} {width} class:hover="{shouldApplyHoverStyle}" />
 </div>

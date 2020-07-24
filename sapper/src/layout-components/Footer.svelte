@@ -37,21 +37,17 @@
 </style>
 
 <footer>
-  <span role="img" aria-label="truck">
-      🚚
-    </span>{' '}
-  1/4/2020 some-hash-here-34df
+  <span role="img" aria-label="truck">🚚</span>
+  {' '} 1/4/2020 some-hash-here-34df
   <div class="br"></div>
-  <span role="img" aria-label="baby">
-      👶
-    </span>{' '}
-  1/4/2019
+  <span role="img" aria-label="baby">👶</span>
+  {' '} 1/4/2019
   <div class="social-links-container">
     <a class="filbert-link-alt" href="https://github.com/bc-jasond/filbert">
-      <GitHubIcon/>
+      <GitHubIcon />
     </a>
     <a class="filbert-link-alt" href="/help">
-      <InfoIcon/>
+      <InfoIcon />
     </a>
   </div>
 </footer>

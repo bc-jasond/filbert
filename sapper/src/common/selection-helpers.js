@@ -11,11 +11,7 @@ import {
   SELECTION_LENGTH,
   SELECTION_NEXT,
 } from './constants';
-import {
-  cleanTextOrZeroLengthPlaceholder,
-  reviver,
-  Selection,
-} from './utils';
+import { cleanTextOrZeroLengthPlaceholder, reviver, Selection } from './utils';
 
 export function formatSelections(head) {
   if (!Map.isMap(head)) {

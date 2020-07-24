@@ -18,6 +18,4 @@
   }
 </style>
 
-<a class="meta-font" href="/public/?username={username}">
-  @{username}
-</a>
+<a class="meta-font" href="/public/?username={username}">@{username}</a>

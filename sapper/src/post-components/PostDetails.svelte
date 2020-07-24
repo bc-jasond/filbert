@@ -5,5 +5,5 @@
 </style>
 
 <section class="filbert-section">
-  <slot></slot>
+  <slot />
 </section>

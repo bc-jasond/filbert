@@ -2,7 +2,7 @@
   export let post;
   export let postIsPrivate = false;
 
-  import {onMount} from 'svelte';
+  import { onMount } from 'svelte';
 
   import PostAvatar from './PostAvatar.svelte';
   import Image from '../document-components/Image.svelte';
@@ -12,7 +12,7 @@
   onMount(async () => {
     const { createNextUrl } = await import('../common/dom');
     nextUrl = createNextUrl(`/manage/${post.get('id')}`);
-  })
+  });
 </script>
 
 <style>
@@ -98,49 +98,65 @@
 </style>
 
 <div class="filbert-flex-grid post-row">
-  {#if post.getIn(['meta','imageNode'])}
+  {#if post.getIn(['meta', 'imageNode'])}
     <div class="image-col">
-      <a rel=prefetch href="/public/{post.get('canonical')}">
+      <a rel="prefetch" href="/public/{post.get('canonical')}">
         <Image
-            node={post.getIn(['meta','imageNode'])}
-            hideBorder
-            hideCaption
-            postListOverride
+          node="{post.getIn(['meta', 'imageNode'])}"
+          hideBorder
+          hideCaption
+          postListOverride
         />
       </a>
     </div>
   {/if}
   <div class="details-col">
-    <a rel=prefetch class="filbert-link-alt heading-link" href="/public/{post.get('canonical')}">
+    <a
+      rel="prefetch"
+      class="filbert-link-alt heading-link"
+      href="/public/{post.get('canonical')}"
+    >
       {post.get('title')}
     </a>
     {#if post.get('abstract')}
       <div class="post-abstract-row">
-        <a rel=prefetch class="filbert-link-alt abstract-link" href="/public/{post.get('canonical')}">
+        <a
+          rel="prefetch"
+          class="filbert-link-alt abstract-link"
+          href="/public/{post.get('canonical')}"
+        >
           {post.get('abstract')}
         </a>
       </div>
     {/if}
     <div class="post-meta-row">
       <div class="post-action-container">
-        <PostAvatar post={post} postIsPrivate={postIsPrivate} />
+        <PostAvatar {post} {postIsPrivate} />
       </div>
       {#if post.get('canEdit')}
         <div class="post-action-container">
-          <a rel=prefetch class="filbert-nav-button post-action-link" href={nextUrl}>
+          <a
+            rel="prefetch"
+            class="filbert-nav-button post-action-link"
+            href="{nextUrl}"
+          >
             manage
           </a>
         </div>
       {/if}
       {#if !postIsPrivate && post.get('canEdit')}
         <div class="post-action-container" style="--padding-left: 0px;">
-          <a rel=prefetch class="filbert-nav-button post-action-link" href={`/edit/${post.get('id')}`}>
+          <a
+            rel="prefetch"
+            class="filbert-nav-button post-action-link"
+            href="{`/edit/${post.get('id')}`}"
+          >
             edit
           </a>
         </div>
       {/if}
       <div class="post-action-container">
-        <AuthorExpand username={post.get('username')} />
+        <AuthorExpand username="{post.get('username')}" />
       </div>
     </div>
   </div>

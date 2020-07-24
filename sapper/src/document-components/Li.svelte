@@ -1,7 +1,7 @@
 <script>
   export let node;
 
-  import {NODE_TYPE_LI} from '../common/constants';
+  import { NODE_TYPE_LI } from '../common/constants';
   import FormattedText from './format-components/NodeSelectionsFormatted.svelte';
 </script>
 
@@ -24,6 +24,6 @@
   }
 </style>
 
-<li data-type={NODE_TYPE_LI} name={node.get('id')}>
+<li data-type="{NODE_TYPE_LI}" name="{node.get('id')}">
   <FormattedText {node} />
 </li>

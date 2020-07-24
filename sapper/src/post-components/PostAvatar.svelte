@@ -29,25 +29,34 @@
   }
 </style>
 
-
 <div class="list-avatar">
   {#if post.get('userProfileIsPublic') || postIsPrivate}
     <a href="/@{post.get('username')}">
-      <ProfileImg src={post.get('profilePictureUrl')} height="40px" width="40px" shouldApplyHoverStyle />
+      <ProfileImg
+        src="{post.get('profilePictureUrl')}"
+        height="40px"
+        width="40px"
+        shouldApplyHoverStyle
+      />
     </a>
   {/if}
   <div class="list-avatar-content">
     {#if post.get('userProfileIsPublic') || postIsPrivate}
-      <div><a class="filbert-link list-avatar-content-row" href="/@{post.get('username')}">
-        {post.get('givenName')} {post.get('familyName')}
-      </a></div>
+      <div>
+        <a
+          class="filbert-link list-avatar-content-row"
+          href="/@{post.get('username')}"
+        >
+          {post.get('givenName')} {post.get('familyName')}
+        </a>
+      </div>
     {/if}
     <div class="meta-font list-avatar-content-row italic">
       {postIsPrivate ? post.get('updated') : post.get('published')}
     </div>
     {#if showHandle}
       <div class="meta-font list-avatar-content-row">
-        <AuthorExpand username={post.get('username')} />
+        <AuthorExpand username="{post.get('username')}" />
       </div>
     {/if}
   </div>

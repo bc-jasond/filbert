@@ -18,10 +18,6 @@
   }
 </style>
 
-<h2
-    data-type={NODE_TYPE_H2}
-    name={node.get('id')}
-    class="filbert-section"
->
+<h2 data-type="{NODE_TYPE_H2}" name="{node.get('id')}" class="filbert-section">
   {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
 </h2>

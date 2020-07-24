@@ -51,10 +51,10 @@
     flex-grow: 0;
   }
   :global(.filbert-nav-button):hover {
-     color: var(--filbert-abramovTextWhite);
-     background-color: var(--accent-color-primary);
-     box-shadow: var(--filbert-box-shadow);
-   }
+    color: var(--filbert-abramovTextWhite);
+    background-color: var(--accent-color-primary);
+    box-shadow: var(--filbert-box-shadow);
+  }
   :global(.filbert-nav-button.open) {
     color: var(--filbert-abramovTextWhite);
     background-color: var(--accent-color-primary);
@@ -67,9 +67,9 @@
     text-decoration: none;
     background-repeat: repeat-x;
     background-image: linear-gradient(
-        to right,
-        currentColor 100%,
-        currentColor 0
+      to right,
+      currentColor 100%,
+      currentColor 0
     );
     background-size: 1px 1px;
     background-position: 0 calc(1em + 1px);
@@ -78,9 +78,9 @@
   :global(.filbert-link):hover {
     color: var(--accent-color-primary);
     background-image: linear-gradient(
-        to right,
-        currentColor 100%,
-        currentColor 0
+      to right,
+      currentColor 100%,
+      currentColor 0
     );
   }
 
@@ -96,7 +96,8 @@
     font-family: var(--filbert-sans-serif), sans-serif;
   }
 
-  :global(.filbert-flex-grid), :global(.filbert-flex-grid-9) {
+  :global(.filbert-flex-grid),
+  :global(.filbert-flex-grid-9) {
     display: block;
   }
 
@@ -130,7 +131,8 @@
       display: flex;
     }
 
-    :global(.filbert-col), :global(.filbert-col):first-of-type {
+    :global(.filbert-col),
+    :global(.filbert-col):first-of-type {
       padding: 16px;
     }
 

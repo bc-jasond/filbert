@@ -21,15 +21,20 @@
   }
 </style>
 
-<section class="filbert-section content-section" data-type={NODE_TYPE_QUOTE} name={id}>
+<section
+  class="filbert-section content-section"
+  data-type="{NODE_TYPE_QUOTE}"
+  name="{id}"
+>
   <p
-      class:edit-section-border={isEditing}
-      class:edit-hover-border={isEditMode}
-      on:click="{() => {}}">
+    class:edit-section-border="{isEditing}"
+    class:edit-hover-border="{isEditMode}"
+    on:click="{() => {}}"
+  >
     {'💡 '}
     <em class="italic-text">
       {quote && `"${quote}" `}
-      <a class="filbert-link" target="_blank" href={url}>
+      <a class="filbert-link" target="_blank" href="{url}">
         {author && `-${author}`}
       </a>
       <span class="mini-text">{context && ` ${context}`}</span>

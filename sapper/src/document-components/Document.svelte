@@ -16,7 +16,7 @@
     NODE_TYPE_CODE,
     NODE_TYPE_OL,
   } from '../common/constants';
-  import { cleanText, getFirstNode } from '../common/utils'
+  import { cleanText, getFirstNode } from '../common/utils';
   import H1 from './H1.svelte';
   import H2 from './H2.svelte';
   import Li from './Li.svelte';
@@ -76,7 +76,7 @@
   function getCodeSection() {
     const preNodes = [];
     while (current.get('type') === NODE_TYPE_PRE) {
-      preNodes.push(current)
+      preNodes.push(current);
       next();
     }
     return { type: NODE_TYPE_CODE, nodes: preNodes };
@@ -138,23 +138,25 @@
           {#if !Map.isMap(nodeInner)}
             <ol>
               {#each nodeInner as li}
-                <Li node={li} />
+                <Li node="{li}" />
               {/each}
             </ol>
           {:else}
-            <P node={nodeInner} />
+            <P node="{nodeInner}" />
           {/if}
         {/each}
       </section>
     {:else if !Map.isMap(node) && node.type === NODE_TYPE_CODE}
       <section class="filbert-section code-section">
         {#each node.nodes as pre}
-          <Pre node={pre} />
+          <Pre node="{pre}" />
         {/each}
       </section>
     {:else if node.get('type') === NODE_TYPE_H1}
-      <H1 {node} shouldShowPlaceholder={nodesById.size === 1 &&
-        cleanText(node.get('content', '')).length === 0} />
+      <H1
+        {node}
+        shouldShowPlaceholder="{nodesById.size === 1 && cleanText(node.get('content', '')).length === 0}"
+      />
     {:else if node.get('type') === NODE_TYPE_H2}
       <H2 {node} />
     {:else if node.get('type') === NODE_TYPE_SPACER}

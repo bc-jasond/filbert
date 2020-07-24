@@ -21,6 +21,6 @@
   }
 </style>
 
-<pre data-type={NODE_TYPE_PRE} name={node.get('id')}>
+<pre data-type="{NODE_TYPE_PRE}" name="{node.get('id')}">
   {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
 </pre>

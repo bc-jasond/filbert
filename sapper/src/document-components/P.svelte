@@ -13,6 +13,6 @@
   }
 </style>
 
-<p data-type={NODE_TYPE_P} name={node.get('id')}>
+<p data-type="{NODE_TYPE_P}" name="{node.get('id')}">
   <FormattedText {node} />
 </p>

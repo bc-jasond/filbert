@@ -1,9 +1,11 @@
 <script>
-  export let node;
-  export let shouldShowPlaceholder;
+  import { Map } from 'immutable';
 
   import { NODE_TYPE_H1 } from '../common/constants';
   import { cleanTextOrZeroLengthPlaceholder } from '../common/utils';
+
+  export let node = Map();
+  export let shouldShowPlaceholder;
 </script>
 
 <style>
@@ -18,18 +20,23 @@
   }
 
   .has-placeholder::before {
-    content: "Write a title and hit enter...";
+    content: 'Write a title and hit enter...';
     position: absolute;
     color: var(--filbert-mediumGrey);
   }
-
 </style>
 
-<h1
-    data-type={NODE_TYPE_H1}
-    name={node.get('id')}
+{#if node.size}
+  <h1
+    data-type="{NODE_TYPE_H1}"
+    name="{node.get('id')}"
     class="filbert-section"
-    class:has-placeholder={shouldShowPlaceholder}
->
-  {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
-</h1>
+    class:has-placeholder="{shouldShowPlaceholder}"
+  >
+    {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
+  </h1>
+{:else}
+  <h1 class="filbert-section">
+    <slot />
+  </h1>
+{/if}

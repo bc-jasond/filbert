@@ -21,7 +21,7 @@
   } from '../../common/constants';
   import { Selection } from '../../common/utils';
 
-  let selectionHead = node.getIn(['meta', 'selections'], Selection());
+  const selectionHead = node.getIn(['meta', 'selections'], Selection());
   const contentPiecesBySelectionLength = getContentBySelections(node);
   const contentAndSelections = contentPiecesBySelectionLength.map((text, idx) => ({
     text,

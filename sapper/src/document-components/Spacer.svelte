@@ -18,9 +18,11 @@
   }
 </style>
 
-<section class="filbert-section"
-         class:edit-section-border={isEditing}
-         class:edit-hover-border={isEditMode}
-         data-type={NODE_TYPE_SPACER}
-         name={node.get('id')}
-         on:click="{() => {}}"></section>
+<section
+  class="filbert-section"
+  class:edit-section-border="{isEditing}"
+  class:edit-hover-border="{isEditMode}"
+  data-type="{NODE_TYPE_SPACER}"
+  name="{node.get('id')}"
+  on:click="{() => {}}"
+></section>
