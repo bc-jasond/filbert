@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
 
   import PostAvatar from './PostAvatar.svelte';
+  import PostImagePlaceholder from './PostImagePlaceholder.svelte';
   import Image from '../document-components/Image.svelte';
   import ExpandLink from '../layout-components/ExpandLink.svelte';
 
@@ -82,18 +83,22 @@
 </style>
 
 <div class="filbert-flex-grid post-row">
-  {#if post.getIn(['meta', 'imageNode'])}
-    <div class="image-col">
-      <a rel="prefetch" href="/public/{post.get('canonical')}">
+
+  <div class="image-col">
+    <a rel="prefetch" href="/public/{post.get('canonical')}">
+      {#if post.getIn(['meta', 'imageNode'])}
         <Image
           node="{post.getIn(['meta', 'imageNode'])}"
           hideBorder
           hideCaption
           postListOverride
         />
-      </a>
-    </div>
-  {/if}
+      {:else}
+        <PostImagePlaceholder postListOverride />
+      {/if}
+    </a>
+  </div>
+
   <div class="details-col">
     <a
       rel="prefetch"
