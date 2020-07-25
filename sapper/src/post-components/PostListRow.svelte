@@ -19,13 +19,21 @@
 <style>
   .post-row {
     max-width: var(--filbert-viewport7);
-    padding: 16px 0;
+    padding: 16px;
+    border: 1px solid transparent;
     border-top: 1px solid var(--background-color-secondary);
     align-items: center;
   }
-
   .post-row:last-of-type {
     margin-bottom: 42px;
+  }
+  .post-row:hover {
+    border-radius: 4px;
+    border: 1px solid var(--background-color-secondary);
+    box-shadow: var(--filbert-box-shadow-alt);
+  }
+  .post-row:hover + .post-row {
+    border: 1px solid transparent;
   }
 
   .image-col {

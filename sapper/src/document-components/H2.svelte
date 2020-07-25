@@ -1,5 +1,6 @@
 <script>
-  export let node;
+  import { Map } from 'immutable';
+  export let node = Map();
 
   import { NODE_TYPE_H2 } from '../common/constants';
   import { cleanTextOrZeroLengthPlaceholder } from '../common/utils';
@@ -18,6 +19,16 @@
   }
 </style>
 
-<h2 data-type="{NODE_TYPE_H2}" name="{node.get('id')}" class="filbert-section">
-  {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
-</h2>
+{#if node.size}
+  <h2
+    data-type="{NODE_TYPE_H2}"
+    name="{node.get('id')}"
+    class="filbert-section"
+  >
+    {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
+  </h2>
+{:else}
+  <h2 class="filbert-section">
+    <slot />
+  </h2>
+{/if}

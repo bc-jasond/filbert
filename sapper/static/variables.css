@@ -43,6 +43,7 @@ body {
     --accent-color-primary: var(--filbert-blue);
     --accent-color-secondary: var(--filbert-darkBlue);
     --filbert-box-shadow: 0 2px 4px 0 var(--filbert-mediumGrey);
+    --filbert-box-shadow-alt: 0 2px 4px 0 var(--filbert-lightGrey);
     --filbert-outline: 3px solid var(--filbert-blue);
     /* default mixed sans & serif style typography */
     --italic-font-family: var(--filbert-italic-serif);

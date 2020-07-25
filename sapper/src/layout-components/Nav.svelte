@@ -49,6 +49,7 @@
     z-index: 12;
     width: 100%;
     background: var(--background-color-primary);
+    border-bottom: 1px solid var(--background-color-secondary);
     opacity: 0.97;
     letter-spacing: 0;
     font-weight: 400;

@@ -128,6 +128,19 @@
     white-space: nowrap;
   }
 
+  :global(input) {
+    font-size: 18px;
+    font-weight: 400;
+    font-family: var(--code-font-family);
+    line-height: 36px;
+    border-radius: 2px;
+    border: 1px solid var(--filbert-grey);
+    padding: 2px 8px;
+  }
+  :global(input.error) {
+    border-color: var(--filbert-error);
+  }
+
   @media (min-width: 768px) {
     :global(.filbert-flex-grid) {
       display: flex;

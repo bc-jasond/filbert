@@ -18,11 +18,15 @@
     }
     return arr;
   }
-  const allPermutations = fisherYates(colorVars.flatMap((toColor) =>
-    colorVars.map((fromColor) =>
-      toColor !== fromColor ? [toColor, fromColor] : undefined
-    ).filter(v => v)
-  ));
+  const allPermutations = fisherYates(
+    colorVars.flatMap((toColor) =>
+      colorVars
+        .map((fromColor) =>
+          toColor !== fromColor ? [toColor, fromColor] : undefined
+        )
+        .filter((v) => v)
+    )
+  );
 
   let currentIndex = 0;
   function getNext() {

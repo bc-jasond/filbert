@@ -1,5 +1,6 @@
 <script>
   export let nextPostOverride = false;
+  export let fontWeightNormal = false;
 </script>
 
 <style>
@@ -20,8 +21,15 @@
     text-align: center;
     margin-bottom: 16px;
   }
+  .font-weight-normal {
+    font-weight: normal;
+  }
 </style>
 
-<h3 class="filbert-section" class:next-post-override="{nextPostOverride}">
+<h3
+  class="filbert-section"
+  class:next-post-override="{nextPostOverride}"
+  class:font-weight-normal="{fontWeightNormal}"
+>
   <slot />
 </h3>
