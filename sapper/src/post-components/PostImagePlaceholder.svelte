@@ -1,6 +1,4 @@
-<script>
-  export let postListOverride = false;
-
+<script context="module">
   const colorVars = [
     '--filbert-lightGrey',
     '--filbert-lightBlue',
@@ -20,7 +18,26 @@
     }
     return arr;
   }
-  const [toColor, fromColor] = fisherYates(colorVars);
+  const allPermutations = fisherYates(colorVars.flatMap((toColor) =>
+    colorVars.map((fromColor) =>
+      toColor !== fromColor ? [toColor, fromColor] : undefined
+    ).filter(v => v)
+  ));
+
+  let currentIndex = 0;
+  function getNext() {
+    const next = allPermutations[currentIndex++];
+    if (currentIndex === allPermutations.length) {
+      currentIndex = 0;
+    }
+    return next;
+  }
+</script>
+
+<script>
+  export let postListOverride = false;
+
+  const [toColor, fromColor] = getNext();
 </script>
 
 <style>
