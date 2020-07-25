@@ -28,7 +28,7 @@
     margin-bottom: 42px;
   }
   .post-row:hover {
-    border-radius: 4px;
+    border-radius: 2px;
     border: 1px solid var(--background-color-secondary);
     box-shadow: var(--filbert-box-shadow-alt);
   }
@@ -90,40 +90,31 @@
   }
 </style>
 
-<div class="filbert-flex-grid post-row">
-
+<a
+  class="filbert-flex-grid post-row filbert-link-alt"
+  rel="prefetch"
+  href="/public/{post.get('canonical')}"
+>
   <div class="image-col">
-    <a rel="prefetch" href="/public/{post.get('canonical')}">
-      {#if post.getIn(['meta', 'imageNode'])}
-        <Image
-          node="{post.getIn(['meta', 'imageNode'])}"
-          hideBorder
-          hideCaption
-          postListOverride
-        />
-      {:else}
-        <PostImagePlaceholder postListOverride />
-      {/if}
-    </a>
+    {#if post.getIn(['meta', 'imageNode'])}
+      <Image
+        node="{post.getIn(['meta', 'imageNode'])}"
+        hideBorder
+        hideCaption
+        postListOverride
+      />
+    {:else}
+      <PostImagePlaceholder postListOverride />
+    {/if}
   </div>
 
   <div class="details-col">
-    <a
-      rel="prefetch"
-      class="filbert-link-alt heading-link"
-      href="/public/{post.get('canonical')}"
-    >
-      {post.get('title')}
-    </a>
+    <span class="filbert-link-alt heading-link">{post.get('title')}</span>
     {#if post.get('abstract')}
       <div class="post-abstract-row">
-        <a
-          rel="prefetch"
-          class="filbert-link-alt abstract-link"
-          href="/public/{post.get('canonical')}"
-        >
+        <span class="filbert-link-alt abstract-link">
           {post.get('abstract')}
-        </a>
+        </span>
       </div>
     {/if}
     <div class="post-meta-row">
@@ -159,4 +150,4 @@
       </div>
     </div>
   </div>
-</div>
+</a>

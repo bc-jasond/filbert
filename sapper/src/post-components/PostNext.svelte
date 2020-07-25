@@ -14,6 +14,13 @@
 <style>
   .post-nav-col {
     margin-bottom: 32px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+  }
+  .post-nav-col:hover {
+    border-radius: 2px;
+    border: 1px solid var(--background-color-secondary);
+    box-shadow: var(--filbert-box-shadow-alt);
   }
 
   .image-container {
@@ -41,7 +48,10 @@
   }
 </style>
 
-<div class="filbert-col post-nav-col">
+<a
+  class="filbert-col filbert-link-alt post-nav-col"
+  href="/public/{post.get('canonical')}"
+>
 
   <ExpandLink url="/public/{post.get('canonical')}">
     <H3 nextPostOverride>
@@ -58,36 +68,26 @@
   </ExpandLink>
 
   <div class="image-container">
-    <a class="filbert-link-alt" href="/public/{post.get('canonical')}">
-      {#if post.getIn(['meta', 'imageNode'])}
-        <Image
-          node="{post.getIn(['meta', 'imageNode'])}"
-          hideBorder
-          hideCaption
-          viewPostOverride
-        />
-      {:else}
-        <PostImagePlaceholder />
-      {/if}
-    </a>
+
+    {#if post.getIn(['meta', 'imageNode'])}
+      <Image
+        node="{post.getIn(['meta', 'imageNode'])}"
+        hideBorder
+        hideCaption
+        viewPostOverride
+      />
+    {:else}
+      <PostImagePlaceholder />
+    {/if}
+
   </div>
   <div class="title-container">
-    <a
-      class="filbert-link-alt heading-link"
-      href="/public/{post.get('canonical')}"
-    >
-      {post.get('title')}
-    </a>
+    <span class="filbert-link-alt heading-link">{post.get('title')}</span>
   </div>
   <div class="abstract-container">
-    <a
-      class="filbert-link-alt abstract-link"
-      href="/public/{post.get('canonical')}"
-    >
-      {post.get('abstract')}
-    </a>
+    <span class="filbert-link-alt abstract-link">{post.get('abstract')}</span>
   </div>
   <div class="post-avatar-container">
     <PostAvatar {post} showHandle />
   </div>
-</div>
+</a>

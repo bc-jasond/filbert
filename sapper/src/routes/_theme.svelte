@@ -72,7 +72,7 @@
       currentColor 0
     );
     background-size: 1px 1px;
-    background-position: 0 calc(1em + 1px);
+    background-position: 0 calc(1em + 2px);
   }
 
   :global(.filbert-link):hover {
