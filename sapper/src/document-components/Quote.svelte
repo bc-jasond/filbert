@@ -22,7 +22,7 @@
   }
   .drop-cap {
     font-size: 48px;
-    line-height: 48px;
+    line-height: 60px;
     float: left;
     position: relative;
   }
@@ -37,24 +37,23 @@
 </style>
 
 <section
-    class="filbert-section content-section"
-    data-type="{NODE_TYPE_QUOTE}"
-    name="{id}"
+  class="filbert-section content-section"
+  data-type="{NODE_TYPE_QUOTE}"
+  name="{id}"
 >
-  <div class="wrapper"
-      class:edit-section-border="{isEditing}"
-      class:edit-hover-border="{isEditMode}"
-      on:click="{() => {}}"
+  <div
+    class="wrapper"
+    class:edit-section-border="{isEditing}"
+    class:edit-hover-border="{isEditMode}"
+    on:click="{() => {}}"
   >
     <span class="drop-cap">{'💡'}</span>
-    <em class="italic-text">
-      {quote && `"${quote}"`}
-    </em>
+    <em class="italic-text">{quote && `"${quote}"`}</em>
     <div class="quote-context-container">
-    <a class="filbert-link" target="_blank" href="{url}">
-      {author && `-${author}`}
-    </a>
-    <span class="mini-text">{context && ` ${context}`}</span>
+      <a class="filbert-link" target="_blank" href="{url}">
+        {author && `-${author}`}
+      </a>
+      <span class="mini-text">{context && ` ${context}`}</span>
     </div>
   </div>
 </section>

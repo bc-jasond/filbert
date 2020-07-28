@@ -145,7 +145,7 @@
         alt="{meta.get('caption')}"
       />
     </div>
-    {#if !hideCaption}
+    {#if meta.get('caption') && !hideCaption}
       <figcaption class="mini-text">{meta.get('caption')}</figcaption>
     {/if}
   </figure>

@@ -5,11 +5,37 @@
   import { formatPostDate } from '../../common/utils';
   import { loading } from '../../stores';
 
-  export function preload(page, session, preloading) {
-    const { path, params, query } = page;
-    loading.set(true);
+  let fetchInternal;
 
-    const responsePromise = this.fetch(`${API_URL}/post`)
+  let oldestFilterIsSelected;
+  let randomFilterIsSelected;
+  let usernameFilterIsSelected;
+  let username = '';
+
+  function pushHistory(param, value) {
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    if (value) {
+      urlSearchParams.set(param, value === true ? '' : value)
+    } else {
+      urlSearchParams.delete(param);
+    }
+    const updatedQueryString =
+        urlSearchParams.toString().length > 0 ? `?${urlSearchParams.toString()}` : '';
+    // update the URL in history for the user to retain
+    window.history.pushState(
+        {},
+        document.title,
+        `${window.location.pathname}${updatedQueryString}`
+    );
+    return urlSearchParams;
+  }
+
+  function loadPosts(urlSearchParams) {
+    loading.set(true);
+    const params = urlSearchParams.toString();
+    const queryString =
+        params.length > 0 ? `?${params}` : '';
+    return fetchInternal(`${API_URL}/post${queryString}`)
         .then(response => response.json())
         .then(postsData => {
           return {
@@ -21,39 +47,58 @@
           }
         })
         .finally(() => loading.set(false))
+  }
+
+  export function preload(page, session, preloading) {
+    const { path, params, query = {} } = page;
+    fetchInternal = this.fetch;
+
+    const responsePromise = loadPosts(new URLSearchParams(query))
 
     return {
       responsePromise,
+      oldestFilterIsSelected: query.oldest !== undefined,
+      randomFilterIsSelected: false,
+      usernameFilterIsSelected: query.username,
+      username: query.username || '',
     };
   }
 </script>
 
 <script>
   export let responsePromise;
+  export let oldestFilterIsSelected;
+  export let randomFilterIsSelected;
+  export let usernameFilterIsSelected;
+  export let username = '';
 
   import H2 from '../../document-components/H2.svelte';
   import H1 from '../../document-components/H1.svelte';
   import H3 from '../../document-components/H3.svelte';
   import PostListRow from '../../post-components/PostListRow.svelte';
 
-  let oldestFilterIsSelected;
   function toggleOldestFilter() {
     oldestFilterIsSelected = !oldestFilterIsSelected;
+    const updatedUrlSearchParams = pushHistory('oldest', oldestFilterIsSelected);
+    responsePromise = loadPosts(updatedUrlSearchParams);
   }
-  let randomFilterIsSelected;
-  function toggleRandomFilter() {}
-  let usernameFilterIsSelected;
+  function toggleRandomFilter() {/*TODO*/}
   let usernameInputDomNode;
   function toggleUsernameFilter() {
     username = '';
+    const updatedUrlSearchParams = pushHistory('username', username);
     usernameFilterIsSelected = !usernameFilterIsSelected;
     if (usernameFilterIsSelected) {
       usernameInputDomNode.focus();
+    } else {
+      responsePromise = loadPosts(updatedUrlSearchParams);
     }
   }
-  let username = '';
   function updateUsername(e) {
     username = e.target.value;
+    pushHistory('username', username);
+    const updatedUrlSearchParams = pushHistory('username', username);
+    responsePromise = loadPosts(updatedUrlSearchParams);
   }
 </script>
 
@@ -128,9 +173,6 @@
   }
 </style>
 
-{#await responsePromise}
-  <p>...public</p>
-{:then {posts}}
 <div class="base-row">
   <H1>Public Articles</H1>
   <H3 fontWeightNormal>
@@ -145,7 +187,7 @@
   </H3>
 </div>
 <div class="base-row">
-  <H2 fontWeightNormal>Filter by:</H2>
+  <H2>Filter by:</H2>
   <div class="filbert-flex-grid">
     <div class="filbert-col col-filter">
       <button class="filbert-nav-button" class:open={!oldestFilterIsSelected} on:click={toggleOldestFilter}>
@@ -168,12 +210,25 @@
           name="username"
           type="text"
           autoComplete="off"
-          minLength="5"
-          maxLength="42"
+          minlength="5"
+          maxlength="42"
       />
     </div>
   </div>
 </div>
+{#await responsePromise}
+  <p>...public</p>
+{:then {posts}}
+  {#if posts && !posts.length}
+    <div class="base-row">
+      <h3 class="filbert-section heading-link">
+        <span role="img" aria-label="crying face">
+                      😢
+                    </span>{' '}
+        Nada. 没有. Rien. ничего. Nothing. ナッシング...
+      </h3>
+    </div>
+  {/if}
   {#each posts as post}
     <PostListRow {post} />
   {/each}

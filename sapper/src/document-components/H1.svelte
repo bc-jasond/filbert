@@ -5,7 +5,7 @@
   import { cleanTextOrZeroLengthPlaceholder } from '../common/utils';
 
   export let node = Map();
-  export let shouldShowPlaceholder;
+  export let shouldShowPlaceholder = false;
 </script>
 
 <style>
