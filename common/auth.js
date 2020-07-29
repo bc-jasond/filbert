@@ -1,4 +1,4 @@
-const { decrypt } = require('../lib/cipher');
+const { decrypt } = require('./cipher');
 /**
  * TODO: implement refresh_token hybrid frontend/server-side flow
  *  https://developers.google.com/identity/sign-in/web/server-side-flow
@@ -33,7 +33,7 @@ async function parseAuthorizationHeader(req, res, next) {
       }
       req.loggedInUser = decryptedToken;
     }
-    //console.info("no Authorization header found.")
+    //console.info("no Authorization header found, continuing...")
     next();
   } catch (err) {
     console.error('Authorization header Error, continuing anyway...', err);

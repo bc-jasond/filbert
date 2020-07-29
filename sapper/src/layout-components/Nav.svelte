@@ -1,0 +1,159 @@
+<script>
+  export let segment;
+  export let navHeight = 0; // will be bound to in _layout.svelte via "bind:navHeight".  Initializing here so svelte doesn't complain
+
+  import { onMount } from 'svelte';
+  import { goto } from '@sapper/app';
+  import { Map } from 'immutable';
+
+  import HeaderLogo from './HeaderLogo.svelte';
+  import {
+    SANS_FONT_THEME,
+    DARK_MODE_THEME,
+    PAGE_NAME_EDIT,
+    PAGE_NAME_VIEW,
+  } from '../common/constants';
+
+  // workaround for SSR to avoid calling "window" global on the server
+  // onMount won't run on the server
+  let manageUrl;
+  onMount(async () => {
+    const { createNextUrl } = await import('../common/dom.js');
+    manageUrl = createNextUrl(`/manage/${post.get('id')}`);
+  });
+
+  let session = Map();
+  let post = Map();
+  let userIsMe = false;
+  let theme = '';
+  let themeButtonDisplay = theme === DARK_MODE_THEME ? '☀️' : '🌑';
+  let font = '';
+  let fontButtonDisplay = font === SANS_FONT_THEME ? '🖋' : '✏️';
+
+  const shouldShowManagePost = segment === PAGE_NAME_EDIT && post.get('id');
+  const shouldShowEdit = segment === PAGE_NAME_VIEW && post.get('canEdit');
+  const shouldShowNew = segment !== PAGE_NAME_EDIT || post.get('id');
+  const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
+
+  function handleSignout() {
+    if (confirm('Sign out?')) {
+      goto('/signout');
+    }
+  }
+</script>
+
+<style>
+  header {
+    position: fixed;
+    box-sizing: border-box;
+    z-index: 12;
+    width: 100%;
+    background: var(--background-color-primary);
+    border-bottom: 1px solid var(--background-color-secondary);
+    opacity: 0.97;
+    letter-spacing: 0;
+    font-weight: 400;
+    font-style: normal;
+    top: 0;
+  }
+
+  /* used as a container for the left logo and menu items on the right */
+  nav {
+    min-height: var(--filbert-nav-height);
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: 0 auto;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-scroll {
+    overflow-x: auto;
+  }
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  button,
+  a {
+    font-family: var(--code-font-family), monospaced;
+    color: var(--filbert-grey);
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 18px;
+    line-height: 24px;
+    padding: 14px 18px;
+    border-radius: 26px;
+    border: 1px solid transparent;
+    transition: background-color 0.125s, color 0.125s;
+    flex-grow: 0;
+  }
+
+  button:hover,
+  a:hover {
+    color: var(--filbert-abramovTextWhite);
+    background-color: var(--accent-color-primary);
+    box-shadow: var(--filbert-box-shadow);
+  }
+
+  @media (min-width: 768px) {
+    header {
+      display: flex;
+      align-items: center;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+
+    nav {
+      display: flex;
+      margin: 0;
+    }
+  }
+</style>
+
+<header bind:clientHeight="{navHeight}">
+  <nav class="nav-logo">
+    <HeaderLogo />
+  </nav>
+  <nav class="nav-scroll">
+    <div class="nav-actions">
+      <button title="font style" on:click="{() => {}}">
+        {fontButtonDisplay}
+      </button>
+      <button title="dark mode" on:click="{() => {}}">
+        {themeButtonDisplay}
+      </button>
+      {#if session.size}
+        {#if shouldShowManagePost}
+          <a href="{manageUrl}">manage</a>
+        {/if}
+        {#if shouldShowEdit}
+          <a href="/edit/{post.get('id')}">edit</a>
+        {/if}
+        {#if shouldShowNew}
+          <a href="/edit/new">new</a>
+        {/if}
+        {#if shouldShowPublic}
+          <a rel="prefetch" href="/p">public</a>
+        {/if}
+        <a href="/private">private</a>
+        {#if userIsMe}
+          <button id="signed-in-user" on:click="{handleSignout}">
+            sign out
+          </button>
+        {:else}
+          <a data-test-id="signed-in-user" href="/me">
+            {session.get('username')}
+          </a>
+        {/if}
+      {:else}
+        <a rel="prefetch" href="/public">public</a>
+        <a data-test-id="signed-in-user" href="/signin">join or sign in</a>
+      {/if}
+    </div>
+  </nav>
+</header>

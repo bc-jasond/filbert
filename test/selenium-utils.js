@@ -46,7 +46,7 @@ async function ensureSignedIn(driver) {
   // check header for Signed in user name
   await driver.get(getUrl('/'));
   let loggedInUserLink = await driver.wait(
-    until.elementLocated(By.id('signed-in-user')),
+    until.elementLocated(By.css('[data-test-id="signed-in-user"]')),
     10000
   );
   const linkText = await loggedInUserLink.getText();
@@ -59,7 +59,10 @@ async function ensureSignedIn(driver) {
   await driver.findElement(By.name('username')).sendKeys(username);
   await driver.findElement(By.name('password')).sendKeys(password);
   await driver.findElement(By.css('[type="submit"]')).click();
-  return driver.wait(until.elementLocated(By.id('signed-in-user')), 10000);
+  return driver.wait(
+    until.elementLocated(By.css('[data-test-id="signed-in-user"]')),
+    10000
+  );
 }
 
 function ensureSignedOut() {

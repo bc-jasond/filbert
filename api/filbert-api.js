@@ -12,7 +12,7 @@ const { assertUserHasPost } = require('./lib/post-util');
 const {
   parseAuthorizationHeader,
   assertLoggedInUser,
-} = require('./routes/auth');
+} = require('../common/auth');
 const { postSignin, postSigninGoogle } = require('./routes/signin');
 const { getUser, patchProfile, getStats } = require('./routes/user');
 const {

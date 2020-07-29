@@ -1,4 +1,4 @@
-const { encrypt } = require('./cipher');
+const { encrypt } = require('../../common/cipher');
 
 function sendSession(res, user) {
   res.send({
