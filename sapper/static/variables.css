@@ -31,6 +31,8 @@
     --filbert-italic-serif-alt: 'filbert-italic-alt';
     --filbert-sans-serif-alt: 'filbert-sans-alt';
     --filbert-monospaced-alt: 'filbert-monospace-alt';
+    /* transition */
+    --filbert-bezier: '0.3s cubic-bezier(0.175, 0.885, 0.320, 1.275)';
 }
 body {
     /* default light theme */
