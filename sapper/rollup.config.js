@@ -12,6 +12,26 @@ const dev = mode === 'development';
 
 const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && /[/\\]@sapper[/\\]/.test(warning.message)) || onwarn(warning);
 
+const babelConfig = {
+	extensions: ['.js', '.mjs', '.html', '.svelte'],
+	babelHelpers: 'runtime',
+	exclude: ['node_modules/@babel/**'],
+	presets: [
+		['@babel/preset-env', {
+			targets: {
+				node: "current",
+			}
+		}]
+	],
+	plugins: [
+		"@babel/plugin-proposal-optional-chaining",
+		'@babel/plugin-syntax-dynamic-import',
+		['@babel/plugin-transform-runtime', {
+			useESModules: true
+		}]
+	]
+};
+
 export default {
 	client: {
 		input: config.client.input(),
@@ -33,25 +53,7 @@ export default {
 			}),
 			commonjs(),
 
-			babel({
-				extensions: ['.js', '.mjs', '.html', '.svelte'],
-				babelHelpers: 'runtime',
-				exclude: ['node_modules/@babel/**'],
-				presets: [
-					['@babel/preset-env', {
-						targets: {
-							node: "current",
-						}
-					}]
-				],
-				plugins: [
-					"@babel/plugin-proposal-optional-chaining",
-					'@babel/plugin-syntax-dynamic-import',
-					['@babel/plugin-transform-runtime', {
-						useESModules: true
-					}]
-				]
-			}),
+			babel(babelConfig),
 
 			!dev && terser({
 				module: true
@@ -78,7 +80,8 @@ export default {
 			resolve({
 				dedupe: ['svelte']
 			}),
-			commonjs()
+			commonjs(),
+			babel(babelConfig),
 		],
 		external: Object.keys(pkg.dependencies).concat(
 			require('module').builtinModules || Object.keys(process.binding('natives'))

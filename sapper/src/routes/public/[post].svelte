@@ -3,15 +3,15 @@
 
   import { API_URL } from '../../common/constants';
   import { formatPostDate, reviver } from '../../common/utils';
+  import { getApiClientInstance } from '../../common/api-client';
   import { loading } from '../../stores';
 
   export function preload(page, session, preloading) {
     const { path, params, query } = page;
     loading.set(true);
 
-    const responsePromise = this.fetch(`${API_URL}/post/${params.post}`)
-        .then(response => response.json())
-        .then(( { prevPost, nextPost, post, contentNodes } ) => {
+    const responsePromise = getApiClientInstance(this.fetch).get(`${API_URL}/post/${params.post}`)
+        .then(( {error, data: { prevPost, nextPost, post, contentNodes } = {}} ) => {
           prevPost.published = formatPostDate(prevPost.published);
           nextPost.published = formatPostDate(nextPost.published);
           post.published = formatPostDate(post.published);

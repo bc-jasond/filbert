@@ -2,19 +2,21 @@ const knex = require('knex');
 
 const { wrapExec } = require('./util');
 
-let knexConnection;
+export const connectionConfig = {
+  host: process.env.NODE_ENV === 'production' ? 'db' : 'localhost', // docker-compose.yml service name
+  port: 3306,
+  user: 'root',
+  password: process.env.MYSQL_ROOT_PASSWORD,
+  database: 'filbert',
+}
 
+let knexConnection;
 export async function getKnex() {
   if (!knexConnection) {
     console.info('Connecting to MySQL...');
     knexConnection = knex({
       client: 'mysql2',
-      connection: {
-        host: process.env.NODE_ENV === 'production' ? 'db' : 'localhost', // docker-compose.yml service name
-        user: 'root',
-        password: process.env.MYSQL_ROOT_PASSWORD,
-        database: 'filbert',
-      },
+      connection: connectionConfig,
       asyncStackTraces: true,
       debug: true,
     });
@@ -174,7 +176,7 @@ export async function getPostByCanonicalHelper(canonical, loggedInUser) {
     post.canDelete = loggedInUser.id === post.userId;
     post.canPublish = loggedInUser.id === post.userId;
   }
-  if (!post.userProfileIsPublic && loggedInUser.id !== post.userId) {
+  if (!post.userProfileIsPublic && (!loggedInUser || loggedInUser.id !== post.userId)) {
     delete post.profilePictureUrl;
     delete post.familyName;
     delete post.givenName;

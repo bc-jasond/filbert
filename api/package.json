@@ -27,6 +27,8 @@
     "cors": "^2.8.5",
     "esm": "^3.2.25",
     "express": "^4.16.4",
+    "express-mysql-session": "^2.1.4",
+    "express-session": "^1.17.1",
     "figlet": "^1.2.4",
     "google-auth-library": "^5.7.0",
     "immutable": "^4.0.0-rc.12",

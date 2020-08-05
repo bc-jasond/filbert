@@ -42,7 +42,7 @@ async function parseAuthorizationHeader(req, res, next) {
 }
 
 async function assertLoggedInUser(req, res, next) {
-  if (!req.loggedInUser) {
+  if (!req.session.isSignedIn && !req.session.user) {
     console.error(
       'no loggedInUser found, stopping',
       req.method,

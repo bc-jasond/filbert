@@ -3,9 +3,10 @@
 
   import { API_URL } from '../../common/constants';
   import { formatPostDate } from '../../common/utils';
+  import { getApiClientInstance } from '../../common/api-client';
   import { loading } from '../../stores';
 
-  let fetchInternal;
+  let apiClient;
 
   let oldestFilterIsSelected;
   let randomFilterIsSelected;
@@ -35,9 +36,8 @@
     const params = urlSearchParams.toString();
     const queryString =
         params.length > 0 ? `?${params}` : '';
-    return fetchInternal(`${API_URL}/post${queryString}`)
-        .then(response => response.json())
-        .then(postsData => {
+    return apiClient.get(`${API_URL}/post${queryString}`)
+        .then(({error, data: postsData}) => {
           return {
             posts: postsData.map((post) => fromJS({
               ...post,
@@ -51,7 +51,7 @@
 
   export function preload(page, session, preloading) {
     const { path, params, query = {} } = page;
-    fetchInternal = this.fetch;
+    apiClient = getApiClientInstance(this.fetch);
 
     const responsePromise = loadPosts(new URLSearchParams(query))
 

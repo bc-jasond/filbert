@@ -2,17 +2,22 @@
 require = require('esm')(module /*, options*/);
 
 const express = require('express');
+const session = require('express-session');
+const MysqlStore = require('express-mysql-session')(session);
 const cors = require('cors');
 const multer = require('multer');
 const chalk = require('chalk');
 
+const { FILBERT_SESSION_COOKIE_NAME } = require('../common/constants');
+const {
+  assertLoggedInUser,
+} = require('../common/auth');
+const { ENCRYPTION_KEY } = require('../common/cipher');
+const { connectionConfig } = require('./lib/mysql');
 const { saneEnvironmentOrExit } = require('./lib/util');
 const { assertUserHasPost } = require('./lib/post-util');
 
-const {
-  parseAuthorizationHeader,
-  assertLoggedInUser,
-} = require('../common/auth');
+
 const { postSignin, postSigninGoogle } = require('./routes/signin');
 const { getUser, patchProfile, getStats } = require('./routes/user');
 const {
@@ -37,6 +42,7 @@ const { duplicatePost } = require('./routes/duplicate');
 
 async function main() {
   try {
+    const sessionStore = new MysqlStore(connectionConfig)
     const storage = multer.memoryStorage();
     const upload = multer({
       storage, // TODO: store in memory as Buffer - bad idea?
@@ -49,12 +55,23 @@ async function main() {
 
     const app = express();
     app.use(express.json());
-    app.use(cors(/* TODO: whitelist *.filbert.xyz in PRODUCTION */));
-
+    app.use(cors(
+      /* TODO: whitelist *.filbert.xyz in PRODUCTION */
+      {
+        origin: 'http://localhost:3000',
+        credentials: true,
+      }
+    ));
     /**
-     * add logged in user to req object if present
+     * initialize session, will add logged in user to req object if present
      */
-    app.use(parseAuthorizationHeader);
+    app.use(session({
+      key: FILBERT_SESSION_COOKIE_NAME,
+      secret: ENCRYPTION_KEY,
+      store: sessionStore,
+      resave: false,
+      saveUninitialized: false,
+    }))
 
     /**
      * PUBLIC routes - be careful...

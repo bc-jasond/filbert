@@ -42,9 +42,6 @@
     .image-container {
       max-height: 250px;
     }
-    .placeholder-image {
-      height: 250px;
-    }
   }
 </style>
 

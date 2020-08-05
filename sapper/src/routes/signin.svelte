@@ -1,4 +1,5 @@
 <script>
+  import { loading } from '../stores';
   import ButtonSpinner from '../form-components/ButtonSpinner.svelte';
 
   import ProfileImg from '../user-components/ProfileImg.svelte';
@@ -7,26 +8,33 @@
   import H3 from '../document-components/H3.svelte';
   import GoogleLogoSvg from '../icons/google-logo.svelte';
 
-  function doLoginGoogle() {}
+  function doLoginGoogle() {
+    $loading = true;
+    console.log('farts');
+  }
 
   function doLogout() {}
 
-  function updateUsername(event) {
-    const {
-      target: { value },
-    } = event;
-    username = value.replace(/[^0-9a-z]/g, '');
+  $: {
+    usernameValue = usernameValue.replace(/[^0-9a-z]/g, '').slice(0, 42);
+    username = usernameValue;
+    usernameIsInvalid = username.length < 5 || username.length > 42;
+    error = undefined;
+    success = undefined;
   }
 
   let usernameInputDomNode;
   let imageUrl;
   let name;
   let email;
-  let username;
+  let usernameValue = '';
+  let username = '';
+  let usernameIsInvalid = false;
   let givenName;
   let shouldShowUsernameInput = true;
   let error;
   let success;
+  let GoogleAuth;
 </script>
 
 <style>
@@ -90,12 +98,10 @@
   }
 
   .success {
-    font-family: inherit;
     color: var(--filbert-success);
   }
 
   .error {
-    font-family: inherit;
     color: var(--filbert-error);
   }
 
@@ -117,7 +123,7 @@
 </style>
 
 <section>
-  <form on:submit="{doLoginGoogle}">
+  <form on:submit|preventDefault="{doLoginGoogle}">
     <div class="centered">
       <H1>Sign In</H1>
     </div>
@@ -139,17 +145,16 @@
         <span class="choose-username-info">Choose a filbert username.</span>
       </H3>
       <div class="input-container">
-        <label htmlFor="username" class:error>
+        <label htmlFor="username" class:error="{error || usernameIsInvalid}">
           filbert username (lowercase letters a-z and numbers 0-9 only, length 5
           to 42 characters)
         </label>
         <input
+          class:error="{error || usernameIsInvalid}"
+          bind:value="{usernameValue}"
+          bind:this="{usernameInputDomNode}"
           name="username"
           type="text"
-          value="{username}"
-          on:input="{updateUsername}"
-          class:error
-          bind:this="{usernameInputDomNode}"
           autoComplete="off"
           minLength="5"
           maxLength="42"
