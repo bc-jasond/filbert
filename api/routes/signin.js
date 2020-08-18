@@ -1,5 +1,7 @@
 const { OAuth2Client } = require('google-auth-library');
 
+const { FILBERT_SESSION_COOKIE_NAME } = require('@filbert/lib');
+
 const { getKnex } = require('../lib/mysql');
 const { sendSession } = require('../lib/session');
 const { checkPassword } = require('../lib/admin');
@@ -104,7 +106,15 @@ async function postSigninGoogle(req, res) {
   }
 }
 
+async function postSignout(req, res) {
+  console.log('signout', req.session.id, req.session);
+  req.session.destroy(() => {
+    res.send({});
+  });
+}
+
 module.exports = {
   postSignin,
   postSigninGoogle,
+  postSignout,
 };

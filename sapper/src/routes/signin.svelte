@@ -1,5 +1,9 @@
 <script>
-  import { loading } from '../stores';
+  import { goto, stores } from '@sapper/app';
+  import { loading, GoogleAuth } from '../stores';
+  import { getGoogleUser } from '../common/google-auth';
+  import { getApiClientInstance } from '../common/api-client';
+
   import ButtonSpinner from '../form-components/ButtonSpinner.svelte';
 
   import ProfileImg from '../user-components/ProfileImg.svelte';
@@ -8,12 +12,72 @@
   import H3 from '../document-components/H3.svelte';
   import GoogleLogoSvg from '../icons/google-logo.svelte';
 
-  function doLoginGoogle() {
-    $loading = true;
-    console.log('farts');
+  const { session } = stores();
+
+  let usernameInputDomNode;
+  let usernameValue = '';
+  let username = '';
+  let usernameIsInvalid = false;
+  let shouldShowUsernameInput;
+  let error;
+  let success;
+  let currentGoogleUser = {};
+  let signinLoading = false;
+
+  GoogleAuth.subscribe((auth) => {
+    if (auth?.isSignedIn?.get?.()) {
+      currentGoogleUser = getGoogleUser(auth?.currentUser?.get?.());
+    } else {
+      currentGoogleUser = {};
+    }
+  });
+
+  async function doLoginGoogle() {
+    success = undefined;
+    error = undefined;
+    signinLoading = true;
+
+    if (!currentGoogleUser.idToken) {
+      // open google window to let the user select a user to login as, or to grant access
+      try {
+        const user = await $GoogleAuth.signIn();
+        currentGoogleUser = getGoogleUser(user);
+      } catch(err) {
+        error = err;
+        return;
+      }
+    }
+    const {
+      error: errorApi,
+      signupIsIncomplete,
+      ...filbertUser
+    } = await getApiClientInstance(fetch).signinGoogle(currentGoogleUser, username);
+    if (errorApi) {
+      success = undefined;
+      error = errorApi?.error || errorApi?.message || 'Error';
+      signinLoading = false;
+      return;
+    }
+    if (signupIsIncomplete) {
+      shouldShowUsernameInput = true;
+      error = undefined;
+      success = undefined;
+      signinLoading = false;
+      usernameInputDomNode.focus();
+      return;
+    }
+    session.set({ ...session, user: filbertUser });
+    success = 'All set 👍';
+    error = undefined;
+    setTimeout(() => {
+      // let some time pass to show the success message
+      goto('/public/homepage');
+    }, 400);
   }
 
-  function doLogout() {}
+  function doLogout() {
+    $GoogleAuth.signOut();
+  }
 
   $: {
     usernameValue = usernameValue.replace(/[^0-9a-z]/g, '').slice(0, 42);
@@ -22,19 +86,6 @@
     error = undefined;
     success = undefined;
   }
-
-  let usernameInputDomNode;
-  let imageUrl;
-  let name;
-  let email;
-  let usernameValue = '';
-  let username = '';
-  let usernameIsInvalid = false;
-  let givenName;
-  let shouldShowUsernameInput = true;
-  let error;
-  let success;
-  let GoogleAuth;
 </script>
 
 <style>
@@ -127,12 +178,12 @@
     <div class="centered">
       <H1>Sign In</H1>
     </div>
-    {#if imageUrl && name && email}
+    {#if currentGoogleUser.imageUrl && currentGoogleUser.name && currentGoogleUser.email}
       <div class="google-info">
-        <ProfileImg src="{imageUrl}" />
-        <span class="google-info-span">{name}</span>
+        <ProfileImg src="{currentGoogleUser.imageUrl}" />
+        <span class="google-info-span">{currentGoogleUser.name}</span>
         <span class="google-info-span">
-          <span class="email">{email}</span>
+          <span class="email">{currentGoogleUser.email}</span>
         </span>
       </div>
     {/if}
@@ -145,7 +196,7 @@
         <span class="choose-username-info">Choose a filbert username.</span>
       </H3>
       <div class="input-container">
-        <label htmlFor="username" class:error="{error || usernameIsInvalid}">
+        <label for="username" class:error="{error || usernameIsInvalid}">
           filbert username (lowercase letters a-z and numbers 0-9 only, length 5
           to 42 characters)
         </label>
@@ -175,15 +226,16 @@
       id="google-sign-in-button"
       type="submit"
       primary
-      label="{givenName || shouldShowUsernameInput ? `Continue as ${shouldShowUsernameInput ? username : givenName}` : 'Sign in to filbert with Google'}"
+      label="{currentGoogleUser.givenName || shouldShowUsernameInput ? `Continue as ${shouldShowUsernameInput ? username : currentGoogleUser.givenName}` : 'Sign in to filbert with Google'}"
+      loading="{signinLoading}"
     >
       <GoogleLogoSvg />
     </ButtonSpinner>
-    {#if !shouldShowUsernameInput && givenName}
+    {#if !shouldShowUsernameInput && currentGoogleUser.givenName}
       <button
         class="filbert-nav-button cancel"
         type="button"
-        onClick="{doLogout}"
+        on:click="{doLogout}"
       >
         <span class="button-span">Logout</span>
       </button>

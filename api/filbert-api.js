@@ -8,17 +8,20 @@ const cors = require('cors');
 const multer = require('multer');
 const chalk = require('chalk');
 
-const { FILBERT_SESSION_COOKIE_NAME } = require('../common/constants');
 const {
+  FILBERT_SESSION_COOKIE_NAME,
   assertLoggedInUser,
-} = require('../common/auth');
-const { ENCRYPTION_KEY } = require('../common/cipher');
-const { connectionConfig } = require('./lib/mysql');
+  ENCRYPTION_KEY,
+  mysqlConnectionConfig,
+} = require('@filbert/lib');
 const { saneEnvironmentOrExit } = require('./lib/util');
 const { assertUserHasPost } = require('./lib/post-util');
 
-
-const { postSignin, postSigninGoogle } = require('./routes/signin');
+const {
+  postSignin,
+  postSigninGoogle,
+  postSignout,
+} = require('./routes/signin');
 const { getUser, patchProfile, getStats } = require('./routes/user');
 const {
   getPosts,
@@ -42,7 +45,7 @@ const { duplicatePost } = require('./routes/duplicate');
 
 async function main() {
   try {
-    const sessionStore = new MysqlStore(connectionConfig)
+    const sessionStore = new MysqlStore(mysqlConnectionConfig);
     const storage = multer.memoryStorage();
     const upload = multer({
       storage, // TODO: store in memory as Buffer - bad idea?
@@ -55,29 +58,39 @@ async function main() {
 
     const app = express();
     app.use(express.json());
-    app.use(cors(
-      /* TODO: whitelist *.filbert.xyz in PRODUCTION */
-      {
-        origin: 'http://localhost:3000',
-        credentials: true,
-      }
-    ));
+    app.use(
+      cors(
+        /* TODO: whitelist *.filbert.xyz in PRODUCTION */
+        {
+          origin: 'http://localhost:3000',
+          credentials: true,
+        }
+      )
+    );
     /**
-     * initialize session, will add logged in user to req object if present
+     * initialize session, available at req.session
      */
-    app.use(session({
-      key: FILBERT_SESSION_COOKIE_NAME,
-      secret: ENCRYPTION_KEY,
-      store: sessionStore,
-      resave: false,
-      saveUninitialized: false,
-    }))
+    app.use(
+      session({
+        key: FILBERT_SESSION_COOKIE_NAME,
+        secret: ENCRYPTION_KEY,
+        store: sessionStore,
+        resave: false,
+        saveUninitialized: false,
+      })
+    );
+    
+    app.use((req, res, next) => {
+      console.log("API", ENCRYPTION_KEY, req.session.id, req.session)
+      next()
+    })
 
     /**
      * PUBLIC routes - be careful...
      */
     app.post('/signin', postSignin);
     app.post('/signin-google', postSigninGoogle);
+    app.post('/signout', postSignout);
     app.get('/user/:username', getUser);
     app.get('/user-stats/:username', getStats);
     app.get('/post', getPosts);

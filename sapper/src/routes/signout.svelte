@@ -1,11 +1,24 @@
 <script context="module">
+  import { getApiClientInstance } from '../common/api-client';
+
   export async function preload(page, session) {
-    // TODO: call API /signout
+    const { error } = await getApiClientInstance(this.fetch).post('/signout')
+
+    return { error };
   }
 </script>
 
 <script>
+  import { stores } from '@sapper/app';
   import H1 from '../document-components/H1.svelte';
+
+  const { session } = stores();
+
+  let error;
+
+  if (!error) {
+    session.set({})
+  }
 </script>
 
 <style>
@@ -21,11 +34,15 @@
   }
 </style>
 
-<div class="test">
+<div>
   <H1>
     <span class="bigger">
-      You're logged out
-      <span role="img" aria-label="hand waving bye">👋</span>
+      {#if error}
+        Signout failed, refresh the page
+      {:else}
+        You're logged out
+        <span role="img" aria-label="hand waving bye">👋</span>
+      {/if}
     </span>
   </H1>
 </div>

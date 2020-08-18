@@ -12,6 +12,12 @@ const dev = mode === 'development';
 
 const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && /[/\\]@sapper[/\\]/.test(warning.message)) || onwarn(warning);
 
+const env = {
+	'process.env.NODE_ENV': JSON.stringify(mode),
+	'process.env.API_URL': JSON.stringify(process.env.API_URL),
+	'process.env.GOOGLE_API_FILBERT_CLIENT_ID': JSON.stringify(process.env.GOOGLE_API_FILBERT_CLIENT_ID)
+}
+
 const babelConfig = {
 	extensions: ['.js', '.mjs', '.html', '.svelte'],
 	babelHelpers: 'runtime',
@@ -32,15 +38,14 @@ const babelConfig = {
 	]
 };
 
-export default {
+module.exports = {
 	client: {
 		input: config.client.input(),
 		output: config.client.output(),
 		plugins: [
 			replace({
 				'process.browser': true,
-				'process.env.NODE_ENV': JSON.stringify(mode),
-				'process.env.API_URL': JSON.stringify(process.env.API_URL)
+				...env
 			}),
 			svelte({
 				dev,
@@ -70,8 +75,7 @@ export default {
 		plugins: [
 			replace({
 				'process.browser': false,
-				'process.env.NODE_ENV': JSON.stringify(mode),
-				'process.env.API_URL': JSON.stringify(process.env.API_URL)
+				...env
 			}),
 			svelte({
 				generate: 'ssr',
@@ -98,8 +102,7 @@ export default {
 			resolve(),
 			replace({
 				'process.browser': true,
-				'process.env.NODE_ENV': JSON.stringify(mode),
-				'process.env.API_URL': JSON.stringify(process.env.API_URL)
+				...env
 			}),
 			commonjs(),
 			!dev && terser()

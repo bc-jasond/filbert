@@ -7,12 +7,10 @@ function sendSession(req, res, user) {
     pictureUrl: user.picture_url,
     created: user.created,
     iss: user.iss,
-  }
+  };
   req.session.user = loggedInUser;
   req.session.isSignedIn = true;
-  res.send({
-    session: loggedInUser,
-  });
+  res.send(loggedInUser);
 }
 
 function syncUserProfileFromGoogle() {}

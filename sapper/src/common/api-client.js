@@ -1,3 +1,4 @@
+import { API_URL } from './constants';
 import { loading } from '../stores';
 
 function getBaseConfig(abortSignal = null) {
@@ -29,7 +30,7 @@ async function handleResponse(res) {
   return { error: null, data };
 }
 
-export function getApiClientInstance(fetchClient) {
+export function getApiClientInstance(fetchClient = fetch) {
   async function fetchRefresh(url, config) {
     const res = await fetchClient(url, config);
     return handleResponse(res);
@@ -48,7 +49,7 @@ export function getApiClientInstance(fetchClient) {
     if (data) {
       configInternal.body = JSON.stringify(data); // body data type must match "Content-Type" header
     }
-    const response = await fetchRefresh(`${url}`, configInternal);
+    const response = await fetchRefresh(`${API_URL}${url}`, configInternal);
     loading.set(false);
     return response;
   }
@@ -58,19 +59,18 @@ export function getApiClientInstance(fetchClient) {
     const config = getBaseConfig();
     config.method = 'POST';
     config.body = JSON.stringify({ googleUser, filbertUsername }); // body data type must match "Content-Type" header
-    const response = await fetchClient(`/signin-google`, config);
+    const response = await fetchClient(`${API_URL}/signin-google`, config);
     const { error, data } = await handleResponse(response);
     loading.set(false);
     if (error) {
       console.error('Google Signin Error: ', error);
       return { error };
     }
-    const { signupIsIncomplete, token, session } = data;
+    const { signupIsIncomplete } = data;
     if (signupIsIncomplete) {
       return { signupIsIncomplete };
     }
-    signin(token, session);
-    return { signupIsIncomplete: false };
+    return data;
   }
 
   async function apiGet(url, abortSignal = null) {
