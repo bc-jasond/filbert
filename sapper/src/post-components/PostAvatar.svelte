@@ -3,6 +3,9 @@
   export let showHandle = false;
   export let postIsPrivate = false;
 
+  $: postMap = Map(post);
+
+  import { Map } from 'immutable';
   import ProfileImg from '../user-components/ProfileImg.svelte';
   import ExpandLink from '../layout-components/ExpandLink.svelte';
 </script>
@@ -30,10 +33,10 @@
 </style>
 
 <div class="list-avatar">
-  {#if post.get('userProfileIsPublic') || postIsPrivate}
-    <a href="/@{post.get('username')}">
+  {#if postMap.get('userProfileIsPublic') || postIsPrivate}
+    <a href="/@{postMap.get('username')}">
       <ProfileImg
-        src="{post.get('profilePictureUrl')}"
+        src="{postMap.get('profilePictureUrl')}"
         height="40px"
         width="40px"
         shouldApplyHoverStyle
@@ -41,23 +44,23 @@
     </a>
   {/if}
   <div class="list-avatar-content">
-    {#if post.get('userProfileIsPublic') || postIsPrivate}
+    {#if postMap.get('userProfileIsPublic') || postIsPrivate}
       <div>
         <a
           class="filbert-link list-avatar-content-row"
-          href="/@{post.get('username')}"
+          href="/@{postMap.get('username')}"
         >
-          {post.get('givenName')} {post.get('familyName')}
+          {postMap.get('givenName')} {postMap.get('familyName')}
         </a>
       </div>
     {/if}
     <div class="meta-font list-avatar-content-row italic">
-      {postIsPrivate ? post.get('updated') : post.get('published')}
+      {postIsPrivate ? postMap.get('updated') : postMap.get('published')}
     </div>
     {#if showHandle}
       <div class="meta-font list-avatar-content-row">
-        <ExpandLink url="/public/?username={post.get('username')}">
-          @{post.get('username')}
+        <ExpandLink url="/public/?username={postMap.get('username')}">
+          @{postMap.get('username')}
         </ExpandLink>
       </div>
     {/if}

@@ -3,8 +3,8 @@
   export let onClick;
   export let primary = false;
   export let disabled = false;
+  export let loading = false;
 
-  import { loading } from '../stores';
   import Spinner from '../icons/spinner.svelte';
 </script>
 
@@ -52,12 +52,12 @@
 <button
   class="filbert-nav-button"
   class:primary
-  class:loading="{$loading}"
+  class:loading
   class:disabled
-  on:click="{() => !$loading && !disabled && onClick?.()}"
-  disabled="{$loading || disabled}"
+  on:click="{() => !loading && !disabled && onClick?.()}"
+  disabled="{loading || disabled}"
 >
   <slot />
-  <div class="button-label" class:loading="{$loading}">{label}</div>
-  <Spinner loading="{$loading}" />
+  <div class="button-label" class:loading>{label}</div>
+  <Spinner {loading} />
 </button>

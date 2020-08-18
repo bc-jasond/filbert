@@ -1,33 +1,50 @@
 <script context="module">
-  import { fromJS } from 'immutable';
-
-  import { API_URL } from '../../common/constants';
-  import { formatPostDate, reviver } from '../../common/utils';
   import { getApiClientInstance } from '../../common/api-client';
+  import { formatPostDate } from '../../common/utils';
   import { loading } from '../../stores';
 
-  export function preload(page, session, preloading) {
-    const { path, params, query } = page;
+  // TODO: this double loads on the server and client rn
+  export async function preload({ path, params, query }, session) {
     loading.set(true);
 
-    const responsePromise = getApiClientInstance(this.fetch).get(`${API_URL}/post/${params.post}`)
-        .then(( {error, data: { prevPost, nextPost, post, contentNodes } = {}} ) => {
-          prevPost.published = formatPostDate(prevPost.published);
-          nextPost.published = formatPostDate(nextPost.published);
-          post.published = formatPostDate(post.published);
-          return { post: fromJS(post), nodesById: fromJS(contentNodes, reviver), prevPost: fromJS(prevPost), nextPost: fromJS(nextPost) };
-        })
-        .finally(() => loading.set(false))
+    const postRes = await getApiClientInstance(this.fetch).get(
+      `/post/${params.post}`
+    );
+    const {
+      error,
+      data: { prevPost, nextPost, post, contentNodes: nodesById } = {},
+    } = postRes;
+
+    if (error) {
+      this.error(error);
+    }
+
+    prevPost.published = formatPostDate(prevPost.published);
+    nextPost.published = formatPostDate(nextPost.published);
+    post.published = formatPostDate(post.published);
 
     return {
-      responsePromise,
+      post,
+      nodesById,
+      prevPost,
+      nextPost,
     };
   }
 </script>
 
 <script>
-  export let responsePromise;
+  export let post;
+  export let nodesById;
+  export let prevPost;
+  export let nextPost;
 
+  $: postMap = fromJS(post);
+  $: nodesByIdMap = fromJS(nodesById, reviver);
+  $: prevPostMap = fromJS(prevPost);
+  $: nextPostMap = fromJS(nextPost);
+
+  import { fromJS } from 'immutable';
+  import { reviver } from '../../common/utils';
   import PostNext from '../../post-components/PostNext.svelte';
   import SiteInfo from '../../document-components/format-components/SiteInfo.svelte';
   import PostDetailsSection from '../../post-components/PostDetails.svelte';
@@ -40,38 +57,32 @@
     margin-bottom: 16px;
     max-width: var(--filbert-viewport9);
   }
+
   .thanks-for-reading-container {
     display: block;
     font-size: 32px;
     text-align: center;
     margin: 48px 0 32px 0;
   }
+
   .thanks-for-reading {
     letter-spacing: 0.6rem;
   }
 </style>
 
-{#await responsePromise}
-  <p>...post</p>
-{:then {post, nodesById, prevPost, nextPost}}
-  <PostDetailsSection>
-    <PostAvatar {post} showHandle />
-  </PostDetailsSection>
-  <Document nodesById={nodesById} />
-  <div class="filbert-section prev-next-post-section">
-    <SiteInfo shouldFormat>
-      <div class="thanks-for-reading-container">
+<PostDetailsSection>
+  <PostAvatar post="{postMap}" showHandle />
+</PostDetailsSection>
+<Document nodesById="{nodesByIdMap}" />
+<div class="filbert-section prev-next-post-section">
+  <SiteInfo shouldFormat>
+    <div class="thanks-for-reading-container">
       <span class="thanks-for-reading">Thanks for reading</span>
-      <span role="img" aria-label="peace sign">
-    ✌🏼
-    </span>
-      </div>
-    </SiteInfo>
-    <div class="filbert-flex-grid">
-      <PostNext post={prevPost} isPrevious />
-      <PostNext post={nextPost} />
+      <span role="img" aria-label="peace sign">✌🏼</span>
     </div>
+  </SiteInfo>
+  <div class="filbert-flex-grid">
+    <PostNext post="{prevPostMap}" isPrevious />
+    <PostNext post="{nextPostMap}" />
   </div>
-{:catch error}
-  <p style="color: red">{error.message}</p>
-{/await}
+</div>
