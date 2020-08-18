@@ -4,8 +4,8 @@
 
 {#if shouldFormat}
   <em class="italic-text">
-    <slot></slot>
+    <slot />
   </em>
 {:else}
-  <slot></slot>
+  <slot />
 {/if}

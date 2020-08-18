@@ -8,7 +8,10 @@
   import Mini from './Mini.svelte';
   import SiteInfo from './SiteInfo.svelte';
   import Strikethrough from './Strikethrough.svelte';
-  import { getContentBySelections, getSelectionAtIdx } from '../../common/selection-helpers';
+  import {
+    getContentBySelections,
+    getSelectionAtIdx,
+  } from '../../common/selection-helpers';
   import {
     SELECTION_ACTION_BOLD,
     SELECTION_ACTION_CODE,
@@ -23,20 +26,26 @@
 
   const selectionHead = node.getIn(['meta', 'selections'], Selection());
   const contentPiecesBySelectionLength = getContentBySelections(node);
-  const contentAndSelections = contentPiecesBySelectionLength.map((text, idx) => ({
-    text,
-    selection: getSelectionAtIdx(selectionHead, idx)
-  }))
+  const contentAndSelections = contentPiecesBySelectionLength.map(
+    (text, idx) => ({
+      text,
+      selection: getSelectionAtIdx(selectionHead, idx),
+    })
+  );
 </script>
 
-{#each contentAndSelections as {text, selection}}
-  <Link url={selection.get(SELECTION_ACTION_LINK) && selection.get(SELECTION_LINK_URL)}>
-    <Bold shouldFormat={selection.get(SELECTION_ACTION_BOLD)}>
-      <Code shouldFormat={selection.get(SELECTION_ACTION_CODE)}>
-        <Italic shouldFormat={selection.get(SELECTION_ACTION_ITALIC)}>
-          <Mini shouldFormat={selection.get(SELECTION_ACTION_MINI)}>
-            <SiteInfo shouldFormat={selection.get(SELECTION_ACTION_SITEINFO)}>
-              <Strikethrough shouldFormat={selection.get(SELECTION_ACTION_BOLD)}>
+{#each contentAndSelections as { text, selection }}
+  <Link
+    url="{selection.get(SELECTION_ACTION_LINK) && selection.get(SELECTION_LINK_URL)}"
+  >
+    <Bold shouldFormat="{selection.get(SELECTION_ACTION_BOLD)}">
+      <Code shouldFormat="{selection.get(SELECTION_ACTION_CODE)}">
+        <Italic shouldFormat="{selection.get(SELECTION_ACTION_ITALIC)}">
+          <Mini shouldFormat="{selection.get(SELECTION_ACTION_MINI)}">
+            <SiteInfo shouldFormat="{selection.get(SELECTION_ACTION_SITEINFO)}">
+              <Strikethrough
+                shouldFormat="{selection.get(SELECTION_ACTION_BOLD)}"
+              >
                 {text}
               </Strikethrough>
             </SiteInfo>

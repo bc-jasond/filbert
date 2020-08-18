@@ -3,9 +3,9 @@
 </script>
 
 {#if url}
-  <a class="filbert-link" href={url}>
-    <slot></slot>
+  <a class="filbert-link" href="{url}">
+    <slot />
   </a>
 {:else}
-  <slot></slot>
+  <slot />
 {/if}
