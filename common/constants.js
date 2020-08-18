@@ -1,1 +1,0 @@
-export const FILBERT_SESSION_COOKIE_NAME = 'filbert-session';

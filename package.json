@@ -1,0 +1,23 @@
+{
+  "name": "filbert",
+  "version": "0.0.1",
+  "description": "filbert monorepo - a nice place to write",
+  "main": "index.js",
+  "repository": "git@github.com:bc-jasond/filbert.git",
+  "author": "Jason Dubaniewicz <jason@filbert.xyz>",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "api",
+    "frontend",
+    "sapper",
+    "lib"
+  ],
+  "scripts": {
+    "sapper-dev": "yarn --cwd sapper dev",
+    "api-watch": "yarn --cwd api watch",
+    "pretty-svelte": "prettier --write --plugin-search-dir=. './sapper/src/**/*.{html,svelte,js}'",
+    "pretty-api": "prettier --parser=babel --single-quote --write './api/**/*.js'",
+    "pretty-react": "prettier --parser=babel --single-quote --write './frontend/src/**/*.{js,jsx}'"
+  }
+}
