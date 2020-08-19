@@ -12,7 +12,11 @@ const {
 const { makeSelections } = require('../test-helpers');
 
 const { fromJS, Map } = require('immutable');
-const { reviver, cleanTextOrZeroLengthPlaceholder, Selection } = require('../utils');
+const {
+  reviver,
+  cleanTextOrZeroLengthPlaceholder,
+  Selection,
+} = require('../utils');
 const {
   getSelectionAtIdx,
   formatSelections,

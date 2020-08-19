@@ -12,15 +12,40 @@ const dev = mode === 'development';
 
 const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && /[/\\]@sapper[/\\]/.test(warning.message)) || onwarn(warning);
 
-export default {
+const env = {
+	'process.env.NODE_ENV': JSON.stringify(mode),
+	'process.env.API_URL': JSON.stringify(process.env.API_URL),
+	'process.env.GOOGLE_API_FILBERT_CLIENT_ID': JSON.stringify(process.env.GOOGLE_API_FILBERT_CLIENT_ID)
+}
+
+const babelConfig = {
+	extensions: ['.js', '.mjs', '.html', '.svelte'],
+	babelHelpers: 'runtime',
+	exclude: ['node_modules/@babel/**'],
+	presets: [
+		['@babel/preset-env', {
+			targets: {
+				node: "current",
+			}
+		}]
+	],
+	plugins: [
+		"@babel/plugin-proposal-optional-chaining",
+		'@babel/plugin-syntax-dynamic-import',
+		['@babel/plugin-transform-runtime', {
+			useESModules: true
+		}]
+	]
+};
+
+module.exports = {
 	client: {
 		input: config.client.input(),
 		output: config.client.output(),
 		plugins: [
 			replace({
 				'process.browser': true,
-				'process.env.NODE_ENV': JSON.stringify(mode),
-				'process.env.API_URL': JSON.stringify(process.env.API_URL)
+				...env
 			}),
 			svelte({
 				dev,
@@ -33,25 +58,7 @@ export default {
 			}),
 			commonjs(),
 
-			babel({
-				extensions: ['.js', '.mjs', '.html', '.svelte'],
-				babelHelpers: 'runtime',
-				exclude: ['node_modules/@babel/**'],
-				presets: [
-					['@babel/preset-env', {
-						targets: {
-							node: "current",
-						}
-					}]
-				],
-				plugins: [
-					"@babel/plugin-proposal-optional-chaining",
-					'@babel/plugin-syntax-dynamic-import',
-					['@babel/plugin-transform-runtime', {
-						useESModules: true
-					}]
-				]
-			}),
+			babel(babelConfig),
 
 			!dev && terser({
 				module: true
@@ -68,8 +75,7 @@ export default {
 		plugins: [
 			replace({
 				'process.browser': false,
-				'process.env.NODE_ENV': JSON.stringify(mode),
-				'process.env.API_URL': JSON.stringify(process.env.API_URL)
+				...env
 			}),
 			svelte({
 				generate: 'ssr',
@@ -78,7 +84,8 @@ export default {
 			resolve({
 				dedupe: ['svelte']
 			}),
-			commonjs()
+			commonjs(),
+			babel(babelConfig),
 		],
 		external: Object.keys(pkg.dependencies).concat(
 			require('module').builtinModules || Object.keys(process.binding('natives'))
@@ -95,8 +102,7 @@ export default {
 			resolve(),
 			replace({
 				'process.browser': true,
-				'process.env.NODE_ENV': JSON.stringify(mode),
-				'process.env.API_URL': JSON.stringify(process.env.API_URL)
+				...env
 			}),
 			commonjs(),
 			!dev && terser()

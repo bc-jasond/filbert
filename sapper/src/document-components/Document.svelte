@@ -26,7 +26,8 @@
   import Image from './Image.svelte';
   import Quote from './Quote.svelte';
 
-  let current = getFirstNode(nodesById);
+  let current;
+  let nodesInOrder;
 
   function next() {
     current = nodesById.get(current.get('next_sibling_id')) || Map();
@@ -82,20 +83,23 @@
     return { type: NODE_TYPE_CODE, nodes: preNodes };
   }
 
-  let nodesInOrder = [];
-  while (current.get('id')) {
-    let shouldAdvanceCurrent = true;
-    if ([NODE_TYPE_P, NODE_TYPE_LI].includes(current.get('type'))) {
-      nodesInOrder.push(getContentSection());
-      shouldAdvanceCurrent = false;
-    } else if ([NODE_TYPE_PRE].includes(current.get('type'))) {
-      nodesInOrder.push(getCodeSection());
-      shouldAdvanceCurrent = false;
-    } else {
-      nodesInOrder.push(current);
-    }
-    if (shouldAdvanceCurrent) {
-      next();
+  $: {
+    current = getFirstNode(nodesById);
+    nodesInOrder = [];
+    while (current.get('id')) {
+      let shouldAdvanceCurrent = true;
+      if ([NODE_TYPE_P, NODE_TYPE_LI].includes(current.get('type'))) {
+        nodesInOrder.push(getContentSection());
+        shouldAdvanceCurrent = false;
+      } else if ([NODE_TYPE_PRE].includes(current.get('type'))) {
+        nodesInOrder.push(getCodeSection());
+        shouldAdvanceCurrent = false;
+      } else {
+        nodesInOrder.push(current);
+      }
+      if (shouldAdvanceCurrent) {
+        next();
+      }
     }
   }
 </script>

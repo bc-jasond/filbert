@@ -11,8 +11,8 @@
 
 {#if shouldFormat}
   <strong>
-    <slot></slot>
+    <slot />
   </strong>
 {:else}
-  <slot></slot>
+  <slot />
 {/if}

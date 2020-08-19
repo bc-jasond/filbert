@@ -4,8 +4,8 @@
 
 {#if shouldFormat}
   <span class="mini-text">
-    <slot></slot>
+    <slot />
   </span>
 {:else}
-  <slot></slot>
+  <slot />
 {/if}

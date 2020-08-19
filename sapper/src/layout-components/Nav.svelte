@@ -3,7 +3,7 @@
   export let navHeight = 0; // will be bound to in _layout.svelte via "bind:navHeight".  Initializing here so svelte doesn't complain
 
   import { onMount } from 'svelte';
-  import { goto } from '@sapper/app';
+  import { goto, stores } from '@sapper/app';
   import { Map } from 'immutable';
 
   import HeaderLogo from './HeaderLogo.svelte';
@@ -14,6 +14,8 @@
     PAGE_NAME_VIEW,
   } from '../common/constants';
 
+  const { session } = stores();
+
   // workaround for SSR to avoid calling "window" global on the server
   // onMount won't run on the server
   let manageUrl;
@@ -22,7 +24,6 @@
     manageUrl = createNextUrl(`/manage/${post.get('id')}`);
   });
 
-  let session = Map();
   let post = Map();
   let userIsMe = false;
   let theme = '';
@@ -127,7 +128,7 @@
       <button title="dark mode" on:click="{() => {}}">
         {themeButtonDisplay}
       </button>
-      {#if session.size}
+      {#if $session.user}
         {#if shouldShowManagePost}
           <a href="{manageUrl}">manage</a>
         {/if}
@@ -138,7 +139,7 @@
           <a href="/edit/new">new</a>
         {/if}
         {#if shouldShowPublic}
-          <a rel="prefetch" href="/p">public</a>
+          <a rel="prefetch" href="/public">public</a>
         {/if}
         <a href="/private">private</a>
         {#if userIsMe}
@@ -146,8 +147,8 @@
             sign out
           </button>
         {:else}
-          <a data-test-id="signed-in-user" href="/me">
-            {session.get('username')}
+          <a data-test-id="signed-in-user" href="/signout">
+            {$session.user.username}
           </a>
         {/if}
       {:else}

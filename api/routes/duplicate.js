@@ -1,4 +1,4 @@
-import { getChecksum } from '../../common/cipher';
+import { getChecksum } from '@filbert/lib';
 import { getKnex } from '../lib/mysql';
 
 async function duplicatePost(req, res, next) {

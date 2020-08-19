@@ -42,17 +42,14 @@
     .image-container {
       max-height: 250px;
     }
-    .placeholder-image {
-      height: 250px;
-    }
   }
 </style>
 
 <a
   class="filbert-col filbert-link-alt post-nav-col"
   href="/public/{post.get('canonical')}"
+  rel="prefetch"
 >
-
   <ExpandLink url="/public/{post.get('canonical')}">
     <H3 nextPostOverride>
       {#if isPrevious}

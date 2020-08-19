@@ -18,8 +18,8 @@
 
 {#if shouldFormat}
   <code>
-    <slot></slot>
+    <slot />
   </code>
 {:else}
-  <slot></slot>
+  <slot />
 {/if}

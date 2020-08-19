@@ -14,7 +14,7 @@ FROM node:12-slim
 WORKDIR /usr/local/api/
 COPY --from=0 /api/ /usr/local/api/
 # copy shared library code
-COPY --from=0 /common/ /usr/local/common/
+COPY --from=0 /lib /usr/local/common/
 RUN mkdir /usr/local/logs
 
 ENV NODE_ENV=production

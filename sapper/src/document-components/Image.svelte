@@ -13,15 +13,15 @@
   let isEditing = false;
   let isEditMode = false;
 
-  const id = node.get('id');
-  const meta = node.get('meta', Map());
-  const w = meta.get('resizeWidth', meta.get('width'));
-  const h = meta.get('resizeHeight', meta.get('height'));
-  const rotationDegrees = meta.get('rotationDegrees', 0);
-  const url = meta.get('url');
+  $: id = node.get('id');
+  $: meta = node.get('meta', Map());
+  $: w = meta.get('resizeWidth', meta.get('width'));
+  $: h = meta.get('resizeHeight', meta.get('height'));
+  $: rotationDegrees = meta.get('rotationDegrees', 0);
+  $: url = meta.get('url');
   // if the image is rotated left once or right once change the height of the image container
   // to the width of the image to cover the increased/decreased dimension after CSS transform
-  const figureHeightOverride =
+  $: figureHeightOverride =
     rotationDegrees === 90 || rotationDegrees === 270
       ? // current max-width of an ImageSection is 1000px...
         Math.min(w, 1000)

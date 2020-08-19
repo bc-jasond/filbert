@@ -2,7 +2,10 @@
   export let post;
   export let postIsPrivate = false;
 
+  $: postMap = fromJS(post);
+
   import { onMount } from 'svelte';
+  import { fromJS} from 'immutable';
 
   import PostAvatar from './PostAvatar.svelte';
   import PostImagePlaceholder from './PostImagePlaceholder.svelte';
@@ -12,7 +15,7 @@
   let nextUrl;
   onMount(async () => {
     const { createNextUrl } = await import('../common/dom');
-    nextUrl = createNextUrl(`/manage/${post.get('id')}`);
+    nextUrl = createNextUrl(`/manage/${postMap.get('id')}`);
   });
 </script>
 
@@ -93,12 +96,12 @@
 <a
   class="filbert-flex-grid post-row filbert-link-alt"
   rel="prefetch"
-  href="/public/{post.get('canonical')}"
+  href="/public/{postMap.get('canonical')}"
 >
   <div class="image-col">
-    {#if post.getIn(['meta', 'imageNode'])}
+    {#if postMap.getIn(['meta', 'imageNode'])}
       <Image
-        node="{post.getIn(['meta', 'imageNode'])}"
+        node="{postMap.getIn(['meta', 'imageNode'])}"
         hideBorder
         hideCaption
         postListOverride
@@ -109,11 +112,11 @@
   </div>
 
   <div class="details-col">
-    <span class="filbert-link-alt heading-link">{post.get('title')}</span>
-    {#if post.get('abstract')}
+    <span class="filbert-link-alt heading-link">{postMap.get('title')}</span>
+    {#if postMap.get('abstract')}
       <div class="post-abstract-row">
         <span class="filbert-link-alt abstract-link">
-          {post.get('abstract')}
+          {postMap.get('abstract')}
         </span>
       </div>
     {/if}
@@ -121,7 +124,7 @@
       <div class="post-action-container">
         <PostAvatar {post} {postIsPrivate} />
       </div>
-      {#if post.get('canEdit')}
+      {#if postMap.get('canEdit')}
         <div class="post-action-container">
           <a
             rel="prefetch"
@@ -132,20 +135,20 @@
           </a>
         </div>
       {/if}
-      {#if !postIsPrivate && post.get('canEdit')}
+      {#if !postIsPrivate && postMap.get('canEdit')}
         <div class="post-action-container" style="--padding-left: 0px;">
           <a
             rel="prefetch"
             class="filbert-nav-button post-action-link"
-            href="{`/edit/${post.get('id')}`}"
+            href="{`/edit/${postMap.get('id')}`}"
           >
             edit
           </a>
         </div>
       {/if}
       <div class="post-action-container">
-        <ExpandLink url="/public/?username={post.get('username')}">
-          @{post.get('username')}
+        <ExpandLink url="/public/?username={postMap.get('username')}">
+          @{postMap.get('username')}
         </ExpandLink>
       </div>
     </div>

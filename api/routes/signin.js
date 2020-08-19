@@ -1,7 +1,9 @@
 const { OAuth2Client } = require('google-auth-library');
 
+const { FILBERT_SESSION_COOKIE_NAME } = require('@filbert/lib');
+
 const { getKnex } = require('../lib/mysql');
-const { sendSession } = require('../lib/express-util');
+const { sendSession } = require('../lib/session');
 const { checkPassword } = require('../lib/admin');
 
 async function postSignin(req, res) {
@@ -23,7 +25,7 @@ async function postSignin(req, res) {
     }
 
     const exp = Date.now() / 1000 + 60 * 60 * 24; // 24 hours
-    sendSession(res, { ...user, exp });
+    sendSession(req, res, { ...user, exp });
   } catch (err) {
     console.error('Signin Error: ', err);
     res.status(401).send({});
@@ -54,7 +56,7 @@ async function postSigninGoogle(req, res) {
     let [user] = await knex('user').where('email', email);
     // TODO: update filbert db if any values are different
     if (user) {
-      sendSession(res, { ...user, exp });
+      sendSession(req, res, { ...user, exp });
       return;
     }
 
@@ -97,14 +99,22 @@ async function postSigninGoogle(req, res) {
 
     [user] = await knex('user').where('id', userId);
 
-    sendSession(res, { ...user, exp });
+    sendSession(req, res, { ...user, exp });
   } catch (err) {
     console.error('Signin Error: ', err);
     res.status(401).send({});
   }
 }
 
+async function postSignout(req, res) {
+  console.log('signout', req.session.id, req.session);
+  req.session.destroy(() => {
+    res.send({});
+  });
+}
+
 module.exports = {
   postSignin,
   postSigninGoogle,
+  postSignout,
 };

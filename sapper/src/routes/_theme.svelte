@@ -60,6 +60,17 @@
     background-color: var(--accent-color-primary);
   }
 
+  :global(.filbert-nav-button.cancel) {
+    background: var(--filbert-mediumGrey);
+  }
+  :global(.filbert-nav-button.cancel):hover {
+    background: var(--filbert-grey);
+  }
+  :global(.button-span) {
+    color: white;
+    font-family: var(--alt-font-family);
+  }
+
   :global(.filbert-link) {
     color: var(--accent-color-secondary);
     cursor: pointer;
@@ -128,6 +139,36 @@
     white-space: nowrap;
   }
 
+  /* FORMS */
+  :global(.input-container) {
+    display: flex;
+    flex-direction: column;
+    margin: 24px 0;
+  }
+  :global(.input-container:last-of-type) {
+    margin-bottom: 48px;
+  }
+  :global(textarea) {
+    font-size: 18px;
+    font-weight: 400;
+    font-family: var(--code-font-family);
+    line-height: 36px;
+    border-radius: 2px;
+    border: 1px solid var(--filbert-grey);
+    padding: 2px 8px;
+    min-height: 200px;
+  }
+  :global(textarea.error) {
+    border-color: var(--filbert-error);
+  }
+  :global(label) {
+    display: block;
+    margin-bottom: 4px;
+    font-family: var(--alt-font-family);
+  }
+  :global(label.error) {
+    color: var(--filbert-error);
+  }
   :global(input) {
     font-size: 18px;
     font-weight: 400;

@@ -17,7 +17,6 @@
     "start": "webpack-dev-server --hot --mode development",
     "start-prod": "webpack-dev-server --config webpack-prod.config.js -p --mode production",
     "start-prod-local": "USE_LOCALHOST_API=true webpack-dev-server --hot --mode production",
-    "pretty": "prettier --parser=babel --single-quote --write \"**/*.{js,jsx}\"",
     "pretty-ci": "prettier --parser=babel --single-quote --check \"**/*.{js,jsx}\"",
     "lint": "eslint --fix \"**/*.{js,jsx}\"",
     "nibble": "eslint-nibble \"**/*.{js,jsx}\""
