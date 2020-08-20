@@ -59,13 +59,14 @@ async function main() {
     const app = express();
     app.use(express.json());
     app.use(
-      cors(
-        /* TODO: whitelist *.filbert.xyz in PRODUCTION */
-        {
-          origin: 'http://localhost:3000',
-          credentials: true,
-        }
-      )
+      cors({
+        origin: [
+          'http://localhost:3000',
+          'https://filbert.xyz',
+          'https://www.filbert.xyz',
+        ],
+        credentials: true,
+      })
     );
     /**
      * initialize session, available at req.session
@@ -79,11 +80,11 @@ async function main() {
         saveUninitialized: false,
       })
     );
-    
+
     app.use((req, res, next) => {
-      console.log("API", ENCRYPTION_KEY, req.session.id, req.session)
-      next()
-    })
+      console.log('API', ENCRYPTION_KEY, req.session.id, req.session);
+      next();
+    });
 
     /**
      * PUBLIC routes - be careful...

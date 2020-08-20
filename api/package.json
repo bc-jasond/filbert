@@ -7,7 +7,7 @@
   "author": "Jason Dubaniewicz <jason@dubaniewi.cz>",
   "license": "MIT",
   "scripts": {
-    "watch": ". dev.env && nodemon filbert-api.js localhost 3001",
+    "watch": "nodemon filbert-api.js localhost 3001",
     "start": "node filbert-api.js",
     "docker-build": "docker build --tag=filbert-api:`git log -1 --pretty=format:%h` .",
     "docker-run": "docker run -p 3001:3001 filbert-api:`git log -1 --pretty=format:%h`",

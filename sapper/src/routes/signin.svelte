@@ -1,6 +1,15 @@
+<script context="module">
+  export function preload({query}) {
+    return {isAdminLogin: query.admin !== undefined};
+  }
+</script>
+
 <script>
+  export let isAdminLogin;
+
   import { goto, stores } from '@sapper/app';
-  import { loading, GoogleAuth } from '../stores';
+  import { onDestroy } from 'svelte';
+  import { GoogleAuth } from '../stores';
   import { getGoogleUser } from '../common/google-auth';
   import { getApiClientInstance } from '../common/api-client';
 
@@ -15,6 +24,7 @@
   const { session } = stores();
 
   let usernameInputDomNode;
+  let usernameAdminInputDomNode;
   let usernameValue = '';
   let username = '';
   let usernameIsInvalid = false;
@@ -23,14 +33,20 @@
   let success;
   let currentGoogleUser = {};
   let signinLoading = false;
+  let signinButtonLabel;
 
-  GoogleAuth.subscribe((auth) => {
+  const googleAuthUnsubscribe = GoogleAuth.subscribe((auth) => {
+    if (isAdminLogin) {
+      return;
+    }
     if (auth?.isSignedIn?.get?.()) {
       currentGoogleUser = getGoogleUser(auth?.currentUser?.get?.());
     } else {
       currentGoogleUser = {};
     }
   });
+
+  onDestroy(googleAuthUnsubscribe)
 
   async function doLoginGoogle() {
     success = undefined;
@@ -75,8 +91,12 @@
     }, 400);
   }
 
+  function doLogin() {
+    alert("Admin")
+  }
+
   function doLogout() {
-    $GoogleAuth.signOut();
+    GoogleAuth.update(auth => auth.signOut());
   }
 
   $: {
@@ -85,6 +105,11 @@
     usernameIsInvalid = username.length < 5 || username.length > 42;
     error = undefined;
     success = undefined;
+    if (isAdminLogin) {
+      signinButtonLabel = 'Sign in to filbert';
+    } else {
+      signinButtonLabel = currentGoogleUser.givenName || shouldShowUsernameInput ? `Continue as ${shouldShowUsernameInput ? username : currentGoogleUser.givenName}` : 'Sign in to filbert with Google'
+    }
   }
 </script>
 
@@ -171,10 +196,16 @@
     margin-bottom: 16px;
     background: var(--accent-color-primary);
   }
+
+  a {
+      display: block;
+    text-align: center;
+      margin: 8px;
+  }
 </style>
 
 <section>
-  <form on:submit|preventDefault="{doLoginGoogle}">
+  <form on:submit|preventDefault="{() => isAdminLogin ? doLogin() : doLoginGoogle()}">
     <div class="centered">
       <H1>Sign In</H1>
     </div>
@@ -212,6 +243,34 @@
         />
       </div>
     {/if}
+    {#if isAdminLogin}
+      <div class="input-container">
+        <label for="username-admin" class:error="{error}">
+          filbert username
+        </label>
+        <input
+            class:error="{error}"
+            bind:value="{usernameValue}"
+            bind:this="{usernameAdminInputDomNode}"
+            name="username-admin"
+            type="text"
+            autoComplete="off"
+            minLength="5"
+            maxLength="42"
+        />
+      </div>
+      <div class="input-container">
+        <label for="password" class:error="{error}">
+          password
+        </label>
+        <input
+            class:error="{error || usernameIsInvalid}"
+            bind:value="{usernameValue}"
+            name="password"
+            type="password"
+        />
+      </div>
+      {/if}
     <div class="message-container">
       {#if error}
         <span class="error">
@@ -223,13 +282,15 @@
       {/if}
     </div>
     <ButtonSpinner
-      id="google-sign-in-button"
+      id="sign-in-button"
       type="submit"
       primary
-      label="{currentGoogleUser.givenName || shouldShowUsernameInput ? `Continue as ${shouldShowUsernameInput ? username : currentGoogleUser.givenName}` : 'Sign in to filbert with Google'}"
+      label={signinButtonLabel}
       loading="{signinLoading}"
     >
-      <GoogleLogoSvg />
+      {#if !isAdminLogin}
+        <GoogleLogoSvg />
+      {/if}
     </ButtonSpinner>
     {#if !shouldShowUsernameInput && currentGoogleUser.givenName}
       <button
@@ -246,5 +307,10 @@
         </button>
       </a>
     {/if}
+    {#if isAdminLogin}
+      <a href="/signin" class="filbert-link">Google signin</a>
+      {:else}
+      <a href="/signin?admin" class="filbert-link">admin signin</a>
+      {/if}
   </form>
 </section>
