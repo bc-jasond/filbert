@@ -2,7 +2,7 @@
   import { getApiClientInstance } from '../common/api-client';
 
   export async function preload(page, session) {
-    const { error } = await getApiClientInstance(this.fetch).post('/signout')
+    const { error } = await getApiClientInstance(this.fetch).post('/signout');
 
     return { error };
   }
@@ -17,7 +17,7 @@
   let error;
 
   if (!error) {
-    session.set({})
+    session.set({});
   }
 </script>
 

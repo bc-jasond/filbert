@@ -1,6 +1,6 @@
 <script context="module">
-  export function preload({query}) {
-    return {isAdminLogin: query.admin !== undefined};
+  export function preload({ query }) {
+    return { isAdminLogin: query.admin !== undefined };
   }
 </script>
 
@@ -8,7 +8,7 @@
   export let isAdminLogin;
 
   import { goto, stores } from '@sapper/app';
-  import { onDestroy } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { GoogleAuth } from '../stores';
   import { getGoogleUser } from '../common/google-auth';
   import { getApiClientInstance } from '../common/api-client';
@@ -24,11 +24,17 @@
   const { session } = stores();
 
   let usernameInputDomNode;
-  let usernameAdminInputDomNode;
+  let shouldShowUsernameInput;
   let usernameValue = '';
   let username = '';
   let usernameIsInvalid = false;
-  let shouldShowUsernameInput;
+
+  let usernameAdminInputDomNode;
+  let usernameAdminValue = '';
+  let usernameAdminIsInvalid = false;
+  let passwordValue = '';
+  let passwordIsInvalid = false;
+
   let error;
   let success;
   let currentGoogleUser = {};
@@ -36,9 +42,6 @@
   let signinButtonLabel;
 
   const googleAuthUnsubscribe = GoogleAuth.subscribe((auth) => {
-    if (isAdminLogin) {
-      return;
-    }
     if (auth?.isSignedIn?.get?.()) {
       currentGoogleUser = getGoogleUser(auth?.currentUser?.get?.());
     } else {
@@ -46,7 +49,13 @@
     }
   });
 
-  onDestroy(googleAuthUnsubscribe)
+  onMount(() => {
+    if (isAdminLogin) {
+      usernameAdminInputDomNode.focus();
+    }
+  });
+
+  onDestroy(googleAuthUnsubscribe);
 
   async function doLoginGoogle() {
     success = undefined;
@@ -58,7 +67,7 @@
       try {
         const user = await $GoogleAuth.signIn();
         currentGoogleUser = getGoogleUser(user);
-      } catch(err) {
+      } catch (err) {
         error = err;
         return;
       }
@@ -67,7 +76,10 @@
       error: errorApi,
       signupIsIncomplete,
       ...filbertUser
-    } = await getApiClientInstance(fetch).signinGoogle(currentGoogleUser, username);
+    } = await getApiClientInstance(fetch).signinGoogle(
+      currentGoogleUser,
+      username
+    );
     if (errorApi) {
       success = undefined;
       error = errorApi?.error || errorApi?.message || 'Error';
@@ -91,12 +103,28 @@
     }, 400);
   }
 
-  function doLogin() {
-    alert("Admin")
+  async function doLogin() {
+    success = undefined;
+    error = undefined;
+    signinLoading = true;
+    const { error: errorApi } = await getApiClientInstance(fetch).signinAdmin(
+      usernameAdminValue,
+      passwordValue
+    );
+    if (errorApi) {
+      console.error(errorApi);
+      error = true;
+      return;
+    }
+    success = 'All set 👍';
+    setTimeout(() => {
+      goto('/public/homepage');
+    }, 400);
   }
 
-  function doLogout() {
-    GoogleAuth.update(auth => auth.signOut());
+  async function doLogout() {
+    GoogleAuth.update((auth) => auth.signOut());
+    const res = await getApiClientInstance(fetch).post('/signout');
   }
 
   $: {
@@ -106,9 +134,18 @@
     error = undefined;
     success = undefined;
     if (isAdminLogin) {
+      currentGoogleUser = {};
       signinButtonLabel = 'Sign in to filbert';
     } else {
-      signinButtonLabel = currentGoogleUser.givenName || shouldShowUsernameInput ? `Continue as ${shouldShowUsernameInput ? username : currentGoogleUser.givenName}` : 'Sign in to filbert with Google'
+      if ($GoogleAuth?.isSignedIn?.get?.()) {
+        currentGoogleUser = getGoogleUser($GoogleAuth?.currentUser?.get?.());
+      }
+      signinButtonLabel =
+        currentGoogleUser.givenName || shouldShowUsernameInput
+          ? `Continue as ${
+              shouldShowUsernameInput ? username : currentGoogleUser.givenName
+            }`
+          : 'Sign in to filbert with Google';
     }
   }
 </script>
@@ -198,14 +235,16 @@
   }
 
   a {
-      display: block;
+    display: block;
     text-align: center;
-      margin: 8px;
+    margin: 8px;
   }
 </style>
 
 <section>
-  <form on:submit|preventDefault="{() => isAdminLogin ? doLogin() : doLoginGoogle()}">
+  <form
+    on:submit|preventDefault="{() => (isAdminLogin ? doLogin() : doLoginGoogle())}"
+  >
     <div class="centered">
       <H1>Sign In</H1>
     </div>
@@ -235,6 +274,7 @@
           class:error="{error || usernameIsInvalid}"
           bind:value="{usernameValue}"
           bind:this="{usernameInputDomNode}"
+          id="username"
           name="username"
           type="text"
           autoComplete="off"
@@ -245,32 +285,35 @@
     {/if}
     {#if isAdminLogin}
       <div class="input-container">
-        <label for="username-admin" class:error="{error}">
+        <label
+          for="username-admin"
+          class:error="{error || usernameAdminIsInvalid}"
+        >
           filbert username
         </label>
         <input
-            class:error="{error}"
-            bind:value="{usernameValue}"
-            bind:this="{usernameAdminInputDomNode}"
-            name="username-admin"
-            type="text"
-            autoComplete="off"
-            minLength="5"
-            maxLength="42"
+          class:error
+          bind:value="{usernameAdminValue}"
+          bind:this="{usernameAdminInputDomNode}"
+          id="username-admin"
+          name="username-admin"
+          type="text"
+          autoComplete="off"
+          minLength="5"
+          maxLength="42"
         />
       </div>
       <div class="input-container">
-        <label for="password" class:error="{error}">
-          password
-        </label>
+        <label for="password" class:error>password</label>
         <input
-            class:error="{error || usernameIsInvalid}"
-            bind:value="{usernameValue}"
-            name="password"
-            type="password"
+          class:error="{error || passwordIsInvalid}"
+          bind:value="{passwordValue}"
+          id="password"
+          name="password"
+          type="password"
         />
       </div>
-      {/if}
+    {/if}
     <div class="message-container">
       {#if error}
         <span class="error">
@@ -285,7 +328,7 @@
       id="sign-in-button"
       type="submit"
       primary
-      label={signinButtonLabel}
+      label="{signinButtonLabel}"
       loading="{signinLoading}"
     >
       {#if !isAdminLogin}
@@ -309,8 +352,8 @@
     {/if}
     {#if isAdminLogin}
       <a href="/signin" class="filbert-link">Google signin</a>
-      {:else}
+    {:else}
       <a href="/signin?admin" class="filbert-link">admin signin</a>
-      {/if}
+    {/if}
   </form>
 </section>

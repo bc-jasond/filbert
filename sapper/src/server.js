@@ -29,7 +29,16 @@ polka() // You can also use Express
     }),
     sapper.middleware({
       session: (req, res) => {
-        console.log("SAPPER", ENCRYPTION_KEY, req.session.id, req.session, req.headers.cookie.split(';').filter(c => c.includes(FILBERT_SESSION_COOKIE_NAME)));
+        console.log(
+          'SAPPER',
+          ENCRYPTION_KEY,
+          req.session.id,
+          req.session,
+          req.headers.cookie &&
+            req.headers.cookie
+              .split(';')
+              .filter((c) => c.includes(FILBERT_SESSION_COOKIE_NAME))
+        );
         // devalue doesn't like Session(), so stripping it before serialization
         return JSON.parse(JSON.stringify(req.session || {}));
       },

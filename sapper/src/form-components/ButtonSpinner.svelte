@@ -51,7 +51,9 @@
   }
 </style>
 
-<button {id} {type}
+<button
+  {id}
+  {type}
   class="filbert-nav-button"
   class:primary
   class:loading
