@@ -8,9 +8,9 @@
   export let isAdminLogin;
 
   import { goto, stores } from '@sapper/app';
-  import { onMount, onDestroy } from 'svelte';
+  import { afterUpdate, onDestroy, tick } from 'svelte';
   import { GoogleAuth } from '../stores';
-  import { getGoogleUser } from '../common/google-auth';
+  import { getGoogleUser, googleAuth } from '../common/google-auth';
   import { getApiClientInstance } from '../common/api-client';
 
   import ButtonSpinner from '../form-components/ButtonSpinner.svelte';
@@ -49,13 +49,18 @@
     }
   });
 
-  onMount(() => {
-    if (isAdminLogin) {
+  onDestroy(googleAuthUnsubscribe);
+
+  afterUpdate(async () => {
+    await tick();
+    if (
+      isAdminLogin &&
+      usernameAdminValue.length === 0 &&
+      passwordValue.length === 0
+    ) {
       usernameAdminInputDomNode.focus();
     }
   });
-
-  onDestroy(googleAuthUnsubscribe);
 
   async function doLoginGoogle() {
     success = undefined;
@@ -65,7 +70,7 @@
     if (!currentGoogleUser.idToken) {
       // open google window to let the user select a user to login as, or to grant access
       try {
-        const user = await $GoogleAuth.signIn();
+        const user = await $GoogleAuth.signIn({ prompt: 'select_account' });
         currentGoogleUser = getGoogleUser(user);
       } catch (err) {
         error = err;
@@ -107,15 +112,17 @@
     success = undefined;
     error = undefined;
     signinLoading = true;
-    const { error: errorApi } = await getApiClientInstance(fetch).signinAdmin(
-      usernameAdminValue,
-      passwordValue
-    );
+    const { error: errorApi, ...filbertUser } = await getApiClientInstance(
+      fetch
+    ).signinAdmin(usernameAdminValue, passwordValue);
     if (errorApi) {
       console.error(errorApi);
-      error = true;
+      error = ' ';
+      signinLoading = false;
+      usernameAdminInputDomNode.focus();
       return;
     }
+    session.set({ ...session, user: filbertUser });
     success = 'All set 👍';
     setTimeout(() => {
       goto('/public/homepage');
@@ -123,16 +130,25 @@
   }
 
   async function doLogout() {
-    GoogleAuth.update((auth) => auth.signOut());
-    const res = await getApiClientInstance(fetch).post('/signout');
+    await $GoogleAuth.signOut();
+    await getApiClientInstance(fetch).post('/signout');
+    $GoogleAuth = await googleAuth();
+    currentGoogleUser = {};
+    session.set({});
   }
 
+  // restrict username input with regex, clear messaging & errors
   $: {
     usernameValue = usernameValue.replace(/[^0-9a-z]/g, '').slice(0, 42);
+    // clear messaging, errors for admin username when user types
+    usernameAdminValue = usernameAdminValue;
     username = usernameValue;
     usernameIsInvalid = username.length < 5 || username.length > 42;
     error = undefined;
     success = undefined;
+  }
+
+  $: {
     if (isAdminLogin) {
       currentGoogleUser = {};
       signinButtonLabel = 'Sign in to filbert';
@@ -241,6 +257,10 @@
   }
 </style>
 
+<svelte:head>
+  <title>filbert | signin</title>
+</svelte:head>
+
 <section>
   <form
     on:submit|preventDefault="{() => (isAdminLogin ? doLogin() : doLoginGoogle())}"
@@ -341,7 +361,7 @@
         type="button"
         on:click="{doLogout}"
       >
-        <span class="button-span">Logout</span>
+        <span class="button-span">Google Logout or Switch Google User</span>
       </button>
     {:else}
       <a class="filbert-link-alt" href="/">

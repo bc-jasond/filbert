@@ -9,16 +9,25 @@
 </script>
 
 <script>
+  import { onMount } from 'svelte';
   import { stores } from '@sapper/app';
+  import { GoogleAuth } from '../stores';
+  import { googleAuth } from '../common/google-auth';
+
   import H1 from '../document-components/H1.svelte';
 
   const { session } = stores();
 
   let error;
 
-  if (!error) {
-    session.set({});
-  }
+  onMount(async () => {
+    if (!error) {
+      await $GoogleAuth.signOut();
+      // refresh GoogleAuth instance
+      $GoogleAuth = await googleAuth();
+      session.set({});
+    }
+  });
 </script>
 
 <style>
@@ -33,6 +42,10 @@
     font-size: 72px;
   }
 </style>
+
+<svelte:head>
+  <title>filbert | signout</title>
+</svelte:head>
 
 <div>
   <H1>

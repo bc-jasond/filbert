@@ -47,7 +47,6 @@
   // TODO: this loads on both server and client every time, it needs to be redesigned
   //  so that sapper (devalue) can tell that the data has been loaded
   export async function preload({ query = {} }, session) {
-    console.log('POST LIST PRELOAD');
     const posts = await loadPosts(new URLSearchParams(query), this.fetch);
 
     return {
@@ -181,6 +180,10 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>filbert | public posts</title>
+</svelte:head>
 
 <div class="base-row">
   <H1>Public Articles ({totalPosts})</H1>
