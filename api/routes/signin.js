@@ -1,7 +1,5 @@
 const { OAuth2Client } = require('google-auth-library');
 
-const { FILBERT_SESSION_COOKIE_NAME } = require('@filbert/lib');
-
 const { getKnex } = require('../lib/mysql');
 const { sendSession } = require('../lib/session');
 const { checkPassword } = require('../lib/admin');

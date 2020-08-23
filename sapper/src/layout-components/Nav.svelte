@@ -25,7 +25,6 @@
   });
 
   let post = Map();
-  let userIsMe = false;
   let theme = '';
   let themeButtonDisplay = theme === DARK_MODE_THEME ? '☀️' : '🌑';
   let font = '';
@@ -142,15 +141,9 @@
           <a rel="prefetch" href="/public">public</a>
         {/if}
         <a href="/private">private</a>
-        {#if userIsMe}
-          <button id="signed-in-user" on:click="{handleSignout}">
-            sign out
-          </button>
-        {:else}
-          <a data-test-id="signed-in-user" href="/signout">
-            {$session.user.username}
-          </a>
-        {/if}
+        <button id="signed-in-user" on:click="{handleSignout}">
+          {$session.user.username}
+        </button>
       {:else}
         <a rel="prefetch" href="/public">public</a>
         <a data-test-id="signed-in-user" href="/signin">join or sign in</a>

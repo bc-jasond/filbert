@@ -5,7 +5,7 @@
   $: postMap = fromJS(post);
 
   import { onMount } from 'svelte';
-  import { fromJS} from 'immutable';
+  import { fromJS } from 'immutable';
 
   import PostAvatar from './PostAvatar.svelte';
   import PostImagePlaceholder from './PostImagePlaceholder.svelte';

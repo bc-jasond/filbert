@@ -30,7 +30,7 @@
 
   async function loadPosts(urlSearchParams, fetchClient) {
     loading.set(true);
-    const apiClient = getApiClientInstance(fetchClient)
+    const apiClient = getApiClientInstance(fetchClient);
     const params = urlSearchParams.toString();
     const queryString = params.length > 0 ? `?${params}` : '';
     const { error, data: postsData } = await apiClient.get(
@@ -46,8 +46,7 @@
 
   // TODO: this loads on both server and client every time, it needs to be redesigned
   //  so that sapper (devalue) can tell that the data has been loaded
-  export async function preload({query = {}}, session) {
-    console.log("POST LIST PRELOAD")
+  export async function preload({ query = {} }, session) {
     const posts = await loadPosts(new URLSearchParams(query), this.fetch);
 
     return {
@@ -72,18 +71,21 @@
   import H3 from '../../document-components/H3.svelte';
   import PostListRow from '../../post-components/PostListRow.svelte';
 
-  let responsePromise = Promise.resolve(posts)
+  let responsePromise = Promise.resolve(posts);
   let totalPosts = posts.length;
 
   $: {
-    responsePromise.then(p => {
+    responsePromise.then((p) => {
       totalPosts = p.length;
-    })
+    });
   }
 
   function toggleOldestFilter() {
     oldestFilterIsSelected = !oldestFilterIsSelected;
-    const updatedUrlSearchParams = pushHistory('oldest', oldestFilterIsSelected);
+    const updatedUrlSearchParams = pushHistory(
+      'oldest',
+      oldestFilterIsSelected
+    );
     responsePromise = loadPosts(updatedUrlSearchParams);
   }
   function toggleRandomFilter() {
@@ -178,6 +180,10 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>filbert | public posts</title>
+</svelte:head>
 
 <div class="base-row">
   <H1>Public Articles ({totalPosts})</H1>

@@ -1,7 +1,16 @@
+<script context="module">
+  export function preload({ query }) {
+    return { isAdminLogin: query.admin !== undefined };
+  }
+</script>
+
 <script>
+  export let isAdminLogin;
+
   import { goto, stores } from '@sapper/app';
-  import { loading, GoogleAuth } from '../stores';
-  import { getGoogleUser } from '../common/google-auth';
+  import { afterUpdate, onDestroy, tick } from 'svelte';
+  import { GoogleAuth } from '../stores';
+  import { getGoogleUser, googleAuth } from '../common/google-auth';
   import { getApiClientInstance } from '../common/api-client';
 
   import ButtonSpinner from '../form-components/ButtonSpinner.svelte';
@@ -15,20 +24,41 @@
   const { session } = stores();
 
   let usernameInputDomNode;
+  let shouldShowUsernameInput;
   let usernameValue = '';
   let username = '';
   let usernameIsInvalid = false;
-  let shouldShowUsernameInput;
+
+  let usernameAdminInputDomNode;
+  let usernameAdminValue = '';
+  let usernameAdminIsInvalid = false;
+  let passwordValue = '';
+  let passwordIsInvalid = false;
+
   let error;
   let success;
   let currentGoogleUser = {};
   let signinLoading = false;
+  let signinButtonLabel;
 
-  GoogleAuth.subscribe((auth) => {
+  const googleAuthUnsubscribe = GoogleAuth.subscribe((auth) => {
     if (auth?.isSignedIn?.get?.()) {
       currentGoogleUser = getGoogleUser(auth?.currentUser?.get?.());
     } else {
       currentGoogleUser = {};
+    }
+  });
+
+  onDestroy(googleAuthUnsubscribe);
+
+  afterUpdate(async () => {
+    await tick();
+    if (
+      isAdminLogin &&
+      usernameAdminValue.length === 0 &&
+      passwordValue.length === 0
+    ) {
+      usernameAdminInputDomNode.focus();
     }
   });
 
@@ -40,9 +70,9 @@
     if (!currentGoogleUser.idToken) {
       // open google window to let the user select a user to login as, or to grant access
       try {
-        const user = await $GoogleAuth.signIn();
+        const user = await $GoogleAuth.signIn({ prompt: 'select_account' });
         currentGoogleUser = getGoogleUser(user);
-      } catch(err) {
+      } catch (err) {
         error = err;
         return;
       }
@@ -51,7 +81,10 @@
       error: errorApi,
       signupIsIncomplete,
       ...filbertUser
-    } = await getApiClientInstance(fetch).signinGoogle(currentGoogleUser, username);
+    } = await getApiClientInstance(fetch).signinGoogle(
+      currentGoogleUser,
+      username
+    );
     if (errorApi) {
       success = undefined;
       error = errorApi?.error || errorApi?.message || 'Error';
@@ -75,16 +108,61 @@
     }, 400);
   }
 
-  function doLogout() {
-    $GoogleAuth.signOut();
+  async function doLogin() {
+    success = undefined;
+    error = undefined;
+    signinLoading = true;
+    const { error: errorApi, ...filbertUser } = await getApiClientInstance(
+      fetch
+    ).signinAdmin(usernameAdminValue, passwordValue);
+    if (errorApi) {
+      console.error(errorApi);
+      error = ' ';
+      signinLoading = false;
+      usernameAdminInputDomNode.focus();
+      return;
+    }
+    session.set({ ...session, user: filbertUser });
+    success = 'All set 👍';
+    setTimeout(() => {
+      goto('/public/homepage');
+    }, 400);
   }
 
+  async function doLogout() {
+    await $GoogleAuth.signOut();
+    await getApiClientInstance(fetch).post('/signout');
+    $GoogleAuth = await googleAuth();
+    currentGoogleUser = {};
+    session.set({});
+  }
+
+  // restrict username input with regex, clear messaging & errors
   $: {
     usernameValue = usernameValue.replace(/[^0-9a-z]/g, '').slice(0, 42);
+    // clear messaging, errors for admin username when user types
+    usernameAdminValue = usernameAdminValue;
     username = usernameValue;
     usernameIsInvalid = username.length < 5 || username.length > 42;
     error = undefined;
     success = undefined;
+  }
+
+  $: {
+    if (isAdminLogin) {
+      currentGoogleUser = {};
+      signinButtonLabel = 'Sign in to filbert';
+    } else {
+      if ($GoogleAuth?.isSignedIn?.get?.()) {
+        currentGoogleUser = getGoogleUser($GoogleAuth?.currentUser?.get?.());
+      }
+      signinButtonLabel =
+        currentGoogleUser.givenName || shouldShowUsernameInput
+          ? `Continue as ${
+              shouldShowUsernameInput ? username : currentGoogleUser.givenName
+            }`
+          : 'Sign in to filbert with Google';
+    }
   }
 </script>
 
@@ -171,10 +249,22 @@
     margin-bottom: 16px;
     background: var(--accent-color-primary);
   }
+
+  a {
+    display: block;
+    text-align: center;
+    margin: 8px;
+  }
 </style>
 
+<svelte:head>
+  <title>filbert | signin</title>
+</svelte:head>
+
 <section>
-  <form on:submit|preventDefault="{doLoginGoogle}">
+  <form
+    on:submit|preventDefault="{() => (isAdminLogin ? doLogin() : doLoginGoogle())}"
+  >
     <div class="centered">
       <H1>Sign In</H1>
     </div>
@@ -204,11 +294,43 @@
           class:error="{error || usernameIsInvalid}"
           bind:value="{usernameValue}"
           bind:this="{usernameInputDomNode}"
+          id="username"
           name="username"
           type="text"
           autoComplete="off"
           minLength="5"
           maxLength="42"
+        />
+      </div>
+    {/if}
+    {#if isAdminLogin}
+      <div class="input-container">
+        <label
+          for="username-admin"
+          class:error="{error || usernameAdminIsInvalid}"
+        >
+          filbert username
+        </label>
+        <input
+          class:error
+          bind:value="{usernameAdminValue}"
+          bind:this="{usernameAdminInputDomNode}"
+          id="username-admin"
+          name="username-admin"
+          type="text"
+          autoComplete="off"
+          minLength="5"
+          maxLength="42"
+        />
+      </div>
+      <div class="input-container">
+        <label for="password" class:error>password</label>
+        <input
+          class:error="{error || passwordIsInvalid}"
+          bind:value="{passwordValue}"
+          id="password"
+          name="password"
+          type="password"
         />
       </div>
     {/if}
@@ -223,13 +345,15 @@
       {/if}
     </div>
     <ButtonSpinner
-      id="google-sign-in-button"
+      id="sign-in-button"
       type="submit"
       primary
-      label="{currentGoogleUser.givenName || shouldShowUsernameInput ? `Continue as ${shouldShowUsernameInput ? username : currentGoogleUser.givenName}` : 'Sign in to filbert with Google'}"
+      label="{signinButtonLabel}"
       loading="{signinLoading}"
     >
-      <GoogleLogoSvg />
+      {#if !isAdminLogin}
+        <GoogleLogoSvg />
+      {/if}
     </ButtonSpinner>
     {#if !shouldShowUsernameInput && currentGoogleUser.givenName}
       <button
@@ -237,7 +361,7 @@
         type="button"
         on:click="{doLogout}"
       >
-        <span class="button-span">Logout</span>
+        <span class="button-span">Google Logout or Switch Google User</span>
       </button>
     {:else}
       <a class="filbert-link-alt" href="/">
@@ -245,6 +369,11 @@
           <span class="button-span">Cancel</span>
         </button>
       </a>
+    {/if}
+    {#if isAdminLogin}
+      <a href="/signin" class="filbert-link">Google signin</a>
+    {:else}
+      <a href="/signin?admin" class="filbert-link">admin signin</a>
     {/if}
   </form>
 </section>

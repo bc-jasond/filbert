@@ -1,6 +1,8 @@
 <script>
+  export let id;
+  export let type;
   export let label;
-  export let onClick;
+  export let onClick = () => {};
   export let primary = false;
   export let disabled = false;
   export let loading = false;
@@ -50,6 +52,8 @@
 </style>
 
 <button
+  {id}
+  {type}
   class="filbert-nav-button"
   class:primary
   class:loading

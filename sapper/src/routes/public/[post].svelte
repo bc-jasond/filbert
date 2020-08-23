@@ -70,6 +70,9 @@
   }
 </style>
 
+<svelte:head>
+  <title>filbert | {postMap.get('title')}</title>
+</svelte:head>
 <PostDetailsSection>
   <PostAvatar post="{postMap}" showHandle />
 </PostDetailsSection>

@@ -100,16 +100,12 @@ export function getApiClientInstance(fetchClient = fetch) {
   }
 
   async function signinAdmin(username, password) {
-    const {
-      error,
-      data: { session, token },
-    } = await apiPost('/signin', { username, password });
+    const { error, data } = await apiPost('/signin', { username, password });
     if (error) {
       console.error('Admin Signin Error: ', error);
       return { error };
     }
-    signin(token, session);
-    return {};
+    return data;
   }
 
   return {
