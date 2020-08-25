@@ -182,6 +182,10 @@ export function moreThanNCharsAreDifferent(
   return false;
 }
 
+export function usernameIsValid(maybeUsername) {
+  return /^@[0-9a-z]{1,42}$/.test(maybeUsername);
+}
+
 export function idIsValid(maybeId) {
   return new RegExp(/[0-9a-f]{4}/).test(maybeId);
 }

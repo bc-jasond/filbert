@@ -1,5 +1,6 @@
 <script>
   export let url;
+  export let bigger;
 </script>
 
 <style>
@@ -18,8 +19,12 @@
     color: var(--text-color-secondary);
     cursor: pointer;
   }
+
+  .bigger {
+    font-size: larger;
+  }
 </style>
 
-<a class="meta-font" href="{url}">
+<a class="meta-font {bigger ? 'bigger' : ''}" href="{url}">
   <slot />
 </a>
