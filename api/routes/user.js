@@ -65,7 +65,7 @@ async function getUser(req, res) {
 async function patchProfile(req, res) {
   const {
     body: { profileIsPublic, statsArePublic } = {},
-    loggedInUser: { id },
+    session: {user: { userId: id }},
   } = req;
   let updateCount = 0;
   const update = {};

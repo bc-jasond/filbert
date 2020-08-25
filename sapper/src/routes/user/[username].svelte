@@ -7,7 +7,9 @@
       this.error(404, 'Not found');
     }
     const usernameWithoutAt = username.slice(1);
-    const { error, data: user } = await getApiClientInstance(this.fetch).get(`/user/${usernameWithoutAt}`)
+    const { error, data: user } = await getApiClientInstance(this.fetch).get(
+      `/user/${usernameWithoutAt}`
+    );
     if (error) {
       this.error(error.status, error.statusText);
     }
@@ -27,16 +29,31 @@
   import H2 from '../../document-components/H2.svelte';
   import ProfileImg from '../../user-components/ProfileImg.svelte';
   import ExpandLink from '../../layout-components/ExpandLink.svelte';
+  import Toggle from '../../form-components/Toggle.svelte';
+
+  function updateProfilePublic() {
+    user = { ...user, profileIsPublic: !user?.profileIsPublic };
+    getApiClientInstance(fetch).patch('/profile', {
+      profileIsPublic: user?.profileIsPublic,
+    });
+  }
+
+  function updateStatsArePublic() {
+    user = { ...user, statsArePublic: !user?.statsArePublic };
+    getApiClientInstance(fetch).patch('/profile', {
+      statsArePublic: user?.statsArePublic,
+    });
+  }
 </script>
 
 <style>
   .row {
     display: flex;
-  flex-direction: row;
+    flex-direction: row;
   }
   .col {
     display: flex;
-  flex-direction: column;
+    flex-direction: column;
   }
   .right {
     margin-left: 16px;
@@ -64,24 +81,26 @@
     </div>
     <div class="col right">
       <H2 noMargin>{user?.givenName} {user?.familyName}</H2>
-      <ExpandLink bigger url="/public/?username={user.username}">{user.username}</ExpandLink>
+      <ExpandLink bigger url="/public/?username={user.username}">
+        {user.username}
+      </ExpandLink>
     </div>
   </div>
 </div>
 {#if userIsMe}
   <div class="filbert-section">
     <H2>Settings</H2>
-    <!--                <Toggle-->
-    <!--                  label="Make my profile public?"-->
-    <!--                  value={user?.profileIsPublic}-->
-    <!--                  onUpdate={updateProfilePublic}-->
-    <!--                />-->
-    <!--                <Toggle-->
-    <!--                  disabled={!user?.profileIsPublic}-->
-    <!--                  label="Make my stats public?"-->
-    <!--                  value={user?.statsArePublic}-->
-    <!--                  onUpdate={updateStatsArePublic}-->
-    <!--                />-->
+    <Toggle
+      label="Make my profile public?"
+      value="{user.profileIsPublic}"
+      onUpdate="{updateProfilePublic}"
+    />
+    <Toggle
+      disabled="{!user.profileIsPublic}"
+      label="Make my stats public?"
+      value="{user.statsArePublic}"
+      onUpdate="{updateStatsArePublic}"
+    />
   </div>
 {/if}
 {#if stats}

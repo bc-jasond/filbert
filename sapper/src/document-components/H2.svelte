@@ -24,12 +24,12 @@
   <h2
     data-type="{NODE_TYPE_H2}"
     name="{node.get('id')}"
-    class="{noMargin ? '' : 'filbert-section'}"
+    class:filbert-section="{!noMargin}"
   >
     {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
   </h2>
 {:else}
-  <h2 class="{noMargin ? '' : 'filbert-section'}">
+  <h2 class:filbert-section="{!noMargin}">
     <slot />
   </h2>
 {/if}
