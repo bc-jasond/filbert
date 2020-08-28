@@ -1,8 +1,8 @@
 <script>
   export let value;
   export let onUpdate;
-  export let label;
-  export let disabled;
+  export let label = '';
+  export let disabled = false;
 
   let isFocused;
 </script>
@@ -56,7 +56,10 @@
   .knob-no-value {
     left: 1px;
   }
-  label {
+  span {
+    font-size: var(--alt-font-size);
+    line-height: var(--alt-line-height);
+    letter-spacing: var(--alt-letter-spacing);
     flex-grow: 2;
   }
   input {
@@ -69,7 +72,7 @@
 
 <div class="wrapper">
   {#if label}
-    <label>{label}</label>
+    <span>{label}</span>
   {:else}
     <slot />
   {/if}

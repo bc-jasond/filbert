@@ -34,7 +34,7 @@
 
 <div class="list-avatar">
   {#if postMap.get('userProfileIsPublic') || postIsPrivate}
-    <a href="/@{postMap.get('username')}">
+    <a href="/user/@{postMap.get('username')}">
       <ProfileImg
         src="{postMap.get('profilePictureUrl')}"
         height="40px"
@@ -48,7 +48,7 @@
       <div>
         <a
           class="filbert-link list-avatar-content-row"
-          href="/@{postMap.get('username')}"
+          href="/user/@{postMap.get('username')}"
         >
           {postMap.get('givenName')} {postMap.get('familyName')}
         </a>

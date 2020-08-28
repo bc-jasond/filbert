@@ -1,6 +1,6 @@
 <script>
   export let url;
-  export let bigger;
+  export let bigger = false;
 </script>
 
 <style>

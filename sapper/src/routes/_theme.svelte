@@ -37,6 +37,26 @@
     letter-spacing: var(--mini-letter-spacing);
   }
 
+  :global(.code-text) {
+    font-family: var(--code-font-family), monospace;
+    font-size: var(--code-font-size);
+    font-weight: var(--code-font-weight);
+    line-height: var(--code-line-height);
+    letter-spacing: var(--code-letter-spacing);
+    color: var(--text-color-secondary);
+    background: var(--background-color-secondary);
+    padding: 4px;
+    margin: 0 2px;
+  }
+
+  :global(.filbert-alt-font) {
+    font-family: var(--alt-font-family);
+    font-size: var(--alt-font-size);
+    font-weight: var(--alt-font-weight);
+    line-height: var(--alt-line-height);
+    letter-spacing: var(--alt-letter-spacing);
+  }
+
   :global(.filbert-nav-button) {
     font-family: var(--code-font-family), monospaced;
     color: var(--filbert-grey);
