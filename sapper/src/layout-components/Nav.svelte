@@ -2,7 +2,7 @@
   export let segment;
   export let navHeight = 0; // will be bound to in _layout.svelte via "bind:navHeight".  Initializing here so svelte doesn't complain
 
-  import { onMount } from 'svelte';
+  import { afterUpdate } from 'svelte';
   import { goto, stores } from '@sapper/app';
   import { Map } from 'immutable';
 
@@ -12,6 +12,7 @@
     DARK_MODE_THEME,
     PAGE_NAME_EDIT,
     PAGE_NAME_VIEW,
+    PAGE_NAME_USER_PROFILE,
   } from '../common/constants';
 
   const { session } = stores();
@@ -19,9 +20,11 @@
   // workaround for SSR to avoid calling "window" global on the server
   // onMount won't run on the server
   let manageUrl;
-  onMount(async () => {
+  let userIsMe;
+  afterUpdate(async () => {
     const { createNextUrl } = await import('../common/dom.js');
     manageUrl = createNextUrl(`/manage/${post.get('id')}`);
+    userIsMe = window.location.href.includes($session?.user?.username);
   });
 
   let post = Map();
@@ -30,9 +33,10 @@
   let font = '';
   let fontButtonDisplay = font === SANS_FONT_THEME ? '🖋' : '✏️';
 
-  const shouldShowManagePost = segment === PAGE_NAME_EDIT && post.get('id');
-  const shouldShowEdit = segment === PAGE_NAME_VIEW && post.get('canEdit');
-  const shouldShowNew = segment !== PAGE_NAME_EDIT || post.get('id');
+  $: shouldShowManagePost = segment === PAGE_NAME_EDIT && post.get('id');
+  $: shouldShowEdit = segment === PAGE_NAME_VIEW && post.get('canEdit');
+  $: shouldShowNew = segment !== PAGE_NAME_EDIT || post.get('id');
+  $: shouldShowLogoutButton = segment === PAGE_NAME_USER_PROFILE && userIsMe;
   const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
 
   function handleSignout() {
@@ -141,9 +145,19 @@
           <a rel="prefetch" href="/public">public</a>
         {/if}
         <a href="/private">private</a>
-        <button id="signed-in-user" on:click="{handleSignout}">
-          {$session.user.username}
-        </button>
+        {#if shouldShowLogoutButton}
+          <button id="logout-button" on:click="{handleSignout}">
+            sign out
+          </button>
+        {:else}
+          <a
+            rel="prefetch"
+            id="signed-in-user"
+            href="/user/@{$session.user.username}"
+          >
+            {$session.user.username}
+          </a>
+        {/if}
       {:else}
         <a rel="prefetch" href="/public">public</a>
         <a data-test-id="signed-in-user" href="/signin">join or sign in</a>

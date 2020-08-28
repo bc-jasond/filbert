@@ -82,7 +82,9 @@
     <span class="filbert-link-alt heading-link">{post.get('title')}</span>
   </div>
   <div class="abstract-container">
-    <span class="filbert-link-alt abstract-link">{post.get('abstract')}</span>
+    <span class="filbert-link-alt abstract-link">
+      {post.get('abstract') || ''}
+    </span>
   </div>
   <div class="post-avatar-container">
     <PostAvatar {post} showHandle />

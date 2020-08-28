@@ -9,6 +9,7 @@
 
   let navHeight;
   let navHeightOverride;
+  // HACK?
   beforeUpdate(() => {
     navHeightOverride = `--filbert-nav-height: ${navHeight}px;`;
   });

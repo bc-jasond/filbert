@@ -1,6 +1,7 @@
 <script>
   import { Map } from 'immutable';
   export let node = Map();
+  export let noMargin = false;
 
   import { NODE_TYPE_H2 } from '../common/constants';
   import { cleanTextOrZeroLengthPlaceholder } from '../common/utils';
@@ -23,12 +24,12 @@
   <h2
     data-type="{NODE_TYPE_H2}"
     name="{node.get('id')}"
-    class="filbert-section"
+    class:filbert-section="{!noMargin}"
   >
     {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
   </h2>
 {:else}
-  <h2 class="filbert-section">
+  <h2 class:filbert-section="{!noMargin}">
     <slot />
   </h2>
 {/if}
