@@ -266,8 +266,23 @@ async function getStats(req, res, next) {
   }
 }
 
+async function patchPreferences(req, res) {
+  const {
+    body: { theme, font },
+    session: {preferences = {}}
+  } = req;
+  if (theme) {
+    req.session.preferences = {...preferences, theme};
+  }
+  if (font) {
+    req.session.preferences = {...preferences, font};
+  }
+  res.send({});
+}
+
 module.exports = {
   getUser,
   patchProfile,
   getStats,
+  patchPreferences,
 };

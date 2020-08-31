@@ -22,7 +22,7 @@ const {
   postSigninGoogle,
   postSignout,
 } = require('./routes/signin');
-const { getUser, patchProfile, getStats } = require('./routes/user');
+const { getUser, patchProfile, getStats, patchPreferences } = require('./routes/user');
 const {
   getPosts,
   getPostByCanonical,
@@ -94,6 +94,7 @@ async function main() {
     app.post('/signout', postSignout);
     app.get('/user/:username', getUser);
     app.get('/user-stats/:username', getStats);
+    app.patch('/preferences', patchPreferences);
     app.get('/post', getPosts);
     app.get('/post/:canonical', getPostByCanonical);
 

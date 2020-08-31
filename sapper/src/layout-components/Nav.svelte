@@ -1,38 +1,60 @@
 <script>
+  import {setFont, setTheme} from "filbert/src/common/session";
+
   export let segment;
   export let navHeight = 0; // will be bound to in _layout.svelte via "bind:navHeight".  Initializing here so svelte doesn't complain
 
-  import { afterUpdate } from 'svelte';
+  import { afterUpdate, beforeUpdate, onMount } from 'svelte';
   import { goto, stores } from '@sapper/app';
   import { Map } from 'immutable';
 
   import HeaderLogo from './HeaderLogo.svelte';
   import {
-    SANS_FONT_THEME,
-    DARK_MODE_THEME,
     PAGE_NAME_EDIT,
     PAGE_NAME_VIEW,
     PAGE_NAME_USER_PROFILE,
+          SESSION_FONT,
+          SANS_FONT_THEME,
+          MIXED_FONT_THEME,
+          SESSION_THEME,
+          LIGHT_MODE_THEME,
+          DARK_MODE_THEME,
   } from '../common/constants';
+  import { getApiClientInstance } from '../common/api-client';
 
   const { session } = stores();
 
-  // workaround for SSR to avoid calling "window" global on the server
-  // onMount won't run on the server
-  let manageUrl;
+  // workaround for SSR to avoid calling "window" or "localStorage" globals on the server
+  // afterUpdate, onMount won't run on the server
   let userIsMe;
   afterUpdate(async () => {
-    const { createNextUrl } = await import('../common/dom.js');
-    manageUrl = createNextUrl(`/manage/${post.get('id')}`);
     userIsMe = window.location.href.includes($session?.user?.username);
   });
-
+  let manageUrl;
   let post = Map();
-  let theme = '';
-  let themeButtonDisplay = theme === DARK_MODE_THEME ? '☀️' : '🌑';
-  let font = '';
-  let fontButtonDisplay = font === SANS_FONT_THEME ? '🖋' : '✏️';
+  let theme = $session?.preferences?.theme;
+  let font = $session?.preferences?.font;
+  let setLocalStorage;
+  onMount(async () => {
+    const [{ createNextUrl }, {get, set}] = await Promise.all([import('../common/dom.js'),import('../common/local-storage')]);
+    manageUrl = createNextUrl(`/manage/${post.get('id')}`);
+    theme = theme || get(SESSION_THEME, LIGHT_MODE_THEME, false);
+    font = font || get(SESSION_FONT, MIXED_FONT_THEME, false);
+    setLocalStorage = set;
+    if (theme === DARK_MODE_THEME) {
+      document.body.classList.add(DARK_MODE_THEME);
+    } else {
+      document.body.classList.remove(DARK_MODE_THEME);
+    }
+    if (font === SANS_FONT_THEME) {
+      document.body.classList.add(SANS_FONT_THEME);
+    } else {
+      document.body.classList.remove(SANS_FONT_THEME);
+    }
+  })
 
+  $: themeButtonDisplay = theme === DARK_MODE_THEME ? '☀️' : '🌑';
+  $: fontButtonDisplay = font === SANS_FONT_THEME ? '🖋' : '✏️';
   $: shouldShowManagePost = segment === PAGE_NAME_EDIT && post.get('id');
   $: shouldShowEdit = segment === PAGE_NAME_VIEW && post.get('canEdit');
   $: shouldShowNew = segment !== PAGE_NAME_EDIT || post.get('id');
@@ -44,6 +66,17 @@
       goto('/signout');
     }
   }
+  function toggleFont() {
+    font = font === SANS_FONT_THEME ? MIXED_FONT_THEME : SANS_FONT_THEME;
+    setLocalStorage(SESSION_FONT, font, false);
+    getApiClientInstance(fetch).patch('/preferences', {font})
+  }
+  function toggleTheme() {
+    theme = theme === DARK_MODE_THEME ? LIGHT_MODE_THEME : DARK_MODE_THEME;
+    setLocalStorage(SESSION_THEME, theme, false);
+    getApiClientInstance(fetch).patch('/preferences', {theme})
+  }
+
 </script>
 
 <style>
@@ -125,10 +158,10 @@
   </nav>
   <nav class="nav-scroll">
     <div class="nav-actions">
-      <button title="font style" on:click="{() => {}}">
+      <button title="font style" on:click={toggleFont}>
         {fontButtonDisplay}
       </button>
-      <button title="dark mode" on:click="{() => {}}">
+      <button title="dark mode" on:click="{toggleTheme}">
         {themeButtonDisplay}
       </button>
       {#if $session.user}
