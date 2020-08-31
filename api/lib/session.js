@@ -9,7 +9,7 @@ function sendSession(req, res, user) {
     iss: user.iss,
   };
   req.session.user = loggedInUser;
-  req.session.isSignedIn = true;
+  req.session.preferences = user?.meta?.preferences;
   res.send(loggedInUser);
 }
 

@@ -7,7 +7,7 @@
 <script>
   export let isAdminLogin;
 
-  import { goto, stores } from '@sapper/app';
+  import { stores } from '@sapper/app';
   import { afterUpdate, onDestroy, tick } from 'svelte';
   import { GoogleAuth } from '../stores';
   import { getGoogleUser, googleAuth } from '../common/google-auth';
@@ -80,7 +80,6 @@
     const {
       error: errorApi,
       signupIsIncomplete,
-      ...filbertUser
     } = await getApiClientInstance(fetch).signinGoogle(
       currentGoogleUser,
       username
@@ -99,12 +98,12 @@
       usernameInputDomNode.focus();
       return;
     }
-    session.set({ ...session, user: filbertUser });
     success = 'All set 👍';
     error = undefined;
     setTimeout(() => {
       // let some time pass to show the success message
-      goto('/public/homepage');
+      // force full page refresh after login instead of goto()...
+      window.location.href = '/public/homepage';
     }, 400);
   }
 
@@ -112,7 +111,7 @@
     success = undefined;
     error = undefined;
     signinLoading = true;
-    const { error: errorApi, ...filbertUser } = await getApiClientInstance(
+    const { error: errorApi } = await getApiClientInstance(
       fetch
     ).signinAdmin(usernameAdminValue, passwordValue);
     if (errorApi) {
@@ -122,10 +121,9 @@
       usernameAdminInputDomNode.focus();
       return;
     }
-    session.set({ ...session, user: filbertUser });
     success = 'All set 👍';
     setTimeout(() => {
-      goto('/public/homepage');
+      window.location.href = '/public/homepage';
     }, 400);
   }
 

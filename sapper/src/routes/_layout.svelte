@@ -26,6 +26,7 @@
     margin: var(--filbert-nav-height) auto 0;
     box-sizing: border-box;
     position: relative;
+    background-color: var(--background-color-primary);
   }
 
   @media (min-width: 768px) {

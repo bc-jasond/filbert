@@ -4,7 +4,7 @@
 sudo apt-get remove docker docker.io containerd runc ;
 sudo apt-get update;
 # Install packages to allow apt to use a repository over HTTPS:
-sudo apt-get install \
+sudo apt-get install -y \
     apt-transport-https \
     ca-certificates \
     curl \
@@ -17,30 +17,16 @@ sudo apt-key fingerprint 0EBFCD88 ;
 # Add Docker repository
 sudo add-apt-repository \
    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-   $(lsb_release -cs) \
-   edge";
+    focal \
+   stable" ;
 # update
 sudo apt-get update ;
 # install Docker
-sudo apt-get install docker-ce docker-ce-cli containerd.io ;
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io ;
+# test
+sudo docker run hello-world ;
 
 
 # install docker-compose
 sudo curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose ;
-
-
-
-# install Dropbox
-cd ~ && wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf - ;
-
-# open firewall
-ufw allow 22/tcp
-ufw allow 80/tcp
-ufw allow 443/tcp
-
-# Certbot / Let's Encrypt
-sudo apt-get install software-properties-common
-sudo add-apt-repository universe
-sudo add-apt-repository ppa:certbot/certbot
-sudo apt-get update
-sudo apt-get install certbot python-certbot-nginx
+sudo chmod +x /usr/local/bin/docker-compose ;

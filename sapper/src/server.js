@@ -27,10 +27,33 @@ polka() // You can also use Express
       resave: false,
       saveUninitialized: false,
     }),
+    // until sapper supports arbitrary "replacers" https://github.com/sveltejs/sapper/pull/1152
+    // HTML (template.html) gets string replacement using this express middleware to read preferences from req.session.preferences during SSR
+    function (req, res, next) {
+      let resEnd = res.end;
+
+      res.end = function (...args) {
+        let [body] = args;
+
+        if (typeof body === 'string') {
+          const bodyClasses = [];
+          if (req.session?.preferences?.theme === 'dark') {
+            bodyClasses.push('dark');
+          }
+          if (req.session?.preferences?.font === 'sans') {
+            bodyClasses.push('sans');
+          }
+          body = body.replace('%filbertBodyClasses%', bodyClasses.join(' '));
+        }
+        resEnd.call(res, body);
+      };
+
+      next();
+    },
     sapper.middleware({
       session: (req, res) => {
         console.log(
-          'SAPPER',
+          'SAPPER server middleware',
           ENCRYPTION_KEY,
           req.session.id,
           req.session,
