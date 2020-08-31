@@ -22,7 +22,12 @@ const {
   postSigninGoogle,
   postSignout,
 } = require('./routes/signin');
-const { getUser, patchProfile, getStats, patchPreferences } = require('./routes/user');
+const {
+  getUser,
+  patchProfile,
+  getStats,
+  patchPreferences,
+} = require('./routes/user');
 const {
   getPosts,
   getPostByCanonical,

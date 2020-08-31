@@ -1,10 +1,8 @@
 <script>
-  import {setFont, setTheme} from "filbert/src/common/session";
-
   export let segment;
   export let navHeight = 0; // will be bound to in _layout.svelte via "bind:navHeight".  Initializing here so svelte doesn't complain
 
-  import { afterUpdate, beforeUpdate, onMount } from 'svelte';
+  import { afterUpdate, onMount } from 'svelte';
   import { goto, stores } from '@sapper/app';
   import { Map } from 'immutable';
 
@@ -13,45 +11,30 @@
     PAGE_NAME_EDIT,
     PAGE_NAME_VIEW,
     PAGE_NAME_USER_PROFILE,
-          SESSION_FONT,
-          SANS_FONT_THEME,
-          MIXED_FONT_THEME,
-          SESSION_THEME,
-          LIGHT_MODE_THEME,
-          DARK_MODE_THEME,
+    SANS_FONT_THEME,
+    MIXED_FONT_THEME,
+    LIGHT_MODE_THEME,
+    DARK_MODE_THEME,
   } from '../common/constants';
   import { getApiClientInstance } from '../common/api-client';
 
   const { session } = stores();
 
-  // workaround for SSR to avoid calling "window" or "localStorage" globals on the server
+  // workaround for SSR to avoid calling browser-only globals like "window" or "localStorage" globals on the server
   // afterUpdate, onMount won't run on the server
   let userIsMe;
   afterUpdate(async () => {
     userIsMe = window.location.href.includes($session?.user?.username);
   });
   let manageUrl;
+  onMount(async () => {
+    const { createNextUrl } = await import('../common/dom.js');
+    manageUrl = createNextUrl(`/manage/${post.get('id')}`);
+  });
+
   let post = Map();
   let theme = $session?.preferences?.theme;
   let font = $session?.preferences?.font;
-  let setLocalStorage;
-  onMount(async () => {
-    const [{ createNextUrl }, {get, set}] = await Promise.all([import('../common/dom.js'),import('../common/local-storage')]);
-    manageUrl = createNextUrl(`/manage/${post.get('id')}`);
-    theme = theme || get(SESSION_THEME, LIGHT_MODE_THEME, false);
-    font = font || get(SESSION_FONT, MIXED_FONT_THEME, false);
-    setLocalStorage = set;
-    if (theme === DARK_MODE_THEME) {
-      document.body.classList.add(DARK_MODE_THEME);
-    } else {
-      document.body.classList.remove(DARK_MODE_THEME);
-    }
-    if (font === SANS_FONT_THEME) {
-      document.body.classList.add(SANS_FONT_THEME);
-    } else {
-      document.body.classList.remove(SANS_FONT_THEME);
-    }
-  })
 
   $: themeButtonDisplay = theme === DARK_MODE_THEME ? '☀️' : '🌑';
   $: fontButtonDisplay = font === SANS_FONT_THEME ? '🖋' : '✏️';
@@ -68,15 +51,22 @@
   }
   function toggleFont() {
     font = font === SANS_FONT_THEME ? MIXED_FONT_THEME : SANS_FONT_THEME;
-    setLocalStorage(SESSION_FONT, font, false);
-    getApiClientInstance(fetch).patch('/preferences', {font})
+    getApiClientInstance(fetch).patch('/preferences', { font });
+    if (font === SANS_FONT_THEME) {
+      document.body.classList.add(SANS_FONT_THEME);
+    } else {
+      document.body.classList.remove(SANS_FONT_THEME);
+    }
   }
   function toggleTheme() {
     theme = theme === DARK_MODE_THEME ? LIGHT_MODE_THEME : DARK_MODE_THEME;
-    setLocalStorage(SESSION_THEME, theme, false);
-    getApiClientInstance(fetch).patch('/preferences', {theme})
+    getApiClientInstance(fetch).patch('/preferences', { theme });
+    if (theme === DARK_MODE_THEME) {
+      document.body.classList.add(DARK_MODE_THEME);
+    } else {
+      document.body.classList.remove(DARK_MODE_THEME);
+    }
   }
-
 </script>
 
 <style>
@@ -158,7 +148,7 @@
   </nav>
   <nav class="nav-scroll">
     <div class="nav-actions">
-      <button title="font style" on:click={toggleFont}>
+      <button title="font style" on:click="{toggleFont}">
         {fontButtonDisplay}
       </button>
       <button title="dark mode" on:click="{toggleTheme}">

@@ -65,7 +65,9 @@ async function getUser(req, res) {
 async function patchProfile(req, res) {
   const {
     body: { profileIsPublic, statsArePublic } = {},
-    session: {user: { userId: id }},
+    session: {
+      user: { userId: id },
+    },
   } = req;
   let updateCount = 0;
   const update = {};
@@ -269,13 +271,27 @@ async function getStats(req, res, next) {
 async function patchPreferences(req, res) {
   const {
     body: { theme, font },
-    session: {preferences = {}}
+    session: { user: { userId: id } = {}, preferences = {} },
   } = req;
   if (theme) {
-    req.session.preferences = {...preferences, theme};
+    req.session.preferences = { ...preferences, theme };
   }
   if (font) {
-    req.session.preferences = {...preferences, font};
+    req.session.preferences = { ...preferences, font };
+  }
+  if (id) {
+    // TODO: use JSON_MERGE_PATCH() instead of SELECT & UPDATE?
+    const knex = await getKnex();
+    const [{ meta }] = await knex('user').select('meta').where({ id });
+    const oldMeta = meta ?? {};
+    await knex('user')
+      .update({
+        meta: JSON.stringify({
+          ...oldMeta,
+          preferences: req.session.preferences,
+        }),
+      })
+      .where({ id });
   }
   res.send({});
 }

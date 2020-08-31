@@ -16,6 +16,7 @@
   "scripts": {
     "sapper-dev": "yarn --cwd sapper dev",
     "api-watch": "yarn --cwd api watch",
+    "api-start": "yarn --cwd api start",
     "pretty-svelte": "prettier --write --plugin-search-dir=. './sapper/src/**/*.{html,svelte,js}'",
     "pretty-api": "prettier --parser=babel --single-quote --write './api/**/*.js'",
     "pretty-react": "prettier --parser=babel --single-quote --write './frontend/src/**/*.{js,jsx}'"
