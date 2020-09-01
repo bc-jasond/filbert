@@ -3,12 +3,12 @@
 
   let oldestFilterIsSelected;
   let randomFilterIsSelected;
-  let usernameFilterIsSelected;
-  let username = '';
+  let containsFilterIsSelected;
+  let contains = '';
 
   export async function preload({ query = {} }, session) {
     const posts = await loadPosts(
-      '/post',
+      '/draft',
       new URLSearchParams(query),
       this.fetch
     );
@@ -17,8 +17,8 @@
       posts,
       oldestFilterIsSelected: query.oldest !== undefined,
       randomFilterIsSelected: false,
-      usernameFilterIsSelected: !!query.username,
-      username: query.username || '',
+      containsFilterIsSelected: !!query.contains,
+      contains: query.contains || '',
     };
   }
 </script>
@@ -27,8 +27,8 @@
   export let posts;
   export let oldestFilterIsSelected;
   export let randomFilterIsSelected;
-  export let usernameFilterIsSelected;
-  export let username = '';
+  export let containsFilterIsSelected;
+  export let contains = '';
 
   import { pushHistory } from '../../common/post-list-helpers';
 
@@ -36,7 +36,6 @@
   import H1 from '../../document-components/H1.svelte';
   import H3 from '../../document-components/H3.svelte';
   import PostListRow from '../../list-components/PostListRow.svelte';
-  import Spinner from '../../icons/spinner.svelte';
 
   let responsePromise = Promise.resolve(posts);
   let totalPosts = posts.length;
@@ -53,27 +52,27 @@
       'oldest',
       oldestFilterIsSelected
     );
-    responsePromise = loadPosts('/post', updatedUrlSearchParams);
+    responsePromise = loadPosts(updatedUrlSearchParams);
   }
   function toggleRandomFilter() {
     /*TODO*/
   }
-  let usernameInputDomNode;
-  function toggleUsernameFilter() {
-    username = '';
-    const updatedUrlSearchParams = pushHistory('username', username);
-    usernameFilterIsSelected = !usernameFilterIsSelected;
-    if (usernameFilterIsSelected) {
-      usernameInputDomNode.focus();
+  let containsInputDomNode;
+  function toggleContainsFilter() {
+    contains = '';
+    const updatedUrlSearchParams = pushHistory('contains', contains);
+    containsFilterIsSelected = !containsFilterIsSelected;
+    if (containsFilterIsSelected) {
+      containsInputDomNode.focus();
     } else {
-      responsePromise = loadPosts('/post', updatedUrlSearchParams);
+      responsePromise = loadPosts(updatedUrlSearchParams);
     }
   }
-  function updateUsername(e) {
-    username = e.target.value;
-    pushHistory('username', username);
-    const updatedUrlSearchParams = pushHistory('username', username);
-    responsePromise = loadPosts('/post', updatedUrlSearchParams);
+  function updateContains(e) {
+    contains = e.target.value;
+    pushHistory('contains', contains);
+    const updatedUrlSearchParams = pushHistory('contains', contains);
+    responsePromise = loadPosts(updatedUrlSearchParams);
   }
 </script>
 
@@ -91,12 +90,6 @@
   }
   .base-row:last-of-type {
     margin-bottom: 42px;
-  }
-  .loader-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 48px;
   }
   .col-filter {
     display: flex;
@@ -155,16 +148,21 @@
 </style>
 
 <svelte:head>
-  <title>filbert | public posts</title>
+  <title>filbert | private work</title>
 </svelte:head>
 
 <div class="base-row">
-  <H1>Public Articles ({totalPosts})</H1>
+  <H1>My Private Work ({totalPosts})</H1>
   <H3 fontWeightNormal>
-    These pieces have been published{' '}
-    <span role="img" aria-label="stack of books">📚</span>
-    {' '} and are viewable by everyone on the World Wide Web{' '}
-    <span role="img" aria-label="globe">🌍</span>
+    These pieces have{' '}
+    <span role="img" aria-label="lock">🔒</span>
+    {' '} NOT been published{' '}
+    <span role="img" aria-label="lock">🔑</span>
+    {' '} and are only viewable{' '}
+    <span role="img" aria-label="eyeballs">👀</span>
+    {' '} by you while logged into{' '}
+    <span role="img" aria-label="hand writing with a pen">✍️</span>
+    {' '} filbert
   </H3>
 </div>
 <div class="base-row">
@@ -196,29 +194,24 @@
     <div class="filbert-col col-filter">
       <button
         class="filbert-nav-button with-input"
-        class:open="{usernameFilterIsSelected}"
-        on:click="{toggleUsernameFilter}"
+        class:open="{containsFilterIsSelected}"
+        on:click="{toggleContainsFilter}"
       >
-        username @
+        contains
       </button>
       <input
-        class:hide="{!usernameFilterIsSelected}"
-        on:input="{updateUsername}"
-        bind:this="{usernameInputDomNode}"
-        value="{username}"
-        name="username"
+        class:hide="{!containsFilterIsSelected}"
+        on:input="{updateContains}"
+        bind:this="{containsInputDomNode}"
+        value="{contains}"
+        name="contains"
         type="text"
-        autoComplete="off"
-        minlength="5"
-        maxlength="42"
       />
     </div>
   </div>
 </div>
 {#await responsePromise}
-  <div class="base-row loader-row">
-    <Spinner loading dark />
-  </div>
+  <p class="filbert-section">...public</p>
 {:then posts}
   {#if posts && !posts.length}
     <div class="base-row">

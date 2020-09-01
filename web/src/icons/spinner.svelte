@@ -1,5 +1,6 @@
 <script>
   export let loading;
+  export let dark;
 </script>
 
 <style>
@@ -31,11 +32,16 @@
     opacity: 1;
     margin-top: -4px;
   }
+  .dark {
+    opacity: 1;
+    fill: var(--filbert-darkGrey);
+  }
 </style>
 
 <svg
   class="spinner"
   class:loading
+  class:dark
   width="100%"
   height="100%"
   xmlns="http://www.w3.org/2000/svg"

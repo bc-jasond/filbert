@@ -7,8 +7,8 @@
   import { onMount } from 'svelte';
   import { fromJS } from 'immutable';
 
-  import PostAvatar from './PostAvatar.svelte';
-  import PostImagePlaceholder from './PostImagePlaceholder.svelte';
+  import PostAvatar from '../post-components/PostAvatar.svelte';
+  import PostImagePlaceholder from '../post-components/PostImagePlaceholder.svelte';
   import Image from '../document-components/Image.svelte';
   import ExpandLink from '../layout-components/ExpandLink.svelte';
 
