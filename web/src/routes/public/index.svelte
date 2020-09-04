@@ -1,11 +1,6 @@
 <script context="module">
   import { loadPosts } from '../../common/post-list-helpers';
 
-  let oldestFilterIsSelected;
-  let randomFilterIsSelected;
-  let usernameFilterIsSelected;
-  let username = '';
-
   export async function preload({ query = {} }, session) {
     const posts = await loadPosts(
       '/post',
@@ -17,7 +12,6 @@
       posts,
       oldestFilterIsSelected: query.oldest !== undefined,
       randomFilterIsSelected: false,
-      usernameFilterIsSelected: !!query.username,
       username: query.username || '',
     };
   }
@@ -27,8 +21,9 @@
   export let posts;
   export let oldestFilterIsSelected;
   export let randomFilterIsSelected;
-  export let usernameFilterIsSelected;
   export let username = '';
+
+  import { onMount } from 'svelte';
 
   import { pushHistory } from '../../common/post-list-helpers';
 
@@ -37,9 +32,15 @@
   import H3 from '../../document-components/H3.svelte';
   import PostListRow from '../../list-components/PostListRow.svelte';
   import Spinner from '../../icons/spinner.svelte';
+  import FilterWithInput from '../../list-components/FilterWithInput.svelte';
 
   let responsePromise = Promise.resolve(posts);
   let totalPosts = posts.length;
+  let isBrowser;
+
+  onMount(() => {
+    isBrowser = true;
+  });
 
   $: {
     responsePromise.then((p) => {
@@ -47,33 +48,23 @@
     });
   }
 
-  function toggleOldestFilter() {
-    oldestFilterIsSelected = !oldestFilterIsSelected;
-    const updatedUrlSearchParams = pushHistory(
-      'oldest',
-      oldestFilterIsSelected
-    );
-    responsePromise = loadPosts('/post', updatedUrlSearchParams);
-  }
-  function toggleRandomFilter() {
-    /*TODO*/
-  }
-  let usernameInputDomNode;
-  function toggleUsernameFilter() {
-    username = '';
-    const updatedUrlSearchParams = pushHistory('username', username);
-    usernameFilterIsSelected = !usernameFilterIsSelected;
-    if (usernameFilterIsSelected) {
-      usernameInputDomNode.focus();
-    } else {
+  // react to toggle username filter or username input
+  $: {
+    if (isBrowser) {
+      pushHistory('username', username);
+      const updatedUrlSearchParams = pushHistory('username', username);
       responsePromise = loadPosts('/post', updatedUrlSearchParams);
     }
   }
-  function updateUsername(e) {
-    username = e.target.value;
-    pushHistory('username', username);
-    const updatedUrlSearchParams = pushHistory('username', username);
-    responsePromise = loadPosts('/post', updatedUrlSearchParams);
+  // toggle oldest / newest filter
+  $: {
+    if (isBrowser) {
+      const updatedUrlSearchParams = pushHistory(
+        'oldest',
+        oldestFilterIsSelected
+      );
+      responsePromise = loadPosts('/post', updatedUrlSearchParams);
+    }
   }
 </script>
 
@@ -114,33 +105,6 @@
   button:first-of-type {
     margin-left: 0;
   }
-  input {
-    flex: 1;
-    height: 38px;
-    margin-right: 8px;
-    transition: opacity 0.2s;
-    opacity: 1;
-    /* outline: var(--filbert-outline); */
-    border: 1px solid var(--filbert-lightBlue);
-    border-left: none;
-    border-radius: 0 26px 26px 0;
-  }
-  input.hide {
-    opacity: 0;
-  }
-  .with-input {
-    flex-grow: 0;
-    border: 1px solid transparent;
-    border-right: none;
-    margin-right: 0;
-  }
-  .with-input.open {
-    border: 1px solid var(--accent-color-primary);
-    border-right: none;
-    margin-right: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-  }
 
   @media (min-width: 768px) {
     .base-row {
@@ -174,43 +138,30 @@
       <button
         class="filbert-nav-button"
         class:open="{!oldestFilterIsSelected}"
-        on:click="{toggleOldestFilter}"
+        on:click="{() => (oldestFilterIsSelected = !oldestFilterIsSelected)}"
       >
         newest ⇩
       </button>
       <button
         class="filbert-nav-button"
         class:open="{oldestFilterIsSelected}"
-        on:click="{toggleOldestFilter}"
+        on:click="{() => (oldestFilterIsSelected = !oldestFilterIsSelected)}"
       >
         oldest ⇧
       </button>
       <button
         class="filbert-nav-button"
         class:open="{randomFilterIsSelected}"
-        on:click="{toggleRandomFilter}"
+        on:click="{() => {}}"
       >
         random ?
       </button>
     </div>
     <div class="filbert-col col-filter">
-      <button
-        class="filbert-nav-button with-input"
-        class:open="{usernameFilterIsSelected}"
-        on:click="{toggleUsernameFilter}"
-      >
-        username @
-      </button>
-      <input
-        class:hide="{!usernameFilterIsSelected}"
-        on:input="{updateUsername}"
-        bind:this="{usernameInputDomNode}"
-        value="{username}"
+      <FilterWithInput
         name="username"
-        type="text"
-        autoComplete="off"
-        minlength="5"
-        maxlength="42"
+        buttonLabel="username @"
+        bind:value="{username}"
       />
     </div>
   </div>
@@ -232,5 +183,7 @@
     <PostListRow {post} />
   {/each}
 {:catch error}
-  <p style="color: red">{error.message}</p>
+  <div class="base-row">
+    <p style="color: red">{error.message}</p>
+  </div>
 {/await}
