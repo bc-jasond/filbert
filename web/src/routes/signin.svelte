@@ -77,13 +77,9 @@
         return;
       }
     }
-    const {
-      error: errorApi,
-      signupIsIncomplete,
-    } = await getApiClientInstance(fetch).signinGoogle(
-      currentGoogleUser,
-      username
-    );
+    const { error: errorApi, signupIsIncomplete } = await getApiClientInstance(
+      fetch
+    ).signinGoogle(currentGoogleUser, username);
     if (errorApi) {
       success = undefined;
       error = errorApi?.error || errorApi?.message || 'Error';
@@ -111,9 +107,10 @@
     success = undefined;
     error = undefined;
     signinLoading = true;
-    const { error: errorApi } = await getApiClientInstance(
-      fetch
-    ).signinAdmin(usernameAdminValue, passwordValue);
+    const { error: errorApi } = await getApiClientInstance(fetch).signinAdmin(
+      usernameAdminValue,
+      passwordValue
+    );
     if (errorApi) {
       console.error(errorApi);
       error = ' ';

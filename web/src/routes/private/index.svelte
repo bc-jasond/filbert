@@ -3,7 +3,7 @@
 
   export async function preload({ query = {} }, session) {
     const posts = await loadPosts(
-      '/post',
+      '/draft',
       new URLSearchParams(query),
       this.fetch
     );
@@ -12,7 +12,7 @@
       posts,
       oldestFilterIsSelected: query.oldest !== undefined,
       randomFilterIsSelected: false,
-      username: query.username || '',
+      contains: query.contains || '',
     };
   }
 </script>
@@ -21,7 +21,7 @@
   export let posts;
   export let oldestFilterIsSelected;
   export let randomFilterIsSelected;
-  export let username = '';
+  export let contains = '';
 
   import { onMount } from 'svelte';
 
@@ -48,12 +48,12 @@
     });
   }
 
-  // react to toggle username filter or username input
+  // react to toggle contains filter or contains input
   $: {
     if (isBrowser) {
-      pushHistory('username', username);
-      const updatedUrlSearchParams = pushHistory('username', username);
-      responsePromise = loadPosts('/post', updatedUrlSearchParams);
+      pushHistory('contains', contains);
+      const updatedUrlSearchParams = pushHistory('contains', contains);
+      responsePromise = loadPosts('/draft', updatedUrlSearchParams);
     }
   }
   // toggle oldest / newest filter
@@ -63,7 +63,7 @@
         'oldest',
         oldestFilterIsSelected
       );
-      responsePromise = loadPosts('/post', updatedUrlSearchParams);
+      responsePromise = loadPosts('/draft', updatedUrlSearchParams);
     }
   }
 </script>
@@ -119,16 +119,21 @@
 </style>
 
 <svelte:head>
-  <title>filbert | public posts</title>
+  <title>filbert | private work</title>
 </svelte:head>
 
 <div class="base-row">
-  <H1>Public Articles ({totalPosts})</H1>
+  <H1>My Private Work ({totalPosts})</H1>
   <H3 fontWeightNormal>
-    These pieces have been published{' '}
-    <span role="img" aria-label="stack of books">📚</span>
-    {' '} and are viewable by everyone on the World Wide Web{' '}
-    <span role="img" aria-label="globe">🌍</span>
+    These pieces have{' '}
+    <span role="img" aria-label="lock">🔒</span>
+    {' '} NOT been published{' '}
+    <span role="img" aria-label="lock">🔑</span>
+    {' '} and are only viewable{' '}
+    <span role="img" aria-label="eyeballs">👀</span>
+    {' '} by you while logged into{' '}
+    <span role="img" aria-label="hand writing with a pen">✍️</span>
+    {' '} filbert
   </H3>
 </div>
 <div class="base-row">
@@ -159,9 +164,9 @@
     </div>
     <div class="filbert-col col-filter">
       <FilterWithInput
-        name="username"
-        buttonLabel="username @"
-        bind:value="{username}"
+        name="contains"
+        buttonLabel="contains"
+        bind:value="{contains}"
       />
     </div>
   </div>

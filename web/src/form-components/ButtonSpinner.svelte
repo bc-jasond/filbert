@@ -7,7 +7,7 @@
   export let disabled = false;
   export let loading = false;
 
-  import Spinner from '../icons/spinner.svelte';
+  import Spinner from '../icons/Spinner.svelte';
 </script>
 
 <style>

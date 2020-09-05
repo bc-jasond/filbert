@@ -12,7 +12,7 @@ const {
 
 async function getPosts(req, res) {
   const {
-    loggedInUser,
+    session: { user: loggedInUser },
     query: { username, oldest, random },
   } = req;
   const knex = await getKnex();
@@ -67,15 +67,15 @@ async function getPosts(req, res) {
     // TODO: add to query above instead of looping here
     posts.map((post) => {
       // keep users info private if they don't want to share it!
-      if (!post.userProfileIsPublic && loggedInUser.id !== post.userId) {
+      if (!post.userProfileIsPublic && loggedInUser.userId !== post.userId) {
         delete post.userId;
         delete post.profilePictureUrl;
         delete post.familyName;
         delete post.givenName;
       }
-      post.canEdit = loggedInUser.id === post.userId;
-      post.canDelete = loggedInUser.id === post.userId;
-      post.canPublish = loggedInUser.id === post.userId;
+      post.canEdit = loggedInUser.userId === post.userId;
+      post.canDelete = loggedInUser.userId === post.userId;
+      post.canPublish = loggedInUser.userId === post.userId;
       return post;
     })
   );
@@ -83,7 +83,9 @@ async function getPosts(req, res) {
 
 // returns both post and content
 async function getPostByCanonical(req, res) {
-  const { loggedInUser } = req;
+  const {
+    session: { user: loggedInUser },
+  } = req;
   const { canonical } = req.params;
 
   const post = await getPostByCanonicalHelper(canonical, loggedInUser);
@@ -141,6 +143,7 @@ async function getPostById(req, res) {
  */
 async function patchPost(req, res, next) {
   try {
+    const { user: { userId: loggedInUserId } = {} } = req.session;
     const { id } = req.currentPost;
     const { title, canonical, abstract, photoUrl, meta } = req.body;
     const patchValues = {};
@@ -164,7 +167,7 @@ async function patchPost(req, res, next) {
       .update(patchValues)
       .whereNull('deleted')
       .andWhere({
-        user_id: req.loggedInUser.id,
+        user_id: loggedInUserId,
         id,
       });
     res.send({});

@@ -1,9 +1,9 @@
 <script>
   export let post;
   export let showHandle = false;
-  export let postIsPrivate = false;
 
   $: postMap = Map(post);
+  $: postIsPrivate = !postMap.get('published');
 
   import { Map } from 'immutable';
   import ProfileImg from '../user-components/ProfileImg.svelte';

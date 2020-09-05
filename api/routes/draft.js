@@ -4,7 +4,7 @@ const { addFirstPhotoTitleAndAbstractToPosts } = require('../lib/post-util');
  * creates a new draft for logged in user
  */
 async function postDraft(req, res) {
-  const user_id = req.loggedInUser.id;
+  const user_id = req.session.user.userId;
   const { title, canonical, meta } = req.body;
   const insertValues = { user_id, title, canonical };
   insertValues.meta = JSON.stringify(
@@ -20,8 +20,8 @@ async function postDraft(req, res) {
 async function getDrafts(req, res, next) {
   try {
     const {
-      loggedInUser,
       query: { contains, oldest, random },
+      session: { user },
     } = req;
     const knex = await getKnex();
     let builder = knex('post')
@@ -48,7 +48,7 @@ async function getDrafts(req, res, next) {
       )
       .innerJoin('user', 'post.user_id', 'user.id')
       .where({
-        'post.user_id': loggedInUser.id,
+        'post.user_id': user.userId,
         published: null,
         'post.deleted': null,
       })
@@ -98,7 +98,7 @@ async function publishDraft(req, res) {
   }
   const knex = await getKnex();
   await knex('post').update({ published: getMysqlDatetime() }).where({
-    user_id: req.loggedInUser.id,
+    user_id: req.session.user.userId,
     id: currentPost.id,
   });
   res.send({});
