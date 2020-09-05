@@ -28,6 +28,9 @@ export function confirmPromise(msg) {
 }
 
 export function formatPostDate(dateStr) {
+  if (!dateStr) {
+    return;
+  }
   const publishedDate = new Date(dateStr);
   return publishedDate.toLocaleDateString('en-us', {
     // weekday: 'long',

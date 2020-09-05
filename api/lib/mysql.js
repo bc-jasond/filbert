@@ -165,13 +165,13 @@ export async function getPostByCanonicalHelper(canonical, loggedInUser) {
   }
 
   if (loggedInUser) {
-    post.canEdit = loggedInUser.id === post.userId;
-    post.canDelete = loggedInUser.id === post.userId;
-    post.canPublish = loggedInUser.id === post.userId;
+    post.canEdit = loggedInUser.userId === post.userId;
+    post.canDelete = loggedInUser.userId === post.userId;
+    post.canPublish = loggedInUser.userId === post.userId;
   }
   if (
     !post.userProfileIsPublic &&
-    (!loggedInUser || loggedInUser.id !== post.userId)
+    (!loggedInUser || loggedInUser.userId !== post.userId)
   ) {
     delete post.profilePictureUrl;
     delete post.familyName;

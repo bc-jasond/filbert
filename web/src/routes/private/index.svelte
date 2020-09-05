@@ -32,7 +32,7 @@
   import H1 from '../../document-components/H1.svelte';
   import H3 from '../../document-components/H3.svelte';
   import PostListRow from '../../list-components/PostListRow.svelte';
-  import Spinner from '../../icons/spinner.svelte';
+  import Spinner from '../../icons/Spinner.svelte';
   import FilterWithInput from '../../list-components/FilterWithInput.svelte';
 
   let responsePromise = Promise.resolve(posts);
@@ -83,6 +83,12 @@
   }
   .base-row:last-of-type {
     margin-bottom: 42px;
+  }
+  .loader-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
   }
   .col-filter {
     display: flex;

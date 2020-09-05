@@ -167,7 +167,7 @@
         {#if shouldShowPublic}
           <a rel="prefetch" href="/public">public</a>
         {/if}
-        <a href="/private">private</a>
+        <a rel="prefetch" href="/private">private</a>
         {#if shouldShowLogoutButton}
           <button id="logout-button" on:click="{handleSignout}">
             sign out
