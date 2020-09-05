@@ -3,7 +3,9 @@
 
   $: postMap = fromJS(post);
   $: postIsPrivate = !postMap.get('published');
-  $: postUrl = postIsPrivate ? `/edit/${postMap.get('id')}` : `/public/${postMap.get('canonical')}`;
+  $: postUrl = postIsPrivate
+    ? `/edit/${postMap.get('id')}`
+    : `/public/${postMap.get('canonical')}`;
 
   import { onMount } from 'svelte';
   import { fromJS } from 'immutable';
@@ -97,7 +99,7 @@
 <a
   class="filbert-flex-grid post-row filbert-link-alt"
   rel="prefetch"
-  href={postUrl}
+  href="{postUrl}"
 >
   <div class="image-col">
     {#if postMap.getIn(['meta', 'imageNode'])}

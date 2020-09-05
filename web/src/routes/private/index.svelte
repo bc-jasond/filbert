@@ -18,7 +18,6 @@
 </script>
 
 <script>
-
   export let posts;
   export let oldestFilterIsSelected;
   export let randomFilterIsSelected;
@@ -61,8 +60,8 @@
   $: {
     if (isBrowser) {
       const updatedUrlSearchParams = pushHistory(
-              'oldest',
-              oldestFilterIsSelected
+        'oldest',
+        oldestFilterIsSelected
       );
       responsePromise = loadPosts('/draft', updatedUrlSearchParams);
     }
@@ -144,21 +143,21 @@
       <button
         class="filbert-nav-button"
         class:open="{!oldestFilterIsSelected}"
-        on:click="{() => oldestFilterIsSelected = !oldestFilterIsSelected}"
+        on:click="{() => (oldestFilterIsSelected = !oldestFilterIsSelected)}"
       >
         newest ⇩
       </button>
       <button
         class="filbert-nav-button"
         class:open="{oldestFilterIsSelected}"
-        on:click="{() => oldestFilterIsSelected = !oldestFilterIsSelected}"
+        on:click="{() => (oldestFilterIsSelected = !oldestFilterIsSelected)}"
       >
         oldest ⇧
       </button>
       <button
         class="filbert-nav-button"
         class:open="{randomFilterIsSelected}"
-        on:click="{() => {/*TODO*/}}"
+        on:click="{() => {}}"
       >
         random ?
       </button>

@@ -21,9 +21,7 @@ async function getDrafts(req, res, next) {
   try {
     const {
       query: { contains, oldest, random },
-        session: {
-        user
-        }
+      session: { user },
     } = req;
     const knex = await getKnex();
     let builder = knex('post')

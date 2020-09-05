@@ -12,7 +12,7 @@ const {
 
 async function getPosts(req, res) {
   const {
-    session: {user: loggedInUser},
+    session: { user: loggedInUser },
     query: { username, oldest, random },
   } = req;
   const knex = await getKnex();
@@ -83,7 +83,9 @@ async function getPosts(req, res) {
 
 // returns both post and content
 async function getPostByCanonical(req, res) {
-  const { session: { user: loggedInUser} } = req;
+  const {
+    session: { user: loggedInUser },
+  } = req;
   const { canonical } = req.params;
 
   const post = await getPostByCanonicalHelper(canonical, loggedInUser);
@@ -141,7 +143,7 @@ async function getPostById(req, res) {
  */
 async function patchPost(req, res, next) {
   try {
-    const { user: { userId: loggedInUserId} = {}} = req.session;
+    const { user: { userId: loggedInUserId } = {} } = req.session;
     const { id } = req.currentPost;
     const { title, canonical, abstract, photoUrl, meta } = req.body;
     const patchValues = {};
