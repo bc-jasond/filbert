@@ -4,6 +4,7 @@
   export let label;
   export let onClick = () => {};
   export let primary = false;
+  export let warning = false;
   export let disabled = false;
   export let loading = false;
 
@@ -27,6 +28,12 @@
     border-color: transparent;
     background-color: var(--filbert-white);
     color: var(--filbert-darkGrey);
+  }
+  button.warning {
+    background: var(--filbert-lightError);
+  }
+  button.warning:hover {
+    background: var(--filbert-error);
   }
   button.disabled,
   button.loading {
@@ -61,7 +68,8 @@
   on:click="{() => !loading && !disabled && onClick?.()}"
   disabled="{loading || disabled}"
 >
-  <slot />
-  <div class="button-label" class:loading>{label}</div>
+  <slot>
+    <div class="button-label" class:loading>{label}</div>
+  </slot>
   <Spinner {loading} />
 </button>
