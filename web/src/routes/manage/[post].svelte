@@ -1,9 +1,21 @@
+<script context="module">
+  import {getApiClientInstance} from '../../common/api-client';
+
+  export async function preload({params}, session) {
+    return {
+      post: {}
+    }
+  }
+</script>
+
 <script>
   export let post;
 
-  import { fromJS } from 'immutable';
+  import { Map, fromJS } from 'immutable';
   import { goto } from '@sapper/app';
 
+  import H1 from '../../document-components/H1.svelte';
+  import H2 from '../../document-components/H2.svelte';
   import Image from '../../document-components/Image.svelte';
   import Toggle from '../../form-components/Toggle.svelte';
   import ButtonSpinner from '../../form-components/ButtonSpinner.svelte';
@@ -13,6 +25,18 @@
   let inputDomNode;
   let errorObj = {};
   let imageIsSelected;
+  let shouldSyncTitleAndAbstract;
+  let imageContainerId;
+  let shouldSyncTopPhoto;
+  let imageNode = Map()
+  let successMessage;
+
+  function toggleTitleAndAbstract() {}
+  function toggleImage() {}
+  function savePost() {}
+  function publishPost() {}
+  function duplicatePost() {}
+  function deletePost() {}
 
   function updatePost(postLocal) {
     postMap = postLocal;
@@ -23,8 +47,11 @@
 
 <style>
   .filbert-input-container {
+    display: flex;
+    flex-direction: column;
     opacity: 1;
     transition: opacity 0.125s ease-out;
+    margin-bottom: 16px;
   }
   .filbert-input-container.hide {
     opacity: 0.4;
@@ -72,24 +99,24 @@
   }
   @media (min-width: 1200px) {
     .middle-wrapper {
-      width: 50%;
+      width: 60%;
     }
   }
 </style>
 
-<h1>Manage{post.get('published') ? ' Post' : ' Draft'}</h1>
-<h2>Edit Listing Details, Publish, Duplicate & Delete</h2>
+<H1>Manage{postMap.get('published') ? ' Post' : ' Draft'}</H1>
+<H2>Edit Listing Details, Publish, Duplicate & Delete</H2>
 <div class="filbert-flex-grid">
   <div class="filbert-col">
     <div
       class="filbert-input-container"
       class:hide="{shouldSyncTitleAndAbstract}"
     >
-      <Label htmlFor="title" class:error="{errorObj.title}">title</Label>
+      <label htmlFor="title" class:error="{errorObj.title}">title</label>
       <input
         name="title"
         type="text"
-        value="{post.get('title')}"
+        value="{postMap.get('title')}"
         disabled="{shouldSyncTitleAndAbstract}"
         on:change="{(e) => {
           updatePost(post.set('title', e.target.value));
@@ -98,15 +125,15 @@
         bind:this="{inputDomNode}"
       />
     </div>
-    <div class="filbert-input-container" class:hide="{post.get('published')}">
+    <div class="filbert-input-container" class:hide="{postMap.get('published')}">
       <label htmlFor="canonical" class:error="{errorObj.canonical}">
         canonical
       </label>
       <input
         name="canonical"
         type="text"
-        value="{post.get('canonical')}"
-        disabled="{post.get('published')}"
+        value="{postMap.get('canonical')}"
+        disabled="{postMap.get('published')}"
         on:change="{(e) => {
           updatePost(post.set('canonical', e.target.value));
         }}"
@@ -123,7 +150,7 @@
       <textarea
         name="abstract"
         type="text"
-        value="{post.get('abstract')}"
+        value="{postMap.get('abstract')}"
         disabled="{shouldSyncTitleAndAbstract}"
         on:change="{(e) => {
           updatePost(post.set('abstract', e.target.value));
@@ -183,30 +210,29 @@
   </div>
   <div class="filbert-flex-grid-9">
     <div class="filbert-col-9">
-      <ButtonSpinner label="Save" onClick="{savePost}" />
+      <ButtonSpinner primary label="Save" onClick="{savePost}" />
     </div>
     <div class="filbert-col-9">
       <ButtonSpinner
-        label="{post.get('published') ? `Published on ${formatPostDate(post.get('published'))}` : 'Publish'}"
+              primary
+        label="{postMap.get('published') ? `Published on ${formatPostDate(postMap.get('published'))}` : 'Publish'}"
         onClick="{publishPost}"
-        disabled="{post.get('published') && 'disabled'}"
+        disabled="{postMap.get('published') && 'disabled'}"
       />
     </div>
     <div class="filbert-col-9">
-      <ButtonSpinner label="Duplicate" onClick="{duplicatePost}" />
+      <ButtonSpinner primary label="Duplicate" onClick="{duplicatePost}" />
     </div>
     <div class="filbert-col-9">
       <ButtonSpinner warning label="Delete" onClick="{deletePost}" />
     </div>
     <div class="filbert-col-9">
-      <button
-        class="filbert-nav-button cancel"
-        on:click="{() => {
+      <ButtonSpinner cancel
+                     label="Done"
+        onClick="{() => {
           goto(getNextFromUrl());
         }}"
-      >
-        <span class="button-span">Done</span>
-      </button>
+      />
     </div>
   </div>
 </div>

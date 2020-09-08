@@ -155,7 +155,7 @@
 
   :global(.filbert-col-9) {
     padding: 0;
-    flex: 1;
+    flex: 0;
     white-space: nowrap;
   }
 
@@ -219,6 +219,7 @@
   @media (min-width: 992px) {
     :global(.filbert-flex-grid-9) {
       display: flex;
+        justify-content: space-evenly;
     }
 
     :global(.filbert-col),
