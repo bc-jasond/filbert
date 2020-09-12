@@ -10,10 +10,11 @@ const chalk = require('chalk');
 
 const {
   FILBERT_SESSION_COOKIE_NAME,
-  assertLoggedInUser,
   ENCRYPTION_KEY,
-  mysqlConnectionConfig,
-} = require('@filbert/lib');
+} = require('@filbert/constants');
+const { assertLoggedInUser } = require('@filbert/auth');
+const { mysqlConnectionConfig } = require('@filbert/mysql');
+
 const { saneEnvironmentOrExit } = require('./lib/util');
 const { assertUserHasPost } = require('./lib/post-util');
 

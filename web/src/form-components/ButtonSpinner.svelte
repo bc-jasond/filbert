@@ -37,11 +37,11 @@
     background: var(--filbert-error);
   }
   button.cancel {
-    background: var(--filbert-mediumGrey)
+    background: var(--filbert-mediumGrey);
   }
   button.cancel:hover {
-     background: var(--filbert-grey)
-   }
+    background: var(--filbert-grey);
+  }
   button.disabled,
   button.loading {
     background-color: var(--filbert-mediumGrey);

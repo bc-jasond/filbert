@@ -219,7 +219,7 @@
   @media (min-width: 992px) {
     :global(.filbert-flex-grid-9) {
       display: flex;
-        justify-content: space-evenly;
+      justify-content: space-evenly;
     }
 
     :global(.filbert-col),

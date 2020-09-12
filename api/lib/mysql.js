@@ -1,7 +1,7 @@
 const knex = require('knex');
 
 const { wrapExec } = require('./util');
-const { mysqlConnectionConfig } = require('@filbert/lib');
+const { mysqlConnectionConfig } = require('@filbert/mysql');
 
 let knexConnection;
 export async function getKnex() {

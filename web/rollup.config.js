@@ -13,6 +13,7 @@ const dev = mode === 'development';
 const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && /[/\\]@sapper[/\\]/.test(warning.message)) || onwarn(warning);
 
 const env = {
+	'process.env.ENCRYPTION_KEY': JSON.stringify(process.env.ENCRYPTION_KEY),
 	'process.env.NODE_ENV': JSON.stringify(mode),
 	'process.env.API_URL': JSON.stringify(process.env.API_URL),
 	'process.env.GOOGLE_API_FILBERT_CLIENT_ID': JSON.stringify(process.env.GOOGLE_API_FILBERT_CLIENT_ID)

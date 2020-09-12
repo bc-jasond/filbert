@@ -96,11 +96,12 @@ async function assertUserHasPost(req, res, next) {
   try {
     const {
       params: { postId },
+      session: { user: { userId } = {} },
     } = req;
     const knex = await getKnex();
     const [post] = await knex('post').where({
       id: postId,
-      user_id: req.loggedInUser.id,
+      user_id: userId,
     });
     if (!post) {
       res.status(404).send({});

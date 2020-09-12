@@ -8,8 +8,8 @@ const MysqlStore = require('express-mysql-session')(session);
 const {
   FILBERT_SESSION_COOKIE_NAME,
   ENCRYPTION_KEY,
-  mysqlConnectionConfig,
-} = require('@filbert/lib');
+} = require('@filbert/constants');
+const { mysqlConnectionConfig } = require('@filbert/mysql');
 
 const sessionStore = new MysqlStore(mysqlConnectionConfig);
 
