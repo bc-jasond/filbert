@@ -1,4 +1,10 @@
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 458 458">
+<script>
+	export let useMixin = false;
+	export let selected = false;
+</script>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 458 458"
+	 class:icon-svg-mixin={useMixin}
+	 class:selected>
 	<path d="M445.651,201.95c-1.485-9.308-10.235-15.649-19.543-14.164c-9.308,1.485-15.649,10.235-14.164,19.543
 		c0.016,0.102,0.033,0.203,0.051,0.304c17.38,102.311-51.47,199.339-153.781,216.719c-102.311,17.38-199.339-51.47-216.719-153.781
 		S92.966,71.232,195.276,53.852c62.919-10.688,126.962,11.29,170.059,58.361l-75.605,25.19

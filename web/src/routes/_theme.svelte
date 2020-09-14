@@ -201,6 +201,41 @@
   :global(input.error) {
     border-color: var(--filbert-error);
   }
+  :global(.lil-sassy-menu) {
+      position: absolute;
+      transition: 0.1s top;
+      z-index: 13;
+      background-image: linear-gradient(to bottom, rgba(49, 49, 47, 0.99), #262625);
+      background-repeat: repeat-x;
+      border-radius: 5px;
+      padding: 0 10px;
+      color: var(--filbert-darkGrey);
+  }
+  :global(.dark-input) {
+      background: rgba(0, 0, 0, 0);
+      color: #fff;
+      border: none;
+      font-size: 16px;
+      border-radius: 5px;
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+  }
+  :global(.svg-icon-mixin) {
+      fill: var(--filbert-white);
+      position: relative;
+      top: -1px;
+      vertical-align: middle;
+      height: 21px;
+      width: 21px;
+      border-bottom: 2px solid transparent;
+  }
+  :global(.svg-icon-mixin:hover) {
+       fill: var(--accent-color-primary);
+   }
+  :global(.svg-icon-mixin.selected) {
+    fill: var(--accent-color-primary);
+  }
 
   @media (min-width: 768px) {
     :global(.filbert-flex-grid) {
