@@ -30,16 +30,22 @@
 
   import { Map, fromJS } from 'immutable';
   import { goto } from '@sapper/app';
-  import { onMount } from 'svelte';
+  import { onMount, beforeUpdate } from 'svelte';
 
   import { POST_ACTION_REDIRECT_TIMEOUT } from '@filbert/constants';
-  import { formatPostDate } from '../../common/utils';
+  import {
+    getMapWithId,
+    nodeIsValid,
+    formatPostDate,
+  } from '../../common/utils';
 
   import H1 from '../../document-components/H1.svelte';
   import H2 from '../../document-components/H2.svelte';
   import Image from '../../document-components/Image.svelte';
   import Toggle from '../../form-components/Toggle.svelte';
   import ButtonSpinner from '../../form-components/ButtonSpinner.svelte';
+  import EditImageMenu from '../../editor-components/EditImageMenu.svelte';
+  import { NODE_TYPE_IMAGE } from 'filbert/src/common/constants';
 
   let nextUrl;
   let focusAndScroll;
@@ -47,6 +53,17 @@
   let backupAbstract;
   let backupImageNode;
   let lastSavedPostMap = Map();
+  let imageIsSelected;
+
+  function positionImageMenu() {
+    if (!imageContainerDomNode) return;
+    imageMenuOffsetTop = imageContainerDomNode.offsetTop - 60;
+    imageMenuOffsetLeft =
+      imageContainerDomNode.offsetLeft -
+      8 +
+      imageContainerDomNode.offsetWidth / 2;
+  }
+
   onMount(async () => {
     const { focusAndScrollSmooth, getNextFromUrl } = await import(
       '../../common/dom'
@@ -56,7 +73,17 @@
     backupTitle = postMap.get('title', '');
     backupAbstract = postMap.get('abstract', '');
     backupImageNode = postMap.getIn(['meta', 'imageNode']) || Map();
+    imageIsSelected = !postMap.getIn(['meta', 'syncTopPhoto']);
     lastSavedPostMap = postMap;
+
+    window.addEventListener('resize', positionImageMenu);
+    return () => {
+      window.removeEventListener('resize', positionImageMenu);
+    };
+  });
+
+  beforeUpdate(() => {
+    positionImageMenu();
   });
 
   $: postMap = fromJS(post);
@@ -74,8 +101,10 @@
 
   let inputDomNode;
   let errorObj = {};
-  let imageIsSelected;
+  let imageMenuOffsetTop = 0;
+  let imageMenuOffsetLeft = 0;
   const imageContainerId = 'manage-post-image-container';
+  let imageContainerDomNode;
   let shouldShowSuccessMessage = false;
   let saveLoading;
 
@@ -145,8 +174,19 @@
 
   function updatePost(postLocal) {
     postMap = postLocal;
+    imageIsSelected = !postMap.getIn(['meta', 'syncTopPhoto']);
     errorObj = {};
     shouldShowSuccessMessage = false;
+  }
+
+  function updateImage(imageNode) {
+    let imageNodeUpdated = imageNode;
+    if (!nodeIsValid(imageNode)) {
+      imageNodeUpdated = imageNode.merge(
+        getMapWithId({ type: NODE_TYPE_IMAGE })
+      );
+    }
+    updatePost(postMap.setIn(['meta', 'imageNode'], imageNodeUpdated));
   }
 </script>
 
@@ -227,7 +267,7 @@
       class="filbert-input-container"
       class:hide="{shouldSyncTitleAndAbstract}"
     >
-      <label htmlFor="title" class:error="{errorObj.title}">title</label>
+      <label for="title" class:error="{errorObj.title}">title</label>
       <input
         name="title"
         type="text"
@@ -244,7 +284,7 @@
       class="filbert-input-container"
       class:hide="{postMap.get('published')}"
     >
-      <label htmlFor="canonical" class:error="{errorObj.canonical}">
+      <label for="canonical" class:error="{errorObj.canonical}">
         canonical
       </label>
       <input
@@ -262,9 +302,7 @@
       class="filbert-input-container"
       class:hide="{shouldSyncTitleAndAbstract}"
     >
-      <label htmlFor="abstract" class:error="{errorObj.abstract}">
-        abstract
-      </label>
+      <label for="abstract" class:error="{errorObj.abstract}">abstract</label>
       <textarea
         name="abstract"
         type="text"
@@ -280,6 +318,7 @@
   <div class="filbert-col">
     <div
       id="{imageContainerId}"
+      bind:this="{imageContainerDomNode}"
       class="filbert-input-container image"
       class:hide="{shouldSyncTopPhoto}"
       on:click="{() => {
@@ -289,9 +328,7 @@
         imageIsSelected = !imageIsSelected;
       }}"
     >
-      <label htmlFor="imageNode" class:error="{errorObj.imageNode}">
-        image
-      </label>
+      <label for="imageNode" class:error="{errorObj.imageNode}">image</label>
       {#if imageNode.size}
         <Image node="{imageNode}" hideBorder="{!imageIsSelected}" hideCaption />
       {/if}
@@ -368,13 +405,13 @@
     </div>
   </div>
 </div>
-<!--{#if shouldSyncTopPhoto && imageIsSelected}-->
-<!--  <EditImageForm-->
-<!--    shouldHideCaption-->
-<!--    offsetTop="{imageMenuOffsetTop}"-->
-<!--    offsetLeft="{imageMenuOffsetLeft}"-->
-<!--    {post}-->
-<!--    nodeModel="{imageNode}"-->
-<!--    update="{updateImage}"-->
-<!--  />-->
+<!--{#if !shouldSyncTopPhoto && imageIsSelected}-->
+<EditImageMenu
+  shouldHideCaption
+  offsetTop="{imageMenuOffsetTop}"
+  offsetLeft="{imageMenuOffsetLeft}"
+  post="{postMap}"
+  nodeModel="{imageNode}"
+  update="{updateImage}"
+/>
 <!--{/if}-->

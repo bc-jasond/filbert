@@ -202,37 +202,56 @@
     border-color: var(--filbert-error);
   }
   :global(.lil-sassy-menu) {
-      position: absolute;
-      transition: 0.1s top;
-      z-index: 13;
-      background-image: linear-gradient(to bottom, rgba(49, 49, 47, 0.99), #262625);
-      background-repeat: repeat-x;
-      border-radius: 5px;
-      padding: 0 10px;
-      color: var(--filbert-darkGrey);
+    position: absolute;
+    transition: 0.1s top;
+    z-index: 13;
+    background-image: linear-gradient(
+      to bottom,
+      rgba(49, 49, 47, 0.99),
+      #262625
+    );
+    background-repeat: repeat-x;
+    border-radius: 5px;
+    padding: 0 10px;
+    color: var(--filbert-darkGrey);
+  }
+  :global(.lil-sassy-menu .point-clip) {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    clip: rect(10px 20px 20px 0);
+    margin-left: -10px;
+  }
+  :global(.lil-sassy-menu .arrow) {
+    display: block;
+    width: 20px;
+    height: 20px;
+    background-color: #262625;
+    transform: rotate(45deg) scale(0.5);
   }
   :global(.dark-input) {
-      background: rgba(0, 0, 0, 0);
-      color: #fff;
-      border: none;
-      font-size: 16px;
-      border-radius: 5px;
-      display: block;
-      box-sizing: border-box;
-      width: 100%;
+    background: rgba(0, 0, 0, 0);
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    border-radius: 5px;
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
   }
+
   :global(.svg-icon-mixin) {
-      fill: var(--filbert-white);
-      position: relative;
-      top: -1px;
-      vertical-align: middle;
-      height: 21px;
-      width: 21px;
-      border-bottom: 2px solid transparent;
+    fill: var(--filbert-white);
+    position: relative;
+    top: -1px;
+    vertical-align: middle;
+    height: 100%;
+    width: 100%;
+    border-bottom: 2px solid transparent;
   }
   :global(.svg-icon-mixin:hover) {
-       fill: var(--accent-color-primary);
-   }
+    fill: var(--accent-color-primary);
+  }
   :global(.svg-icon-mixin.selected) {
     fill: var(--accent-color-primary);
   }
