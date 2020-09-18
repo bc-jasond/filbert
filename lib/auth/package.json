@@ -1,0 +1,7 @@
+{
+  "name": "@filbert/auth",
+  "version": "1.0.0",
+  "description": "shared JS packages for API, web, et al.",
+  "main": "index.js",
+  "license": "MIT"
+}

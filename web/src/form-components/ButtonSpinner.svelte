@@ -4,6 +4,8 @@
   export let label;
   export let onClick = () => {};
   export let primary = false;
+  export let warning = false;
+  export let cancel = false;
   export let disabled = false;
   export let loading = false;
 
@@ -27,6 +29,18 @@
     border-color: transparent;
     background-color: var(--filbert-white);
     color: var(--filbert-darkGrey);
+  }
+  button.warning {
+    background: var(--filbert-lightError);
+  }
+  button.warning:hover {
+    background: var(--filbert-error);
+  }
+  button.cancel {
+    background: var(--filbert-mediumGrey);
+  }
+  button.cancel:hover {
+    background: var(--filbert-grey);
   }
   button.disabled,
   button.loading {
@@ -58,6 +72,8 @@
   class:primary
   class:loading
   class:disabled
+  class:warning
+  class:cancel
   on:click="{() => !loading && !disabled && onClick?.()}"
   disabled="{loading || disabled}"
 >

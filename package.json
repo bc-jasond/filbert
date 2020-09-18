@@ -11,7 +11,7 @@
     "api",
     "frontend",
     "web",
-    "lib"
+    "lib/*"
   ],
   "scripts": {
     "sapper-dev": "yarn --cwd web dev",
@@ -19,6 +19,7 @@
     "api-start": "yarn --cwd api start",
     "pretty-svelte": "prettier --write --plugin-search-dir=. './web/src/**/*.{html,svelte,js}'",
     "pretty-api": "prettier --parser=babel --single-quote --write './api/**/*.js'",
+    "pretty-lib": "prettier --parser=babel --single-quote --write './lib/**/*.js'",
     "pretty-react": "prettier --parser=babel --single-quote --write './frontend/src/**/*.{js,jsx}'"
   }
 }

@@ -22,7 +22,7 @@
     cursor: pointer;
   }
 
-  :global(svg) {
+  footer :global(svg) {
     display: block;
     height: 32px;
     width: 34px;
@@ -30,7 +30,7 @@
     transition: fill 0.375s;
     fill: var(--filbert-grey);
   }
-  :global(svg):hover {
+  footer :global(svg):hover {
     transition: fill 0.375s;
     fill: var(--filbert-darkGrey);
   }

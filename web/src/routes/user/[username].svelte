@@ -5,13 +5,15 @@
   export async function preload({ path, params: { username } }, session) {
     if (!usernameIsValid(username)) {
       this.error(404, 'Not found');
+      return;
     }
     const usernameWithoutAt = username.slice(1);
     const { error, data: user } = await getApiClientInstance(this.fetch).get(
       `/user/${usernameWithoutAt}`
     );
-    if (error) {
+    if (error || !user) {
       this.error(error.status, error.statusText);
+      return;
     }
     const userIsMe = session?.user?.username === usernameWithoutAt;
     if (!user.statsArePublic && !userIsMe) {
@@ -22,6 +24,7 @@
     ).get(`/user-stats/${usernameWithoutAt}`);
     if (statsError) {
       this.error(statsError.status, statsError.statusText);
+      return;
     }
     return { user, userIsMe, stats };
   }

@@ -21,7 +21,8 @@
     "immutable": "^4.0.0-rc.12",
     "polka": "next",
     "sirv": "^0.4.0",
-    "@filbert/lib": "1.0.0"
+    "@filbert/constants": "1.0.0",
+    "@filbert/mysql": "1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",

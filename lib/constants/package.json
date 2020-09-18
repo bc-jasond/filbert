@@ -1,5 +1,5 @@
 {
-  "name": "@filbert/lib",
+  "name": "@filbert/constants",
   "version": "1.0.0",
   "description": "shared JS packages for API, web, et al.",
   "main": "index.js",

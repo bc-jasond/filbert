@@ -1,5 +1,5 @@
 const sharp = require('sharp');
-const { getChecksum } = require('@filbert/lib');
+const { getChecksum } = require('@filbert/cipher');
 const { bucketHasKey, uploadImageToBucket } = require('../lib/s3');
 const { imageBucketName, objectStorageBaseUrl } = require('../lib/constants');
 
