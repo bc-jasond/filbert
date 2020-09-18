@@ -18,6 +18,6 @@
   }
 </style>
 
-<button>
+<button on:click>
   <slot />
 </button>

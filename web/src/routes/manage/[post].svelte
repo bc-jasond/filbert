@@ -204,6 +204,13 @@
   .filbert-input-container.image {
     display: block;
   }
+  /*TODO: add this input to fix tab ordering*/
+  #image-input-hidden {
+    position: absolute;
+    height: 0;
+    width: 0;
+    opacity: 0;
+  }
   .middle-wrapper {
     width: 100%;
     margin: 0;
@@ -405,13 +412,13 @@
     </div>
   </div>
 </div>
-<!--{#if !shouldSyncTopPhoto && imageIsSelected}-->
-<EditImageMenu
-  shouldHideCaption
-  offsetTop="{imageMenuOffsetTop}"
-  offsetLeft="{imageMenuOffsetLeft}"
-  post="{postMap}"
-  nodeModel="{imageNode}"
-  update="{updateImage}"
-/>
-<!--{/if}-->
+{#if !shouldSyncTopPhoto && imageIsSelected}
+  <EditImageMenu
+    shouldHideCaption
+    offsetTop="{imageMenuOffsetTop}"
+    offsetLeft="{imageMenuOffsetLeft}"
+    {postMap}
+    nodeModel="{imageNode}"
+    update="{updateImage}"
+  />
+{/if}
