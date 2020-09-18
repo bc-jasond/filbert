@@ -213,10 +213,12 @@
   .svg-container {
     height: 21px;
     width: 21px;
+    margin-bottom: 4px;
   }
-  .svg-container-bigger {
+  .svg-container.bigger {
     height: 28px;
     width: 28px;
+    margin-bottom: 0;
   }
   input {
     display: none;
@@ -247,7 +249,7 @@
     {/if}
   </IconButton>
   <IconButton on:click="{clickHandlers[2]}">
-    <div class="svg-container-bigger">
+    <div class="svg-container bigger">
       <IconPlusPx useIconMixin selected="{currentIdx === 2}" />
     </div>
     {#if currentIdx === 2}
@@ -255,7 +257,7 @@
     {/if}
   </IconButton>
   <IconButton on:click="{clickHandlers[3]}">
-    <div class="svg-container-bigger">
+    <div class="svg-container bigger">
       <IconMinusPx useIconMixin selected="{currentIdx === 3}" />
     </div>
     {#if currentIdx === 3}

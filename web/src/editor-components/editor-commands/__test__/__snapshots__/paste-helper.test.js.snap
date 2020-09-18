@@ -1,0 +1,24 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Document Model -> paste node helper doPaste() pastes a single line of text 1`] = `
+Array [
+  Object {
+    "executeState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "621e",
+      "type": "h1",
+      "content": "Large Headsome sample stringing",
+      "meta": Immutable.Map {},
+    },
+    "unexecuteState": Immutable.Map {
+      "post_id": 175,
+      "id": "8e34",
+      "next_sibling_id": "621e",
+      "type": "h1",
+      "content": "Large Heading",
+      "meta": Immutable.Map {},
+    },
+  },
+]
+`;
