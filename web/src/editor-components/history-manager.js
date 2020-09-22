@@ -9,7 +9,11 @@ import { moreThanNCharsAreDifferent, reviver } from '../common/utils';
 
 export const characterDiffSize = 6;
 
-export default function HistoryManager(postId, apiClient, pendingHistoryLog = []) {
+export default function HistoryManager(
+  postId,
+  apiClient,
+  pendingHistoryLog = []
+) {
   let historyCandidateNode = Map();
   let historyCandidateUnexecuteSelectionOffsets = {};
   let historyCandidateExecuteSelectionOffsets = {};

@@ -10,7 +10,11 @@ import {
   SELECTION_NEXT,
 } from '../../common/constants';
 import { makeSelections } from '../../common/test-helpers';
-import { cleanTextOrZeroLengthPlaceholder,  reviver, Selection } from '../../common/utils';
+import {
+  cleanTextOrZeroLengthPlaceholder,
+  reviver,
+  Selection,
+} from '../../common/utils';
 
 const { fromJS, Map } = require('immutable');
 const {

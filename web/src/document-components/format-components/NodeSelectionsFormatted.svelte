@@ -24,14 +24,12 @@
   } from '../../common/constants';
   import { Selection } from '../../common/utils';
 
-  const selectionHead = node.getIn(['meta', 'selections'], Selection());
-  const contentPiecesBySelectionLength = getContentBySelections(node);
-  const contentAndSelections = contentPiecesBySelectionLength.map(
-    (text, idx) => ({
-      text,
-      selection: getSelectionAtIdx(selectionHead, idx),
-    })
-  );
+  $: selectionHead = node.getIn(['meta', 'selections'], Selection());
+  $: contentPiecesBySelectionLength = getContentBySelections(node);
+  $: contentAndSelections = contentPiecesBySelectionLength.map((text, idx) => ({
+    text,
+    selection: getSelectionAtIdx(selectionHead, idx),
+  }));
 </script>
 
 {#each contentAndSelections as { text, selection }}

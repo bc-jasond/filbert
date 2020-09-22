@@ -1,5 +1,6 @@
 <script>
   export let nodesById = Map();
+  export let setEditNodeId;
 
   import { Map } from 'immutable';
   import {

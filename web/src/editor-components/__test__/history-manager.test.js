@@ -32,7 +32,7 @@ const selectionOffsets = { is: 'currentOffsets' };
 overrideConsole();
 let historyManager;
 
-const apiClientMock = {post: jest.fn(async () => ({}))};
+const apiClientMock = { post: jest.fn(async () => ({})) };
 
 beforeEach(() => {
   historyManager = HistoryManager(post.id, apiClientMock);
@@ -225,7 +225,9 @@ describe('undo & redo', () => {
     done();
   });
   test("doesn't apply empty updates", async (done) => {
-    apiClientMock.post.mockReturnValue(Promise.resolve({ data: { foo: 'bar' } }));
+    apiClientMock.post.mockReturnValue(
+      Promise.resolve({ data: { foo: 'bar' } })
+    );
     // UNDO
     const undoResult = await historyManager.undo();
     expect(undoResult).toEqual(Map());
