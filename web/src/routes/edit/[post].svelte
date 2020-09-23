@@ -32,8 +32,6 @@
 </script>
 
 <script>
-  import { apiPost } from 'filbert/src/common/fetch';
-
   export let post;
   export let nodesById;
   export let selectionOffsets = {};
@@ -69,13 +67,13 @@
   let batchSaveIntervalId;
   let pasteHistoryState;
   let cutHistoryState;
+  let shouldSkipKeyUp;
 
   import { fromJS, Map } from 'immutable';
   import { goto } from '@sapper/app';
   import { tick, onMount } from 'svelte';
 
   import {
-    KEYCODE_BACKSPACE,
     KEYCODE_DOWN_ARROW,
     KEYCODE_ENTER,
     KEYCODE_ESC,
@@ -94,7 +92,6 @@
     SELECTION_LINK_URL,
   } from '../../common/constants';
   import {
-    reviver,
     getCanonicalFromTitle,
     Selection,
     stopAndPrevent,
@@ -118,6 +115,9 @@
   } from '../../editor-components/editor-commands/dom-sync';
   import { doPaste } from '../../editor-components/editor-commands/paste';
   import { doSplit } from '../../editor-components/editor-commands/split';
+
+  import { handleBackspace } from '../../editor-components/event-handlers/backspace';
+  import { handleEnter } from '../../editor-components/event-handlers/enter';
 
   import {
     getSelectionAtIdx,
@@ -151,12 +151,29 @@
       documentModel = DocumentModel(post.id, nodesById);
       historyManager = HistoryManager(post.id, getApiClientInstance());
       nodesByIdMapInternal = documentModel.getNodes();
+      tick().then(() => {
+        setCaret(selectionOffsets);
+      });
     }
 
     window.addEventListener('keydown', handleKeyDown);
+    //window.addEventListener('resize', manageInsertMenu);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('input', handleInput);
+    //window.addEventListener('paste', handlePaste);
+    //window.addEventListener('cut', handleCut);
+    window.addEventListener('mouseup', handleMouseUp);
+    batchSaveIntervalId = setInterval(batchSave, 3000);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      //window.removeEventListener('resize', manageInsertMenu);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('input', handleInput);
+      //window.removeEventListener('paste', handlePaste);
+      //window.removeEventListener('cut', handleCut);
+      window.removeEventListener('mouseup', handleMouseUp);
+      clearInterval(batchSaveIntervalId);
     };
   });
 
@@ -190,6 +207,15 @@
     await historyManager.saveAndClearLocalHistoryLog();
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
     await goto(`/edit/${postId}`);
+  }
+
+  async function batchSave() {
+    const { updatedPost } = await historyManager.saveAndClearLocalHistoryLog();
+    if (updatedPost) {
+      // trigger reactivity defined in onMount()
+      // the last cursor position and current history position are among things that could have changed
+      post = updatedPost;
+    }
   }
 
   async function commitUpdates(selectionOffsets) {
@@ -227,129 +253,8 @@
 
   function closeAllEditContentMenus() {
     formatSelectionNode = Map();
-    (editSectionNode = Map()), (shouldShowEditSectionMenu = false);
-  }
-
-  async function handleBackspace(evt, selectionOffsets) {
-    // if the caret is collapsed, only let the "backspace" key through...
-    // otherwise, if there are any other key strokes that aren't control keys - delete the selection!
-    if (
-      evt.keyCode !== KEYCODE_BACKSPACE ||
-      // don't delete the section while editing its fields :) !
-      shouldShowEditSectionMenu ||
-      // invalid selection
-      !isValidDomSelection(selectionOffsets)
-    ) {
-      return;
-    }
-
-    stopAndPrevent(evt);
-
-    const { startNodeId, endNodeId, caretStart, caretEnd } = selectionOffsets;
-
-    const historyState = [];
-    let executeSelectionOffsets = selectionOffsets;
-
-    // is this a MetaType node?
-    if (documentModel.isMetaType(startNodeId)) {
-      const {
-        historyState: historyStateDeleteMetaType,
-        executeSelectionOffsets: executeSelectionOffsetsDeleteMetaType,
-      } = doDeleteMetaType(documentModel, selectionOffsets);
-      historyState.push(...historyStateDeleteMetaType);
-      executeSelectionOffsets = executeSelectionOffsetsDeleteMetaType;
-
-      historyManager.appendToHistoryLog({
-        executeSelectionOffsets,
-        unexecuteSelectionOffsets: selectionOffsets,
-        historyState,
-      });
-      await commitUpdates(executeSelectionOffsets);
-      return;
-    }
-
-    const hasContentToDelete = endNodeId || caretStart > 0 || caretEnd;
-
-    // is there any content to delete?
-    if (hasContentToDelete) {
-      const {
-        historyState: historyStateDelete,
-        executeSelectionOffsets: executeSelectionOffsetsDelete,
-      } = doDelete(documentModel, selectionOffsets);
-      historyState.push(...historyStateDelete);
-      executeSelectionOffsets = executeSelectionOffsetsDelete;
-    }
-
-    // if doDelete() returns a different startNodeId, a merge is required
-    // TODO: verify highlight + cut or delete has the right behavior
-    const needsMergeWithOtherNode =
-      executeSelectionOffsets.startNodeId !== startNodeId ||
-      (!caretStart && !caretEnd);
-
-    if (needsMergeWithOtherNode) {
-      const {
-        executeSelectionOffsets: executeSelectionOffsetsMerge,
-        historyState: historyStateMerge,
-      } = doMerge(documentModel, executeSelectionOffsets);
-      historyState.push(...historyStateMerge);
-      executeSelectionOffsets = executeSelectionOffsetsMerge;
-    }
-
-    // since this handler catches keystrokes *before* DOM updates, deleting one char will look like a diff length of 0
-    const didDeleteContentInOneNode = !endNodeId && hasContentToDelete;
-
-    if (didDeleteContentInOneNode) {
-      historyManager.appendToHistoryLogWhenNCharsAreDifferent({
-        executeSelectionOffsets,
-        unexecuteSelectionOffsets: selectionOffsets,
-        historyState,
-        comparisonPath: ['content'],
-      });
-    } else {
-      historyManager.appendToHistoryLog({
-        executeSelectionOffsets,
-        unexecuteSelectionOffsets: selectionOffsets,
-        historyState,
-      });
-    }
-
-    // clear the selected format node when deleting the highlighted selection
-    // NOTE: must wait for state to have been set or setCaret will check stale values
-    closeAllEditContentMenus();
-    await commitUpdates(executeSelectionOffsets);
-  }
-
-  async function handleEnter(evt, selectionOffsets) {
-    if (
-      evt.keyCode !== KEYCODE_ENTER ||
-      // ignore if there's a selected MetaType node's menu is open
-      shouldShowEditSectionMenu ||
-      // invalid dom selection
-      !isValidDomSelection(selectionOffsets)
-    ) {
-      return;
-    }
-
-    stopAndPrevent(evt);
-
-    // perform editor commands
-    const { executeSelectionOffsets, historyState } = doSplit(
-      documentModel,
-      selectionOffsets
-    );
-    // create history log entry
-    historyManager.appendToHistoryLog({
-      executeSelectionOffsets,
-      unexecuteSelectionOffsets: selectionOffsets,
-      historyState,
-    });
-    // special case for creating a new document on "Enter"
-    if (!postMap.get('id') || postMap.get('id') === NEW_POST_URL_ID) {
-      await createNewPost();
-      return;
-    }
-    closeAllEditContentMenus();
-    await commitUpdates(executeSelectionOffsets);
+    editSectionNode = Map();
+    shouldShowEditSectionMenu = false;
   }
 
   async function handleSyncToDom(evt, selectionOffsets) {
@@ -433,14 +338,24 @@
       evt.shiftKey &&
       (evt.metaKey || evt.ctrlKey)
     ) {
-      //this.redo();
+      //redo();
       stopAndPrevent(evt);
       return;
     }
     // undo
     if (evt.keyCode === KEYCODE_Z && (evt.metaKey || evt.ctrlKey)) {
-      //this.undo();
+      //undo();
       stopAndPrevent(evt);
+      return;
+    }
+    // create new post?
+    // special case for creating a new document on "Enter"
+    if (
+      evt.keyCode === KEYCODE_ENTER &&
+      (!postMap.get('id') || postMap.get('id') === NEW_POST_URL_ID)
+    ) {
+      stopAndPrevent(evt);
+      await createNewPost();
       return;
     }
     // ignore shift and option - don't override hard-refresh!
@@ -474,18 +389,100 @@
 
     console.debug('KEYDOWN', evt);
     let selectionOffsets = getSelectionOffsetsOrEditSectionNode();
-    // TODO this.handleDel(evt); // currently, no support for the 'Del' key
-    await handleBackspace(evt, selectionOffsets);
-    await handleEnter(evt, selectionOffsets);
-    //await this.handlePaste(evt, selectionOffsets);
-    //await this.handleCut(evt, selectionOffsets);
+    // ignore invalid DOM selection
+    if (!isValidDomSelection(selectionOffsets)) {
+      return;
+    }
+    // TODO handleDel(evt); // currently, no support for the 'Del' key
+    if (
+      // TODO: unregister this handler when showing the edit section menu...
+      //  don't delete the section while editing its fields :) !
+      !shouldShowEditSectionMenu
+    ) {
+      await handleBackspace({
+        evt,
+        selectionOffsets,
+        documentModel,
+        historyManager,
+        commitUpdates,
+      });
+      await handleEnter({
+        evt,
+        selectionOffsets,
+        documentModel,
+        historyManager,
+        commitUpdates,
+      });
+    }
+    //await handlePaste(evt, selectionOffsets);
+    //await handleCut(evt, selectionOffsets);
     await handleSyncToDom(evt, selectionOffsets);
-    //await this.handleArrows(evt, selectionOffsets);
+    //await handleArrows(evt, selectionOffsets);
     // refresh caret after possible setState() mutations above
-    //selectionOffsets = this.getSelectionOffsetsOrEditSectionNode();
-    //await this.handleEditSectionMenu(evt);
-    //await this.manageInsertMenu(evt, selectionOffsets);
-    //await this.manageFormatSelectionMenu(evt, selectionOffsets);
+    //selectionOffsets = getSelectionOffsetsOrEditSectionNode();
+    //await handleEditSectionMenu(evt);
+    //await manageInsertMenu(evt, selectionOffsets);
+    //await manageFormatSelectionMenu(evt, selectionOffsets);
+  }
+
+  async function handleKeyUp(evt) {
+    if (
+      formatSelectionModel.get(SELECTION_ACTION_LINK) ||
+      (!evt.shiftKey && !isControlKey(evt.keyCode))
+    ) {
+      return;
+    }
+    // TODO: this is to coordinate with closing the Format Selection menu
+    // without it, the menu would reopen after the user hits ESC?
+    if (shouldSkipKeyUp) {
+      shouldSkipKeyUp = undefined;
+      return;
+    }
+    console.debug('KEYUP');
+    const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
+    //await manageFormatSelectionMenu(evt, selectionOffsets);
+  }
+
+  async function handleInput(evt) {
+    // any control keys being held down?
+    if (evt.metaKey) {
+      return;
+    }
+    // if there's a MetaNode selected, bail
+    if (editSectionNode.get('id')) {
+      return;
+    }
+    const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
+    // if the caret isn't on a node with an id, bail
+    if (!selectionOffsets.startNodeId) {
+      return;
+    }
+    console.debug('INPUT (aka: sync back from DOM)');
+    // for emoji keyboard insert & spellcheck correct
+    const { executeSelectionOffsets, historyState } = syncFromDom(
+      documentModel,
+      selectionOffsets,
+      evt
+    );
+    historyManager.appendToHistoryLog({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: selectionOffsets,
+      historyState,
+    });
+
+    // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
+    //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
+    await commitUpdates(executeSelectionOffsets);
+  }
+
+  async function handleMouseUp(evt) {
+    // console.debug('MouseUp: ', evt)
+    const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
+
+    // close everything by default, sectionEdit() callback will fire after this to override
+    await closeAllEditContentMenus();
+    //await manageInsertMenu(evt, selectionOffsets);
+    //await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
   function sectionEdit() {}
@@ -511,7 +508,7 @@
 <!--    insertNodeId={insertMenuNode.get('id')}-->
 <!--    insertMenuTopOffset={insertMenuTopOffset}-->
 <!--    insertMenuLeftOffset={insertMenuLeftOffset}-->
-<!--    insertSection={this.insertSection}-->
+<!--    insertSection={insertSection}-->
 <!--    />-->
 <!--    )}-->
 <!--{editSectionNode.get('type') === NODE_TYPE_IMAGE &&-->
@@ -520,7 +517,7 @@
 <!--    offsetTop={editSectionMetaFormTopOffset}-->
 <!--    post={post}-->
 <!--    nodeModel={editSectionNode}-->
-<!--    update={this.updateEditSectionNode}-->
+<!--    update={updateEditSectionNode}-->
 <!--    />-->
 <!--    )}-->
 <!--{editSectionNode.get('type') === NODE_TYPE_QUOTE &&-->
@@ -528,7 +525,7 @@
 <!--    <EditQuoteForm-->
 <!--    offsetTop={editSectionMetaFormTopOffset}-->
 <!--    nodeModel={editSectionNode}-->
-<!--    update={this.updateEditSectionNode}-->
+<!--    update={updateEditSectionNode}-->
 <!--    />-->
 <!--    )}-->
 <!--{formatSelectionNode.get('id') && (-->
@@ -537,8 +534,8 @@
 <!--    offsetLeft={formatSelectionMenuLeftOffset}-->
 <!--    nodeModel={formatSelectionNode}-->
 <!--    selectionModel={formatSelectionModel}-->
-<!--    selectionAction={this.handleSelectionAction}-->
-<!--    updateLinkUrl={this.updateLinkUrl}-->
-<!--    closeMenu={this.closeFormatSelectionMenu}-->
+<!--    selectionAction={handleSelectionAction}-->
+<!--    updateLinkUrl={updateLinkUrl}-->
+<!--    closeMenu={closeFormatSelectionMenu}-->
 <!--    />-->
 <!--    )}-->
