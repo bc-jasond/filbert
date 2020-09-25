@@ -5,6 +5,16 @@
   :global(.filbert-section) {
     max-width: 740px;
     margin: 0 auto;
+    border: 4px solid transparent;
+  }
+
+  :global(.edit-section-border) {
+    border: 4px solid var(--accent-color-primary) !important;
+  }
+
+  :global(.edit-hover-border:hover) {
+    cursor: pointer;
+    border: 4px solid var(--accent-color-secondary) !important;
   }
 
   :global(.content-section) {

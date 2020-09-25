@@ -118,6 +118,8 @@
 
   import { handleBackspace } from '../../editor-components/event-handlers/backspace';
   import { handleEnter } from '../../editor-components/event-handlers/enter';
+  import { handleSyncToDom } from '../../editor-components/event-handlers/sync-to-dom';
+  import { handleArrows } from '../../editor-components/event-handlers/arrow-keys';
 
   import {
     getSelectionAtIdx,
@@ -257,68 +259,6 @@
     shouldShowEditSectionMenu = false;
   }
 
-  async function handleSyncToDom(evt, selectionOffsets) {
-    // don't send updates for control keys
-    if (
-      isControlKey(evt.keyCode) ||
-      // stopped by another handler like Backspace or Enter
-      evt.defaultPrevented ||
-      // contentEditable is not the srcTarget
-      evt.target.id !== 'filbert-edit-container' ||
-      // ignore "paste" - propagation hasn't been stopped because it would cancel the respective "paste", "cut" events
-      pasteHistoryState ||
-      // ignore "cut"
-      cutHistoryState ||
-      // invalid selection
-      !isValidDomSelection(selectionOffsets)
-    ) {
-      return;
-    }
-    stopAndPrevent(evt);
-
-    if (editSectionNode.get('id')) {
-      return;
-    }
-    const historyState = [];
-    // select-and-type ?? delete selection first
-    if (selectionOffsets.caretStart !== selectionOffsets.caretEnd) {
-      const { historyState: historyStateDelete } = doDelete(
-        documentModel,
-        selectionOffsets
-      );
-      historyState.push(...historyStateDelete);
-    }
-    // sync keystroke to DOM
-    const {
-      historyState: historyStateSync,
-      executeSelectionOffsets,
-    } = syncToDom(documentModel, selectionOffsets, evt);
-    historyState.push(...historyStateSync);
-
-    // assumes content update (of one char) on a single node, only create an entry every so often
-    if (historyState.length === 1) {
-      historyManager.appendToHistoryLogWhenNCharsAreDifferent({
-        unexecuteSelectionOffsets: selectionOffsets,
-        executeSelectionOffsets,
-        historyState,
-        comparisonPath: ['content'],
-      });
-    } else {
-      // we did more than a simple content update to one node, save an entry
-      historyManager.flushPendingHistoryLogEntry();
-      historyManager.appendToHistoryLog({
-        unexecuteSelectionOffsets: selectionOffsets,
-        executeSelectionOffsets,
-        historyState,
-      });
-    }
-
-    // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
-    //  The browser will then place the caret at the beginning of the textContent??? 😞 so we place it back with JS...
-    closeAllEditContentMenus();
-    await commitUpdates(executeSelectionOffsets);
-  }
-
   function getSelectionOffsetsOrEditSectionNode() {
     if (editSectionNode.size > 0) {
       return {
@@ -393,31 +333,46 @@
     if (!isValidDomSelection(selectionOffsets)) {
       return;
     }
-    // TODO handleDel(evt); // currently, no support for the 'Del' key
-    if (
-      // TODO: unregister this handler when showing the edit section menu...
-      //  don't delete the section while editing its fields :) !
-      !shouldShowEditSectionMenu
-    ) {
-      await handleBackspace({
+    // call "callbacks" with "args" in order until one returns truthy to get a "at most one fires in the list" guarantee
+    const first = async (callbacks, args) => {
+      for (let i = 0; i < callbacks.length; i++) {
+        if (await callbacks[i](args)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const atLeastOneHandlerFired = await first(
+      [
+        //handleRedo,
+        //handleUndo,
+        //handleDel, TODO: currently, no support for the 'Del' key
+        handleBackspace,
+        handleEnter,
+        //handlePaste,
+        //handleCut,
+        handleSyncToDom,
+        handleArrows,
+      ],
+      {
         evt,
         selectionOffsets,
         documentModel,
         historyManager,
         commitUpdates,
-      });
-      await handleEnter({
-        evt,
-        selectionOffsets,
-        documentModel,
-        historyManager,
-        commitUpdates,
-      });
+        sectionEdit,
+        shouldShowEditSectionMenu,
+        editSectionNode,
+        closeAllEditContentMenus,
+      }
+    );
+
+    if (!atLeastOneHandlerFired) {
+      console.warn('handleKeyDown - no event handlers were called?');
+      return;
     }
-    //await handlePaste(evt, selectionOffsets);
-    //await handleCut(evt, selectionOffsets);
-    await handleSyncToDom(evt, selectionOffsets);
-    //await handleArrows(evt, selectionOffsets);
+
     // refresh caret after possible setState() mutations above
     //selectionOffsets = getSelectionOffsetsOrEditSectionNode();
     //await handleEditSectionMenu(evt);
@@ -485,7 +440,26 @@
     //await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
-  function sectionEdit() {}
+  function sectionEdit(sectionId) {
+    const [sectionDomNode] = document.getElementsByName(sectionId);
+    const section = documentModel.getNode(sectionId);
+    //if (section.get('type') === NODE_TYPE_SPACER) {
+    removeAllRanges();
+    //}
+    console.log('EDIT SECTION CALLBACK ', sectionId);
+
+    // hide all other menus here because this callback fires last
+    // insert menu
+    insertMenuNode = Map();
+    // format selection menu
+    formatSelectionNode = Map();
+    formatSelectionModel = Selection();
+    formatSelectionModelIdx = -1;
+    // hide edit section menu by default
+    editSectionNode = section;
+    shouldShowEditSectionMenu = section.get('type') !== NODE_TYPE_SPACER;
+    editSectionMetaFormTopOffset = sectionDomNode.offsetTop;
+  }
 </script>
 
 <style>

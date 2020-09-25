@@ -4,14 +4,15 @@
   export let hideCaption = false;
   export let postListOverride = false;
   export let viewPostOverride = false;
+  export let isEditing = false;
+  export let setEditNodeId = undefined;
 
   import { beforeUpdate } from 'svelte';
   import { Map } from 'immutable';
 
   import { NODE_TYPE_IMAGE } from '../common/constants';
 
-  let isEditing = false;
-  let isEditMode = false;
+  $: isEditMode = !!setEditNodeId;
 
   $: id = node.get('id');
   $: meta = node.get('meta', Map());
@@ -27,6 +28,8 @@
         Math.min(w, 1000)
       : 0;
 
+  // TODO: just use JS to manipulate the DOM directly in beforeUpdate()
+  //  using JS to set the CSS Custom Properties is indirect and harder to read
   let figureHeightOverrideStyle;
   let placeholderContainerStyle;
   let placeholderFillStyle;
@@ -81,6 +84,7 @@
     display: block;
     max-width: 100%;
     transition: transform 0.125s ease-out;
+    border: 4px solid transparent;
   }
 
   .rotate-90 {
@@ -140,7 +144,7 @@
         class:rotate-90="{rotationDegrees === 90}"
         class:rotate-180="{rotationDegrees === 180}"
         class:rotate-270="{rotationDegrees === 270}"
-        on:click="{() => {}}"
+        on:click="{() => setEditNodeId && setEditNodeId(id)}"
         src="{url}"
         alt="{meta.get('caption')}"
       />

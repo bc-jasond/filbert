@@ -378,6 +378,7 @@ export default class EditPost extends React.Component {
     ) {
       return;
     }
+    // TODO: unregister handlers when showing the edit section menu...
     console.debug('EDIT SECTION MENU');
     await new Promise((resolve) => {
       this.setState(

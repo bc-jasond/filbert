@@ -1,11 +1,14 @@
 <script>
   export let node;
+  // TODO use a store() ?
+  export let isEditing = false;
+  export let setEditNodeId = undefined;
 
   import { NODE_TYPE_SPACER } from '../common/constants';
 
-  // TODO use a store()
-  let isEditing = false;
-  let isEditMode = false;
+  // assume we're editing if there's a setEditNodeId callback
+  $: isEditMode = !!setEditNodeId;
+  $: id = node.get('id');
 </script>
 
 <style>
@@ -23,6 +26,6 @@
   class:edit-section-border="{isEditing}"
   class:edit-hover-border="{isEditMode}"
   data-type="{NODE_TYPE_SPACER}"
-  name="{node.get('id')}"
-  on:click="{() => {}}"
+  name="{id}"
+  on:click="{() => setEditNodeId && setEditNodeId(id)}"
 ></section>

@@ -12,7 +12,7 @@ export async function handleBackspace({
   // if the caret is collapsed, only let the "backspace" key through...
   // otherwise, if there are any other key strokes that aren't control keys - delete the selection!
   if (evt.keyCode !== KEYCODE_BACKSPACE) {
-    return;
+    return false;
   }
 
   stopAndPrevent(evt);
@@ -37,7 +37,7 @@ export async function handleBackspace({
       historyState,
     });
     await commitUpdates(executeSelectionOffsets);
-    return;
+    return true;
   }
 
   const hasContentToDelete = endNodeId || caretStart > 0 || caretEnd;
@@ -88,4 +88,5 @@ export async function handleBackspace({
   // clear the selected format node when deleting the highlighted selection
   // NOTE: must wait for state to have been set or setCaret will check stale values
   await commitUpdates(executeSelectionOffsets);
+  return true;
 }

@@ -1,16 +1,17 @@
 <script>
   export let node;
+  export let isEditing = false;
+  export let setEditNodeId = undefined;
 
   import { NODE_TYPE_QUOTE } from '../common/constants';
 
-  let isEditing;
-  let isEditMode;
+  $: isEditMode = !!setEditNodeId;
 
-  const id = node.get('id');
-  const quote = node.getIn(['meta', 'quote'], '');
-  const url = node.getIn(['meta', 'url'], '');
-  const author = node.getIn(['meta', 'author'], '');
-  const context = node.getIn(['meta', 'context'], '');
+  $: id = node.get('id');
+  $: quote = node.getIn(['meta', 'quote'], '');
+  $: url = node.getIn(['meta', 'url'], '');
+  $: author = node.getIn(['meta', 'author'], '');
+  $: context = node.getIn(['meta', 'context'], '');
 </script>
 
 <style>
@@ -45,7 +46,7 @@
     class="wrapper"
     class:edit-section-border="{isEditing}"
     class:edit-hover-border="{isEditMode}"
-    on:click="{() => {}}"
+    on:click="{() => setEditNodeId && setEditNodeId(id)}"
   >
     <span class="drop-cap">{'💡'}</span>
     <em class="italic-text">{quote && `"${quote}"`}</em>

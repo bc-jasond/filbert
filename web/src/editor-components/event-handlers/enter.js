@@ -10,7 +10,7 @@ export async function handleEnter({
   commitUpdates,
 }) {
   if (evt.keyCode !== KEYCODE_ENTER) {
-    return;
+    return false;
   }
 
   stopAndPrevent(evt);
@@ -28,4 +28,5 @@ export async function handleEnter({
   });
 
   await commitUpdates(executeSelectionOffsets);
+  return true;
 }
