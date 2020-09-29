@@ -87,6 +87,7 @@ export async function handleArrows({
     const neighborNode = getNeighborOnArrowNavigation(evt, selectionOffsets);
     if (!neighborNode.get('id')) {
       // we won't be leaving the current node, let contenteditable handle the caret
+      console.log('ARROW - not leaving current node');
       return true;
     }
     stopAndPrevent(evt);

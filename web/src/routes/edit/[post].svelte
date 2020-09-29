@@ -56,6 +56,8 @@
   // onMount end
 
   let insertMenuNode = Map();
+  $: insertMenuNodeId = insertMenuNode.get('id');
+
   let insertMenuTopOffset = 0;
   let insertMenuLeftOffset = 0;
   let editSectionNode = Map();
@@ -128,7 +130,7 @@
   } from '../../editor-components/selection-helpers';
   import { doFormatSelection } from '../../editor-components/editor-commands/format-selection';
 
-  //import InsertSectionMenu from './insert-section-menu';
+  import InsertSectionMenu from '../../editor-components/InsertSectionMenu.svelte';
   import EditImageMenu from '../../editor-components/EditImageMenu.svelte';
   //import EditQuoteForm from './edit-quote-form';
   //import FormatSelectionMenu from './format-selection-menu';
@@ -148,15 +150,13 @@
       setCaret,
     } = await import('../../common/dom'));
 
-    $: {
-      postMap = fromJS(post);
-      documentModel = DocumentModel(post.id, nodesById);
-      historyManager = HistoryManager(post.id, getApiClientInstance());
-      nodesByIdMapInternal = documentModel.getNodes();
-      tick().then(() => {
-        setCaret(selectionOffsets);
-      });
-    }
+    postMap = fromJS(post);
+    documentModel = DocumentModel(post.id, nodesById);
+    historyManager = HistoryManager(post.id, getApiClientInstance());
+    nodesByIdMapInternal = documentModel.getNodes();
+    tick().then(() => {
+      setCaret(selectionOffsets);
+    });
 
     window.addEventListener('keydown', handleKeyDown);
     //window.addEventListener('resize', manageInsertMenu);
@@ -217,6 +217,39 @@
       // trigger reactivity defined in onMount()
       // the last cursor position and current history position are among things that could have changed
       post = updatedPost;
+    }
+  }
+
+  // TODO: this function references the DOM and state.  So, it needs to pass-through values because it always executes - separate the DOM and state checks?
+  async function manageInsertMenu(evt, selectionOffsetsArg) {
+    const selectionOffsets =
+      selectionOffsetsArg || getHighlightedSelectionOffsets();
+    const { caretStart, caretEnd, startNodeId } = selectionOffsets;
+    if (!startNodeId) {
+      return;
+    }
+
+    //console.debug('MANAGE INSERT');
+
+    // hide by default
+    const selectedNodeMap = documentModel.getNode(startNodeId);
+    const selectedNode = getNodeById(startNodeId);
+
+    // Show the menu?
+    if (
+      selectedNode &&
+      (!caretEnd || caretStart === caretEnd) &&
+      selectedNodeMap.get('type') === NODE_TYPE_P &&
+      selectedNodeMap.get('content', '').length === 0
+    ) {
+      // save current node because the selection will disappear when the insert menu is shown
+      console.log('INSERT - SHOULD SHOW');
+      insertMenuNode = selectedNodeMap;
+      insertMenuTopOffset = selectedNode.offsetTop;
+      insertMenuLeftOffset = selectedNode.offsetLeft;
+    } else {
+      console.log('INSERT - HIDE');
+      insertMenuNode = Map();
     }
   }
 
@@ -373,10 +406,11 @@
       return;
     }
 
+    await tick();
     // refresh caret after possible setState() mutations above
-    //selectionOffsets = getSelectionOffsetsOrEditSectionNode();
+    selectionOffsets = getSelectionOffsetsOrEditSectionNode();
     //await handleEditSectionMenu(evt);
-    //await manageInsertMenu(evt, selectionOffsets);
+    await manageInsertMenu(evt, selectionOffsets);
     //await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
@@ -436,7 +470,7 @@
 
     // close everything by default, sectionEdit() callback will fire after this to override
     await closeAllEditContentMenus();
-    //await manageInsertMenu(evt, selectionOffsets);
+    await manageInsertMenu(evt, selectionOffsets);
     //await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
@@ -460,6 +494,8 @@
     shouldShowEditSectionMenu = section.get('type') !== NODE_TYPE_SPACER;
     editSectionMetaFormTopOffset = sectionDomNode.offsetTop;
   }
+
+  function insertSection() {}
 </script>
 
 <style>
@@ -477,14 +513,14 @@
     />
   </div>
 {/if}
-<!--{insertMenuNode.get('id') && (-->
-<!--    <InsertSectionMenu-->
-<!--    insertNodeId={insertMenuNode.get('id')}-->
-<!--    insertMenuTopOffset={insertMenuTopOffset}-->
-<!--    insertMenuLeftOffset={insertMenuLeftOffset}-->
-<!--    insertSection={insertSection}-->
-<!--    />-->
-<!--    )}-->
+{#if insertMenuNodeId}
+  <InsertSectionMenu
+    insertNodeId="{insertMenuNodeId}"
+    {insertMenuTopOffset}
+    {insertMenuLeftOffset}
+    {insertSection}
+  />
+{/if}
 <!--{editSectionNode.get('type') === NODE_TYPE_IMAGE &&-->
 <!--shouldShowEditSectionMenu && (-->
 <!--    <EditImageForm-->
