@@ -4,19 +4,21 @@
   import { NEW_POST_URL_ID, NODE_TYPE_H1 } from '../../common/constants';
 
   export async function preload({ path, params, query }, session) {
+    const apiClient = getApiClientInstance(this.fetch);
     if (params.post === NEW_POST_URL_ID) {
       const placeHolderTitle = getMapWithId({ type: NODE_TYPE_H1 }).toJS();
       return {
         post: { id: NEW_POST_URL_ID },
         nodesById: { [placeHolderTitle.id]: placeHolderTitle },
         selectionOffsets: { startNodeId: placeHolderTitle.id },
+        apiClient,
       };
     }
 
     const {
       error,
       data: { post, contentNodes: nodesById, selectionOffsets = {} } = {},
-    } = await getApiClientInstance(this.fetch).get(`/edit/${params.post}`);
+    } = await apiClient.get(`/edit/${params.post}`);
 
     if (error) {
       this.error(error);
@@ -27,6 +29,7 @@
       post,
       nodesById,
       selectionOffsets,
+      apiClient,
     };
   }
 </script>
@@ -35,6 +38,7 @@
   export let post;
   export let nodesById;
   export let selectionOffsets = {};
+  export let apiClient;
 
   // onMount start
   let caretIsOnEdgeOfParagraphText;
@@ -152,7 +156,7 @@
 
     postMap = fromJS(post);
     documentModel = DocumentModel(post.id, nodesById);
-    historyManager = HistoryManager(post.id, getApiClientInstance());
+    historyManager = HistoryManager(post.id, apiClient);
     nodesByIdMapInternal = documentModel.getNodes();
     tick().then(() => {
       setCaret(selectionOffsets);
@@ -184,18 +188,15 @@
     // get canonical - chop title, add hash
     const canonical = getCanonicalFromTitle(title);
     // POST to /post
-    const { error, data: { postId } = {} } = await getApiClientInstance().post(
-      '/post',
-      {
-        title,
-        canonical,
-        // default 'sync post to content' settings ON
-        meta: {
-          syncTitleAndAbstract: true,
-          syncTopPhoto: true,
-        },
-      }
-    );
+    const { error, data: { postId } = {} } = await apiClient.post('/post', {
+      title,
+      canonical,
+      // default 'sync post to content' settings ON
+      meta: {
+        syncTitleAndAbstract: true,
+        syncTopPhoto: true,
+      },
+    });
     // TODO: handle error?
     if (error) {
       console.error(error);
@@ -228,10 +229,6 @@
     if (!startNodeId) {
       return;
     }
-
-    //console.debug('MANAGE INSERT');
-
-    // hide by default
     const selectedNodeMap = documentModel.getNode(startNodeId);
     const selectedNode = getNodeById(startNodeId);
 
@@ -243,12 +240,12 @@
       selectedNodeMap.get('content', '').length === 0
     ) {
       // save current node because the selection will disappear when the insert menu is shown
-      console.log('INSERT - SHOULD SHOW');
+      console.debug('INSERT - SHOULD SHOW');
       insertMenuNode = selectedNodeMap;
       insertMenuTopOffset = selectedNode.offsetTop;
       insertMenuLeftOffset = selectedNode.offsetLeft;
     } else {
-      console.log('INSERT - HIDE');
+      console.debug('INSERT - HIDE');
       insertMenuNode = Map();
     }
   }
@@ -257,8 +254,7 @@
     const { startNodeId, caretStart, caretEnd } = selectionOffsets;
     // TODO: optimistically saving updated nodes with no error handling - look ma, no errors!
 
-    // roll with state changes TODO: handle errors - roll back?
-
+    // sync internal document state with documentModel state
     nodesByIdMapInternal = documentModel.getNodes();
     insertMenuNode = Map();
 
@@ -300,7 +296,6 @@
         caretEnd: 0,
       };
     }
-    // TODO: style MetaType nodes that have been selected so user can tell
     return getHighlightedSelectionOffsets();
   }
 
@@ -474,6 +469,41 @@
     //await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
+  // SECTION
+  async function insertSection(sectionType, [firstFile] = []) {
+    let meta = Map();
+    if (sectionType === NODE_TYPE_IMAGE) {
+      // TODO: add a loading indicator while uploading
+      const { error, data: imageMeta } = await apiClient.uploadImage(
+        getImageFileFormData(firstFile, postMap)
+      );
+      if (error) {
+        console.error('Image Upload Error: ', error);
+        return;
+      }
+      meta = Map(imageMeta);
+    }
+    const historyState = documentModel.update(
+      insertMenuNode.set('type', sectionType).set('meta', meta)
+    );
+    const newSectionId = getLastExecuteIdFromHistory(historyState);
+    const executeSelectionOffsets = { startNodeId: newSectionId };
+    historyManager.appendToHistoryLog({
+      executeSelectionOffsets,
+      unexecuteSelectionOffsets: {
+        startNodeId: insertMenuNode.get('id'),
+        caretStart: 0,
+      },
+      historyState,
+    });
+    await commitUpdates(executeSelectionOffsets);
+    if (
+      [NODE_TYPE_IMAGE, NODE_TYPE_QUOTE, NODE_TYPE_SPACER].includes(sectionType)
+    ) {
+      sectionEdit(newSectionId);
+    }
+  }
+
   function sectionEdit(sectionId) {
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = documentModel.getNode(sectionId);
@@ -495,7 +525,30 @@
     editSectionMetaFormTopOffset = sectionDomNode.offsetTop;
   }
 
-  function insertSection() {}
+  async function updateEditSectionNode(updatedNode, comparisonPath) {
+    const historyState = documentModel.update(updatedNode);
+    const offsets = { startNodeId: updatedNode.get('id') };
+    // some text fields are stored in the node.meta object like image caption, link url, quote fields
+    // these text fields will pass a path to differentiate themselves from other actions like image rotate, zoom, etc
+    if (comparisonPath) {
+      historyManager.appendToHistoryLogWhenNCharsAreDifferent({
+        executeSelectionOffsets: offsets,
+        unexecuteSelectionOffsets: offsets,
+        historyState,
+        comparisonPath,
+      });
+    } else {
+      historyManager.appendToHistoryLog({
+        executeSelectionOffsets: offsets,
+        unexecuteSelectionOffsets: offsets,
+        historyState,
+      });
+    }
+    editSectionNode = updatedNode;
+    await commitUpdates(getSelectionOffsetsOrEditSectionNode());
+  }
+
+  // FORMAT
 </script>
 
 <style>
@@ -521,15 +574,14 @@
     {insertSection}
   />
 {/if}
-<!--{editSectionNode.get('type') === NODE_TYPE_IMAGE &&-->
-<!--shouldShowEditSectionMenu && (-->
-<!--    <EditImageForm-->
-<!--    offsetTop={editSectionMetaFormTopOffset}-->
-<!--    post={post}-->
-<!--    nodeModel={editSectionNode}-->
-<!--    update={updateEditSectionNode}-->
-<!--    />-->
-<!--    )}-->
+{#if editSectionNode.get('type') === NODE_TYPE_IMAGE && shouldShowEditSectionMenu}
+  <EditImageMenu
+    offsetTop="{editSectionMetaFormTopOffset}"
+    postMap="{postMap}"
+    nodeModel="{editSectionNode}"
+    update="{updateEditSectionNode}"
+  />
+{/if}
 <!--{editSectionNode.get('type') === NODE_TYPE_QUOTE &&-->
 <!--shouldShowEditSectionMenu && (-->
 <!--    <EditQuoteForm-->

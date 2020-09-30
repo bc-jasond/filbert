@@ -38,10 +38,10 @@
     imageResizeDown,
   ];
 
-  let currentIdx = 0;
   const captionInputIdx = 4;
   const lastButtonIdx = shouldHideCaption ? 3 : captionInputIdx;
 
+  let currentIdx = shouldHideCaption ? 0 : captionInputIdx;
   let fileInputDomNode;
   let captionInputDomNode;
 
@@ -65,7 +65,7 @@
       }
       if (
         evt.keyCode === KEYCODE_LEFT_ARROW &&
-        (currentIdx <= lastButtonIdx || caretIsAtBeginningOfInput())
+        (currentIdx < lastButtonIdx || caretIsAtBeginningOfInput())
       ) {
         currentIdx = currentIdx === 0 ? lastButtonIdx : currentIdx - 1;
         focusOrBlurCaptionInput(true);
@@ -74,7 +74,7 @@
       }
       if (
         evt.keyCode === KEYCODE_RIGHT_ARROW &&
-        (currentIdx <= lastButtonIdx || caretIsAtEndOfInput())
+        (currentIdx < lastButtonIdx || caretIsAtEndOfInput())
       ) {
         currentIdx = currentIdx === lastButtonIdx ? 0 : currentIdx + 1;
         focusOrBlurCaptionInput(false);
@@ -95,6 +95,8 @@
 
     // `capture: true` AKA "capture phase" will put this event handler in front of the ones set by edit.jsx
     window.addEventListener('keydown', handleKeyDown, { capture: true });
+    focusOrBlurCaptionInput()
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown, {
         capture: true,
@@ -204,11 +206,11 @@
     align-items: center;
     justify-items: center;
     width: 500px;
-    margin: 0 auto 0 -81px;
+    margin-left: -250px;
   }
   #edit-image-menu.hide-caption {
     width: 162px;
-    /*margin-left: -250px;*/
+    margin-left: -81px;
   }
   .svg-container {
     height: 21px;
@@ -220,7 +222,7 @@
     width: 28px;
     margin-bottom: 0;
   }
-  input {
+  input[type="file"] {
     display: none;
   }
 </style>
@@ -271,6 +273,8 @@
       placeholder="Enter Image Caption here..."
       bind:this="{captionInputDomNode}"
       on:input="{updateCaption}"
+      on:click={() => currentIdx = captionInputIdx}
+      on:focus={() => currentIdx = captionInputIdx}
       value="{nodeModel.getIn(['meta', 'caption'], '')}"
     />
   {/if}

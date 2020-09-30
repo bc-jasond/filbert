@@ -93,7 +93,7 @@
   }
 
   .rotate-180 {
-    transform: scale(1, -1);
+    transform: rotate(180deg);
   }
 
   .rotate-270 {

@@ -46,20 +46,18 @@
       insertSectionMenuDomNode.style.top = `${insertMenuTopOffset - 11}px`;
       insertSectionMenuDomNode.style.left = `${insertMenuLeftOffset - 64}px`;
     }
-    // always close the menu when repositioning
-    //menuIsOpen = false;
   });
 
   onMount(() => {
     // `capture: true` will put this event handler in front of the ones set in the editor (parent of this menu)
     // it might be interesting to explore removing the parent handlers when this menu opens in stead of having both
-    /* running and relying on intercept-and-cancel mechanics
+    // running and relying on intercept-and-cancel mechanics
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => {
       window.removeEventListener('keydown', handleKeyDown, {
         capture: true,
       });
-    };*/
+    };
   });
 
   function handleKeyDown(evt) {
@@ -213,7 +211,7 @@
       id="{`insert-section-menu-item-${NODE_TYPE_H1}`}"
       class="filbert-nav-button"
       class:open="{currentIdx === 0}"
-      on:click="{sectionCallbacks[currentIdx]}"
+      on:click="{sectionCallbacks[0]}"
       on:mouseover="{() => (currentIdx = -1)}"
       on:focus="{() => {}}"
     >
@@ -223,7 +221,7 @@
       id="{`insert-section-menu-item-${NODE_TYPE_H2}`}"
       class="filbert-nav-button"
       class:open="{currentIdx === 1}"
-      on:click="{sectionCallbacks[currentIdx]}"
+      on:click="{sectionCallbacks[1]}"
       on:mouseover="{() => (currentIdx = -1)}"
       on:focus="{() => {}}"
     >
@@ -233,7 +231,7 @@
       id="{`insert-section-menu-item-${NODE_TYPE_PRE}`}"
       class="filbert-nav-button"
       class:open="{currentIdx === 2}"
-      on:click="{sectionCallbacks[currentIdx]}"
+      on:click="{sectionCallbacks[2]}"
       on:mouseover="{() => (currentIdx = -1)}"
       on:focus="{() => {}}"
     >
@@ -243,7 +241,7 @@
       id="{`insert-section-menu-item-${NODE_TYPE_LI}`}"
       class="filbert-nav-button"
       class:open="{currentIdx === 3}"
-      on:click="{sectionCallbacks[currentIdx]}"
+      on:click="{sectionCallbacks[3]}"
       on:mouseover="{() => (currentIdx = -1)}"
       on:focus="{() => {}}"
     >
@@ -253,7 +251,7 @@
       id="{`insert-section-menu-item-${NODE_TYPE_SPACER}`}"
       class="filbert-nav-button"
       class:open="{currentIdx === 4}"
-      on:click="{sectionCallbacks[currentIdx]}"
+      on:click="{sectionCallbacks[4]}"
       on:mouseover="{() => (currentIdx = -1)}"
       on:focus="{() => {}}"
     >
@@ -263,7 +261,7 @@
       id="{`insert-section-menu-item-${NODE_TYPE_IMAGE}`}"
       class="filbert-nav-button"
       class:open="{currentIdx === 5}"
-      on:click="{sectionCallbacks[currentIdx]}"
+      on:click="{sectionCallbacks[5]}"
       on:mouseover="{() => (currentIdx = -1)}"
       on:focus="{() => {}}"
     >
@@ -285,7 +283,7 @@
       id="{`insert-section-menu-item-${NODE_TYPE_QUOTE}`}"
       class="filbert-nav-button"
       class:open="{currentIdx === 6}"
-      on:click="{sectionCallbacks[currentIdx]}"
+      on:click="{sectionCallbacks[6]}"
       on:mouseover="{() => (currentIdx = -1)}"
       on:focus="{() => {}}"
     >

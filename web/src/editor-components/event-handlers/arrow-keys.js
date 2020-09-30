@@ -3,13 +3,13 @@ import {
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
   KEYCODE_UP_ARROW,
-} from 'filbert/src/common/constants';
+} from '../../common/constants';
 import {
   caretIsOnEdgeOfParagraphText,
   getRange,
   setCaret,
-} from 'filbert/src/common/dom';
-import { stopAndPrevent } from 'filbert/src/common/utils';
+} from '../../common/dom';
+import { stopAndPrevent } from '../../common/utils';
 import { Map } from 'immutable';
 
 // Intercept arrow keys when moving into or out of MetaType nodes
