@@ -12,6 +12,13 @@
 </script>
 
 <style>
+    section {
+        margin-bottom: 56px;
+        font-family: var(--alt-font-family);
+        font-size: var(--alt-font-size);
+        line-height: var(--alt-line-height);
+        letter-spacing: var(--alt-letter-spacing);
+    }
   section::after {
     content: '✎﹏﹏﹏﹏﹏﹏﹏﹏﹏';
     text-align: center;
