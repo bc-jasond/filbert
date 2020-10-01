@@ -71,8 +71,6 @@
   let formatSelectionModel = Selection();
   let formatSelectionModelIdx = -1;
   let batchSaveIntervalId;
-  let pasteHistoryState;
-  let cutHistoryState;
   let shouldSkipKeyUp;
 
   import { fromJS, Map } from 'immutable';
@@ -126,6 +124,7 @@
   import { handleEnter } from '../../editor-components/event-handlers/enter';
   import { handleSyncToDom } from '../../editor-components/event-handlers/sync-to-dom';
   import { handleArrows } from '../../editor-components/event-handlers/arrow-keys';
+  import {handlePaste, isPasteEvent} from '../../editor-components/event-handlers/paste';
 
   import {
     getSelectionAtIdx,
@@ -138,6 +137,10 @@
   import EditImageMenu from '../../editor-components/EditImageMenu.svelte';
   //import EditQuoteForm from './edit-quote-form';
   //import FormatSelectionMenu from './format-selection-menu';
+
+  function handlePasteWrapper(evt) {
+    return handlePaste({evt, selectionOffsets, documentModel, historyManager, commitUpdates})
+  }
 
   onMount(async () => {
     ({
@@ -166,7 +169,7 @@
     //window.addEventListener('resize', manageInsertMenu);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('input', handleInput);
-    //window.addEventListener('paste', handlePaste);
+    window.addEventListener('paste', handlePasteWrapper);
     //window.addEventListener('cut', handleCut);
     window.addEventListener('mouseup', handleMouseUp);
     batchSaveIntervalId = setInterval(batchSave, 3000);
@@ -174,9 +177,9 @@
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       //window.removeEventListener('resize', manageInsertMenu);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('keyup', handleKeyUp);selectionOffsets
       window.removeEventListener('input', handleInput);
-      //window.removeEventListener('paste', handlePaste);
+      window.removeEventListener('paste', handlePasteWrapper);
       //window.removeEventListener('cut', handleCut);
       window.removeEventListener('mouseup', handleMouseUp);
       clearInterval(batchSaveIntervalId);
@@ -348,7 +351,11 @@
       // allow "cut"
       !((evt.metaKey || evt.ctrlKey) && evt.keyCode === KEYCODE_X) &&
       // allow "paste"
-      !((evt.metaKey || evt.ctrlKey) && evt.keyCode === KEYCODE_V) &&
+      !(isPasteEvent(evt)
+        // don't override pasting into inputs of menus
+        // i.e. don't paste if editing a section or a link url in format selection menu
+        // TODO: the need for this check goes away if we unregister the editor event handlers when showing a menu
+        && !shouldShowEditSectionMenu && !formatSelectionModel.get(SELECTION_ACTION_LINK)) &&
       // allow holding down shift
       !evt.shiftKey
     ) {
@@ -378,7 +385,7 @@
         //handleDel, TODO: currently, no support for the 'Del' key
         handleBackspace,
         handleEnter,
-        //handlePaste,
+        handlePaste,
         //handleCut,
         handleSyncToDom,
         handleArrows,
