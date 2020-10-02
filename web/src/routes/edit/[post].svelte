@@ -10,7 +10,7 @@
       return {
         post: { id: NEW_POST_URL_ID },
         nodesById: { [placeHolderTitle.id]: placeHolderTitle },
-        selectionOffsets: { startNodeId: placeHolderTitle.id },
+        selectionOffsetsPreload: { startNodeId: placeHolderTitle.id },
         apiClient,
       };
     }
@@ -28,7 +28,7 @@
     return {
       post,
       nodesById,
-      selectionOffsets,
+      selectionOffsetsPreload: selectionOffsets,
       apiClient,
     };
   }
@@ -37,7 +37,7 @@
 <script>
   export let post;
   export let nodesById;
-  export let selectionOffsets = {};
+  export let selectionOffsetsPreload;
   export let apiClient;
 
   // onMount start
@@ -52,16 +52,9 @@
   let removeAllRanges;
   let replaceRange;
   let setCaret;
-
-  let postMap;
-  let documentModel;
-  let historyManager;
-  let nodesByIdMapInternal = Map();
   // onMount end
 
   let insertMenuNode = Map();
-  $: insertMenuNodeId = insertMenuNode.get('id');
-
   let insertMenuTopOffset = 0;
   let insertMenuLeftOffset = 0;
   let editSectionNode = Map();
@@ -72,6 +65,12 @@
   let formatSelectionModelIdx = -1;
   let batchSaveIntervalId;
   let shouldSkipKeyUp;
+
+  $: postMap = fromJS(post);
+  $: documentModel = DocumentModel(post.id, nodesById);
+  $: historyManager = HistoryManager(post.id, apiClient);
+  $: nodesByIdMapInternal = documentModel.getNodes();
+  $: insertMenuNodeId = insertMenuNode.get('id');
 
   import { fromJS, Map } from 'immutable';
   import { goto } from '@sapper/app';
@@ -124,7 +123,22 @@
   import { handleEnter } from '../../editor-components/event-handlers/enter';
   import { handleSyncToDom } from '../../editor-components/event-handlers/sync-to-dom';
   import { handleArrows } from '../../editor-components/event-handlers/arrow-keys';
-  import {handlePaste, isPasteEvent} from '../../editor-components/event-handlers/paste';
+  import {
+    handleCut,
+    isCutEvent,
+  } from '../../editor-components/event-handlers/cut';
+  import {
+    handlePaste,
+    isPasteEvent,
+  } from '../../editor-components/event-handlers/paste';
+  import {
+    handleUndo,
+    isUndoEvent,
+  } from '../../editor-components/event-handlers/undo';
+  import {
+    handleRedo,
+    isRedoEvent,
+  } from '../../editor-components/event-handlers/redo';
 
   import {
     getSelectionAtIdx,
@@ -138,8 +152,24 @@
   //import EditQuoteForm from './edit-quote-form';
   //import FormatSelectionMenu from './format-selection-menu';
 
+  function handleCutWrapper(evt) {
+    return handleCut({
+      evt,
+      documentModel,
+      historyManager,
+      commitUpdates,
+      closeAllEditContentMenus,
+    });
+  }
+
   function handlePasteWrapper(evt) {
-    return handlePaste({evt, selectionOffsets, documentModel, historyManager, commitUpdates})
+    return handlePaste({
+      evt,
+      documentModel,
+      historyManager,
+      commitUpdates,
+      closeAllEditContentMenus,
+    });
   }
 
   onMount(async () => {
@@ -157,31 +187,29 @@
       setCaret,
     } = await import('../../common/dom'));
 
-    postMap = fromJS(post);
-    documentModel = DocumentModel(post.id, nodesById);
-    historyManager = HistoryManager(post.id, apiClient);
-    nodesByIdMapInternal = documentModel.getNodes();
-    tick().then(() => {
-      setCaret(selectionOffsets);
-    });
-
     window.addEventListener('keydown', handleKeyDown);
-    //window.addEventListener('resize', manageInsertMenu);
+    window.addEventListener('resize', manageInsertMenu);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('input', handleInput);
     window.addEventListener('paste', handlePasteWrapper);
-    //window.addEventListener('cut', handleCut);
+    window.addEventListener('cut', handleCutWrapper);
     window.addEventListener('mouseup', handleMouseUp);
+
     batchSaveIntervalId = setInterval(batchSave, 3000);
+
+    tick().then(() => {
+      setCaret(selectionOffsetsPreload);
+    });
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      //window.removeEventListener('resize', manageInsertMenu);
-      window.removeEventListener('keyup', handleKeyUp);selectionOffsets
+      window.removeEventListener('resize', manageInsertMenu);
+      window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('input', handleInput);
       window.removeEventListener('paste', handlePasteWrapper);
-      //window.removeEventListener('cut', handleCut);
+      window.removeEventListener('cut', handleCutWrapper);
       window.removeEventListener('mouseup', handleMouseUp);
+
       clearInterval(batchSaveIntervalId);
     };
   });
@@ -303,22 +331,6 @@
   }
 
   async function handleKeyDown(evt) {
-    // redo
-    if (
-      evt.keyCode === KEYCODE_Z &&
-      evt.shiftKey &&
-      (evt.metaKey || evt.ctrlKey)
-    ) {
-      //redo();
-      stopAndPrevent(evt);
-      return;
-    }
-    // undo
-    if (evt.keyCode === KEYCODE_Z && (evt.metaKey || evt.ctrlKey)) {
-      //undo();
-      stopAndPrevent(evt);
-      return;
-    }
     // create new post?
     // special case for creating a new document on "Enter"
     if (
@@ -329,8 +341,8 @@
       await createNewPost();
       return;
     }
-    // ignore shift and option - don't override hard-refresh!
-    if ((evt.metaKey || evt.ctrlKey) && evt.shiftKey) {
+    // ignore shift and option - don't override hard-refresh BUT, do handle REDO :) !
+    if ((evt.metaKey || evt.ctrlKey) && evt.shiftKey && !isRedoEvent(evt)) {
       return;
     }
     if (
@@ -348,14 +360,21 @@
         KEYCODE_DOWN_ARROW,
         KEYCODE_RIGHT_ARROW,
       ].includes(evt.keyCode) &&
+      // allow "redo"
+      !isRedoEvent(evt) &&
+      // allow "undo"
+      !isUndoEvent(evt) &&
       // allow "cut"
-      !((evt.metaKey || evt.ctrlKey) && evt.keyCode === KEYCODE_X) &&
+      !isCutEvent(evt) &&
       // allow "paste"
-      !(isPasteEvent(evt)
+      !(
+        isPasteEvent(evt) &&
         // don't override pasting into inputs of menus
         // i.e. don't paste if editing a section or a link url in format selection menu
         // TODO: the need for this check goes away if we unregister the editor event handlers when showing a menu
-        && !shouldShowEditSectionMenu && !formatSelectionModel.get(SELECTION_ACTION_LINK)) &&
+        !shouldShowEditSectionMenu &&
+        !formatSelectionModel.get(SELECTION_ACTION_LINK)
+      ) &&
       // allow holding down shift
       !evt.shiftKey
     ) {
@@ -380,13 +399,13 @@
 
     const atLeastOneHandlerFired = await first(
       [
-        //handleRedo,
-        //handleUndo,
+        handleRedo, // redo before undo because undo matches on redo keystrokes
+        handleUndo,
         //handleDel, TODO: currently, no support for the 'Del' key
         handleBackspace,
         handleEnter,
+        handleCut,
         handlePaste,
-        //handleCut,
         handleSyncToDom,
         handleArrows,
       ],
@@ -399,6 +418,12 @@
         sectionEdit,
         shouldShowEditSectionMenu,
         editSectionNode,
+        setEditSectionNode: (value) => {
+          editSectionNode = value;
+        },
+        setPost: (value) => {
+          postMap = value;
+        },
         closeAllEditContentMenus,
       }
     );
@@ -584,7 +609,7 @@
 {#if editSectionNode.get('type') === NODE_TYPE_IMAGE && shouldShowEditSectionMenu}
   <EditImageMenu
     offsetTop="{editSectionMetaFormTopOffset}"
-    postMap="{postMap}"
+    {postMap}
     nodeModel="{editSectionNode}"
     update="{updateEditSectionNode}"
   />

@@ -95,7 +95,7 @@
 
     // `capture: true` AKA "capture phase" will put this event handler in front of the ones set by edit.jsx
     window.addEventListener('keydown', handleKeyDown, { capture: true });
-    focusOrBlurCaptionInput()
+    focusOrBlurCaptionInput();
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown, {
@@ -222,7 +222,7 @@
     width: 28px;
     margin-bottom: 0;
   }
-  input[type="file"] {
+  input[type='file'] {
     display: none;
   }
 </style>
@@ -273,8 +273,8 @@
       placeholder="Enter Image Caption here..."
       bind:this="{captionInputDomNode}"
       on:input="{updateCaption}"
-      on:click={() => currentIdx = captionInputIdx}
-      on:focus={() => currentIdx = captionInputIdx}
+      on:click="{() => (currentIdx = captionInputIdx)}"
+      on:focus="{() => (currentIdx = captionInputIdx)}"
       value="{nodeModel.getIn(['meta', 'caption'], '')}"
     />
   {/if}

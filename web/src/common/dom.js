@@ -433,7 +433,7 @@ export function caretIsOnEdgeOfParagraphText() {
     const caretRect = range.getBoundingClientRect();
     const paragraphRect = currentParagraph.getBoundingClientRect();
     if (caretRect.height === 0) {
-      console.warn("range.getBoundingClientRect() returned ZERO values")
+      console.warn('range.getBoundingClientRect() returned ZERO values');
       // BUG: on chrome *sometimes* caretRect values will all be 0
       //  just assume we're at the edge of the paragraph
       //  worst case it will make the arrow keys jump between paragraphs
