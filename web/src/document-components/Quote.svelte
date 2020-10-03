@@ -16,8 +16,9 @@
 
 <style>
   .wrapper {
+    border: 4px solid transparent;
+    min-height: 64px;
     position: relative;
-    margin-bottom: 32px;
     word-break: break-word;
     clear: left;
   }

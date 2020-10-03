@@ -19,7 +19,6 @@ export async function handleArrows({
   selectionOffsets,
   documentModel,
   sectionEdit,
-  shouldShowEditSectionMenu,
   editSectionNode,
   closeAllEditContentMenus,
 }) {
@@ -118,12 +117,12 @@ export async function handleArrows({
   // we're currently inside a selected MetaType node
   // only leave edit section menu if user hit's up / down arrow
   // user can still use tab to move vertically between inputs
-  if (
-    shouldShowEditSectionMenu &&
-    ![KEYCODE_UP_ARROW, KEYCODE_DOWN_ARROW].includes(evt.keyCode)
-  ) {
-    return;
-  }
+  // if (
+  //   shouldShowEditSectionMenu &&
+  //   ![KEYCODE_UP_ARROW, KEYCODE_DOWN_ARROW].includes(evt.keyCode)
+  // ) {
+  //   return;
+  // }
   stopAndPrevent(evt);
   if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
     const prevNode = documentModel.getPrevNode(editSectionNode.get('id'));

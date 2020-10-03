@@ -64,7 +64,6 @@
   let formatSelectionModel = Selection();
   let formatSelectionModelIdx = -1;
   let batchSaveIntervalId;
-  let shouldSkipKeyUp;
 
   $: postMap = fromJS(post);
   $: documentModel = DocumentModel(post.id, nodesById);
@@ -149,7 +148,7 @@
 
   import InsertSectionMenu from '../../editor-components/InsertSectionMenu.svelte';
   import EditImageMenu from '../../editor-components/EditImageMenu.svelte';
-  //import EditQuoteForm from './edit-quote-form';
+  import EditQuoteForm from '../../editor-components/EditQuoteMenu.svelte';
   //import FormatSelectionMenu from './format-selection-menu';
 
   function handleCutWrapper(evt) {
@@ -172,6 +171,26 @@
     });
   }
 
+  function registerTopLevelEventHandlers() {
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', manageInsertMenu);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('input', handleInput);
+    window.addEventListener('paste', handlePasteWrapper);
+    window.addEventListener('cut', handleCutWrapper);
+    window.addEventListener('mouseup', handleMouseUp);
+  }
+
+  function deregisterTopLevelEventHandlers() {
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('resize', manageInsertMenu);
+    window.removeEventListener('keyup', handleKeyUp);
+    window.removeEventListener('input', handleInput);
+    window.removeEventListener('paste', handlePasteWrapper);
+    window.removeEventListener('cut', handleCutWrapper);
+    window.removeEventListener('mouseup', handleMouseUp);
+  }
+
   onMount(async () => {
     ({
       caretIsOnEdgeOfParagraphText,
@@ -187,29 +206,19 @@
       setCaret,
     } = await import('../../common/dom'));
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('resize', manageInsertMenu);
-    window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('input', handleInput);
-    window.addEventListener('paste', handlePasteWrapper);
-    window.addEventListener('cut', handleCutWrapper);
-    window.addEventListener('mouseup', handleMouseUp);
-
+    registerTopLevelEventHandlers();
     batchSaveIntervalId = setInterval(batchSave, 3000);
 
     tick().then(() => {
-      setCaret(selectionOffsetsPreload);
+      if (documentModel.isMetaType(selectionOffsetsPreload.startNodeId)) {
+        sectionEdit(selectionOffsetsPreload.startNodeId);
+      } else {
+        setCaret(selectionOffsetsPreload);
+      }
     });
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('resize', manageInsertMenu);
-      window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('input', handleInput);
-      window.removeEventListener('paste', handlePasteWrapper);
-      window.removeEventListener('cut', handleCutWrapper);
-      window.removeEventListener('mouseup', handleMouseUp);
-
+      deregisterTopLevelEventHandlers();
       clearInterval(batchSaveIntervalId);
     };
   });
@@ -276,7 +285,7 @@
       insertMenuTopOffset = selectedNode.offsetTop;
       insertMenuLeftOffset = selectedNode.offsetLeft;
     } else {
-      console.debug('INSERT - HIDE');
+      console.debug('INSERT - HIDE', selectedNodeMap.toJS());
       insertMenuNode = Map();
     }
   }
@@ -291,7 +300,7 @@
 
     // on insert,set editSectionNode if not already set.
     if (startNodeId && documentModel.isMetaType(startNodeId)) {
-      editSectionNode = documentModel.getNode(startNodeId);
+      sectionEdit(startNodeId);
     }
     // no more caret work necessary for Meta nodes
     if (
@@ -367,26 +376,19 @@
       // allow "cut"
       !isCutEvent(evt) &&
       // allow "paste"
-      !(
-        isPasteEvent(evt) &&
-        // don't override pasting into inputs of menus
-        // i.e. don't paste if editing a section or a link url in format selection menu
-        // TODO: the need for this check goes away if we unregister the editor event handlers when showing a menu
-        !shouldShowEditSectionMenu &&
-        !formatSelectionModel.get(SELECTION_ACTION_LINK)
-      ) &&
+      !isPasteEvent(evt) &&
       // allow holding down shift
       !evt.shiftKey
     ) {
       return;
     }
 
-    console.debug('KEYDOWN', evt);
     let selectionOffsets = getSelectionOffsetsOrEditSectionNode();
     // ignore invalid DOM selection
     if (!isValidDomSelection(selectionOffsets)) {
       return;
     }
+    console.debug('KEYDOWN', evt, selectionOffsets);
     // call "callbacks" with "args" in order until one returns truthy to get a "at most one fires in the list" guarantee
     const first = async (callbacks, args) => {
       for (let i = 0; i < callbacks.length; i++) {
@@ -415,8 +417,8 @@
         documentModel,
         historyManager,
         commitUpdates,
+        closeAllEditContentMenus,
         sectionEdit,
-        shouldShowEditSectionMenu,
         editSectionNode,
         setEditSectionNode: (value) => {
           editSectionNode = value;
@@ -424,7 +426,6 @@
         setPost: (value) => {
           postMap = value;
         },
-        closeAllEditContentMenus,
       }
     );
 
@@ -436,7 +437,6 @@
     await tick();
     // refresh caret after possible setState() mutations above
     selectionOffsets = getSelectionOffsetsOrEditSectionNode();
-    //await handleEditSectionMenu(evt);
     await manageInsertMenu(evt, selectionOffsets);
     //await manageFormatSelectionMenu(evt, selectionOffsets);
   }
@@ -450,10 +450,10 @@
     }
     // TODO: this is to coordinate with closing the Format Selection menu
     // without it, the menu would reopen after the user hits ESC?
-    if (shouldSkipKeyUp) {
-      shouldSkipKeyUp = undefined;
-      return;
-    }
+    // if (shouldSkipKeyUp) {
+    //   shouldSkipKeyUp = undefined;
+    //   return;
+    // }
     console.debug('KEYUP');
     const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
     //await manageFormatSelectionMenu(evt, selectionOffsets);
@@ -493,15 +493,16 @@
 
   async function handleMouseUp(evt) {
     // console.debug('MouseUp: ', evt)
-    const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
+    //const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
 
     // close everything by default, sectionEdit() callback will fire after this to override
     await closeAllEditContentMenus();
-    await manageInsertMenu(evt, selectionOffsets);
+    await manageInsertMenu(evt /*selectionOffsets*/);
     //await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
   // SECTION
+  // TODO: move this out into a
   async function insertSection(sectionType, [firstFile] = []) {
     let meta = Map();
     if (sectionType === NODE_TYPE_IMAGE) {
@@ -537,6 +538,10 @@
   }
 
   function sectionEdit(sectionId) {
+    // noop if this section is already selected
+    if (sectionId === editSectionNode.get('id')) {
+      return;
+    }
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = documentModel.getNode(sectionId);
     //if (section.get('type') === NODE_TYPE_SPACER) {
@@ -612,16 +617,21 @@
     {postMap}
     nodeModel="{editSectionNode}"
     update="{updateEditSectionNode}"
+    closeMenu="{() => {
+      shouldShowEditSectionMenu = false;
+    }}"
   />
 {/if}
-<!--{editSectionNode.get('type') === NODE_TYPE_QUOTE &&-->
-<!--shouldShowEditSectionMenu && (-->
-<!--    <EditQuoteForm-->
-<!--    offsetTop={editSectionMetaFormTopOffset}-->
-<!--    nodeModel={editSectionNode}-->
-<!--    update={updateEditSectionNode}-->
-<!--    />-->
-<!--    )}-->
+{#if editSectionNode.get('type') === NODE_TYPE_QUOTE && shouldShowEditSectionMenu}
+  <EditQuoteForm
+    offsetTop="{editSectionMetaFormTopOffset}"
+    nodeModel="{editSectionNode}"
+    update="{updateEditSectionNode}"
+    closeMenu="{() => {
+      shouldShowEditSectionMenu = false;
+    }}"
+  />
+{/if}
 <!--{formatSelectionNode.get('id') && (-->
 <!--    <FormatSelectionMenu-->
 <!--    offsetTop={formatSelectionMenuTopOffset}-->

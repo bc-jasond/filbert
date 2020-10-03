@@ -5,6 +5,7 @@
   export let shouldHideCaption;
   export let update;
   export let postMap;
+  export let closeMenu;
 
   import { beforeUpdate, onMount } from 'svelte';
   import { Map } from 'immutable';
@@ -13,6 +14,10 @@
     KEYCODE_LEFT_ARROW,
     KEYCODE_RIGHT_ARROW,
     KEYCODE_SPACE,
+    KEYCODE_BACKSPACE,
+    KEYCODE_TAB,
+    KEYCODE_ENTER,
+    KEYCODE_ESC,
   } from '../common/constants';
   import { getApiClientInstance } from '../common/api-client';
   import {
@@ -21,7 +26,6 @@
     getImageFileFormData,
     focusAndScrollSmooth,
   } from '../common/dom';
-  import { stopAndPrevent } from '../common/utils';
 
   import IconButton from '../form-components/IconButton.svelte';
   import Cursor from '../form-components/Cursor.svelte';
@@ -60,25 +64,36 @@
     }
 
     function handleKeyDown(evt) {
-      if (!evt) {
-        return;
+      // override the top level handlers in the Editor
+      if (
+        [
+          KEYCODE_LEFT_ARROW,
+          KEYCODE_RIGHT_ARROW,
+          KEYCODE_TAB,
+          KEYCODE_ENTER,
+          KEYCODE_BACKSPACE,
+        ].includes(evt.keyCode)
+      ) {
+        evt.stopPropagation();
       }
       if (
-        evt.keyCode === KEYCODE_LEFT_ARROW &&
-        (currentIdx < lastButtonIdx || caretIsAtBeginningOfInput())
+        (evt.keyCode === KEYCODE_TAB && evt.shiftKey) ||
+        (evt.keyCode === KEYCODE_LEFT_ARROW &&
+          (currentIdx < lastButtonIdx || caretIsAtBeginningOfInput()))
       ) {
         currentIdx = currentIdx === 0 ? lastButtonIdx : currentIdx - 1;
         focusOrBlurCaptionInput(true);
-        stopAndPrevent(evt);
+        evt.preventDefault();
         return;
       }
       if (
-        evt.keyCode === KEYCODE_RIGHT_ARROW &&
-        (currentIdx < lastButtonIdx || caretIsAtEndOfInput())
+        evt.keyCode === KEYCODE_TAB ||
+        (evt.keyCode === KEYCODE_RIGHT_ARROW &&
+          (currentIdx < lastButtonIdx || caretIsAtEndOfInput()))
       ) {
         currentIdx = currentIdx === lastButtonIdx ? 0 : currentIdx + 1;
         focusOrBlurCaptionInput(false);
-        stopAndPrevent(evt);
+        evt.preventDefault();
         return;
       }
       if (
@@ -89,7 +104,10 @@
         if (currentIdx > -1) {
           clickHandlers[currentIdx]();
         }
-        stopAndPrevent(evt);
+        evt.preventDefault();
+      }
+      if (evt.keyCode === KEYCODE_ENTER || evt.keyCode === KEYCODE_ESC) {
+        closeMenu();
       }
     }
 
@@ -109,7 +127,7 @@
     if (!editImageMenuDomNode) {
       return;
     }
-    editImageMenuDomNode.style.top = `${offsetTop + 10}px`;
+    editImageMenuDomNode.style.top = `${offsetTop - 60}px`;
     editImageMenuDomNode.style.left = offsetLeft ? `${offsetLeft}px` : '50%';
   });
 
@@ -273,6 +291,9 @@
       placeholder="Enter Image Caption here..."
       bind:this="{captionInputDomNode}"
       on:input="{updateCaption}"
+      on:mouseup="{(e) => {
+        e.stopPropagation();
+      }}"
       on:click="{() => (currentIdx = captionInputIdx)}"
       on:focus="{() => (currentIdx = captionInputIdx)}"
       value="{nodeModel.getIn(['meta', 'caption'], '')}"

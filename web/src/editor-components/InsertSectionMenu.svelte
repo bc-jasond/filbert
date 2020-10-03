@@ -86,12 +86,18 @@
         break;
       }
       case KEYCODE_LEFT_ARROW: {
+        if (!menuIsOpen) {
+          break;
+        }
         const nextIdx = currentIdx <= 0 ? 6 : currentIdx - 1;
         currentIdx = nextIdx;
         stopAndPrevent(evt);
         break;
       }
       case KEYCODE_RIGHT_ARROW: {
+        if (!menuIsOpen) {
+          break;
+        }
         const nextIdx = currentIdx === 6 ? 0 : currentIdx + 1;
         currentIdx = nextIdx;
         stopAndPrevent(evt);
@@ -107,11 +113,11 @@
       case KEYCODE_SPACE: // fall-through
       case KEYCODE_ENTER: {
         if (currentIdx > -1) {
+          stopAndPrevent(evt);
           sectionCallbacks[currentIdx]();
           currentIdx = -1;
           menuIsOpen = false;
         }
-        stopAndPrevent(evt);
         break;
       }
       default:
