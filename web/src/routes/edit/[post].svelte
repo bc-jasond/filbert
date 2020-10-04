@@ -63,6 +63,9 @@
   let formatSelectionNode = Map();
   let formatSelectionModel = Selection();
   let formatSelectionModelIdx = -1;
+  let formatSelectionMenuTopOffset = 0;
+  let formatSelectionMenuLeftOffset = 0;
+  let selectionOffsetsManageFormatSelectionMenu;
   let batchSaveIntervalId;
 
   $: postMap = fromJS(post);
@@ -149,7 +152,7 @@
   import InsertSectionMenu from '../../editor-components/InsertSectionMenu.svelte';
   import EditImageMenu from '../../editor-components/EditImageMenu.svelte';
   import EditQuoteForm from '../../editor-components/EditQuoteMenu.svelte';
-  //import FormatSelectionMenu from './format-selection-menu';
+  import FormatSelectionMenu from '../../editor-components/FormatSelectionMenu.svelte';
 
   function handleCutWrapper(evt) {
     return handleCut({
@@ -492,17 +495,17 @@
   }
 
   async function handleMouseUp(evt) {
-    // console.debug('MouseUp: ', evt)
-    //const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
+    console.debug('MouseUp: ', evt);
+    const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
 
     // close everything by default, sectionEdit() callback will fire after this to override
     await closeAllEditContentMenus();
-    await manageInsertMenu(evt /*selectionOffsets*/);
-    //await manageFormatSelectionMenu(evt, selectionOffsets);
+    await manageInsertMenu(evt, selectionOffsets);
+    await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
   // SECTION
-  // TODO: move this out into a
+  // TODO: move this out into "section" helper
   async function insertSection(sectionType, [firstFile] = []) {
     let meta = Map();
     if (sectionType === NODE_TYPE_IMAGE) {
@@ -586,6 +589,154 @@
   }
 
   // FORMAT
+  // TODO: move this out into "format" helper
+  function closeFormatSelectionMenu(selectionOffsets) {
+    const { startNodeId, endNodeId, caretEnd } = selectionOffsets;
+    if (formatSelectionNode.get('id')) {
+      formatSelectionNode = Map();
+      formatSelectionModel = Selection();
+      formatSelectionModelIdx = -1;
+      formatSelectionMenuTopOffset = 0;
+      formatSelectionMenuLeftOffset = 0;
+
+      // if we're highlighting across nodes, don't setCaret because user is changing selection size with arrows keys while holding shift
+      if (!endNodeId) {
+        // caretStart: caretEnd - collapse range and place caret at end
+        setCaret({ startNodeId, caretStart: caretEnd });
+      }
+    }
+  }
+
+  async function updateLinkUrl(value) {
+    const updatedSelectionModel = formatSelectionModel.set(
+      SELECTION_LINK_URL,
+      value
+    );
+    const updatedNode = replaceSelection(
+      formatSelectionNode,
+      updatedSelectionModel,
+      formatSelectionModelIdx
+    );
+    documentModel.update(updatedNode);
+    formatSelectionNode = updatedNode;
+    formatSelectionModel = updatedSelectionModel;
+    await commitUpdates(getSelectionOffsetsOrEditSectionNode());
+  }
+
+  // TODO: show/hide logic for this menu is split up and difficult to understand.
+  //  It should be split up based on type of event instead of trying to overload the handlers with too much logic
+  async function manageFormatSelectionMenu(evt, selectionOffsets) {
+    const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
+    if (
+      // no node
+      !startNodeId ||
+      !caretEnd ||
+      // collapsed caret
+      caretStart === caretEnd
+    ) {
+      if (formatSelectionNode.size > 0) {
+        closeFormatSelectionMenu(selectionOffsets);
+      }
+      return;
+    }
+
+    if (endNodeId) {
+      // TODO: support highlight across multiple nodes
+      console.info(
+        '// TODO: format selection across nodes: ',
+        selectionOffsets
+      );
+      closeFormatSelectionMenu();
+      return;
+    }
+
+    // allow user to hold shift and use arrow keys to adjust selection range
+    if (
+      !evt.shiftKey &&
+      !(evt.metaKey && [KEYCODE_X, KEYCODE_V].includes(evt.keyCode))
+    ) {
+      stopAndPrevent(evt);
+    }
+
+    const range = getRange();
+    console.info(
+      'SELECTION: ',
+      caretStart,
+      caretEnd,
+      endNodeId,
+      range,
+      range.getBoundingClientRect()
+    );
+    const rect = range.getBoundingClientRect();
+    const selectedNodeModel = documentModel.getNode(startNodeId);
+    // save range offsets because if the selection is marked as a "link" the url input will be focused
+    // and the range will be lost
+    selectionOffsetsManageFormatSelectionMenu = selectionOffsets;
+    const { selections, idx } = getSelectionByContentOffset(
+      selectedNodeModel,
+      caretStart,
+      caretEnd
+    );
+
+    formatSelectionNode = selectedNodeModel.setIn(
+      ['meta', 'selections'],
+      selections
+    );
+    formatSelectionModel = getSelectionAtIdx(selections, idx);
+    formatSelectionModelIdx = idx;
+    // NOTE: need to add current vertical scroll position of the window to the
+    // rect position to get offset relative to the whole document
+    formatSelectionMenuTopOffset = rect.top + window.scrollY;
+    formatSelectionMenuLeftOffset = (rect.left + rect.right) / 2;
+  }
+
+  async function handleSelectionAction(action) {
+    const { historyState, updatedSelection } = doFormatSelection(
+      documentModel,
+      formatSelectionNode,
+      formatSelectionModel,
+      formatSelectionModelIdx,
+      action
+    );
+    // formatting doesn't change the SelectionOffsets
+    // seems like it could conditionally collapse the selection only when moving from P -> H1 or H2 but, idk???
+    historyManager.appendToHistoryLog({
+      executeSelectionOffsets: selectionOffsetsManageFormatSelectionMenu,
+      unexecuteSelectionOffsets: selectionOffsetsManageFormatSelectionMenu,
+      historyState,
+    });
+    await commitUpdates(selectionOffsetsManageFormatSelectionMenu);
+
+    const updatedNode = documentModel.getNode(
+      getLastExecuteIdFromHistory(historyState)
+    );
+    // need to refresh the selection after update, as a merge might have occured
+    // between neighboring selections that now have identical formats
+    const { selections } = getSelectionByContentOffset(
+      updatedNode,
+      selectionOffsetsManageFormatSelectionMenu.caretStart,
+      selectionOffsetsManageFormatSelectionMenu.caretEnd
+    );
+    formatSelectionNode = updatedNode.setIn(['meta', 'selections'], selections);
+    // note: this selection index shouldn't have changed.
+    formatSelectionModel = getSelectionAtIdx(
+      selections,
+      formatSelectionModelIdx
+    );
+    if (updatedSelection.get(SELECTION_ACTION_LINK)) {
+      return;
+    }
+    // this replaces the selection after calling setState
+    const replacementRange = replaceRange(
+      selectionOffsetsManageFormatSelectionMenu
+    );
+    // reposition menu since formatting changes move the selection around on the screen
+    const rect = replacementRange.getBoundingClientRect();
+    // NOTE: need to add current vertical scroll position of the window to the
+    // rect position to get offset relative to the whole document
+    formatSelectionMenuTopOffset = rect.top + window.scrollY;
+    formatSelectionMenuLeftOffset = (rect.left + rect.right) / 2;
+  }
 </script>
 
 <style>
@@ -632,14 +783,14 @@
     }}"
   />
 {/if}
-<!--{formatSelectionNode.get('id') && (-->
-<!--    <FormatSelectionMenu-->
-<!--    offsetTop={formatSelectionMenuTopOffset}-->
-<!--    offsetLeft={formatSelectionMenuLeftOffset}-->
-<!--    nodeModel={formatSelectionNode}-->
-<!--    selectionModel={formatSelectionModel}-->
-<!--    selectionAction={handleSelectionAction}-->
-<!--    updateLinkUrl={updateLinkUrl}-->
-<!--    closeMenu={closeFormatSelectionMenu}-->
-<!--    />-->
-<!--    )}-->
+{#if formatSelectionNode.get('id')}
+  <FormatSelectionMenu
+    offsetTop="{formatSelectionMenuTopOffset}"
+    offsetLeft="{formatSelectionMenuLeftOffset}"
+    nodeModel="{formatSelectionNode}"
+    selectionModel="{formatSelectionModel}"
+    selectionAction="{handleSelectionAction}"
+    {updateLinkUrl}
+    closeMenu="{closeFormatSelectionMenu}"
+  />
+{/if}

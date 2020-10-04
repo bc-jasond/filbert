@@ -172,7 +172,7 @@ export default React.memo(
     const linkUrlRef = useRef(null);
 
     const nodeId = nodeModel.get('id');
-    const linkMenuItemIdx = 6;
+
 
     const [currentIdx, setCurrentIdx] = useState(
       selectionModel?.get(SELECTION_ACTION_LINK) ? linkMenuItemIdx : -1
