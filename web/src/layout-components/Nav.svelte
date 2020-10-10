@@ -40,7 +40,7 @@
   $: fontButtonDisplay = font === SANS_FONT_THEME ? '🖋' : '✏️';
   $: shouldShowManagePost = segment === PAGE_NAME_EDIT && post.get('id');
   $: shouldShowEdit = segment === PAGE_NAME_VIEW && post.get('canEdit');
-  $: shouldShowNew = segment !== PAGE_NAME_EDIT || post.get('id');
+  $: shouldShowNew = true; //segment !== PAGE_NAME_EDIT || post.get('id');
   $: shouldShowLogoutButton = segment === PAGE_NAME_USER_PROFILE && userIsMe;
   const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
 

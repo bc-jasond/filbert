@@ -1,3 +1,7 @@
+<script>
+  export let id = performance.now();
+</script>
+
 <style>
   button {
     position: relative;
@@ -18,6 +22,6 @@
   }
 </style>
 
-<button on:click>
+<button {id} on:click>
   <slot />
 </button>

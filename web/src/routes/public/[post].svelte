@@ -46,7 +46,6 @@
   import { fromJS } from 'immutable';
   import { reviver } from '../../common/utils';
   import PostNext from '../../post-components/PostNext.svelte';
-  import SiteInfo from '../../document-components/format-components/SiteInfo.svelte';
   import PostDetailsSection from '../../post-components/PostDetails.svelte';
   import PostAvatar from '../../post-components/PostAvatar.svelte';
   import Document from '../../document-components/Document.svelte';
@@ -78,12 +77,12 @@
 </PostDetailsSection>
 <Document nodesById="{nodesByIdMap}" />
 <div class="filbert-section prev-next-post-section">
-  <SiteInfo shouldFormat>
+  <span class="siteinfo-text" shouldFormat>
     <div class="thanks-for-reading-container">
       <span class="thanks-for-reading">Thanks for reading</span>
       <span role="img" aria-label="peace sign">✌🏼</span>
     </div>
-  </SiteInfo>
+  </span>
   <div class="filbert-flex-grid">
     <PostNext post="{prevPostMap}" isPrevious />
     <PostNext post="{nextPostMap}" />

@@ -9,6 +9,8 @@
 </script>
 
 <script>
+  export let error;
+
   import { onMount } from 'svelte';
   import { stores } from '@sapper/app';
   import { GoogleAuth } from '../stores';
@@ -18,11 +20,9 @@
 
   const { session } = stores();
 
-  let error;
-
   onMount(async () => {
     if (!error) {
-      await $GoogleAuth.signOut();
+      await $GoogleAuth?.signOut?.();
       // refresh GoogleAuth instance
       $GoogleAuth = await googleAuth();
       session.set({});

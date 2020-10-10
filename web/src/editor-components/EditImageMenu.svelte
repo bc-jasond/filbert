@@ -26,6 +26,7 @@
     getImageFileFormData,
     focusAndScrollSmooth,
   } from '../common/dom';
+  import { stopAndPrevent } from '../common/utils';
 
   import IconButton from '../form-components/IconButton.svelte';
   import Cursor from '../form-components/Cursor.svelte';
@@ -113,10 +114,20 @@
 
     // `capture: true` AKA "capture phase" will put this event handler in front of the ones set by edit.jsx
     window.addEventListener('keydown', handleKeyDown, { capture: true });
+    // override top level mouseup handler
+    function noop(e) {
+      if (editImageMenuDomNode.contains(e.target)) {
+        stopAndPrevent(e);
+      }
+    }
+    window.addEventListener('mouseup', noop, { capture: true });
     focusOrBlurCaptionInput();
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown, {
+        capture: true,
+      });
+      window.removeEventListener('mouseup', noop, {
         capture: true,
       });
     };
@@ -291,9 +302,6 @@
       placeholder="Enter Image Caption here..."
       bind:this="{captionInputDomNode}"
       on:input="{updateCaption}"
-      on:mouseup="{(e) => {
-        e.stopPropagation();
-      }}"
       on:click="{() => (currentIdx = captionInputIdx)}"
       on:focus="{() => (currentIdx = captionInputIdx)}"
       value="{nodeModel.getIn(['meta', 'caption'], '')}"

@@ -1,12 +1,13 @@
 <script>
-  export let nodeModel;
-  export let selectionModel;
+  export let nodeModel = Map();
+  export let selectionModel = Map();
   export let selectionAction;
   export let offsetTop;
   export let offsetLeft;
   export let updateLinkUrl;
   export let closeMenu;
 
+  import { Map } from 'immutable';
   import { beforeUpdate, onMount } from 'svelte';
 
   import {
@@ -20,7 +21,12 @@
     SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_H1,
     SELECTION_ACTION_H2,
+    NODE_TYPE_H1,
+    NODE_TYPE_H2,
   } from '../common/constants';
+
+  import { stopAndPrevent } from '../common/utils';
+
   import Cursor from '../form-components/Cursor.svelte';
   import IconButton from '../form-components/IconButton.svelte';
   import IconBold from '../icons/bold.svelte';
@@ -33,11 +39,23 @@
   import IconH2 from '../icons/h2.svelte';
   import IconMini from '../icons/mini.svelte';
 
+  $: boldIsEnabled = selectionModel.get(SELECTION_ACTION_BOLD);
+  $: italicIsEnabled = selectionModel.get(SELECTION_ACTION_ITALIC);
+  $: codeIsEnabled = selectionModel.get(SELECTION_ACTION_CODE);
+  $: siteinfoIsEnabled = selectionModel.get(SELECTION_ACTION_SITEINFO);
+  $: miniIsEnabled = selectionModel.get(SELECTION_ACTION_MINI);
+  $: strikethroughIsEnabled = selectionModel.get(
+    SELECTION_ACTION_STRIKETHROUGH
+  );
+  $: linkIsEnabled = selectionModel.get(SELECTION_ACTION_LINK);
+  $: h1IsEnabled = nodeModel.get('type') === NODE_TYPE_H1;
+  $: h2IsEnabled = nodeModel.get('type') === NODE_TYPE_H2;
+
   let formatSelectionMenuDomNode;
   let linkUrlInputDomNode;
   let isMenuOpen = true;
   const linkMenuItemIdx = 6;
-  let currentIdx = selectionModel?.get(SELECTION_ACTION_LINK)
+  let currentIdx = selectionModel.get(SELECTION_ACTION_LINK)
     ? linkMenuItemIdx
     : -1;
 
@@ -52,7 +70,44 @@
     }
   });
 
-  onMount(() => {});
+  function handleKeyDown(evt) {}
+
+  onMount(() => {
+    // `capture: true` AKA "capture phase" will put this event handler in front of the ones set by edit.jsx
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    // override top level mouseup handler
+    function noop(e) {
+      if (formatSelectionMenuDomNode.contains(e.target)) {
+        stopAndPrevent(e);
+      }
+    }
+    window.addEventListener('mouseup', noop, { capture: true });
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, {
+        capture: true,
+      });
+      window.removeEventListener('mouseup', noop, {
+        capture: true,
+      });
+    };
+  });
+
+  function isFormatEnabled(type) {
+    if (
+      nodeModel.get('type') === NODE_TYPE_H1 &&
+      type === SELECTION_ACTION_H1
+    ) {
+      return true;
+    }
+    if (
+      nodeModel.get('type') === NODE_TYPE_H2 &&
+      type === SELECTION_ACTION_H2
+    ) {
+      return true;
+    }
+    return selectionModel.get(type) || undefined;
+  }
 </script>
 
 <style>
@@ -98,7 +153,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_BOLD)}"
   >
     <div class="svg-container">
-      <IconBold useIconMixin selected="{currentIdx === 0}" />
+      <IconBold useIconMixin selected="{boldIsEnabled}" />
     </div>
     {#if currentIdx === 0}
       <Cursor />
@@ -109,7 +164,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_ITALIC)}"
   >
     <div class="svg-container">
-      <IconItalic useIconMixin selected="{currentIdx === 1}" />
+      <IconItalic useIconMixin selected="{italicIsEnabled}" />
     </div>
     {#if currentIdx === 1}
       <Cursor />
@@ -120,7 +175,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_CODE)}"
   >
     <div class="svg-container">
-      <IconCode useIconMixin selected="{currentIdx === 2}" />
+      <IconCode useIconMixin selected="{codeIsEnabled}" />
     </div>
     {#if currentIdx === 2}
       <Cursor />
@@ -131,7 +186,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_SITEINFO)}"
   >
     <div class="svg-container">
-      <IconSiteinfo useIconMixin selected="{currentIdx === 3}" />
+      <IconSiteinfo useIconMixin selected="{siteinfoIsEnabled}" />
     </div>
     {#if currentIdx === 3}
       <Cursor />
@@ -142,7 +197,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_MINI)}"
   >
     <div class="svg-container">
-      <IconMini useIconMixin selected="{currentIdx === 4}" />
+      <IconMini useIconMixin selected="{miniIsEnabled}" />
     </div>
     {#if currentIdx === 4}
       <Cursor />
@@ -153,7 +208,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_STRIKETHROUGH)}"
   >
     <div class="svg-container">
-      <IconStrikethrough useIconMixin selected="{currentIdx === 5}" />
+      <IconStrikethrough useIconMixin selected="{strikethroughIsEnabled}" />
     </div>
     {#if currentIdx === 5}
       <Cursor />
@@ -164,7 +219,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_LINK)}"
   >
     <div class="svg-container">
-      <IconLink useIconMixin selected="{currentIdx === 6}" />
+      <IconLink useIconMixin selected="{linkIsEnabled}" />
     </div>
     {#if currentIdx === 6}
       <Cursor />
@@ -176,7 +231,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_H1)}"
   >
     <div class="svg-container">
-      <IconH1 useIconMixin selected="{currentIdx === 7}" />
+      <IconH1 useIconMixin selected="{h1IsEnabled}" />
     </div>
     {#if currentIdx === 7}
       <Cursor />
@@ -187,7 +242,7 @@
     on:click="{() => selectionAction(SELECTION_ACTION_H2)}"
   >
     <div class="svg-container">
-      <IconH2 useIconMixin selected="{currentIdx === 8}" />
+      <IconH2 useIconMixin selected="{h2IsEnabled}" />
     </div>
     {#if currentIdx === 8}
       <Cursor />

@@ -68,10 +68,41 @@
   let selectionOffsetsManageFormatSelectionMenu;
   let batchSaveIntervalId;
 
-  $: postMap = fromJS(post);
-  $: documentModel = DocumentModel(post.id, nodesById);
-  $: historyManager = HistoryManager(post.id, apiClient);
+  let postMap;
+  let isUnsavedPost;
+  let documentModel;
+  let historyManager;
+  let nodesByIdMapInternal;
   $: nodesByIdMapInternal = documentModel.getNodes();
+  $: {
+    function reinstantiatePost() {
+      console.info('RE-INSTANTIATE POST', post);
+      postMap = fromJS(post);
+      isUnsavedPost = postMap.get('id') === NEW_POST_URL_ID;
+      documentModel = DocumentModel(post.id, nodesById);
+      historyManager = HistoryManager(post.id, apiClient);
+      nodesByIdMapInternal = documentModel.getNodes();
+      if (isUnsavedPost) {
+        clearInterval(batchSaveIntervalId);
+      } else if (!batchSaveIntervalId) {
+        batchSaveIntervalId = setInterval(batchSave, 3000);
+      }
+      tick().then(() => {
+        if (!setCaret) {
+          return;
+        }
+        if (documentModel.isMetaType(selectionOffsetsPreload.startNodeId)) {
+          sectionEdit(selectionOffsetsPreload.startNodeId);
+        } else {
+          setCaret(selectionOffsetsPreload);
+        }
+      });
+    }
+    if (!postMap || post.id !== postMap.get('id')) {
+      reinstantiatePost();
+    }
+  }
+
   $: insertMenuNodeId = insertMenuNode.get('id');
 
   import { fromJS, Map } from 'immutable';
@@ -109,18 +140,7 @@
     getLastExecuteIdFromHistory,
   } from '../../editor-components/history-manager';
 
-  import {
-    doDelete,
-    doDeleteMetaType,
-    doMerge,
-  } from '../../editor-components/editor-commands/delete';
-  import {
-    syncFromDom,
-    syncToDom,
-  } from '../../editor-components/editor-commands/dom-sync';
-  import { doPaste } from '../../editor-components/editor-commands/paste';
-  import { doSplit } from '../../editor-components/editor-commands/split';
-
+  import { syncFromDom } from '../../editor-components/editor-commands/dom-sync';
   import { handleBackspace } from '../../editor-components/event-handlers/backspace';
   import { handleEnter } from '../../editor-components/event-handlers/enter';
   import { handleSyncToDom } from '../../editor-components/event-handlers/sync-to-dom';
@@ -209,16 +229,24 @@
       setCaret,
     } = await import('../../common/dom'));
 
-    registerTopLevelEventHandlers();
-    batchSaveIntervalId = setInterval(batchSave, 3000);
+    console.log('EDIT onMount()');
+
+    if (isUnsavedPost) {
+      clearInterval(batchSaveIntervalId);
+    } else {
+      batchSaveIntervalId = setInterval(batchSave, 3000);
+    }
 
     tick().then(() => {
       if (documentModel.isMetaType(selectionOffsetsPreload.startNodeId)) {
         sectionEdit(selectionOffsetsPreload.startNodeId);
       } else {
         setCaret(selectionOffsetsPreload);
+        manageInsertMenu();
       }
     });
+
+    registerTopLevelEventHandlers();
 
     return () => {
       deregisterTopLevelEventHandlers();
@@ -245,14 +273,18 @@
       console.error(error);
       return;
     }
+    console.info('CREATE NEW POST');
     // copy placeholder history
     const pendingHistory = historyManager.getLocalHistoryLog();
     // re-instantiate HistoryManager with pendingHistory for saveAndClearLocalHistoryLog()
-    historyManager = HistoryManager(postId, pendingHistory);
     // will save current document state from history
-    await historyManager.saveAndClearLocalHistoryLog();
+    await HistoryManager(
+      postId,
+      apiClient,
+      pendingHistory
+    ).saveAndClearLocalHistoryLog();
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
-    await goto(`/edit/${postId}`);
+    await goto(`/edit/${postId}`, { replaceState: true });
   }
 
   async function batchSave() {

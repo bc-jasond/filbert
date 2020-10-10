@@ -25,6 +25,24 @@
     margin-bottom: 52px;
   }
 
+  :global(.bold-text) {
+    color: var(--text-color-secondary);
+    font-weight: 700;
+  }
+  :global(.strikethrough-text) {
+    color: var(--text-color-secondary);
+    text-decoration: line-through;
+    font-family: inherit;
+  }
+  :global(.siteinfo-text) {
+    color: var(--text-color-secondary);
+    font-family: var(--alt-font-family), sans-serif;
+    font-size: var(--alt-font-size);
+    font-weight: var(--alt-font-weight);
+    line-height: var(--alt-line-height);
+    letter-spacing: var(--alt-letter-spacing);
+  }
+
   :global(.meta-font) {
     letter-spacing: 0px;
     font-size: 16px;

@@ -1,9 +1,11 @@
 <script>
   export let useIconMixin = false;
+  export let selected = false;
 </script>
 
 <svg
   class:svg-icon-mixin="{useIconMixin}"
+  class:selected
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 21 21"
 >
