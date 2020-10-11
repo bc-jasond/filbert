@@ -6,7 +6,7 @@ async function getUser(req, res) {
   const {
     query: { forSignup },
     params: { username },
-    session: {user: loggedInUser},
+    session: { user: loggedInUser },
   } = req;
   const isCheckingAvailability = typeof forSignup === 'string';
   if (!username) {

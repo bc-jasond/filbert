@@ -26,7 +26,9 @@
     text,
     selection: getSelectionAtIdx(selectionHead, idx),
   }));
-  let formattedMarkup = he.escape(cleanTextOrZeroLengthPlaceholder(node.get('content')));
+  let formattedMarkup = he.escape(
+    cleanTextOrZeroLengthPlaceholder(node.get('content'))
+  );
   $: {
     //console.debug('FORMATTED SELECTIONS render()', node);
     formattedMarkup = '';
@@ -69,9 +71,9 @@
             `<a class="filbert-link" href="${selection.get('linkUrl')}">`
           );
         }
-        formattedMarkup = `${formattedMarkup}${openingTags.join('')}${
-          he.escape(contentPiecesBySelectionLength[idx])
-        }${closingTags.join('')}`;
+        formattedMarkup = `${formattedMarkup}${openingTags.join('')}${he.escape(
+          contentPiecesBySelectionLength[idx]
+        )}${closingTags.join('')}`;
         selection = selection.get(SELECTION_NEXT);
         idx += 1;
       }
@@ -82,13 +84,15 @@
     }
     // if there's an error, show unformatted content
     if (didError) {
-      formattedMarkup = he.escape(cleanTextOrZeroLengthPlaceholder(node.get('content')));
+      formattedMarkup = he.escape(
+        cleanTextOrZeroLengthPlaceholder(node.get('content'))
+      );
     }
   }
 </script>
 
 <style>
-      /* styles are globally defined in _theme.svelte */
+  /* styles are globally defined in _theme.svelte */
 </style>
 
 {@html formattedMarkup}

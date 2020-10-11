@@ -4,7 +4,7 @@
   export async function preload({ params: { post: postId } }, session) {
     const {
       error: errorPost,
-      data: { post },
+      data: { post } = {},
     } = await getApiClientInstance(this.fetch).get(`/manage/${postId}`);
     if (errorPost) {
       console.error(errorPost);
@@ -33,11 +33,17 @@
   import { onMount, beforeUpdate } from 'svelte';
 
   import { POST_ACTION_REDIRECT_TIMEOUT } from '@filbert/constants';
+
+  import { currentPost } from '../../stores';
+
   import {
     getMapWithId,
     nodeIsValid,
     formatPostDate,
+    confirmPromise,
   } from '../../common/utils';
+  import { NODE_TYPE_IMAGE } from '../../common/constants';
+  import { getNextFromUrl } from '../../common/dom';
 
   import H1 from '../../document-components/H1.svelte';
   import H2 from '../../document-components/H2.svelte';
@@ -45,7 +51,6 @@
   import Toggle from '../../form-components/Toggle.svelte';
   import ButtonSpinner from '../../form-components/ButtonSpinner.svelte';
   import EditImageMenu from '../../editor-components/EditImageMenu.svelte';
-  import { NODE_TYPE_IMAGE } from 'filbert/src/common/constants';
 
   let nextUrl;
   let focusAndScroll;
@@ -86,7 +91,10 @@
     positionImageMenu();
   });
 
+  let postMap = Map();
   $: postMap = fromJS(post);
+  $currentPost = postMap;
+
   $: postSummaryMap = fromJS(postSummary);
   $: shouldSyncTitleAndAbstract = postMap.getIn([
     'meta',
@@ -107,6 +115,9 @@
   let imageContainerDomNode;
   let shouldShowSuccessMessage = false;
   let saveLoading;
+  let publishLoading;
+  let duplicateLoading;
+  let deleteLoading;
 
   function syncTitleAndAbstract(postLocal, postSummaryLocal) {
     const current = postLocal.getIn(['meta', 'syncTitleAndAbstract']);
@@ -168,9 +179,92 @@
     }, POST_ACTION_REDIRECT_TIMEOUT);
     return {};
   }
-  function publishPost() {}
-  function duplicatePost() {}
-  function deletePost() {}
+  async function publishPost() {
+    publishLoading = true;
+    const didConfirm = await confirmPromise(
+      'Publish this draft?  This makes it public.'
+    );
+    if (!didConfirm) {
+      return;
+    }
+    // Save the post first
+    let error;
+    ({ error } = await savePost());
+    if (error) {
+      publishLoading = false;
+      shouldShowSuccessMessage = false;
+      errorObj = error;
+      return { error };
+    }
+    // manage second
+    ({ error } = await getApiClientInstance().post(
+      `/publish/${postMap.get('id')}`
+    ));
+    publishLoading = false;
+    if (error) {
+      shouldShowSuccessMessage = false;
+      errorObj = error;
+      return { error };
+    }
+    shouldShowSuccessMessage = true;
+    errorObj = {};
+    setTimeout(
+      () => goto(`/public/${postMap.get('canonical')}`),
+      POST_ACTION_REDIRECT_TIMEOUT
+    );
+  }
+  async function duplicatePost() {
+    duplicateLoading = true;
+    const didConfim = await confirmPromise(
+      `Duplicate? \n\n${postMap.get('title')}`
+    );
+    if (!didConfim) {
+      return;
+    }
+    const {
+      error,
+      data: { newPostId } = {},
+    } = await getApiClientInstance().post(`/duplicate/${postMap.get('id')}`);
+    duplicateLoading = false;
+    if (error) {
+      shouldShowSuccessMessage = false;
+      errorObj = error;
+      return { error };
+    }
+    shouldShowSuccessMessage = true;
+    errorObj = {};
+    setTimeout(() => goto(`/edit/${newPostId}`), POST_ACTION_REDIRECT_TIMEOUT);
+  }
+  async function deletePost() {
+    deleteLoading = true;
+    const draftType = postMap.get('published') ? 'post' : 'draft';
+    const didConfim = await confirmPromise(
+      `Delete ${draftType} ${postMap.get('title')}?`
+    );
+    if (!didConfim) {
+      return;
+    }
+    const { error } = await getApiClientInstance().del(
+      `/${draftType}/${postMap.get('id')}`
+    );
+    deleteLoading = false;
+    if (error) {
+      shouldShowSuccessMessage = false;
+      errorObj = error;
+      return { error };
+    }
+    shouldShowSuccessMessage = true;
+    errorObj = {};
+    setTimeout(() => {
+      // nextUrl might be to the post that we're deleting - only go to public or private post list
+      const nextUrl = getNextFromUrl();
+      if (nextUrl.includes('private')) {
+        goto('/private');
+      } else {
+        goto('/public');
+      }
+    }, POST_ACTION_REDIRECT_TIMEOUT);
+  }
 
   function updatePost(postLocal) {
     postMap = postLocal;
@@ -369,7 +463,7 @@
     {/if}
     {#if shouldShowSuccessMessage}
       <span class="success">
-        Saved{' '}
+        Success{' '}
         <span role="img" aria-label="thumbs up">👍</span>
       </span>
     {/if}

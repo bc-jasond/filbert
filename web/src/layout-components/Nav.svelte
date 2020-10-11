@@ -4,7 +4,8 @@
 
   import { afterUpdate, onMount } from 'svelte';
   import { goto, stores } from '@sapper/app';
-  import { Map } from 'immutable';
+
+  import { currentPost } from '../stores';
 
   import HeaderLogo from './HeaderLogo.svelte';
   import {
@@ -15,6 +16,7 @@
     MIXED_FONT_THEME,
     LIGHT_MODE_THEME,
     DARK_MODE_THEME,
+    NEW_POST_URL_ID,
   } from '../common/constants';
   import { getApiClientInstance } from '../common/api-client';
 
@@ -23,25 +25,26 @@
   // workaround for SSR to avoid calling browser-only globals like "window" or "localStorage" globals on the server
   // afterUpdate, onMount won't run on the server
   let userIsMe;
+  let createNextUrl = () => {};
   afterUpdate(async () => {
     userIsMe = window.location.href.includes($session?.user?.username);
   });
-  let manageUrl;
   onMount(async () => {
-    const { createNextUrl } = await import('../common/dom.js');
-    manageUrl = createNextUrl(`/manage/${post.get('id')}`);
+    ({ createNextUrl } = await import('../common/dom.js'));
   });
 
-  let post = Map();
+  // TODO: this isn't wired up lol - use a store?
   let theme = $session?.preferences?.theme;
   let font = $session?.preferences?.font;
 
   $: themeButtonDisplay = theme === DARK_MODE_THEME ? '☀️' : '🌑';
   $: fontButtonDisplay = font === SANS_FONT_THEME ? '🖋' : '✏️';
-  $: shouldShowManagePost = segment === PAGE_NAME_EDIT && post.get('id');
-  $: shouldShowEdit = segment === PAGE_NAME_VIEW && post.get('canEdit');
-  $: shouldShowNew = true; //segment !== PAGE_NAME_EDIT || post.get('id');
+  $: shouldShowManagePost =
+    $currentPost.get('canEdit') && $currentPost.get('id') !== NEW_POST_URL_ID;
+  $: shouldShowEdit = segment !== PAGE_NAME_EDIT && $currentPost.get('canEdit');
+  $: shouldShowNew = $currentPost.get('id') !== NEW_POST_URL_ID;
   $: shouldShowLogoutButton = segment === PAGE_NAME_USER_PROFILE && userIsMe;
+  $: manageUrl = createNextUrl(`/manage/${$currentPost.get('id')}`);
   const shouldShowPublic = true; // pageName !== PAGE_NAME_PUBLIC;
 
   function handleSignout() {
@@ -159,7 +162,7 @@
           <a href="{manageUrl}">manage</a>
         {/if}
         {#if shouldShowEdit}
-          <a href="/edit/{post.get('id')}">edit</a>
+          <a href="/edit/{$currentPost.get('id')}">edit</a>
         {/if}
         {#if shouldShowNew}
           <a href="/edit/new">new</a>

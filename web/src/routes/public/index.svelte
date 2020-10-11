@@ -51,7 +51,6 @@
   // react to toggle username filter or username input
   $: {
     if (isBrowser) {
-      pushHistory('username', username);
       const updatedUrlSearchParams = pushHistory('username', username);
       responsePromise = loadPosts('/post', updatedUrlSearchParams);
     }

@@ -32,7 +32,7 @@ async function getPostForEdit(req, res) {
     .limit(1);
 
   res.send({
-    post: currentPost,
+    post: { ...currentPost, canEdit: true },
     contentNodes,
     selectionOffsets:
       currentUndoHistoryId !== -1 && lastActionWasUndo

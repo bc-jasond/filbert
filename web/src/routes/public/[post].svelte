@@ -38,12 +38,18 @@
   export let prevPost;
   export let nextPost;
 
-  $: postMap = fromJS(post);
+  let postMap = Map();
+  $: {
+    postMap = fromJS(post);
+    $currentPost = postMap;
+  }
   $: nodesByIdMap = fromJS(nodesById, reviver);
   $: prevPostMap = fromJS(prevPost);
   $: nextPostMap = fromJS(nextPost);
 
-  import { fromJS } from 'immutable';
+  import { fromJS, Map } from 'immutable';
+
+  import { currentPost } from '../../stores';
   import { reviver } from '../../common/utils';
   import PostNext from '../../post-components/PostNext.svelte';
   import PostDetailsSection from '../../post-components/PostDetails.svelte';

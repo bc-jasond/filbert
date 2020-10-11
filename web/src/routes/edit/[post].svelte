@@ -78,6 +78,7 @@
     function reinstantiatePost() {
       console.info('RE-INSTANTIATE POST', post);
       postMap = fromJS(post);
+      $currentPost = postMap;
       isUnsavedPost = postMap.get('id') === NEW_POST_URL_ID;
       documentModel = DocumentModel(post.id, nodesById);
       historyManager = HistoryManager(post.id, apiClient);
@@ -108,6 +109,8 @@
   import { fromJS, Map } from 'immutable';
   import { goto } from '@sapper/app';
   import { tick, onMount } from 'svelte';
+
+  import { currentPost } from '../../stores';
 
   import {
     KEYCODE_DOWN_ARROW,

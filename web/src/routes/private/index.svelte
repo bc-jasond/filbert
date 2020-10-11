@@ -51,7 +51,6 @@
   // react to toggle contains filter or contains input
   $: {
     if (isBrowser) {
-      pushHistory('contains', contains);
       const updatedUrlSearchParams = pushHistory('contains', contains);
       responsePromise = loadPosts('/draft', updatedUrlSearchParams);
     }
