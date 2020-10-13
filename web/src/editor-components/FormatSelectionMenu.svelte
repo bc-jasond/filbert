@@ -37,8 +37,6 @@
   import { stopAndPrevent } from '../common/utils';
   import {
     focusAndScrollSmooth,
-    caretIsAtBeginningOfInput,
-    caretIsAtEndOfInput,
   } from '../common/dom';
 
   import Cursor from '../form-components/Cursor.svelte';

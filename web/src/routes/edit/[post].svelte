@@ -4,21 +4,19 @@
   import { NEW_POST_URL_ID, NODE_TYPE_H1 } from '../../common/constants';
 
   export async function preload({ path, params, query }, session) {
-    const apiClient = getApiClientInstance(this.fetch);
     if (params.post === NEW_POST_URL_ID) {
       const placeHolderTitle = getMapWithId({ type: NODE_TYPE_H1 }).toJS();
       return {
         post: { id: NEW_POST_URL_ID },
         nodesById: { [placeHolderTitle.id]: placeHolderTitle },
         selectionOffsetsPreload: { startNodeId: placeHolderTitle.id },
-        apiClient,
       };
     }
 
     const {
       error,
       data: { post, contentNodes: nodesById, selectionOffsets = {} } = {},
-    } = await apiClient.get(`/edit/${params.post}`);
+    } = await getApiClientInstance(this.fetch).get(`/edit/${params.post}`);
 
     if (error) {
       this.error(error);
@@ -28,8 +26,7 @@
     return {
       post,
       nodesById,
-      selectionOffsetsPreload: selectionOffsets,
-      apiClient,
+      selectionOffsetsPreload: selectionOffsets
     };
   }
 </script>
@@ -38,7 +35,8 @@
   export let post;
   export let nodesById;
   export let selectionOffsetsPreload;
-  export let apiClient;
+
+  let apiClient;
 
   // onMount start
   let caretIsOnEdgeOfParagraphText;
@@ -69,43 +67,11 @@
   let batchSaveIntervalId;
   let shouldSkipKeyUp;
 
-  let postMap;
+  let postMap = Map();
   let isUnsavedPost;
   let documentModel;
   let historyManager;
-  let nodesByIdMapInternal;
-  $: nodesByIdMapInternal = documentModel.getNodes();
-  $: {
-    function reinstantiatePost() {
-      console.info('RE-INSTANTIATE POST', postMap, post);
-      postMap = fromJS(post);
-      $currentPost = postMap;
-      isUnsavedPost = postMap.get('id') === NEW_POST_URL_ID;
-      documentModel = DocumentModel(post.id, nodesById);
-      historyManager = HistoryManager(post.id, apiClient);
-      nodesByIdMapInternal = documentModel.getNodes();
-      if (isUnsavedPost) {
-        clearInterval(batchSaveIntervalId);
-      } else if (!batchSaveIntervalId) {
-        batchSaveIntervalId = setInterval(batchSave, 3000);
-      }
-      tick().then(() => {
-        if (!setCaret) {
-          return;
-        }
-        if (documentModel.isMetaType(selectionOffsetsPreload.startNodeId)) {
-          sectionEdit(selectionOffsetsPreload.startNodeId);
-        } else {
-          setCaret(selectionOffsetsPreload);
-        }
-      });
-    }
-    if (!postMap || post.id !== postMap.get('id')) {
-      reinstantiatePost();
-    }
-  }
-
-  $: insertMenuNodeId = insertMenuNode.get('id');
+  let nodesByIdMapInternal = Map();
 
   import { fromJS, Map } from 'immutable';
   import { goto } from '@sapper/app';
@@ -221,6 +187,18 @@
     window.removeEventListener('mouseup', handleMouseUp);
   }
 
+  $: {
+    if (post.id !== postMap.get('id')) {
+      reinstantiatePost();
+    }
+  }
+  $: {
+    if (isBrowser()) {
+      apiClient = getApiClientInstance();
+    }
+  }
+  $: insertMenuNodeId = insertMenuNode.get('id');
+
   onMount(async () => {
     ({
       caretIsOnEdgeOfParagraphText,
@@ -255,10 +233,38 @@
 
     registerTopLevelEventHandlers();
   });
+
   onDestroy(() => {
     deregisterTopLevelEventHandlers();
     clearInterval(batchSaveIntervalId);
   });
+
+  async function reinstantiatePost() {
+    if (!isBrowser()) {
+      return;
+    }
+    console.info('RE-INSTANTIATE POST', postMap, post);
+    postMap = fromJS(post);
+    $currentPost = postMap;
+    isUnsavedPost = postMap.get('id') === NEW_POST_URL_ID;
+    documentModel = DocumentModel(post.id, nodesById);
+    historyManager = HistoryManager(post.id, apiClient);
+    nodesByIdMapInternal = documentModel.getNodes();
+    if (isUnsavedPost) {
+      clearInterval(batchSaveIntervalId);
+    } else if (!batchSaveIntervalId) {
+      batchSaveIntervalId = setInterval(batchSave, 3000);
+    }
+    await tick();
+    if (!setCaret) {
+      return;
+    }
+    if (documentModel.isMetaType(selectionOffsetsPreload.startNodeId)) {
+      sectionEdit(selectionOffsetsPreload.startNodeId);
+    } else {
+      setCaret(selectionOffsetsPreload);
+    }
+  }
 
   async function createNewPost() {
     const title = getFirstHeadingContent();
