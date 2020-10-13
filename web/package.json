@@ -15,14 +15,15 @@
     "jestcov": "jest --coverage"
   },
   "dependencies": {
+    "@filbert/constants": "1.0.0",
+    "@filbert/mysql": "1.0.0",
     "compression": "^1.7.1",
     "express-mysql-session": "^2.1.4",
     "express-session": "^1.17.1",
+    "he": "^1.2.0",
     "immutable": "^4.0.0-rc.12",
     "polka": "next",
-    "sirv": "^0.4.0",
-    "@filbert/constants": "1.0.0",
-    "@filbert/mysql": "1.0.0"
+    "sirv": "^0.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",

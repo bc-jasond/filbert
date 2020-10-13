@@ -1,5 +1,7 @@
 <script>
   export let nodesById = Map();
+  export let currentEditNode = Map();
+  export let setEditNodeId = undefined;
 
   import { Map } from 'immutable';
   import {
@@ -164,11 +166,24 @@
     {:else if node.get('type') === NODE_TYPE_H2}
       <H2 {node} />
     {:else if node.get('type') === NODE_TYPE_SPACER}
-      <Spacer {node} />
+      <Spacer
+        {node}
+        {setEditNodeId}
+        isEditing="{node.get('id') === currentEditNode.get('id')}"
+      />
     {:else if node.get('type') === NODE_TYPE_IMAGE}
-      <Image {node} />
+      <Image
+        {node}
+        hideBorder="{false}"
+        {setEditNodeId}
+        isEditing="{node.get('id') === currentEditNode.get('id')}"
+      />
     {:else if node.get('type') === NODE_TYPE_QUOTE}
-      <Quote {node} />
+      <Quote
+        {node}
+        {setEditNodeId}
+        isEditing="{node.get('id') === currentEditNode.get('id')}"
+      />
     {/if}
   {/each}
 </div>

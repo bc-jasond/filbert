@@ -24,6 +24,7 @@ polka() // You can also use Express
       key: FILBERT_SESSION_COOKIE_NAME,
       secret: ENCRYPTION_KEY,
       store: sessionStore,
+      rolling: true,
       resave: false,
       saveUninitialized: false,
     }),
@@ -56,6 +57,7 @@ polka() // You can also use Express
           'SAPPER server middleware',
           ENCRYPTION_KEY,
           req.session.id,
+          `TTL in seconds: ${Math.floor(req.session.cookie.maxAge / 1000)}`,
           req.session,
           req.headers.cookie &&
             req.headers.cookie

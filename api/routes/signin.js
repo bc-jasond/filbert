@@ -1,8 +1,22 @@
 const { OAuth2Client } = require('google-auth-library');
 
 const { getKnex } = require('../lib/mysql');
-const { sendSession } = require('../lib/session');
 const { checkPassword } = require('../lib/admin');
+
+function sendLoggedInUser(req, res, user) {
+  const loggedInUser = {
+    username: user.username,
+    userId: user.id,
+    givenName: user.given_name,
+    familyName: user.family_name,
+    pictureUrl: user.picture_url,
+    created: user.created,
+    iss: user.iss,
+  };
+  req.session.user = loggedInUser;
+  req.session.preferences = user?.meta?.preferences;
+  res.send(loggedInUser);
+}
 
 async function postSignin(req, res) {
   try {
@@ -23,7 +37,7 @@ async function postSignin(req, res) {
     }
 
     const exp = Date.now() / 1000 + 60 * 60 * 24; // 24 hours
-    sendSession(req, res, { ...user, exp });
+    sendLoggedInUser(req, res, { ...user, exp });
   } catch (err) {
     console.error('Signin Error: ', err);
     res.status(401).send({});
@@ -54,7 +68,7 @@ async function postSigninGoogle(req, res) {
     let [user] = await knex('user').where('email', email);
     // TODO: update filbert db if any values are different
     if (user) {
-      sendSession(req, res, { ...user, exp });
+      sendLoggedInUser(req, res, { ...user, exp });
       return;
     }
 
@@ -97,7 +111,7 @@ async function postSigninGoogle(req, res) {
 
     [user] = await knex('user').where('id', userId);
 
-    sendSession(req, res, { ...user, exp });
+    sendLoggedInUser(req, res, { ...user, exp });
   } catch (err) {
     console.error('Signin Error: ', err);
     res.status(401).send({});

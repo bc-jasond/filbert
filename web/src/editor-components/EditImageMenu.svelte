@@ -1,10 +1,11 @@
 <script>
   export let offsetTop;
-  export let offsetLeft;
+  export let offsetLeft = 0;
   export let nodeModel;
-  export let shouldHideCaption;
+  export let shouldHideCaption = false;
   export let update;
   export let postMap;
+  export let closeMenu;
 
   import { beforeUpdate, onMount } from 'svelte';
   import { Map } from 'immutable';
@@ -13,6 +14,10 @@
     KEYCODE_LEFT_ARROW,
     KEYCODE_RIGHT_ARROW,
     KEYCODE_SPACE,
+    KEYCODE_BACKSPACE,
+    KEYCODE_TAB,
+    KEYCODE_ENTER,
+    KEYCODE_ESC,
   } from '../common/constants';
   import { getApiClientInstance } from '../common/api-client';
   import {
@@ -38,10 +43,10 @@
     imageResizeDown,
   ];
 
-  let currentIdx = 0;
   const captionInputIdx = 4;
   const lastButtonIdx = shouldHideCaption ? 3 : captionInputIdx;
 
+  let currentIdx = shouldHideCaption ? 0 : captionInputIdx;
   let fileInputDomNode;
   let captionInputDomNode;
 
@@ -60,25 +65,37 @@
     }
 
     function handleKeyDown(evt) {
-      if (!evt) {
-        return;
+      // override the top level handlers in the Editor
+      if (
+        [
+          KEYCODE_LEFT_ARROW,
+          KEYCODE_RIGHT_ARROW,
+          KEYCODE_TAB,
+          KEYCODE_ENTER,
+          KEYCODE_ESC,
+          KEYCODE_BACKSPACE,
+        ].includes(evt.keyCode)
+      ) {
+        evt.stopPropagation();
       }
       if (
-        evt.keyCode === KEYCODE_LEFT_ARROW &&
-        (currentIdx <= lastButtonIdx || caretIsAtBeginningOfInput())
+        (evt.keyCode === KEYCODE_TAB && evt.shiftKey) ||
+        (evt.keyCode === KEYCODE_LEFT_ARROW &&
+          (currentIdx < lastButtonIdx || caretIsAtBeginningOfInput()))
       ) {
         currentIdx = currentIdx === 0 ? lastButtonIdx : currentIdx - 1;
         focusOrBlurCaptionInput(true);
-        stopAndPrevent(evt);
+        evt.preventDefault();
         return;
       }
       if (
-        evt.keyCode === KEYCODE_RIGHT_ARROW &&
-        (currentIdx <= lastButtonIdx || caretIsAtEndOfInput())
+        evt.keyCode === KEYCODE_TAB ||
+        (evt.keyCode === KEYCODE_RIGHT_ARROW &&
+          (currentIdx < lastButtonIdx || caretIsAtEndOfInput()))
       ) {
         currentIdx = currentIdx === lastButtonIdx ? 0 : currentIdx + 1;
         focusOrBlurCaptionInput(false);
-        stopAndPrevent(evt);
+        evt.preventDefault();
         return;
       }
       if (
@@ -89,14 +106,29 @@
         if (currentIdx > -1) {
           clickHandlers[currentIdx]();
         }
-        stopAndPrevent(evt);
+        evt.preventDefault();
+      }
+      if (evt.keyCode === KEYCODE_ENTER || evt.keyCode === KEYCODE_ESC) {
+        closeMenu();
       }
     }
 
     // `capture: true` AKA "capture phase" will put this event handler in front of the ones set by edit.jsx
     window.addEventListener('keydown', handleKeyDown, { capture: true });
+    // override top level mouseup handler
+    function noop(e) {
+      if (editImageMenuDomNode.contains(e.target)) {
+        stopAndPrevent(e);
+      }
+    }
+    window.addEventListener('mouseup', noop, { capture: true });
+    focusOrBlurCaptionInput();
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown, {
+        capture: true,
+      });
+      window.removeEventListener('mouseup', noop, {
         capture: true,
       });
     };
@@ -107,7 +139,7 @@
     if (!editImageMenuDomNode) {
       return;
     }
-    editImageMenuDomNode.style.top = `${offsetTop + 10}px`;
+    editImageMenuDomNode.style.top = `${offsetTop - 60}px`;
     editImageMenuDomNode.style.left = offsetLeft ? `${offsetLeft}px` : '50%';
   });
 
@@ -204,21 +236,23 @@
     align-items: center;
     justify-items: center;
     width: 500px;
-    margin: 0 auto 0 -81px;
+    margin-left: -250px;
   }
   #edit-image-menu.hide-caption {
     width: 162px;
-    /*margin-left: -250px;*/
+    margin-left: -81px;
   }
   .svg-container {
     height: 21px;
     width: 21px;
+    margin-bottom: 4px;
   }
-  .svg-container-bigger {
+  .svg-container.bigger {
     height: 28px;
     width: 28px;
+    margin-bottom: 0;
   }
-  input {
+  input[type='file'] {
     display: none;
   }
 </style>
@@ -247,7 +281,7 @@
     {/if}
   </IconButton>
   <IconButton on:click="{clickHandlers[2]}">
-    <div class="svg-container-bigger">
+    <div class="svg-container bigger">
       <IconPlusPx useIconMixin selected="{currentIdx === 2}" />
     </div>
     {#if currentIdx === 2}
@@ -255,7 +289,7 @@
     {/if}
   </IconButton>
   <IconButton on:click="{clickHandlers[3]}">
-    <div class="svg-container-bigger">
+    <div class="svg-container bigger">
       <IconMinusPx useIconMixin selected="{currentIdx === 3}" />
     </div>
     {#if currentIdx === 3}
@@ -269,6 +303,8 @@
       placeholder="Enter Image Caption here..."
       bind:this="{captionInputDomNode}"
       on:input="{updateCaption}"
+      on:click="{() => (currentIdx = captionInputIdx)}"
+      on:focus="{() => (currentIdx = captionInputIdx)}"
       value="{nodeModel.getIn(['meta', 'caption'], '')}"
     />
   {/if}

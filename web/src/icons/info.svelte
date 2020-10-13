@@ -1,4 +1,9 @@
-<svg viewBox="0 0 92 92">
+<script>
+  export let useIconMixin = false;
+  export let selected = false;
+</script>
+
+<svg class:svg-icon-mixin="{useIconMixin}" class:selected viewBox="0 0 92 92">
   <path
     d="M45.386,0.004C19.983,0.344-0.333,21.215,0.005,46.619c0.34,25.393,21.209,45.715,46.611,45.377
     c25.398-0.342,45.718-21.213,45.38-46.615C91.656,19.986,70.786-0.335,45.386,0.004z

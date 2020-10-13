@@ -2,7 +2,7 @@
   export let node;
 
   import { NODE_TYPE_P } from '../common/constants';
-  import FormattedText from './format-components/NodeSelectionsFormatted.svelte';
+  import FormattedText from './NodeSelectionsFormatted.svelte';
 </script>
 
 <style>

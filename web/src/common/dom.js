@@ -375,7 +375,7 @@ export function getHighlightedSelectionOffsets() {
   // offset of caret relative to the paragraph content length
   let caretStart = rangeStartOffset + startNodeOffset;
   // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
-  if (rangeStartOffset === 1 && cleanText(startNode.textContent).length === 0) {
+  if (cleanText(startNode.textContent).length === 0) {
     caretStart = 0;
   }
   // in consumer code range.collapsed can be checked by caretStart === caretEnd
@@ -393,7 +393,7 @@ export function getHighlightedSelectionOffsets() {
   const endNodeOffset = getParagraphContentOffset(range.endContainer, endNode);
   let endNodeCaretEnd = rangeEndOffset + endNodeOffset;
   // special case for an empty paragraph with a ZERO_LENGTH_PLACEHOLDER
-  if (rangeEndOffset === 1 && cleanText(endNode.textContent).length === 0) {
+  if (cleanText(endNode.textContent).length === 0) {
     endNodeCaretEnd = 0;
   }
   selectionOffsets.caretEnd = endNodeCaretEnd;
@@ -432,6 +432,13 @@ export function caretIsOnEdgeOfParagraphText() {
   function compareRangeAndParagraphTopOrBottom(key) {
     const caretRect = range.getBoundingClientRect();
     const paragraphRect = currentParagraph.getBoundingClientRect();
+    if (caretRect.height === 0) {
+      console.warn('range.getBoundingClientRect() returned ZERO values');
+      // BUG: on chrome *sometimes* caretRect values will all be 0
+      //  just assume we're at the edge of the paragraph
+      //  worst case it will make the arrow keys jump between paragraphs
+      return true;
+    }
     // if there's less than a caret height left when comparing the range rect to the paragraph rect,
     // we're on the top or bottom line of the paragraph text
     // TODO: this will probably break if adding margin or padding to the paragraph or any formatting <span>s

@@ -5,6 +5,16 @@
   :global(.filbert-section) {
     max-width: 740px;
     margin: 0 auto;
+    border: 4px solid transparent;
+  }
+
+  :global(.edit-section-border) {
+    border: 4px solid var(--accent-color-primary) !important;
+  }
+
+  :global(.edit-hover-border:hover) {
+    cursor: pointer;
+    border: 4px solid var(--accent-color-secondary) !important;
   }
 
   :global(.content-section) {
@@ -13,6 +23,24 @@
     line-height: 1.58;
     letter-spacing: -0.01em;
     margin-bottom: 52px;
+  }
+
+  :global(.bold-text) {
+    color: var(--text-color-secondary);
+    font-weight: 700;
+  }
+  :global(.strikethrough-text) {
+    color: var(--text-color-secondary);
+    text-decoration: line-through;
+    font-family: inherit;
+  }
+  :global(.siteinfo-text) {
+    color: var(--text-color-secondary);
+    font-family: var(--alt-font-family), sans-serif;
+    font-size: var(--alt-font-size);
+    font-weight: var(--alt-font-weight);
+    line-height: var(--alt-line-height);
+    letter-spacing: var(--alt-letter-spacing);
   }
 
   :global(.meta-font) {

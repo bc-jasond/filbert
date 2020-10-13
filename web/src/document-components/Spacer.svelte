@@ -1,14 +1,24 @@
 <script>
   export let node;
+  // TODO use a store() ?
+  export let isEditing = false;
+  export let setEditNodeId = undefined;
 
   import { NODE_TYPE_SPACER } from '../common/constants';
 
-  // TODO use a store()
-  let isEditing = false;
-  let isEditMode = false;
+  // assume we're editing if there's a setEditNodeId callback
+  $: isEditMode = !!setEditNodeId;
+  $: id = node.get('id');
 </script>
 
 <style>
+  section {
+    margin-bottom: 56px;
+    font-family: var(--alt-font-family);
+    font-size: var(--alt-font-size);
+    line-height: var(--alt-line-height);
+    letter-spacing: var(--alt-letter-spacing);
+  }
   section::after {
     content: '✎﹏﹏﹏﹏﹏﹏﹏﹏﹏';
     text-align: center;
@@ -23,6 +33,6 @@
   class:edit-section-border="{isEditing}"
   class:edit-hover-border="{isEditMode}"
   data-type="{NODE_TYPE_SPACER}"
-  name="{node.get('id')}"
-  on:click="{() => {}}"
+  name="{id}"
+  on:click="{() => setEditNodeId && setEditNodeId(id)}"
 ></section>

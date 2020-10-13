@@ -1,6 +1,6 @@
 <script>
   export let loading;
-  export let dark;
+  export let dark = false;
 </script>
 
 <style>

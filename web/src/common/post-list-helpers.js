@@ -13,12 +13,14 @@ export function pushHistory(param, value) {
     urlSearchParams.toString().length > 0
       ? `?${urlSearchParams.toString()}`
       : '';
-  // update the URL in history for the user to retain
-  window.history.pushState(
-    {},
-    document.title,
-    `${window.location.pathname}${updatedQueryString}`
-  );
+  // update the URL in history for the user to retain, only if it changed!
+  if (window.location.search != updatedQueryString) {
+    window.history.pushState(
+      {},
+      document.title,
+      `${window.location.pathname}${updatedQueryString}`
+    );
+  }
   return urlSearchParams;
 }
 

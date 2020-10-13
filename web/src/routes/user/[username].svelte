@@ -112,7 +112,6 @@
 
   import H1 from '../../document-components/H1.svelte';
   import H2 from '../../document-components/H2.svelte';
-  import Bold from '../../document-components/format-components/Bold.svelte';
   import ProfileImg from '../../user-components/ProfileImg.svelte';
   import ExpandLink from '../../layout-components/ExpandLink.svelte';
   import Toggle from '../../form-components/Toggle.svelte';
@@ -220,7 +219,7 @@
           {#if key === 'favorite'}
             {#each figure as { word, count }}
               <div>
-                <Bold shouldFormat>{word}</Bold>
+                <strong class="bold-text">{word}</strong>
                 used {formatNumber(count)} times
               </div>
             {/each}

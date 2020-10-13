@@ -430,8 +430,20 @@ export function caretIsOnEdgeOfParagraphText() {
   );
 
   function compareRangeAndParagraphTopOrBottom(key) {
+
+
     const caretRect = range.getBoundingClientRect();
     const paragraphRect = currentParagraph.getBoundingClientRect();
+    if (caretRect.height === 0) {
+      console.warn("range.getBoundingClientRect() returned ZERO values")
+      // BUG: on chrome caretRect values will all be 0 *sometimes*
+      //  just assume we're at the edge of the paragraph
+      //  worst case it will make the arrow keys jump between paragraphs
+      return true;
+    }
+    // did it work?
+    console.log("RECTs", caretRect, paragraphRect)
+
     // if there's less than a caret height left when comparing the range rect to the paragraph rect,
     // we're on the top or bottom line of the paragraph text
     // TODO: this will probably break if adding margin or padding to the paragraph or any formatting <span>s

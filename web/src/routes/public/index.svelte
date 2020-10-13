@@ -23,9 +23,8 @@
   export let randomFilterIsSelected;
   export let username = '';
 
-  import { onMount } from 'svelte';
-
   import { pushHistory } from '../../common/post-list-helpers';
+  import { isBrowser } from '../../common/utils';
 
   import H2 from '../../document-components/H2.svelte';
   import H1 from '../../document-components/H1.svelte';
@@ -36,11 +35,6 @@
 
   let responsePromise = Promise.resolve(posts);
   let totalPosts = posts.length;
-  let isBrowser;
-
-  onMount(() => {
-    isBrowser = true;
-  });
 
   $: {
     responsePromise.then((p) => {
@@ -50,15 +44,14 @@
 
   // react to toggle username filter or username input
   $: {
-    if (isBrowser) {
-      pushHistory('username', username);
+    if (isBrowser()) {
       const updatedUrlSearchParams = pushHistory('username', username);
       responsePromise = loadPosts('/post', updatedUrlSearchParams);
     }
   }
   // toggle oldest / newest filter
   $: {
-    if (isBrowser) {
+    if (isBrowser()) {
       const updatedUrlSearchParams = pushHistory(
         'oldest',
         oldestFilterIsSelected

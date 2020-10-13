@@ -1,7 +1,7 @@
 // for document container
 export const NODE_TYPE_ROOT = 'root';
 
-export const PAGE_NAME_VIEW = 'p';
+export const PAGE_NAME_VIEW = 'public';
 export const PAGE_NAME_EDIT = 'edit';
 export const PAGE_NAME_PUBLIC = 'public';
 export const PAGE_NAME_PRIVATE = 'private';
