@@ -471,6 +471,7 @@
   <div class="filbert-flex-grid-9">
     <div class="filbert-col-9">
       <ButtonSpinner
+        id="manage-post-save-button"
         primary
         loading="{saveLoading}"
         disabled="{!shouldWarnForUnsaved}"
@@ -480,6 +481,7 @@
     </div>
     <div class="filbert-col-9">
       <ButtonSpinner
+        id="manage-post-publish-button"
         primary
         label="{postMap.get('published') ? `Published on ${formatPostDate(postMap.get('published'))}` : 'Publish'}"
         onClick="{publishPost}"
@@ -487,13 +489,24 @@
       />
     </div>
     <div class="filbert-col-9">
-      <ButtonSpinner primary label="Duplicate" onClick="{duplicatePost}" />
-    </div>
-    <div class="filbert-col-9">
-      <ButtonSpinner warning label="Delete" onClick="{deletePost}" />
+      <ButtonSpinner
+        id="manage-post-duplicate-button"
+        primary
+        label="Duplicate"
+        onClick="{duplicatePost}"
+      />
     </div>
     <div class="filbert-col-9">
       <ButtonSpinner
+        id="manage-post-delete-button"
+        warning
+        label="Delete"
+        onClick="{deletePost}"
+      />
+    </div>
+    <div class="filbert-col-9">
+      <ButtonSpinner
+        id="manage-post-done-button"
         cancel
         label="Done"
         onClick="{() => {

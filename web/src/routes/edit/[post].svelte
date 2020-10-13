@@ -1,6 +1,6 @@
 <script context="module">
   import { getApiClientInstance } from '../../common/api-client';
-  import { getMapWithId } from '../../common/utils';
+  import { getMapWithId, isBrowser } from '../../common/utils';
   import { NEW_POST_URL_ID, NODE_TYPE_H1 } from '../../common/constants';
 
   export async function preload({ path, params, query }, session) {
@@ -67,6 +67,7 @@
   let formatSelectionMenuLeftOffset = 0;
   let selectionOffsetsManageFormatSelectionMenu;
   let batchSaveIntervalId;
+  let shouldSkipKeyUp;
 
   let postMap;
   let isUnsavedPost;
@@ -76,7 +77,7 @@
   $: nodesByIdMapInternal = documentModel.getNodes();
   $: {
     function reinstantiatePost() {
-      console.info('RE-INSTANTIATE POST', post);
+      console.info('RE-INSTANTIATE POST', postMap, post);
       postMap = fromJS(post);
       $currentPost = postMap;
       isUnsavedPost = postMap.get('id') === NEW_POST_URL_ID;
@@ -108,7 +109,7 @@
 
   import { fromJS, Map } from 'immutable';
   import { goto } from '@sapper/app';
-  import { tick, onMount } from 'svelte';
+  import { tick, onMount, onDestroy } from 'svelte';
 
   import { currentPost } from '../../stores';
 
@@ -208,6 +209,9 @@
   }
 
   function deregisterTopLevelEventHandlers() {
+    if (!isBrowser()) {
+      return;
+    }
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('resize', manageInsertMenu);
     window.removeEventListener('keyup', handleKeyUp);
@@ -250,11 +254,10 @@
     });
 
     registerTopLevelEventHandlers();
-
-    return () => {
-      deregisterTopLevelEventHandlers();
-      clearInterval(batchSaveIntervalId);
-    };
+  });
+  onDestroy(() => {
+    deregisterTopLevelEventHandlers();
+    clearInterval(batchSaveIntervalId);
   });
 
   async function createNewPost() {
@@ -476,7 +479,7 @@
     // refresh caret after possible setState() mutations above
     selectionOffsets = getSelectionOffsetsOrEditSectionNode();
     await manageInsertMenu(evt, selectionOffsets);
-    //await manageFormatSelectionMenu(evt, selectionOffsets);
+    await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
   async function handleKeyUp(evt) {
@@ -488,13 +491,13 @@
     }
     // TODO: this is to coordinate with closing the Format Selection menu
     // without it, the menu would reopen after the user hits ESC?
-    // if (shouldSkipKeyUp) {
-    //   shouldSkipKeyUp = undefined;
-    //   return;
-    // }
+    if (shouldSkipKeyUp) {
+      shouldSkipKeyUp = undefined;
+      return;
+    }
     console.debug('KEYUP');
     const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
-    //await manageFormatSelectionMenu(evt, selectionOffsets);
+    await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
   async function handleInput(evt) {
@@ -625,20 +628,14 @@
 
   // FORMAT
   // TODO: move this out into "format" helper
-  function closeFormatSelectionMenu(selectionOffsets) {
-    const { startNodeId, endNodeId, caretEnd } = selectionOffsets;
+  function closeFormatSelectionMenu() {
+    shouldSkipKeyUp = true;
     if (formatSelectionNode.get('id')) {
       formatSelectionNode = Map();
       formatSelectionModel = Selection();
       formatSelectionModelIdx = -1;
       formatSelectionMenuTopOffset = 0;
       formatSelectionMenuLeftOffset = 0;
-
-      // if we're highlighting across nodes, don't setCaret because user is changing selection size with arrows keys while holding shift
-      if (!endNodeId) {
-        // caretStart: caretEnd - collapse range and place caret at end
-        setCaret({ startNodeId, caretStart: caretEnd });
-      }
     }
   }
 
@@ -661,6 +658,9 @@
   // TODO: show/hide logic for this menu is split up and difficult to understand.
   //  It should be split up based on type of event instead of trying to overload the handlers with too much logic
   async function manageFormatSelectionMenu(evt, selectionOffsets) {
+    if (evt.shiftKey) {
+      return;
+    }
     const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
     if (
       // no node
@@ -670,7 +670,7 @@
       caretStart === caretEnd
     ) {
       if (formatSelectionNode.size > 0) {
-        closeFormatSelectionMenu(selectionOffsets);
+        closeFormatSelectionMenu();
       }
       return;
     }

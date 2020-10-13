@@ -70,6 +70,7 @@
           openingTags.push(
             `<a class="filbert-link" href="${selection.get('linkUrl')}">`
           );
+          closingTags.unshift('</a>');
         }
         formattedMarkup = `${formattedMarkup}${openingTags.join('')}${he.escape(
           contentPiecesBySelectionLength[idx]

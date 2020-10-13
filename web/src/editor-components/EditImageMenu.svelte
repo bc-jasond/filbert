@@ -1,8 +1,8 @@
 <script>
   export let offsetTop;
-  export let offsetLeft;
+  export let offsetLeft = 0;
   export let nodeModel;
-  export let shouldHideCaption;
+  export let shouldHideCaption = false;
   export let update;
   export let postMap;
   export let closeMenu;
@@ -72,6 +72,7 @@
           KEYCODE_RIGHT_ARROW,
           KEYCODE_TAB,
           KEYCODE_ENTER,
+          KEYCODE_ESC,
           KEYCODE_BACKSPACE,
         ].includes(evt.keyCode)
       ) {

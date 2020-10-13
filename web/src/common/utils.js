@@ -237,3 +237,7 @@ export function getFirstNode(nodesById) {
   const [firstId] = [...difference];
   return nodesById.get(firstId);
 }
+
+export function isBrowser() {
+  return typeof window !== 'undefined';
+}

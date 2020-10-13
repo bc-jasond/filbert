@@ -1,6 +1,6 @@
 <script>
   export let id;
-  export let type;
+  export let type = 'button';
   export let label;
   export let onClick = () => {};
   export let primary = false;
