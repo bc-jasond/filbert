@@ -1,3 +1,5 @@
+<svelte:options immutable/>
+
 <script>
   export let node;
   // TODO use a store() ?

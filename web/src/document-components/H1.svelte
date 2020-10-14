@@ -1,3 +1,5 @@
+<svelte:options immutable/>
+
 <script>
   import { Map } from 'immutable';
 

@@ -1,3 +1,5 @@
+<svelte:options immutable/>
+
 <script>
   export let nextPostOverride = false;
   export let fontWeightNormal = false;

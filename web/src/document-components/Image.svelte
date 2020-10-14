@@ -1,3 +1,5 @@
+<svelte:options immutable/>
+
 <script>
   export let node;
   export let hideBorder = true;

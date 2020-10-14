@@ -1,3 +1,5 @@
+<svelte:options immutable/>
+
 <script>
   export let nodesById = Map();
   export let currentEditNode = Map();
