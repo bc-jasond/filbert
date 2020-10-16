@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   import { Map } from 'immutable';
   export let node = Map();
@@ -22,6 +20,7 @@
   }
 </style>
 
+<svelte:options immutable />
 {#if node.size}
   <h2
     data-type="{NODE_TYPE_H2}"

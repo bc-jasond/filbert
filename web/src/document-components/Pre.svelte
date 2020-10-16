@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   export let node;
 
@@ -23,6 +21,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <pre data-type="{NODE_TYPE_PRE}" name="{node.get('id')}">
   {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
 </pre>

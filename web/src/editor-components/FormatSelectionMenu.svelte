@@ -35,9 +35,7 @@
   } from '../common/constants';
 
   import { stopAndPrevent } from '../common/utils';
-  import {
-    focusAndScrollSmooth,
-  } from '../common/dom';
+  import { focusAndScrollSmooth } from '../common/dom';
 
   import Cursor from '../form-components/Cursor.svelte';
   import IconButton from '../form-components/IconButton.svelte';
@@ -61,11 +59,11 @@
   );
   $: linkIsEnabled = selectionModel.get(SELECTION_ACTION_LINK);
   $: {
-      tick().then(()=>{
-        if (shouldShowLinkInput && linkUrlInputDomNode) {
-          linkUrlInputDomNode.focus();
-        }
-      });
+    tick().then(() => {
+      if (shouldShowLinkInput && linkUrlInputDomNode) {
+        linkUrlInputDomNode.focus();
+      }
+    });
   }
   $: h1IsEnabled = nodeModel.get('type') === NODE_TYPE_H1;
   $: h2IsEnabled = nodeModel.get('type') === NODE_TYPE_H2;

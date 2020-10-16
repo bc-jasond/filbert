@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   export let node;
   export let hideBorder = true;
@@ -122,6 +120,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <section
   class="filbert-section"
   class:post-list-override="{postListOverride}"

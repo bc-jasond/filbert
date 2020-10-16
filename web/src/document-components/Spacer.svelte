@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   export let node;
   // TODO use a store() ?
@@ -30,6 +28,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <section
   class="filbert-section"
   class:edit-section-border="{isEditing}"

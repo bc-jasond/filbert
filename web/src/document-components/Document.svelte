@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   export let nodesById = Map();
   export let currentEditNode = Map();
@@ -138,6 +136,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <div>
   {#each nodesInOrder as node}
     {#if !Map.isMap(node) && node.type === NODE_TYPE_CONTENT}

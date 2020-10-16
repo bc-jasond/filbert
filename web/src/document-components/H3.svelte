@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   export let nextPostOverride = false;
   export let fontWeightNormal = false;
@@ -28,6 +26,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <h3
   class="filbert-section"
   class:next-post-override="{nextPostOverride}"

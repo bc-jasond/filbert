@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   export let node;
   export let isEditing = false;
@@ -40,6 +38,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <section
   class="filbert-section content-section"
   data-type="{NODE_TYPE_QUOTE}"

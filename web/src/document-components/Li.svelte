@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   export let node;
 
@@ -26,6 +24,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <li data-type="{NODE_TYPE_LI}" name="{node.get('id')}">
   <FormattedText {node} />
 </li>

@@ -1,5 +1,3 @@
-<svelte:options immutable/>
-
 <script>
   export let node;
 
@@ -98,6 +96,7 @@
   /* styles are globally defined in _theme.svelte */
 </style>
 
+<svelte:options immutable />
 {@html formattedMarkup}
 
 <!--The code below is much more straightforward but didn't work and is why I'm just using {@html}.  -->

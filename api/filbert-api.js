@@ -14,7 +14,13 @@ const {
 } = require('@filbert/constants');
 const { assertLoggedInUser } = require('@filbert/auth');
 const { mysqlConnectionConfig } = require('@filbert/mysql');
-const { log, info, error, success, saneEnvironmentOrExit } = require('@filbert/util');
+const {
+  log,
+  info,
+  error,
+  success,
+  saneEnvironmentOrExit,
+} = require('@filbert/util');
 
 const { assertUserHasPost } = require('./lib/post-util');
 
@@ -174,7 +180,7 @@ saneEnvironmentOrExit(
   'ENCRYPTION_KEY',
   'GOOGLE_API_FILBERT_CLIENT_ID',
   'LINODE_OBJECT_STORAGE_ACCESS_KEY',
-  'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY',
+  'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY'
 );
 
 // from figlet
@@ -186,5 +192,5 @@ const welcomeMessage = `
  / ____ \\| |    _| |_ 
 /_/    \\_\\_|   |_____|\n\n`;
 info(welcomeMessage);
-info("NODE_ENV", process.env.NODE_ENV)
+info('NODE_ENV', process.env.NODE_ENV);
 main();

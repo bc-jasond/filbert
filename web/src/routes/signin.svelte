@@ -344,17 +344,17 @@
       {/if}
     </div>
     <div class="button-spinner-container">
-    <ButtonSpinner
-      id="sign-in-button"
-      type="submit"
-      primary
-      label="{signinButtonLabel}"
-      loading="{signinLoading}"
-    >
-      {#if !isAdminLogin}
-        <GoogleLogoSvg />
-      {/if}
-    </ButtonSpinner>
+      <ButtonSpinner
+        id="sign-in-button"
+        type="submit"
+        primary
+        label="{signinButtonLabel}"
+        loading="{signinLoading}"
+      >
+        {#if !isAdminLogin}
+          <GoogleLogoSvg />
+        {/if}
+      </ButtonSpinner>
     </div>
     {#if !shouldShowUsernameInput && currentGoogleUser.givenName}
       <button

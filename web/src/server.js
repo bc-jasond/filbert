@@ -9,7 +9,13 @@ import sirv from 'sirv';
 const session = require('express-session');
 const MysqlStore = require('express-mysql-session')(session);
 
-const { saneEnvironmentOrExit, success, info, error, log } = require('@filbert/util')
+const {
+  saneEnvironmentOrExit,
+  success,
+  info,
+  error,
+  log,
+} = require('@filbert/util');
 const {
   FILBERT_SESSION_COOKIE_NAME,
   ENCRYPTION_KEY,
@@ -21,10 +27,7 @@ const sessionStore = new MysqlStore(mysqlConnectionConfig);
 const { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === 'development';
 
-saneEnvironmentOrExit(
-    'MYSQL_ROOT_PASSWORD',
-    'ENCRYPTION_KEY',
-);
+saneEnvironmentOrExit('MYSQL_ROOT_PASSWORD', 'ENCRYPTION_KEY');
 
 // from figlet
 const welcomeMessage = `
@@ -35,7 +38,7 @@ __          ________ ____
    \\  /\\  /  | |____| |_) |
     \\/  \\/   |______|____/ \n\n`;
 info(welcomeMessage);
-info("NODE_ENV", process.env.NODE_ENV)
+info('NODE_ENV', process.env.NODE_ENV);
 
 polka() // You can also use Express
   .use(
