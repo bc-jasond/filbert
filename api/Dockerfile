@@ -18,7 +18,5 @@ WORKDIR /usr/local/filbert/
 COPY --from=0 /filbert/ /usr/local/filbert/
 RUN mkdir /usr/local/logs
 
-# note: need to set this again, don't remove!
-ENV NODE_ENV=production
 EXPOSE 3001
 CMD ["yarn", "api-start"]

@@ -1,4 +1,4 @@
-import { API_URL } from './constants';
+import { API_URL } from '@filbert/constants';
 import { loading } from '../stores';
 
 function getBaseConfig(abortSignal = null) {
