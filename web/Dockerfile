@@ -9,8 +9,7 @@ COPY ./lib/ /filbert/lib/
 COPY ./web/ /filbert/web/
 
 # NOTE: install of both devDependencies & dependencies required
-RUN yarn;
-ENV NODE_ENV=production
+RUN yarn install --production=false;
 RUN yarn sapper-build;
 
 # multi-staged builds save space!

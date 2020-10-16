@@ -8,8 +8,7 @@ COPY ./yarn.lock /filbert/
 COPY ./lib/ /filbert/lib/
 COPY ./api/ /filbert/api/
 
-ENV NODE_ENV=production
-RUN yarn
+RUN yarn;
 
 # multi-staged builds save space!
 FROM node:14-slim

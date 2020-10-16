@@ -5,7 +5,6 @@ import svelte from 'rollup-plugin-svelte';
 import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 
-import {API_URL} from '@filbert/constants';
 import config from 'sapper/config/rollup.js';
 import pkg from './package.json';
 
@@ -17,7 +16,6 @@ const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && /
 const env = {
 	'process.env.ENCRYPTION_KEY': JSON.stringify(process.env.ENCRYPTION_KEY),
 	'process.env.NODE_ENV': JSON.stringify(mode),
-	'process.env.API_URL': JSON.stringify(API_URL),
 	'process.env.GOOGLE_API_FILBERT_CLIENT_ID': JSON.stringify(process.env.GOOGLE_API_FILBERT_CLIENT_ID)
 }
 
