@@ -51,9 +51,9 @@ polka() // You can also use Express
       store: sessionStore,
       resave: false,
       saveUninitialized: false,
-        cookie: {
-          maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
-        }
+      cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      },
     }),
     // until sapper supports arbitrary "replacers" https://github.com/sveltejs/sapper/pull/1152
     // HTML (template.html) gets string replacement using this express middleware to read preferences from req.session.preferences during SSR
@@ -101,4 +101,3 @@ polka() // You can also use Express
   });
 
 success('Filbert WEB Started 👍');
-
