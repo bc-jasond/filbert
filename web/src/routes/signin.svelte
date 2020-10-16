@@ -144,6 +144,8 @@
   }
 
   $: {
+    error = undefined;
+    success = undefined;
     if (isAdminLogin) {
       currentGoogleUser = {};
       signinButtonLabel = 'Sign in to filbert';
@@ -357,6 +359,7 @@
       </ButtonSpinner>
     </div>
     {#if !shouldShowUsernameInput && currentGoogleUser.givenName}
+      <div class="button-spinner-container">
       <button
         class="filbert-nav-button cancel"
         type="button"
@@ -364,6 +367,7 @@
       >
         <span class="button-span">Google Logout or Switch Google User</span>
       </button>
+      </div>
     {:else}
       <a class="filbert-link-alt" href="/">
         <button class="filbert-nav-button cancel">

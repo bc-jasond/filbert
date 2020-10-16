@@ -44,13 +44,16 @@ polka() // You can also use Express
   .use(
     compression({ threshold: 0 }),
     sirv('static', { dev }),
+    // TODO: centralize this to coordinate with filbert-api.js
     session({
       key: FILBERT_SESSION_COOKIE_NAME,
       secret: ENCRYPTION_KEY,
       store: sessionStore,
-      rolling: true,
       resave: false,
       saveUninitialized: false,
+        cookie: {
+          maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+        }
     }),
     // until sapper supports arbitrary "replacers" https://github.com/sveltejs/sapper/pull/1152
     // HTML (template.html) gets string replacement using this express middleware to read preferences from req.session.preferences during SSR
@@ -98,3 +101,4 @@ polka() // You can also use Express
   });
 
 success('Filbert WEB Started 👍');
+

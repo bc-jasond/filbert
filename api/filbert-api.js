@@ -87,6 +87,7 @@ async function main() {
     /**
      * initialize session, available at req.session
      */
+    // TODO: centralize this to coordinate with sapper server.js
     app.use(
       session({
         key: FILBERT_SESSION_COOKIE_NAME,
