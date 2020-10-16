@@ -6,10 +6,11 @@ COPY ./package.json /filbert/
 COPY ./yarn.lock /filbert/
 # copy shared code imported via @filbert/foo
 COPY ./lib/ /filbert/lib/
-COPY ./api/ /filbert/api/
+COPY ./web/ /filbert/web/
 
+RUN yarn;
 ENV NODE_ENV=production
-RUN yarn
+RUN yarn sapper-build;
 
 # multi-staged builds save space!
 FROM node:14-slim
@@ -18,7 +19,5 @@ WORKDIR /usr/local/filbert/
 COPY --from=0 /filbert/ /usr/local/filbert/
 RUN mkdir /usr/local/logs
 
-# note: need to set this again, don't remove!
-ENV NODE_ENV=production
-EXPOSE 3001
-CMD ["yarn", "api-start"]
+EXPOSE 3000
+CMD ["yarn", "sapper-start"]

@@ -2,6 +2,7 @@
 version: '3.7'
 
 services:
+  # nginx - routes requests to web, api and serves static assets (jason.html for now, this should probably move :)
   frontend:
     build: ./frontend
     ports:
@@ -14,6 +15,17 @@ services:
       - type: bind
         source: ./data/certbot/www
         target: /var/www/certbot
+
+  web:
+    build:
+      context: .
+      dockerfile: ./web/Dockerfile
+    environment:
+      - MYSQL_ROOT_PASSWORD
+      - ENCRYPTION_KEY
+    ports:
+      # for local development testing
+      - 127.0.0.1:3000:3000
 
   api:
     build:
