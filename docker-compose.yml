@@ -1,5 +1,5 @@
 # Use root/example as user/password credentials
-version: '3.7'
+version: '3.8'
 
 services:
   # nginx - routes requests to web, api and serves static assets (jason.html for now, this should probably move :)
@@ -24,7 +24,10 @@ services:
       - NODE_ENV
       - MYSQL_ROOT_PASSWORD
       - ENCRYPTION_KEY
-      - GOOGLE_API_FILBERT_CLIENT_ID
+    args:
+      node_env: ${NODE_ENV}
+      google_client_id: ${GOOGLE_API_FILBERT_CLIENT_ID}
+      encryption_key: ${ENCRYPTION_KEY}
     #ports:
       # for local development testing
       #- 127.0.0.1:3000:3000

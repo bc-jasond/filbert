@@ -27,7 +27,7 @@ const sessionStore = new MysqlStore(mysqlConnectionConfig);
 const { PORT, NODE_ENV } = process.env;
 const dev = NODE_ENV === 'development';
 
-saneEnvironmentOrExit('NODE_ENV', 'MYSQL_ROOT_PASSWORD', 'ENCRYPTION_KEY', 'GOOGLE_API_FILBERT_CLIENT_ID');
+saneEnvironmentOrExit('NODE_ENV', 'MYSQL_ROOT_PASSWORD', 'ENCRYPTION_KEY');
 
 // from figlet
 const welcomeMessage = `
