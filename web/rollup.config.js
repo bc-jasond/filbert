@@ -1,3 +1,6 @@
+// ESM - remove after ECMAScript Module support is past Experimental - node v14 ?
+require = require('esm')(module /*, options*/);
+
 import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import commonjs from '@rollup/plugin-commonjs';
