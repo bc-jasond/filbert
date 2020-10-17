@@ -9,8 +9,8 @@ COPY ./lib/ /filbert/lib/
 COPY ./web/ /filbert/web/
 
 # NOTE: install of both devDependencies & dependencies required
-RUN yarn install --production=false;
-RUN yarn sapper-build;
+RUN yarn install --production=false; \
+  yarn sapper-build;
 
 # multi-staged builds save space!
 FROM node:14-slim
