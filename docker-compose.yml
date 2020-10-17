@@ -20,14 +20,14 @@ services:
     build:
       context: .
       dockerfile: ./web/Dockerfile
+      args:
+        node_env: ${NODE_ENV}
+        google_client_id: ${GOOGLE_API_FILBERT_CLIENT_ID}
+        encryption_key: ${ENCRYPTION_KEY}
     environment:
       - NODE_ENV
       - MYSQL_ROOT_PASSWORD
       - ENCRYPTION_KEY
-    args:
-      node_env: ${NODE_ENV}
-      google_client_id: ${GOOGLE_API_FILBERT_CLIENT_ID}
-      encryption_key: ${ENCRYPTION_KEY}
     #ports:
       # for local development testing
       #- 127.0.0.1:3000:3000
