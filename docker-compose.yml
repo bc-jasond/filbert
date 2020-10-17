@@ -25,9 +25,9 @@ services:
       - MYSQL_ROOT_PASSWORD
       - ENCRYPTION_KEY
       - GOOGLE_API_FILBERT_CLIENT_ID
-    ports:
+    #ports:
       # for local development testing
-      - 127.0.0.1:3000:3000
+      #- 127.0.0.1:3000:3000
 
   api:
     build:
@@ -40,9 +40,9 @@ services:
       - GOOGLE_API_FILBERT_CLIENT_ID
       - LINODE_OBJECT_STORAGE_ACCESS_KEY
       - LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY
-    ports:
+    #ports:
       # localhost only for development, this should be proxied through nginx
-      - 127.0.0.1:3001:3001
+      #- 127.0.0.1:3001:3001
 
   db:
     image: percona
