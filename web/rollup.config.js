@@ -5,8 +5,11 @@ import svelte from 'rollup-plugin-svelte';
 import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 
+import {saneEnvironmentOrExit} from '@filbert/util';
 import config from 'sapper/config/rollup.js';
 import pkg from './package.json';
+
+saneEnvironmentOrExit('ENCRYPTION_KEY', 'NODE_ENV','GOOGLE_API_FILBERT_CLIENT_ID')
 
 const dev = process.env.NODE_ENV !== 'production';
 
