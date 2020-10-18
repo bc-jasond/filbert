@@ -95,11 +95,14 @@ async function main() {
         store: sessionStore,
         resave: false,
         saveUninitialized: false,
+        cookie: {
+          secure: process.env.NODE_ENV === 'production',
+        },
       })
     );
 
     app.use((req, res, next) => {
-      log('API', ENCRYPTION_KEY, req.session.id, req.session);
+      log('API', req.session.id, req.session);
       next();
     });
 
