@@ -102,7 +102,7 @@ async function main() {
     );
 
     app.use((req, res, next) => {
-      log('API', req.session.id, req.session);
+      log('API', req.session.id, req.session, `res.get('Set Cookie') ${res.get('Set Cookie')}`,);
       next();
     });
 

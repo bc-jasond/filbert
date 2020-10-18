@@ -87,7 +87,8 @@ polka() // You can also use Express
           req.session.id,
           `TTL in seconds: ${Math.floor(req.session.cookie.maxAge / 1000)}`,
           req.session,
-          req.headers.cookie
+          req.headers.cookie,
+            `res.get('Set Cookie') ${res.get('Set Cookie')}`,
         );
         // devalue doesn't like Session(), so stripping it before serialization
         return JSON.parse(JSON.stringify(req.session || {}));
