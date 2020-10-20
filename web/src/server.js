@@ -22,12 +22,12 @@ const {
 } = require('@filbert/constants');
 const { mysqlConnectionConfig } = require('@filbert/mysql');
 
+saneEnvironmentOrExit('NODE_ENV', 'MYSQL_ROOT_PASSWORD', 'ENCRYPTION_KEY');
+
 const sessionStore = new MysqlStore(mysqlConnectionConfig);
 
 const { PORT, NODE_ENV } = process.env;
-const dev = NODE_ENV === 'development';
-
-saneEnvironmentOrExit('NODE_ENV', 'MYSQL_ROOT_PASSWORD', 'ENCRYPTION_KEY');
+const isProduction = NODE_ENV === 'production';
 
 // from figlet
 const welcomeMessage = `
@@ -43,7 +43,7 @@ info('NODE_ENV', process.env.NODE_ENV);
 polka() // You can also use Express
   .use(
     compression({ threshold: 0 }),
-    sirv('static', { dev }),
+    sirv('static', { dev: !isProduction }),
     // TODO: centralize this to coordinate with filbert-api.js
     session({
       key: FILBERT_SESSION_COOKIE_NAME,
@@ -53,7 +53,8 @@ polka() // You can also use Express
       saveUninitialized: false,
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
+        domain: isProduction ? '.filbert.xyz' : '',
       },
     }),
     // until sapper supports arbitrary "replacers" https://github.com/sveltejs/sapper/pull/1152
@@ -83,12 +84,11 @@ polka() // You can also use Express
       session: (req, res) => {
         log(
           'SAPPER server middleware',
-          ENCRYPTION_KEY,
           req.session.id,
           `TTL in seconds: ${Math.floor(req.session.cookie.maxAge / 1000)}`,
           req.session,
           req.headers.cookie,
-            `res.get('Set Cookie') ${res.get('Set Cookie')}`,
+          `\nres.getHeader('Set-Cookie') ${res.getHeader('Set-Cookie')}`
         );
         // devalue doesn't like Session(), so stripping it before serialization
         return JSON.parse(JSON.stringify(req.session || {}));

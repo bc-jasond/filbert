@@ -55,6 +55,8 @@ const { postContentNodes } = require('./routes/content-nodes');
 const { undo, redo } = require('./routes/content-node-history');
 const { duplicatePost } = require('./routes/duplicate');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 async function main() {
   try {
     const sessionStore = new MysqlStore(mysqlConnectionConfig);
@@ -88,6 +90,9 @@ async function main() {
      * initialize session, available at req.session
      */
     // TODO: centralize this to coordinate with sapper server.js
+    if (isProduction) {
+      app.enable('trust proxy')
+    }
     app.use(
       session({
         key: FILBERT_SESSION_COOKIE_NAME,
@@ -96,13 +101,15 @@ async function main() {
         resave: false,
         saveUninitialized: false,
         cookie: {
-          secure: process.env.NODE_ENV === 'production',
+          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+          secure: isProduction,
+          domain: isProduction ? '.filbert.xyz' : '',
         },
       })
     );
 
     app.use((req, res, next) => {
-      log('API', req.session.id, req.session, `res.get('Set Cookie') ${res.get('Set Cookie')}`,);
+      log('API', req.session.id, req.session, `\nres.get('Set Cookie') ${res.get('Set Cookie')}`,);
       next();
     });
 
