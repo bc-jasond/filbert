@@ -109,7 +109,8 @@ async function main() {
     );
 
     app.use((req, res, next) => {
-      log('API', req.session.id, req.session, `\nres.get('Set Cookie') ${res.get('Set Cookie')}`,);
+      const setCookieValue = res.get('Set-Cookie') ? `\nres.get('Set-Cookie') ${res.get('Set-Cookie')}` : '';
+      log('API', req.session.id, req.session, setCookieValue);
       next();
     });
 
