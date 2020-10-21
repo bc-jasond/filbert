@@ -92,10 +92,11 @@ async function getStats(req, res, next) {
   try {
     const {
       params: { username },
-      loggedInUser,
+      session: { user: loggedInUser },
     } = req;
     const start = performance.now();
     const knex = await getKnex();
+    console.log('GET STATS loggedInUser', loggedInUser)
     let builder = knex('user').where({ username });
     if (!loggedInUser || username !== loggedInUser.username) {
       builder = builder.andWhere({ show_stats: 1 });
@@ -103,6 +104,7 @@ async function getStats(req, res, next) {
     const [user] = await builder;
     if (!user) {
       res.status(404).send({});
+      return;
     }
     // TODO: this is just quick 'n dirty.  Since historical data doesn't change, this can be calculated and stored
     //  in a stats table once a day

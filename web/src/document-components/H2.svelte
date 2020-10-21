@@ -20,6 +20,7 @@
   }
 </style>
 
+<svelte:options immutable />
 {#if node.size}
   <h2
     data-type="{NODE_TYPE_H2}"

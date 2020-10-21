@@ -144,6 +144,8 @@
   }
 
   $: {
+    error = undefined;
+    success = undefined;
     if (isAdminLogin) {
       currentGoogleUser = {};
       signinButtonLabel = 'Sign in to filbert';
@@ -250,6 +252,9 @@
     text-align: center;
     margin: 8px;
   }
+  .button-spinner-container {
+    margin: 8px;
+  }
 </style>
 
 <svelte:head>
@@ -292,7 +297,7 @@
           id="username"
           name="username"
           type="text"
-          autoComplete="off"
+          autoComplete="username"
           minLength="5"
           maxLength="42"
         />
@@ -313,7 +318,7 @@
           id="username-admin"
           name="username-admin"
           type="text"
-          autoComplete="off"
+          autoComplete="username"
           minLength="5"
           maxLength="42"
         />
@@ -326,6 +331,7 @@
           id="password"
           name="password"
           type="password"
+          autoComplete="current-password"
         />
       </div>
     {/if}
@@ -339,25 +345,29 @@
         <span class="success">{success}</span>
       {/if}
     </div>
-    <ButtonSpinner
-      id="sign-in-button"
-      type="submit"
-      primary
-      label="{signinButtonLabel}"
-      loading="{signinLoading}"
-    >
-      {#if !isAdminLogin}
-        <GoogleLogoSvg />
-      {/if}
-    </ButtonSpinner>
-    {#if !shouldShowUsernameInput && currentGoogleUser.givenName}
-      <button
-        class="filbert-nav-button cancel"
-        type="button"
-        on:click="{doLogout}"
+    <div class="button-spinner-container">
+      <ButtonSpinner
+        id="sign-in-button"
+        type="submit"
+        primary
+        label="{signinButtonLabel}"
+        loading="{signinLoading}"
       >
-        <span class="button-span">Google Logout or Switch Google User</span>
-      </button>
+        {#if !isAdminLogin}
+          <GoogleLogoSvg />
+        {/if}
+      </ButtonSpinner>
+    </div>
+    {#if !shouldShowUsernameInput && currentGoogleUser.givenName}
+      <div class="button-spinner-container">
+        <button
+          class="filbert-nav-button cancel"
+          type="button"
+          on:click="{doLogout}"
+        >
+          <span class="button-span">Google Logout or Switch Google User</span>
+        </button>
+      </div>
     {:else}
       <a class="filbert-link-alt" href="/">
         <button class="filbert-nav-button cancel">

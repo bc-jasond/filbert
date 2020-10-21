@@ -35,7 +35,7 @@
     formatNumber,
     formatPostDate,
     formatStreakDate,
-  } from 'filbert/src/common/utils';
+  } from '../../common/utils';
 
   export let user = {};
   export let userIsMe;

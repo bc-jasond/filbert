@@ -120,6 +120,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <section
   class="filbert-section"
   class:post-list-override="{postListOverride}"

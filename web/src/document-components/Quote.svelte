@@ -38,6 +38,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <section
   class="filbert-section content-section"
   data-type="{NODE_TYPE_QUOTE}"

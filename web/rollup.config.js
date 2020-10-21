@@ -4,18 +4,20 @@ import commonjs from '@rollup/plugin-commonjs';
 import svelte from 'rollup-plugin-svelte';
 import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
+
+import {saneEnvironmentOrExit} from '@filbert/util';
 import config from 'sapper/config/rollup.js';
 import pkg from './package.json';
 
-const mode = process.env.NODE_ENV;
-const dev = mode === 'development';
+saneEnvironmentOrExit('ENCRYPTION_KEY', 'NODE_ENV','GOOGLE_API_FILBERT_CLIENT_ID')
+
+const dev = process.env.NODE_ENV !== 'production';
 
 const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && /[/\\]@sapper[/\\]/.test(warning.message)) || onwarn(warning);
 
 const env = {
 	'process.env.ENCRYPTION_KEY': JSON.stringify(process.env.ENCRYPTION_KEY),
-	'process.env.NODE_ENV': JSON.stringify(mode),
-	'process.env.API_URL': JSON.stringify(process.env.API_URL),
+	'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
 	'process.env.GOOGLE_API_FILBERT_CLIENT_ID': JSON.stringify(process.env.GOOGLE_API_FILBERT_CLIENT_ID)
 }
 

@@ -14,8 +14,14 @@ const {
 } = require('@filbert/constants');
 const { assertLoggedInUser } = require('@filbert/auth');
 const { mysqlConnectionConfig } = require('@filbert/mysql');
+const {
+  log,
+  info,
+  error,
+  success,
+  saneEnvironmentOrExit,
+} = require('@filbert/util');
 
-const { saneEnvironmentOrExit } = require('./lib/util');
 const { assertUserHasPost } = require('./lib/post-util');
 
 const {
@@ -49,6 +55,8 @@ const { postContentNodes } = require('./routes/content-nodes');
 const { undo, redo } = require('./routes/content-node-history');
 const { duplicatePost } = require('./routes/duplicate');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 async function main() {
   try {
     const sessionStore = new MysqlStore(mysqlConnectionConfig);
@@ -81,6 +89,10 @@ async function main() {
     /**
      * initialize session, available at req.session
      */
+    // TODO: centralize this to coordinate with sapper server.js
+    if (isProduction) {
+      app.enable('trust proxy')
+    }
     app.use(
       session({
         key: FILBERT_SESSION_COOKIE_NAME,
@@ -88,11 +100,17 @@ async function main() {
         store: sessionStore,
         resave: false,
         saveUninitialized: false,
+        cookie: {
+          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+          secure: isProduction,
+          domain: isProduction ? '.filbert.xyz' : '',
+        },
       })
     );
 
     app.use((req, res, next) => {
-      console.log('API', ENCRYPTION_KEY, req.session.id, req.session);
+      const setCookieValue = res.get('Set-Cookie') ? `\nres.get('Set-Cookie') ${res.get('Set-Cookie')}` : '';
+      log('API', req.session.id, req.session, setCookieValue);
       next();
     });
 
@@ -143,7 +161,7 @@ async function main() {
     // https://expressjs.com/en/4x/api.html#app.use
     app.use((err, req, res, next) => {
       if (err) {
-        console.error(err);
+        error(err);
         if (typeof err !== 'object') {
           res.status(500).send({ message: err });
         }
@@ -163,26 +181,28 @@ async function main() {
       }
     });
     app.listen(3001);
-    console.info(chalk.green('Filbert API Started 👍'));
+    success('Filbert API Started 👍');
   } catch (err) {
-    console.error('main() error: ', err);
+    error('main() error: ', err);
   }
 }
 
-saneEnvironmentOrExit([
+saneEnvironmentOrExit(
   'MYSQL_ROOT_PASSWORD',
   'ENCRYPTION_KEY',
   'GOOGLE_API_FILBERT_CLIENT_ID',
   'LINODE_OBJECT_STORAGE_ACCESS_KEY',
-  'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY',
-]);
+  'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY'
+);
 
 // from figlet
 const welcomeMessage = `
-   __ _ _ _               _
-  / _(_) | |__   ___ _ __| |_
- | |_| | | '_ \\ / _ \\ '__| __|
- |  _| | | |_) |  __/ |  | |_
- |_| |_|_|_.__/ \\___|_|   \\__|\n\n`;
-console.info(chalk.cyan(welcomeMessage));
+          _____ _____ 
+    /\\   |  __ \\_   _|
+   /  \\  | |__) || |  
+  / /\\ \\ |  ___/ | |  
+ / ____ \\| |    _| |_ 
+/_/    \\_\\_|   |_____|\n\n`;
+info(welcomeMessage);
+info('NODE_ENV', process.env.NODE_ENV);
 main();

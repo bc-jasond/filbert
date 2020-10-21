@@ -28,6 +28,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <section
   class="filbert-section"
   class:edit-section-border="{isEditing}"

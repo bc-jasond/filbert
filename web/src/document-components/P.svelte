@@ -13,6 +13,7 @@
   }
 </style>
 
+<svelte:options immutable />
 <p data-type="{NODE_TYPE_P}" name="{node.get('id')}">
   <FormattedText {node} />
 </p>

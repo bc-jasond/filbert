@@ -26,7 +26,7 @@
     return {
       post,
       nodesById,
-      selectionOffsetsPreload: selectionOffsets
+      selectionOffsetsPreload: selectionOffsets,
     };
   }
 </script>

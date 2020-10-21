@@ -1,22 +1,21 @@
-FROM node:12
+FROM node:14
 
-WORKDIR /api/
-COPY ./api/ /api/
-# copy shared library code
-COPY ./common/ /common/
+WORKDIR /filbert/
+# this is run from the monorepo root
+COPY ./package.json /filbert/
+COPY ./yarn.lock /filbert/
+# copy shared code imported via @filbert/foo
+COPY ./lib/ /filbert/lib/
+COPY ./api/ /filbert/api/
 
-ENV NODE_ENV=production
-RUN yarn
+RUN yarn;
 
 # multi-staged builds save space!
-FROM node:12-slim
+FROM node:14-slim
 
-WORKDIR /usr/local/api/
-COPY --from=0 /api/ /usr/local/api/
-# copy shared library code
-COPY --from=0 /lib /usr/local/common/
+WORKDIR /usr/local/filbert/
+COPY --from=0 /filbert/ /usr/local/filbert/
 RUN mkdir /usr/local/logs
 
-ENV NODE_ENV=production
 EXPOSE 3001
-CMD ["yarn", "start"]
+CMD ["yarn", "api-start"]
