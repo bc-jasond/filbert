@@ -2,12 +2,9 @@
     "extends": [
         "airbnb",
         "prettier",
-        "prettier/babel",
-        "prettier/react",
-        "plugin:react-hooks/recommended"
+        "prettier/babel"
     ],
     "globals": {
-        "Pace": "readonly",
         "gapi": "readonly"
     },
     "parser": "babel-eslint",
@@ -15,7 +12,6 @@
         "ecmaVersion": 11,
         "sourceType": "module",
         "ecmaFeatures": {
-            "jsx": true,
             "impliedStrict": true
         }
     },
@@ -52,7 +48,6 @@
         }, {
             "enforceForRenamedProperties": true
         }],
-        "react/prop-types": 0, // TODO: types are annoying but, I guess they're awesome when they save yo ass
         "sort-imports": ["error", {
             "ignoreCase": true,
             "ignoreDeclarationSort": true,
