@@ -6,7 +6,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(filbert.xyz www.filbert.xyz api.filbert.xyz dubaniewi.cz www.dubaniewi.cz jason.dubaniewi.cz)
+domains=(filbert.xyz www.filbert.xyz api.filbert.xyz dubaniewi.cz www.dubaniewi.cz jason.dubaniewi.cz tinsey.app www.tinsey.app tinzey.app www.tinzey.app)
 rsa_key_size=4096
 data_path="./data/certbot"
 # NOTE: cert files will be stored in a directory named by the first string in the $domains{@} array
