@@ -1,0 +1,3 @@
+[submodule "tinsey"]
+	path = tinsey
+	url = git@github.com:bc-jasond/tinsey.git

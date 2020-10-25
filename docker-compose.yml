@@ -8,7 +8,6 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 127.0.0.1:3002:3002 # tinsey
     volumes:
       - type: bind
         source: ./data/certbot/conf
@@ -32,6 +31,17 @@ services:
     #ports:
       # for local development testing
       #- 127.0.0.1:3000:3000
+
+  tinsey:
+    build:
+      context: ./tinsey
+      dockerfile: ./tinsey/Dockerfile
+      args: # build-time environment vars
+        node_env: ${NODE_ENV}
+        google_client_id: ${GOOGLE_API_FILBERT_CLIENT_ID}
+    environment: # runtime environment vars
+      - NODE_ENV
+      - MYSQL_ROOT_PASSWORD
 
   api:
     build:
