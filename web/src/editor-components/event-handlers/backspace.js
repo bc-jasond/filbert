@@ -11,7 +11,10 @@ export async function handleBackspace({
 }) {
   // if the caret is collapsed, only let the "backspace" key through...
   // otherwise, if there are any other key strokes that aren't control keys - delete the selection!
-  if (evt.keyCode !== KEYCODE_BACKSPACE) {
+  if (
+    evt.keyCode !== KEYCODE_BACKSPACE &&
+    evt.inputType !== 'deleteContentBackward'
+  ) {
     return false;
   }
 

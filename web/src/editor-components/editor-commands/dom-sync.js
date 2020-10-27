@@ -8,9 +8,12 @@ import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
 export function syncToDom(documentModel, selectionOffsets, evt) {
   assertValidDomSelectionOrThrow(selectionOffsets);
   const { caretStart, startNodeId } = selectionOffsets;
-  console.debug('To DOM SYNC', startNodeId, 'offset', caretStart);
+  console.debug('To DOM SYNC', startNodeId, 'offset', caretStart, evt);
 
   const newChar = getCharFromEvent(evt);
+  if (newChar.length === 0) {
+    console.warn('syncToDom() skipping 0 length char', evt);
+  }
   if (newChar.length > 1) {
     console.warn(
       'syncToDom() char length greater than 1 ?',

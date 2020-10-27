@@ -101,6 +101,11 @@ export function cleanTextOrZeroLengthPlaceholder(text) {
 }
 
 export function getCharFromEvent(evt) {
+  // Firefox issue when typing fast - skip these.  NOTE: this could ignore composing characters for languages other than English
+  //https://stackoverflow.com/a/25509350/1991322
+  if (evt.key === 'Process') {
+    return '';
+  }
   if (evt && typeof evt.keyCode !== 'undefined') {
     // for normal "found on the keyboard" characters
     return evt.key;

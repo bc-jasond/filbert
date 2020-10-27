@@ -80,6 +80,7 @@
   import { currentPost } from '../../stores';
 
   import {
+    KEYCODE_BACKSPACE,
     KEYCODE_DOWN_ARROW,
     KEYCODE_ENTER,
     KEYCODE_ESC,
@@ -366,7 +367,7 @@
       replaceRange(selectionOffsets);
     }
     //manageInsertMenu({}, selectionOffsets);
-    //manageFormatSelectionMenu({}, selectionOffsets);
+    await manageFormatSelectionMenu({}, selectionOffsets);
   }
 
   function closeAllEditContentMenus() {
@@ -387,16 +388,6 @@
   }
 
   async function handleKeyDown(evt) {
-    // create new post?
-    // special case for creating a new document on "Enter"
-    if (
-      evt.keyCode === KEYCODE_ENTER &&
-      (!postMap.get('id') || postMap.get('id') === NEW_POST_URL_ID)
-    ) {
-      stopAndPrevent(evt);
-      await createNewPost();
-      return;
-    }
     // ignore shift and option - don't override hard-refresh BUT, do handle REDO :) !
     if ((evt.metaKey || evt.ctrlKey) && evt.shiftKey && !isRedoEvent(evt)) {
       return;
@@ -486,6 +477,15 @@
     selectionOffsets = getSelectionOffsetsOrEditSectionNode();
     await manageInsertMenu(evt, selectionOffsets);
     await manageFormatSelectionMenu(evt, selectionOffsets);
+
+    // create new post?
+    // special case for creating a new document on "Enter"
+    if (
+      evt.keyCode === KEYCODE_ENTER &&
+      (!postMap.get('id') || postMap.get('id') === NEW_POST_URL_ID)
+    ) {
+      await createNewPost();
+    }
   }
 
   async function handleKeyUp(evt) {
@@ -520,7 +520,20 @@
     if (!selectionOffsets.startNodeId) {
       return;
     }
-    console.debug('INPUT (aka: sync back from DOM)');
+    // hitting backspace with a Selection is an input event but, not when the caret is collapsed?
+    if (evt.inputType === 'deleteContentBackward') {
+      console.debug('INPUT (Backspace with Selection)', evt);
+      await handleBackspace({
+        evt,
+        // selectionOffsets will be collapsed here, use the last saved offsets during manageFormatSelectionMenu()
+        selectionOffsets: selectionOffsetsManageFormatSelectionMenu,
+        documentModel,
+        historyManager,
+        commitUpdates,
+      });
+      return;
+    }
+    console.debug('INPUT (aka: sync back from DOM)', evt);
     // for emoji keyboard insert & spellcheck correct
     const { executeSelectionOffsets, historyState } = syncFromDom(
       documentModel,
