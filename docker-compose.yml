@@ -34,7 +34,7 @@ services:
 
   tinsey:
     build:
-      context: ./tinsey
+      context: .
       dockerfile: ./tinsey/Dockerfile
       args: # build-time environment vars
         node_env: ${NODE_ENV}
