@@ -16,6 +16,7 @@ import {
   SELECTION_NEXT,
   ZERO_LENGTH_CHAR,
 } from './constants';
+import { updateLinkUrl } from '../editor-components/FormatSelectionMenu.svelte';
 
 export function confirmPromise(msg) {
   return new Promise((resolve) => {
@@ -245,4 +246,20 @@ export function getFirstNode(nodesById) {
 
 export function isBrowser() {
   return typeof window !== 'undefined';
+}
+
+export function getUrl(s) {
+  try {
+    const url = new URL(s);
+    const urlString = url.toString();
+    // URL().toString() adds the trailing / slash to the host portion of the url
+    // this is annoying when you're typing
+    // do a check to see if the end of the user input is a `/` and if not, strip it
+    if (urlString.slice(-1) === '/' && s.slice(-1) !== '/') {
+      return urlString.slice(0, -1);
+    }
+    return urlString;
+  } catch (err) {
+    return '';
+  }
 }

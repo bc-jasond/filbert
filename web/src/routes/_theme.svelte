@@ -266,6 +266,7 @@
     display: block;
     box-sizing: border-box;
     width: 100%;
+    line-height: 24px;
   }
 
   :global(.svg-icon-mixin) {
