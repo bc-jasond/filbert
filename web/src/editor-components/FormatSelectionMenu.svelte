@@ -34,7 +34,7 @@
     KEYCODE_TAB,
   } from '../common/constants';
 
-  import { stopAndPrevent } from '../common/utils';
+  import { stopAndPrevent, getUrl } from '../common/utils';
   import { focusAndScrollSmooth } from '../common/dom';
 
   import Cursor from '../form-components/Cursor.svelte';
@@ -83,6 +83,7 @@
   let formatSelectionMenuDomNode;
   let linkUrlInputDomNode;
   let shouldShowLinkInput = selectionModel.get(SELECTION_ACTION_LINK);
+  let linkUrlHasError;
   const linkMenuItemIdx = 6;
   let currentIdx = selectionModel.get(SELECTION_ACTION_LINK)
     ? linkMenuItemIdx
@@ -239,6 +240,11 @@
       }
     }
     window.addEventListener('mouseup', mouseupHandler, { capture: true });
+    function stop(e) {
+      e.stopPropagation();
+    }
+    window.addEventListener('cut', stop, { capture: true });
+    window.addEventListener('paste', stop, { capture: true });
     focusOrBlurCaptionInput();
 
     return () => {
@@ -248,23 +254,21 @@
       window.removeEventListener('mouseup', mouseupHandler, {
         capture: true,
       });
+      window.removeEventListener('cut', stop, { capture: true });
+      window.removeEventListener('paste', stop, { capture: true });
     };
   });
 
-  function isFormatEnabled(type) {
-    if (
-      nodeModel.get('type') === NODE_TYPE_H1 &&
-      type === SELECTION_ACTION_H1
-    ) {
-      return true;
+  function maybeUpdateLinkUrl(e) {
+    const userInput = e.target.value;
+    const maybeLink = getUrl(userInput);
+    if (maybeLink) {
+      linkUrlHasError = false;
+      updateLinkUrl(maybeLink);
+      return;
     }
-    if (
-      nodeModel.get('type') === NODE_TYPE_H2 &&
-      type === SELECTION_ACTION_H2
-    ) {
-      return true;
-    }
-    return selectionModel.get(type) || undefined;
+    linkUrlHasError = true;
+    selectionModel = selectionModel.set(SELECTION_LINK_URL, e.target.value);
   }
 </script>
 
@@ -291,8 +295,12 @@
     transition: 0.05s height;
   }
   input.enabled {
-    padding: 0 12px 12px;
+    padding: 12px;
+    margin-bottom: 8px;
     height: 30px;
+  }
+  .error {
+    color: var(--filbert-error);
   }
 </style>
 
@@ -370,7 +378,10 @@
   </IconButton>
   <IconButton
     id="{`format-selection-menu-${SELECTION_ACTION_LINK}`}"
-    on:click="{() => selectionAction(SELECTION_ACTION_LINK)}"
+    on:click="{() => {
+      shouldShowLinkInput = !selectionModel.get(SELECTION_ACTION_LINK);
+      selectionAction(SELECTION_ACTION_LINK);
+    }}"
   >
     <div class="svg-container">
       <IconLink useIconMixin selected="{linkIsEnabled}" />
@@ -405,10 +416,11 @@
   <input
     id="format-selection-menu-link-url-input"
     class="dark-input"
+    class:error="{linkUrlHasError}"
     placeholder="Enter URL here..."
     bind:this="{linkUrlInputDomNode}"
     class:enabled="{shouldShowLinkInput}"
-    on:input="{(e) => updateLinkUrl(e.target.value)}"
+    on:input="{maybeUpdateLinkUrl}"
     value="{selectionModel.get(SELECTION_LINK_URL, '')}"
   />
   <div class="point-clip">
