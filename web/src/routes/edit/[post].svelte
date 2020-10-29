@@ -489,12 +489,6 @@
   }
 
   async function handleKeyUp(evt) {
-    if (
-      formatSelectionModel.get(SELECTION_ACTION_LINK) ||
-      (!evt.shiftKey && !isControlKey(evt.keyCode))
-    ) {
-      return;
-    }
     // TODO: this is to coordinate with closing the Format Selection menu
     // without it, the menu would reopen after the user hits ESC?
     if (shouldSkipKeyUp) {
@@ -649,12 +643,13 @@
   // TODO: move this out into "format" helper
   function closeFormatSelectionMenu() {
     shouldSkipKeyUp = true;
-    if (formatSelectionNode.get('id')) {
-      formatSelectionNode = Map();
-      formatSelectionModel = Selection();
-      formatSelectionModelIdx = -1;
-      formatSelectionMenuTopOffset = 0;
-      formatSelectionMenuLeftOffset = 0;
+    formatSelectionNode = Map();
+    formatSelectionModel = Selection();
+    formatSelectionModelIdx = -1;
+    formatSelectionMenuTopOffset = 0;
+    formatSelectionMenuLeftOffset = 0;
+    if (selectionOffsetsManageFormatSelectionMenu) {
+      setCaret(selectionOffsetsManageFormatSelectionMenu);
     }
   }
 
@@ -668,10 +663,17 @@
       updatedSelectionModel,
       formatSelectionModelIdx
     );
-    documentModel.update(updatedNode);
     formatSelectionNode = updatedNode;
     formatSelectionModel = updatedSelectionModel;
-    await commitUpdates(getSelectionOffsetsOrEditSectionNode());
+
+    const historyState = documentModel.update(updatedNode);
+    // TODO: when NCharsAreDifferent - current linked list representation doesn't lend itself well to comparisonPath
+    historyManager.appendToHistoryLog({
+      executeSelectionOffsets: selectionOffsetsManageFormatSelectionMenu,
+      unexecuteSelectionOffsets: selectionOffsetsManageFormatSelectionMenu,
+      historyState,
+    });
+    await commitUpdates(selectionOffsetsManageFormatSelectionMenu);
   }
 
   // TODO: show/hide logic for this menu is split up and difficult to understand.
@@ -713,14 +715,6 @@
     }
 
     const range = getRange();
-    console.info(
-      'SELECTION: ',
-      caretStart,
-      caretEnd,
-      endNodeId,
-      range,
-      range.getBoundingClientRect()
-    );
     const rect = range.getBoundingClientRect();
     const selectedNodeModel = documentModel.getNode(startNodeId);
     // save range offsets because if the selection is marked as a "link" the url input will be focused
@@ -730,6 +724,17 @@
       selectedNodeModel,
       caretStart,
       caretEnd
+    );
+
+    console.info(
+      'manageFormatSelectionMenu: ',
+      caretStart,
+      caretEnd,
+      endNodeId,
+      selections.toJS(),
+      idx,
+      range,
+      range.getBoundingClientRect()
     );
 
     formatSelectionNode = selectedNodeModel.setIn(

@@ -243,6 +243,7 @@
     function stop(e) {
       e.stopPropagation();
     }
+    window.addEventListener('keyup', stop, { capture: true });
     window.addEventListener('cut', stop, { capture: true });
     window.addEventListener('paste', stop, { capture: true });
     focusOrBlurCaptionInput();
@@ -254,6 +255,7 @@
       window.removeEventListener('mouseup', mouseupHandler, {
         capture: true,
       });
+      window.removeEventListener('keyup', stop, { capture: true });
       window.removeEventListener('cut', stop, { capture: true });
       window.removeEventListener('paste', stop, { capture: true });
     };
