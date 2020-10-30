@@ -22,6 +22,7 @@
     "pretty-svelte": "prettier --write --plugin-search-dir=. './web/src/**/*.{html,svelte,js}'",
     "pretty-api": "prettier --parser=babel --single-quote --write './api/**/*.js'",
     "pretty-lib": "prettier --parser=babel --single-quote --write './lib/**/*.js'",
+    "pretty-test": "prettier --parser=babel --single-quote --write './test/**/*.js'",
     "pretty-react": "prettier --parser=babel --single-quote --write './frontend/src/**/*.{js,jsx}'"
   }
 }

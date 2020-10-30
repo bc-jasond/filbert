@@ -146,7 +146,7 @@
       <input
         class="dark-input"
         class:error="{input.name === 'url' && linkUrlHasError}"
-        placeholder="{`Enter ${input.name.toLocaleUpperCase()} here...}`}"
+        placeholder="{`Enter ${input.name.toLocaleUpperCase()} here...`}"
         bind:this="{input.domNode}"
         on:mouseup="{(e) => {
           e.stopPropagation();

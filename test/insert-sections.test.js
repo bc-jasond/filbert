@@ -15,6 +15,7 @@ const {
   INSERT_SECTION_MENU_ITEM_ID_PREFIX,
   EDIT_IMAGE_MENU_CAPTION_INPUT_ID,
   EDIT_IMAGE_HIDDEN_FILE_INPUT_ID,
+  EDIT_QUOTE_MENU_ID,
 } = require('./constants');
 
 let driver;
@@ -41,9 +42,9 @@ describe('filbert - Insert Menu', () => {
     try {
       await ensureSignedIn(driver);
       await driver.get(getUrl('/edit/new'));
-      const placeholderTitle = await driver
-        .findElement(By.id(EDITOR_CONTAINER_ID))
-        .findElement(By.css('h1'));
+      const placeholderTitle = await driver.wait(
+        until.elementLocated(By.css(`#${EDITOR_CONTAINER_ID} h1`))
+      );
       await placeholderTitle.sendKeys('Insert Menu Tests\n');
       await driver.wait(async () => {
         const currentUrl = await driver.getCurrentUrl();
@@ -193,9 +194,13 @@ describe('filbert - Insert Menu', () => {
       newSection = await insertHelper('quote');
       expect(await newSection.getTagName()).toBe('section');
       expect(await newSection.getAttribute('data-type')).toBe('quote');
-      await newSection.sendKeys(
+      const editQuoteMenu = await driver.wait(
+        until.elementLocated(By.id(EDIT_QUOTE_MENU_ID))
+      );
+      const [firstInput] = await editQuoteMenu.findElements(By.css('input'));
+      await firstInput.sendKeys(
         // TODO: why doesn't this first line appear?
-        'Simple things should be simple and complex things should be possible.\tAlan Kay\tneeds citation\thttps://en.wikipedia.org/wiki/Alan_Kay\n\n'
+        'Simple things should be simple. Complex things should be possible.\tAlan Kay\tneeds citation\thttps://en.wikipedia.org/wiki/Alan_Kay\n\n'
       );
 
       done();

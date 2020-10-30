@@ -1,11 +1,11 @@
-const { Builder, By, until, WebDriver } = require('selenium-webdriver');
+const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 
 // ENV constants
 let {
   env: {
     SELENIUM_CHROMEDRIVER_LOCATION: chromedriverLocation = '/usr/local/bin/chromedriver',
-    SELENIUM_BASEURL: baseUrl = 'http://localhost:8080',
+    SELENIUM_BASEURL: baseUrl = 'http://localhost:3000',
     SELENIUM_USERNAME: username = 'test',
     // $2b$10$wZfnw2d6XV4cmIMaN0uwy.vHVhBxvXKafo4cH9LbARt5jaNuJVCw2
     SELENIUM_PASSWORD: password = '1234',
@@ -46,7 +46,7 @@ async function ensureSignedIn(driver) {
   // check header for Signed in user name
   await driver.get(getUrl('/'));
   let loggedInUserLink = await driver.wait(
-    until.elementLocated(By.css('[data-test-id="signed-in-user"]')),
+    until.elementLocated(By.id('signed-in-user')),
     10000
   );
   const linkText = await loggedInUserLink.getText();
@@ -55,12 +55,17 @@ async function ensureSignedIn(driver) {
     return;
   }
   // log the user in
-  await driver.get(getUrl('/signin-admin'));
-  await driver.findElement(By.name('username')).sendKeys(username);
+  await driver.get(getUrl('/signin?admin'));
+  await driver.findElement(By.name('username-admin')).sendKeys(username);
   await driver.findElement(By.name('password')).sendKeys(password);
   await driver.findElement(By.css('[type="submit"]')).click();
+  await driver.wait(
+    // assume redirect to / after signin, which redirects to /public
+    until.urlContains('public')
+  );
+  loggedInUserLink = await driver.findElement(By.id('signed-in-user'));
   return driver.wait(
-    until.elementLocated(By.css('[data-test-id="signed-in-user"]')),
+    until.elementTextContains(loggedInUserLink, username),
     10000
   );
 }

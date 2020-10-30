@@ -2,6 +2,11 @@
   import { loadPosts } from '../../common/post-list-helpers';
 
   export async function preload({ query = {} }, session) {
+    if (!session.user) {
+      this.error(404, 'Not found')
+      return;
+    }
+
     const posts = await loadPosts(
       '/draft',
       new URLSearchParams(query),

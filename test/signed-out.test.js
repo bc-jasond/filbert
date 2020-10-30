@@ -26,7 +26,7 @@ describe('filbert - When signed out', () => {
     try {
       await driver.get(getUrl());
       const url = await driver.getCurrentUrl();
-      expect(url.includes('homepage')).toBeTruthy();
+      expect(url.includes('public')).toBeTruthy();
       done();
     } catch (err) {
       done(err);
@@ -46,9 +46,6 @@ describe('filbert - When signed out', () => {
     try {
       await driver.get(getUrl('/edit/new'));
       let errorMessage = driver.findElement(By.id('error-message'));
-      expect(await errorMessage.getText()).toContain('404');
-      await driver.get(getUrl('/edit/new'));
-      errorMessage = driver.findElement(By.id('error-message'));
       expect(await errorMessage.getText()).toContain('404');
       await driver.get(getUrl('/edit'));
       errorMessage = driver.findElement(By.id('error-message'));

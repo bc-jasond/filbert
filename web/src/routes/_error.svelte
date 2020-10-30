@@ -32,7 +32,7 @@
   <title>{status}</title>
 </svelte:head>
 
-<div class="filbert-section">
+<div id="error-message" class="filbert-section">
   <h1>{status}</h1>
 
   <p>{error.message}</p>

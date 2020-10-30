@@ -4,6 +4,11 @@
   import { NEW_POST_URL_ID, NODE_TYPE_H1 } from '../../common/constants';
 
   export async function preload({ path, params, query }, session) {
+    if (!session.user) {
+      this.error(404, 'Not found')
+      return;
+    }
+
     if (params.post === NEW_POST_URL_ID) {
       const placeHolderTitle = getMapWithId({ type: NODE_TYPE_H1 }).toJS();
       return {

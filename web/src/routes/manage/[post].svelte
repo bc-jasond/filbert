@@ -2,6 +2,11 @@
   import { getApiClientInstance } from '../../common/api-client';
 
   export async function preload({ params: { post: postId } }, session) {
+    if (!session.user) {
+      this.error(404, 'Not found')
+      return;
+    }
+
     const {
       error: errorPost,
       data: { post } = {},
@@ -17,6 +22,7 @@
     if (errorPostSummary) {
       console.error(errorPostSummary);
     }
+
     return {
       post,
       postSummary,

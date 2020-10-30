@@ -1,5 +1,4 @@
-const path = require('path');
-const { By, Key, until } = require('selenium-webdriver');
+const { By, until } = require('selenium-webdriver');
 
 const {
   cleanupClient,
@@ -38,9 +37,9 @@ describe(`filbert - ${testName}`, () => {
     try {
       await ensureSignedIn(driver);
       await driver.get(getUrl('/edit/new'));
-      const placeholderTitle = await driver
-        .findElement(By.id(EDITOR_CONTAINER_ID))
-        .findElement(By.css('h1'));
+      const placeholderTitle = await driver.wait(
+        until.elementLocated(By.css(`#${EDITOR_CONTAINER_ID} h1`))
+      );
       await placeholderTitle.sendKeys(`${testName} Tests\n`);
       await driver.wait(async () => {
         const currentUrl = await driver.getCurrentUrl();

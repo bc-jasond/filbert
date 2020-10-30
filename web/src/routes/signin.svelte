@@ -99,7 +99,7 @@
     setTimeout(() => {
       // let some time pass to show the success message
       // force full page refresh after login instead of goto()...
-      window.location.href = '/public/homepage';
+      window.location.href = '/';
     }, 400);
   }
 
@@ -120,7 +120,7 @@
     }
     success = 'All set 👍';
     setTimeout(() => {
-      window.location.href = '/public/homepage';
+      window.location.href = '/';
     }, 400);
   }
 
@@ -319,7 +319,6 @@
           name="username-admin"
           type="text"
           autoComplete="username"
-          minLength="5"
           maxLength="42"
         />
       </div>
