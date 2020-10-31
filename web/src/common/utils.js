@@ -16,7 +16,6 @@ import {
   SELECTION_NEXT,
   ZERO_LENGTH_CHAR,
 } from './constants';
-import { updateLinkUrl } from '../editor-components/FormatSelectionMenu.svelte';
 
 export function confirmPromise(msg) {
   return new Promise((resolve) => {

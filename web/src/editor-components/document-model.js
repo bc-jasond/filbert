@@ -53,6 +53,10 @@ export default function DocumentManager(postId, jsonData = null) {
   }
 
   function getNodes() {
+    if (nodesById.size === 0) {
+      // no nodes in the document? - add back a placeholder
+      insert(NODE_TYPE_H1);
+    }
     return nodesById;
   }
 
@@ -214,12 +218,8 @@ export default function DocumentManager(postId, jsonData = null) {
     history.push({ unexecuteState: node, executeState: undefined });
     nodesById = nodesById.delete(nodeId);
 
-    // deleting the only node in the document - add back a placeholder
-    if (nodesById.size === 0) {
-      history.push(...insert(NODE_TYPE_H1));
-    }
     // deleting somewhere in the middle
-    else if (prevNode.get('id') && nextNode.get('id')) {
+    if (prevNode.get('id') && nextNode.get('id')) {
       history.push(
         ...update(prevNode.set('next_sibling_id', nextNode.get('id')))
       );

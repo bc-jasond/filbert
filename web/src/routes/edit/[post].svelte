@@ -349,6 +349,7 @@
 
     // sync internal document state with documentModel state
     nodesByIdMapInternal = documentModel.getNodes();
+    await tick();
     insertMenuNode = Map();
 
     // on insert,set editSectionNode if not already set.
@@ -364,7 +365,6 @@
       return;
     }
 
-    await tick();
     // if a menu isn't open, re-place the caret
     if (!caretEnd || caretStart === caretEnd) {
       setCaret(selectionOffsets);
@@ -442,6 +442,7 @@
       return false;
     };
 
+    // TODO: return selectionOffsets instead of boolean?
     const atLeastOneHandlerFired = await first(
       [
         handleRedo, // redo before undo because undo matches on redo keystrokes
@@ -603,6 +604,9 @@
     }
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = documentModel.getNode(sectionId);
+    if (!section.size) {
+      console.warn("BAD Section", section.toJS())
+    }
     //if (section.get('type') === NODE_TYPE_SPACER) {
     removeAllRanges();
     //}
