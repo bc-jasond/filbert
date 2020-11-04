@@ -34,8 +34,8 @@ services:
 
   tinsey:
     build:
-      context: .
-      dockerfile: ./tinsey/Dockerfile
+      context: ./tinsey/
+      dockerfile: ./Dockerfile
       args: # build-time environment vars
         node_env: ${NODE_ENV}
         google_client_id: ${GOOGLE_API_FILBERT_CLIENT_ID}
