@@ -41,8 +41,9 @@ export async function handleBackspace({
       unexecuteSelectionOffsets: selectionOffsets,
       historyState,
     });
-    await commitUpdates(executeSelectionOffsets);
+    // call this setter before commitUpdates or it could unset a neighboring meta node highlight!
     setEditSectionNode(Map())
+    await commitUpdates(executeSelectionOffsets);
     return true;
   }
 

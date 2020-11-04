@@ -29,8 +29,9 @@ export async function handleEnter({
     historyState,
   });
 
-  await commitUpdates(executeSelectionOffsets);
   // clear current edit section node if coming from a Meta Type or caret position will be stale
   setEditSectionNode(Map());
+  await commitUpdates(executeSelectionOffsets);
+
   return true;
 }

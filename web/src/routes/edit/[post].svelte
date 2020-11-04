@@ -355,13 +355,11 @@
     // on insert,set editSectionNode if not already set.
     if (startNodeId && documentModel.isMetaType(startNodeId)) {
       sectionEdit(startNodeId);
+      // no more caret work necessary for Meta nodes
+      return;
     }
-    // no more caret work necessary for Meta nodes
-    if (
-      documentModel.isMetaType(startNodeId) ||
-      // OR if we're typing a url in the formatSelection menu
-      formatSelectionModel.get(SELECTION_ACTION_LINK)
-    ) {
+    // no more caret work if we're typing a url in the formatSelection menu
+    if (formatSelectionModel.get(SELECTION_ACTION_LINK)) {
       return;
     }
 

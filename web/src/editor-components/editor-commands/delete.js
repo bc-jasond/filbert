@@ -99,7 +99,7 @@ export function doDeleteMetaType(documentModel, selectionOffsets) {
     historyState,
     executeSelectionOffsets: {
       startNodeId: prevNodeId,
-      caretStart: wasFirstNodeInDocument || documentModel.isMetaType() ? 0 : -1,
+      caretStart: wasFirstNodeInDocument || documentModel.isMetaType(prevNodeId) ? 0 : -1,
     },
   };
 }
