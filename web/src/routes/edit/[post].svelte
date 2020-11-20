@@ -477,7 +477,7 @@
     }
 
     await tick();
-    // refresh caret after possible setState() mutations above
+    // refresh caret after possible document state mutations above
     selectionOffsets = getSelectionOffsetsOrEditSectionNode();
     await manageInsertMenu(evt, selectionOffsets);
     await manageFormatSelectionMenu(evt, selectionOffsets);
@@ -698,6 +698,8 @@
       caretStart === caretEnd
     ) {
       if (formatSelectionNode.size > 0) {
+        // NOTE: unset this selectionOffsets cache - at least one known issue is "select and type" - this value will setCaret() to a stale value
+        selectionOffsetsManageFormatSelectionMenu = undefined;
         closeFormatSelectionMenu();
       }
       return;
