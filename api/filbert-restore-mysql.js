@@ -12,7 +12,7 @@ const {
   warn,
   success,
   saneEnvironmentOrExit,
-} = require('./lib/util');
+} = require('@filbert/util');
 const {
   listBuckets,
   listKeysForBucket,
@@ -113,11 +113,11 @@ async function main() {
   }
 }
 
-saneEnvironmentOrExit([
+saneEnvironmentOrExit(
   'MYSQL_ROOT_PASSWORD',
   'PERCONA_CONTAINER_NAME',
   'LINODE_OBJECT_STORAGE_ACCESS_KEY',
   'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY',
-]);
+);
 
 main();

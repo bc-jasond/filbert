@@ -4,6 +4,7 @@ require = require('esm')(module /*, options*/);
 const { performance } = require('perf_hooks');
 const cron = require('node-cron');
 
+const { saneEnvironmentOrExit } = require('@filbert/util')
 const {
   assertBucket,
   uploadFileToBucket,
@@ -18,7 +19,7 @@ const {
   dailyBucketName,
   hourlyBucketName,
 } = require('./lib/constants');
-const { saneEnvironmentOrExit, assertDir, rmFile } = require('./lib/util');
+const { assertDir, rmFile } = require('./lib/util');
 
 /**
  * runs once every hour at 0 minutes (add a * to the end (5 stars total) to test in seconds)
@@ -132,12 +133,12 @@ async function filbertMysqldumpToS3Job() {
 }
 
 console.log('Starting filbert-cron scheduler...');
-saneEnvironmentOrExit([
+saneEnvironmentOrExit(
   'MYSQL_ROOT_PASSWORD',
   'PERCONA_CONTAINER_NAME',
   'LINODE_OBJECT_STORAGE_ACCESS_KEY',
   'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY',
-]);
+);
 
 //filbertMysqldumpToS3Job();
 // run once an hour at 5 minutes i.e. 1:05, 2:05, 11:05...
