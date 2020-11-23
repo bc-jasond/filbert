@@ -4,7 +4,7 @@ require = require('esm')(module /*, options*/);
 const { performance } = require('perf_hooks');
 const cron = require('node-cron');
 
-const { saneEnvironmentOrExit } = require('@filbert/util')
+const { saneEnvironmentOrExit } = require('@filbert/util');
 const {
   assertBucket,
   uploadFileToBucket,
@@ -137,7 +137,7 @@ saneEnvironmentOrExit(
   'MYSQL_ROOT_PASSWORD',
   'PERCONA_CONTAINER_NAME',
   'LINODE_OBJECT_STORAGE_ACCESS_KEY',
-  'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY',
+  'LINODE_OBJECT_STORAGE_SECRET_ACCESS_KEY'
 );
 
 //filbertMysqldumpToS3Job();

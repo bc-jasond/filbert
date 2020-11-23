@@ -105,6 +105,7 @@ async function publishDraft(req, res) {
 }
 
 /**
+ * 
  * delete a draft (and content nodes) for logged in user
  */
 async function deleteDraftAndContentNodes(req, res) {
@@ -112,14 +113,16 @@ async function deleteDraftAndContentNodes(req, res) {
   const knex = await getKnex();
   /**
    * DANGER ZONE!!!
+   * aptly named.  That's why it's marked deleted instead of actually deleted now.
    */
-  // TODO: transaction
   const deleted = getMysqlDatetime();
-  await knex('content_node_history').update({ deleted }).where('post_id', id);
-  await knex('content_node').update({ deleted }).where('post_id', id);
-  await knex('post').update({ deleted }).where('id', id);
+  await knex.transaction(async (trx) => {
+    await trx('content_node_history').update({ deleted }).where('post_id', id);
+    await trx('content_node').update({ deleted }).where('post_id', id);
+    await trx('post').update({ deleted }).where('id', id);
 
-  res.status(204).send({});
+    res.status(204).send({});
+  })
 }
 
 module.exports = {

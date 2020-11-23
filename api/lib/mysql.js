@@ -60,42 +60,48 @@ async function markPostUpdated(postId) {}
  *
  * @returns {Knex.Raw<TResult>}
  */
-export async function bulkContentNodeUpsert(postId, nodes) {
+export async function bulkContentNodeUpsert(postId, nodes, trxArg) {
   if (nodes.length === 0) return;
-  const knexInstance = await getKnex();
-  const query = `
-    INSERT INTO content_node (post_id, id, next_sibling_id, type, content, meta) VALUES
-    ${nodes.map(() => '(?)').join(',')}
-    ON DUPLICATE KEY UPDATE
-    next_sibling_id = VALUES(next_sibling_id),
-    type = VALUES(type),
-    content = VALUES(content),
-    meta = VALUES(meta),
-    # don't forget to mark "un-deleted" !
-    deleted = NULL`;
+  const knex = await getKnex();
+  const transaction = trxArg.transaction || knex.transaction;
+  return transaction(async (trx) => {
+    const query = `
+      INSERT INTO content_node (post_id, id, next_sibling_id, type, content, meta) VALUES
+      ${nodes.map(() => '(?)').join(',')}
+      ON DUPLICATE KEY UPDATE
+      next_sibling_id = VALUES(next_sibling_id),
+      type = VALUES(type),
+      content = VALUES(content),
+      meta = VALUES(meta),
+      # don't forget to mark "un-deleted" !
+      deleted = NULL`;
 
-  const values = nodes.map(
-    ({
-      // post_id, - note using postId passed as argument instead of post_id from node
-      id,
-      next_sibling_id = null,
-      type,
-      content = '',
-      meta = {},
-    }) => [postId, id, next_sibling_id, type, content, JSON.stringify(meta)]
-  );
+    const values = nodes.map(
+      ({
+        // post_id, - note using postId passed as argument instead of post_id from node
+        id,
+        next_sibling_id = null,
+        type,
+        content = '',
+        meta = {},
+      }) => [postId, id, next_sibling_id, type, content, JSON.stringify(meta)]
+    );
 
-  return knexInstance.raw(query, values);
+    return trx.raw(query, values);
+  });
 }
 
-export async function bulkContentNodeDelete(postId, nodeIds) {
+export async function bulkContentNodeDelete(postId, nodeIds, trxArg) {
   // delete all records WHERE id IN (...recordIds) OR WHERE parent_id IN (...recordIds)
   if (nodeIds.length === 0) return;
-  const knexInstance = await getKnex();
-  return knexInstance('content_node')
-    .update({ deleted: getMysqlDatetime() })
-    .whereIn('id', nodeIds)
-    .andWhere('post_id', postId);
+  const knex = await getKnex();
+  const transaction = trxArg.transaction || knex.transaction;
+  return transaction(async (trx) => {
+    return trx('content_node')
+      .update({ deleted: getMysqlDatetime() })
+      .whereIn('id', nodeIds)
+      .andWhere('post_id', postId);
+  });
 }
 
 export async function makeMysqlDump(now, stagingDirectory) {

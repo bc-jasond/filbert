@@ -91,7 +91,7 @@ async function main() {
      */
     // TODO: centralize this to coordinate with sapper server.js
     if (isProduction) {
-      app.enable('trust proxy')
+      app.enable('trust proxy');
     }
     app.use(
       session({
@@ -109,7 +109,9 @@ async function main() {
     );
 
     app.use((req, res, next) => {
-      const setCookieValue = res.get('Set-Cookie') ? `\nres.get('Set-Cookie') ${res.get('Set-Cookie')}` : '';
+      const setCookieValue = res.get('Set-Cookie')
+        ? `\nres.get('Set-Cookie') ${res.get('Set-Cookie')}`
+        : '';
       log('API', req.session.id, req.session, setCookieValue);
       next();
     });

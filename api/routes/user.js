@@ -96,7 +96,7 @@ async function getStats(req, res, next) {
     } = req;
     const start = performance.now();
     const knex = await getKnex();
-    console.log('GET STATS loggedInUser', loggedInUser)
+    console.log('GET STATS loggedInUser', loggedInUser);
     let builder = knex('user').where({ username });
     if (!loggedInUser || username !== loggedInUser.username) {
       builder = builder.andWhere({ show_stats: 1 });
