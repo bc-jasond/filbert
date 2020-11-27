@@ -1,47 +1,5 @@
-const {
-  getKnex,
-  getMysqlDatetime,
-  bulkContentNodeUpsert,
-  bulkContentNodeDelete,
-} = require('../lib/mysql');
+const { getKnex, getMysqlDatetime } = require('../lib/mysql');
 
-async function updateDocumentSnapshot(
-  postId,
-  nodeUpdatesByNodeId = [],
-  trxArg
-) {
-  let updates = [];
-  let deletes = [];
-  // dedupe the state changes - last wins
-  // assuming here that the history is in the correct order - AKA - if this is for an "UNDO" action, the list has been reversed
-  const dedupeMap = {};
-  nodeUpdatesByNodeId.forEach((nodeUpdate) => {
-    const currentNodeId =
-      typeof nodeUpdate === 'string' ? nodeUpdate : nodeUpdate.id;
-    dedupeMap[currentNodeId] = nodeUpdate;
-  });
-  // separate state changes into updates and deletes
-  Object.values(dedupeMap).forEach((nodeUpdate) => {
-    const isDelete = typeof nodeUpdate === 'string';
-    const currentNodeId = isDelete ? nodeUpdate : nodeUpdate.id;
-
-    if (isDelete) {
-      deletes.push(currentNodeId);
-      return;
-    }
-    updates.push(nodeUpdate);
-  });
-
-  // TODO: validation
-  //  - node fields are correct
-  //  - delete all selections if any are invalid
-  //  - orphaned nodes
-  //    - now: delete them, log it
-  //    - eventually: append to end of document for now <- this requires adding a history entry.
-  const updateResult = await bulkContentNodeUpsert(postId, updates, trxArg);
-  const deleteResult = await bulkContentNodeDelete(postId, deletes, trxArg);
-  return { updateResult, deleteResult };
-}
 /**
  * adds to document's revision history
  */
@@ -79,21 +37,14 @@ async function postContentNodeHistory(currentPost, history, trxArg) {
     const nextHistoryId = lastHistoryId + 1;
 
     const insertValues = history
-      // TODO: verify/filter "empty" & "noop" state updates
-      .map(
-        (
-          { executeSelectionOffsets, unexecuteSelectionOffsets, historyState },
-          idx
-        ) => ({
-          post_id: id,
-          content_node_history_id: nextHistoryId + idx,
-          meta: JSON.stringify({
-            executeSelectionOffsets,
-            unexecuteSelectionOffsets,
-            historyState,
-          }),
-        })
-      );
+      // TODO: verify/filter "empty", "noop" & "orphaned nodes" state updates
+      .map((historyEntry, idx) => ({
+        post_id: id,
+        content_node_history_id: nextHistoryId + idx,
+        meta: JSON.stringify({
+          ...historyEntry,
+        }),
+      }));
 
     return trx('content_node_history').insert(insertValues);
   });
@@ -144,27 +95,19 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
       return {};
     }
 
-    // process history into a list of updates to update current snapshot and to send to frontend to update the document in memory
+    // get state updates and caret positioning to send to the frontend to update the document in memory
     const {
       meta: {
-        historyState,
-        executeSelectionOffsets,
-        unexecuteSelectionOffsets,
+        execute: {
+          historyState: executeHistoryState,
+          selectionOffsets: executeSelectionOffsets,
+        },
+        unexecute: {
+          historyState: unexecuteHistoryState,
+          selectionOffsets: unexecuteSelectionOffsets,
+        },
       },
     } = history;
-    let statesByNodeId = historyState.map(({ executeState, unexecuteState }) =>
-      isUndo
-        ? // undo: if unexecute is falsy it was an insert - mark node for delete by returning just the id
-          unexecuteState || executeState.id
-        : // redo: if execute is falsy, it was a delete operation.  Use the unexecute id to delete
-          executeState || unexecuteState.id
-    );
-    if (isUndo) {
-      // play updates in reverse for undo!
-      statesByNodeId.reverse();
-    }
-    // update document snapshot
-    await updateDocumentSnapshot(id, statesByNodeId, trx);
 
     // update undo history cursor in post meta
     await trx('post')
@@ -184,7 +127,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
       selectionOffsets: isUndo
         ? unexecuteSelectionOffsets
         : executeSelectionOffsets,
-      nodeUpdatesById: statesByNodeId,
+      nodeUpdatesById: isUndo ? unexecuteHistoryState : executeHistoryState,
       updatedPost,
     };
   });
@@ -208,7 +151,6 @@ async function redo(req, res, next) {
 }
 
 module.exports = {
-  updateDocumentSnapshot,
   postContentNodeHistory,
   undo,
   redo,

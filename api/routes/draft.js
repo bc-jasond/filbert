@@ -105,7 +105,7 @@ async function publishDraft(req, res) {
 }
 
 /**
- * 
+ *
  * delete a draft (and content nodes) for logged in user
  */
 async function deleteDraftAndContentNodes(req, res) {
@@ -122,7 +122,7 @@ async function deleteDraftAndContentNodes(req, res) {
     await trx('post').update({ deleted }).where('id', id);
 
     res.status(204).send({});
-  })
+  });
 }
 
 module.exports = {

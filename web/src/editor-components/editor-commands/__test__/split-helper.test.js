@@ -5,9 +5,9 @@ import {
   NODE_TYPE_PRE,
 } from '../../../common/constants';
 import { overrideConsole } from '../../../common/test-helpers';
-import DocumentModel from '../../document-model';
-import { getLastExecuteIdFromHistory } from '../../history-manager';
-import * as selectionHelpers from '../../selection-helpers';
+import DocumentModel from '@filbert/document/document-model';
+import { getLastExecuteIdFromHistory } from '@filbert/document/history-manager';
+import * as selectionHelpers from '../../../../../lib/selection/selection-helpers';
 import { doSplit } from '../split';
 import {
   testPostWithAllTypesJS,

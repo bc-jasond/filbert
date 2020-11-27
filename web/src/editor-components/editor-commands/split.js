@@ -12,12 +12,12 @@ import {
   cleanText,
   cleanTextOrZeroLengthPlaceholder,
 } from '../../common/utils';
-import { getFirstNode } from '../document-model';
+import { getFirstNode } from '@filbert/document/document-model';
 import {
   formatSelections,
   splitSelectionsAtCaretOffset,
-} from '../selection-helpers';
-import { getLastExecuteIdFromHistory } from '../history-manager';
+} from '../../../../lib/selection/selection-helpers';
+import { getLastExecuteIdFromHistory } from '@filbert/document/history-manager';
 
 function handleEnterTextType(
   documentModel,

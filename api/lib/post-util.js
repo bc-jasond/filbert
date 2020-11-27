@@ -74,7 +74,7 @@ async function addFirstPhotoTitleAndAbstractToPosts(posts) {
     let title, abstract, imageNode;
     const { syncTopPhoto, syncTitleAndAbstract } = draft.meta;
     if (syncTopPhoto || syncTitleAndAbstract) {
-      const contentNodes = await getNodesFlat(draft.id);
+      const { contentNodes } = await getNodesFlat(draft.id);
       ({ title, abstract, imageNode } = getFirstPhotoAndAbstractFromContent(
         contentNodes,
         draft.id

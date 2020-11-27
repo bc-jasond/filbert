@@ -11,7 +11,7 @@ import {
   SELECTION_LINK_URL,
 } from '../../common/constants';
 import { Selection } from '../../common/utils';
-import { replaceSelection } from '../selection-helpers';
+import { replaceSelection } from '../../../../lib/selection/selection-helpers';
 
 export function doFormatSelection(
   documentModel,

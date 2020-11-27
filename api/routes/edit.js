@@ -1,4 +1,4 @@
-const { getKnex, getNodesFlat } = require('../lib/mysql');
+const { getNodesFlat } = require('../lib/mysql');
 /**
  * get post for editing - signed-in user only
  */
@@ -13,31 +13,19 @@ async function getPostForEdit(req, res) {
     res.status(404).send({});
     return;
   }
-  const contentNodes = await getNodesFlat(id);
-  // get history for caret positioning on document load
-  const knex = await getKnex();
-  // if not in an undo/redo state, get most recent history
-  const whereClause = { post_id: id, deleted: null };
-  // undo/redo state - get history at currentUndoHistoryId
-  if (currentUndoHistoryId && currentUndoHistoryId !== -1) {
-    whereClause.content_node_history_id = currentUndoHistoryId;
-  }
-  const [
-    {
-      meta: { executeSelectionOffsets = {}, unexecuteSelectionOffsets } = {},
-    } = {},
-  ] = await knex('content_node_history')
-    .where(whereClause)
-    .orderBy('content_node_history_id', 'desc')
-    .limit(1);
+
+  const { contentNodes, selectionOffsets } = await getNodesFlat(
+    id,
+    currentUndoHistoryId
+  );
 
   res.send({
     post: { ...currentPost, canEdit: true },
     contentNodes,
-    selectionOffsets:
-      currentUndoHistoryId !== -1 && lastActionWasUndo
-        ? unexecuteSelectionOffsets
-        : executeSelectionOffsets,
+    selectionOffsets,
+    // currentUndoHistoryId !== -1 && lastActionWasUndo
+    //   ? unexecuteSelectionOffsets
+    //   : executeSelectionOffsets,
   });
 }
 

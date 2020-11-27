@@ -126,7 +126,7 @@ async function getPostByCanonical(req, res) {
     nextPostCanonical,
     loggedInUser
   );
-  const contentNodes = await getNodesFlat(post.id);
+  const { contentNodes } = await getNodesFlat(post.id);
 
   res.send({ prevPost, nextPost, post, contentNodes });
 }
@@ -179,7 +179,7 @@ async function patchPost(req, res, next) {
 async function getSummaryAndPhotoFromContent(req, res) {
   const { id } = req.currentPost;
   const responseData = {};
-  const contentNodes = await getNodesFlat(id);
+  const { contentNodes } = await getNodesFlat(id);
 
   if (!contentNodes) {
     res.send(responseData);

@@ -1,8 +1,5 @@
 const { getKnex } = require('../lib/mysql');
-const {
-  postContentNodeHistory,
-  updateDocumentSnapshot,
-} = require('./content-node-history');
+const { postContentNodeHistory } = require('./content-node-history');
 
 function pruneOrphanedNodesFromUpdates(updates) {}
 
@@ -13,7 +10,7 @@ async function postContentNodes(req, res) {
   try {
     // validate post
     const {
-      body: { nodeUpdatesByNodeId, contentNodeHistoryLog },
+      body: { contentNodeHistoryLog },
       currentPost,
     } = req;
     const { id: postId, meta: postMeta } = currentPost;
@@ -48,16 +45,7 @@ async function postContentNodes(req, res) {
         [updatedPost] = await trx('post').where({ id: postId });
       }
 
-      // 3) update current document state snapshot - create a map of updates and deletes
-      const { updateResult, deleteResult } = await updateDocumentSnapshot(
-        postId,
-        nodeUpdatesByNodeId,
-        trx
-      );
-
       res.send({
-        updateResult,
-        deleteResult,
         contentNodeHistoryLogResult,
         updatedPost,
       });
@@ -70,5 +58,4 @@ async function postContentNodes(req, res) {
 
 module.exports = {
   postContentNodes,
-  updateDocumentSnapshot,
 };

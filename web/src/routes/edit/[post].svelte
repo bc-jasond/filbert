@@ -5,7 +5,7 @@
 
   export async function preload({ path, params, query }, session) {
     if (!session.user) {
-      this.error(404, 'Not found')
+      this.error(404, 'Not found');
       return;
     }
 
@@ -111,10 +111,10 @@
   import Document from '../../document-components/Document.svelte';
   import DocumentModel, {
     getFirstNode,
-  } from '../../editor-components/document-model';
+  } from '@filbert/document/document-model';
   import HistoryManager, {
     getLastExecuteIdFromHistory,
-  } from '../../editor-components/history-manager';
+  } from '@filbert/document/history-manager';
 
   import { syncFromDom } from '../../editor-components/editor-commands/dom-sync';
   import { handleBackspace } from '../../editor-components/event-handlers/backspace';
@@ -142,7 +142,7 @@
     getSelectionAtIdx,
     getSelectionByContentOffset,
     replaceSelection,
-  } from '../../editor-components/selection-helpers';
+  } from '../../../../lib/selection/selection-helpers';
   import { doFormatSelection } from '../../editor-components/editor-commands/format-selection';
 
   import InsertSectionMenu from '../../editor-components/InsertSectionMenu.svelte';
@@ -193,16 +193,12 @@
     window.removeEventListener('mouseup', handleMouseUp);
   }
 
-  $: {
-    if (post.id !== postMap.get('id')) {
+  $: if (post.id !== postMap.get('id')) {
       reinstantiatePost();
     }
-  }
-  $: {
-    if (isBrowser()) {
+  $: if (isBrowser()) {
       apiClient = getApiClientInstance();
     }
-  }
   $: insertMenuNodeId = insertMenuNode.get('id');
 
   onMount(async () => {
@@ -249,16 +245,18 @@
     if (!isBrowser()) {
       return;
     }
-    console.info('RE-INSTANTIATE POST', postMap, post);
     postMap = fromJS(post);
     $currentPost = postMap;
     isUnsavedPost = postMap.get('id') === NEW_POST_URL_ID;
+    console.info('RE-INSTANTIATE POST', postMap, post);
     documentModel = DocumentModel(post.id, nodesById);
     historyManager = HistoryManager(post.id, apiClient);
     nodesByIdMapInternal = documentModel.getNodes();
     if (isUnsavedPost) {
+      console.log("UNSAVED")
       clearInterval(batchSaveIntervalId);
     } else if (!batchSaveIntervalId) {
+      console.log("HEY SAVED")
       batchSaveIntervalId = setInterval(batchSave, 3000);
     }
     await tick();
@@ -603,7 +601,7 @@
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = documentModel.getNode(sectionId);
     if (!section.size) {
-      console.warn("BAD Section", section.toJS())
+      console.warn('BAD Section', section.toJS());
     }
     //if (section.get('type') === NODE_TYPE_SPACER) {
     removeAllRanges();

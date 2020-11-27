@@ -3,7 +3,7 @@
 
   export async function preload({ params: { post: postId } }, session) {
     if (!session.user) {
-      this.error(404, 'Not found')
+      this.error(404, 'Not found');
       return;
     }
 

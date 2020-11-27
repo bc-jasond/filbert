@@ -3,8 +3,8 @@ import { assertValidDomSelectionOrThrow } from '../../common/dom';
 import {
   adjustSelectionOffsetsAndCleanup,
   splitSelectionsAtCaretOffset,
-} from '../selection-helpers';
-import { getLastExecuteIdFromHistory } from '../history-manager';
+} from '../../../../lib/selection/selection-helpers';
+import { getLastExecuteIdFromHistory } from '@filbert/document/history-manager';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   assertValidDomSelectionOrThrow(selectionOffsets);

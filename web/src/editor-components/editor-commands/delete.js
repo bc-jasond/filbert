@@ -1,9 +1,9 @@
 /* eslint-disable import/prefer-default-export */
 import { assertValidDomSelectionOrThrow } from '../../common/dom';
 import { deleteContentRange } from '../../common/utils';
-import { getFirstNode } from '../document-model';
-import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
-import { getLastExecuteIdFromHistory } from '../history-manager';
+import { getFirstNode } from '@filbert/document/document-model';
+import { adjustSelectionOffsetsAndCleanup } from '../../../../lib/selection/selection-helpers';
+import { getLastExecuteIdFromHistory } from '@filbert/document/history-manager';
 
 // returns a nodeId for node deleted, false for node updated
 function updateNode(documentModel, diffLength, nodeId, startIdx) {
@@ -99,7 +99,8 @@ export function doDeleteMetaType(documentModel, selectionOffsets) {
     historyState,
     executeSelectionOffsets: {
       startNodeId: prevNodeId,
-      caretStart: wasFirstNodeInDocument || documentModel.isMetaType(prevNodeId) ? 0 : -1,
+      caretStart:
+        wasFirstNodeInDocument || documentModel.isMetaType(prevNodeId) ? 0 : -1,
     },
   };
 }

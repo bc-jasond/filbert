@@ -11,7 +11,7 @@ export async function getKnex() {
       client: 'mysql2',
       connection: mysqlConnectionConfig,
       asyncStackTraces: true,
-      debug: true,
+      debug: false,
     });
   }
   return knexConnection;
@@ -38,70 +38,38 @@ export function getMysqlDatetime(date = null) {
   );
 }
 
-export async function getNodesFlat(postId) {
+export async function getNodesFlat(postId, currentUndoHistoryId) {
+  // TODO: naive approach - get every history entry and build document from the beginning up to currentUndoHistoryId
   const knex = await getKnex();
-  const nodesArray = await knex('content_node').where({
-    post_id: postId,
-    deleted: null,
-  });
+  const builder = knex('content_node_history')
+    // if not in an undo/redo state, get most recent history
+    .where({ post_id: postId, deleted: null })
+    .orderBy('content_node_history_id', 'asc');
+  // undo/redo state - get history up-to-and-including currentUndoHistoryId
+  if (currentUndoHistoryId && currentUndoHistoryId > -1) {
+    builder.andWhere('content_node_history_id', '<=', currentUndoHistoryId);
+  }
 
-  // flat map of nodeId => node
-  return nodesArray.reduce((acc, node) => {
-    acc[node.id] = node;
-    return acc;
-  }, {});
-}
-
-// TODO: 'touch' post on each update/delete of content or manage
-async function markPostUpdated(postId) {}
-
-/**
- * batch updates, note this is all vanilla JS, so remember to convert from Immutable
- *
- * @returns {Knex.Raw<TResult>}
- */
-export async function bulkContentNodeUpsert(postId, nodes, trxArg) {
-  if (nodes.length === 0) return;
-  const knex = await getKnex();
-  const transaction = trxArg.transaction || knex.transaction;
-  return transaction(async (trx) => {
-    const query = `
-      INSERT INTO content_node (post_id, id, next_sibling_id, type, content, meta) VALUES
-      ${nodes.map(() => '(?)').join(',')}
-      ON DUPLICATE KEY UPDATE
-      next_sibling_id = VALUES(next_sibling_id),
-      type = VALUES(type),
-      content = VALUES(content),
-      meta = VALUES(meta),
-      # don't forget to mark "un-deleted" !
-      deleted = NULL`;
-
-    const values = nodes.map(
-      ({
-        // post_id, - note using postId passed as argument instead of post_id from node
-        id,
-        next_sibling_id = null,
-        type,
-        content = '',
-        meta = {},
-      }) => [postId, id, next_sibling_id, type, content, JSON.stringify(meta)]
-    );
-
-    return trx.raw(query, values);
-  });
-}
-
-export async function bulkContentNodeDelete(postId, nodeIds, trxArg) {
-  // delete all records WHERE id IN (...recordIds) OR WHERE parent_id IN (...recordIds)
-  if (nodeIds.length === 0) return;
-  const knex = await getKnex();
-  const transaction = trxArg.transaction || knex.transaction;
-  return transaction(async (trx) => {
-    return trx('content_node')
-      .update({ deleted: getMysqlDatetime() })
-      .whereIn('id', nodeIds)
-      .andWhere('post_id', postId);
-  });
+  const historyEntries = await builder;
+  const contentNodes = {};
+  let executeSelectionOffsets = {};
+  historyEntries.forEach(
+    ({
+      meta: {
+        execute: { historyState, selectionOffsets },
+      },
+    }) => {
+      Object.entries(historyState).forEach(([nodeId, node]) => {
+        if (typeof node === 'string') {
+          delete contentNodes[nodeId];
+        } else {
+          contentNodes[nodeId] = node;
+        }
+      });
+      executeSelectionOffsets = selectionOffsets;
+    }
+  );
+  return { contentNodes, selectionOffsets: executeSelectionOffsets };
 }
 
 export async function makeMysqlDump(now, stagingDirectory) {
