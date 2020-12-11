@@ -3,15 +3,17 @@ import {
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_P,
+} from '@filbert/document';
+import {
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2,
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
   SELECTION_LINK_URL,
-} from '../../common/constants';
-import { Selection } from '../../common/utils';
-import { replaceSelection } from '../selection-helpers';
+  Selection,
+  replaceSelection,
+} from '@filbert/selection';
 
 export function doFormatSelection(
   documentModel,

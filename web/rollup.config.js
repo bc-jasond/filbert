@@ -7,10 +7,24 @@ import svelte from 'rollup-plugin-svelte';
 import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 
-import {saneEnvironmentOrExit} from '@filbert/util';
+
 import config from 'sapper/config/rollup.js';
 import pkg from './package.json';
 
+//TODO: can't import this mjs module here for some reason, it ends up getting "require()d" in sapper somewhere...
+// import {saneEnvironmentOrExit} from '@filbert/util';
+function saneEnvironmentOrExit(...requiredVars) {
+	const { env } = process;
+	const missingEnvVariables = requiredVars.filter((key) => !env[key] && key);
+	if (missingEnvVariables.length > 0) {
+		console.error(
+			`❌ process.env not sane!\n\nThe following variables are missing:\n${missingEnvVariables.join(
+				'\n'
+			)}`
+		);
+		process.exit(1);
+	}
+}
 saneEnvironmentOrExit('ENCRYPTION_KEY', 'NODE_ENV','GOOGLE_API_FILBERT_CLIENT_ID')
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -104,23 +118,6 @@ module.exports = {
 		external: Object.keys(pkg.dependencies).concat(require('module').builtinModules),
 
 		preserveEntrySignatures: 'strict',
-		onwarn,
-	},
-
-	serviceworker: {
-		input: config.serviceworker.input(),
-		output: config.serviceworker.output(),
-		plugins: [
-			resolve(),
-			replace({
-				'process.browser': true,
-				...env
-			}),
-			commonjs(),
-			!dev && terser()
-		],
-
-		preserveEntrySignatures: false,
 		onwarn,
 	},
 };

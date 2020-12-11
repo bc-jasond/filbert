@@ -1,5 +1,5 @@
-const { Builder, By, until } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
+const { Builder, By, until } from 'selenium-webdriver');
+const chrome from 'selenium-webdriver/chrome');
 
 // ENV constants
 let {

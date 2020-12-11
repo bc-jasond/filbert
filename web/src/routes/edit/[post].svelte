@@ -1,11 +1,13 @@
 <script context="module">
   import { getApiClientInstance } from '../../common/api-client';
-  import { getMapWithId, isBrowser } from '../../common/utils';
-  import { NEW_POST_URL_ID, NODE_TYPE_H1 } from '../../common/constants';
+  import { isBrowser } from '../../common/utils';
+  import { getMapWithId } from '@filbert/util';
+  import { NEW_POST_URL_ID } from '@filbert/constants';
+  import { NODE_TYPE_H1 } from '@filbert/document';
 
   export async function preload({ path, params, query }, session) {
     if (!session.user) {
-      this.error(404, 'Not found')
+      this.error(404, 'Not found');
       return;
     }
 
@@ -85,7 +87,6 @@
   import { currentPost } from '../../stores';
 
   import {
-    KEYCODE_BACKSPACE,
     KEYCODE_DOWN_ARROW,
     KEYCODE_ENTER,
     KEYCODE_ESC,
@@ -94,27 +95,31 @@
     KEYCODE_UP_ARROW,
     KEYCODE_V,
     KEYCODE_X,
-    KEYCODE_Z,
+  } from '@filbert/constants';
+  import {
     NODE_TYPE_IMAGE,
     NODE_TYPE_P,
     NODE_TYPE_QUOTE,
     NODE_TYPE_SPACER,
-    PAGE_NAME_EDIT,
+  } from '@filbert/document';
+  import {
+    Selection,
     SELECTION_ACTION_LINK,
     SELECTION_LINK_URL,
-  } from '../../common/constants';
+  } from '@filbert/selection'
+  import {
+    DocumentModel,
+    getFirstNode,
+  } from '@filbert/document';
+  import {
+    HistoryManager,
+    getLastInsertedNodeIdFromHistory,
+  } from '@filbert/history';
   import {
     getCanonicalFromTitle,
-    Selection,
     stopAndPrevent,
   } from '../../common/utils';
   import Document from '../../document-components/Document.svelte';
-  import DocumentModel, {
-    getFirstNode,
-  } from '../../editor-components/document-model';
-  import HistoryManager, {
-    getLastExecuteIdFromHistory,
-  } from '../../editor-components/history-manager';
 
   import { syncFromDom } from '../../editor-components/editor-commands/dom-sync';
   import { handleBackspace } from '../../editor-components/event-handlers/backspace';
@@ -142,7 +147,7 @@
     getSelectionAtIdx,
     getSelectionByContentOffset,
     replaceSelection,
-  } from '../../editor-components/selection-helpers';
+  } from '@filbert/selection';
   import { doFormatSelection } from '../../editor-components/editor-commands/format-selection';
 
   import InsertSectionMenu from '../../editor-components/InsertSectionMenu.svelte';
@@ -193,16 +198,12 @@
     window.removeEventListener('mouseup', handleMouseUp);
   }
 
-  $: {
-    if (post.id !== postMap.get('id')) {
+  $: if (post.id !== postMap.get('id')) {
       reinstantiatePost();
     }
-  }
-  $: {
-    if (isBrowser()) {
+  $: if (isBrowser()) {
       apiClient = getApiClientInstance();
     }
-  }
   $: insertMenuNodeId = insertMenuNode.get('id');
 
   onMount(async () => {
@@ -249,16 +250,18 @@
     if (!isBrowser()) {
       return;
     }
-    console.info('RE-INSTANTIATE POST', postMap, post);
     postMap = fromJS(post);
     $currentPost = postMap;
     isUnsavedPost = postMap.get('id') === NEW_POST_URL_ID;
+    console.info('RE-INSTANTIATE POST', postMap, post);
     documentModel = DocumentModel(post.id, nodesById);
     historyManager = HistoryManager(post.id, apiClient);
     nodesByIdMapInternal = documentModel.getNodes();
     if (isUnsavedPost) {
+      console.log("UNSAVED")
       clearInterval(batchSaveIntervalId);
     } else if (!batchSaveIntervalId) {
+      console.log("HEY SAVED")
       batchSaveIntervalId = setInterval(batchSave, 3000);
     }
     await tick();
@@ -577,7 +580,7 @@
     const historyState = documentModel.update(
       insertMenuNode.set('type', sectionType).set('meta', meta)
     );
-    const newSectionId = getLastExecuteIdFromHistory(historyState);
+    const newSectionId = getLastInsertedNodeIdFromHistory(historyState);
     const executeSelectionOffsets = { startNodeId: newSectionId };
     historyManager.appendToHistoryLog({
       executeSelectionOffsets,
@@ -603,7 +606,7 @@
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = documentModel.getNode(sectionId);
     if (!section.size) {
-      console.warn("BAD Section", section.toJS())
+      console.warn('BAD Section', section.toJS());
     }
     //if (section.get('type') === NODE_TYPE_SPACER) {
     removeAllRanges();
@@ -776,7 +779,7 @@
     await commitUpdates(selectionOffsetsManageFormatSelectionMenu);
 
     const updatedNode = documentModel.getNode(
-      getLastExecuteIdFromHistory(historyState)
+      getLastInsertedNodeIdFromHistory(historyState)
     );
     // need to refresh the selection after update, as a merge might have occured
     // between neighboring selections that now have identical formats

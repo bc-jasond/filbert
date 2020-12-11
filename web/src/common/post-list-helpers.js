@@ -29,7 +29,7 @@ export async function loadPosts(url, urlSearchParams, fetchClient) {
   const apiClient = getApiClientInstance(fetchClient);
   const params = urlSearchParams.toString();
   const queryString = params.length > 0 ? `?${params}` : '';
-  const { error, data: postsData = []} = await apiClient.get(
+  const { error, data: postsData = [] } = await apiClient.get(
     `${url}${queryString}`
   );
   loading.set(false);

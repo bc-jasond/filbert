@@ -3,7 +3,7 @@
 
   export async function preload({ params: { post: postId } }, session) {
     if (!session.user) {
-      this.error(404, 'Not found')
+      this.error(404, 'Not found');
       return;
     }
 
@@ -44,11 +44,16 @@
 
   import {
     getMapWithId,
+  } from '@filbert/util';
+  import {
+    NODE_TYPE_IMAGE,
+  } from '@filbert/document';
+  import {
     nodeIsValid,
     formatPostDate,
     confirmPromise,
   } from '../../common/utils';
-  import { NODE_TYPE_IMAGE } from '../../common/constants';
+
   import { getNextFromUrl } from '../../common/dom';
 
   import H1 from '../../document-components/H1.svelte';

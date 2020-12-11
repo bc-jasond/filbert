@@ -1,6 +1,6 @@
 import { fromJS, isImmutable, Map } from 'immutable';
 import { FILBERT_LOCALSTORAGE_NAMESPACE } from './constants';
-import { reviver } from './utils';
+import { reviver } from '@filbert/selection';
 
 // reading & parsing JSON from localStorage is too slow.
 // take a dual-write approach - one sync to memory and one optimistic async to localStorage

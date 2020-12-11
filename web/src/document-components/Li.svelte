@@ -1,7 +1,7 @@
 <script>
   export let node;
 
-  import { NODE_TYPE_LI } from '../common/constants';
+  import { NODE_TYPE_LI } from '@filbert/document';
   import FormattedText from './NodeSelectionsFormatted.svelte';
 </script>
 

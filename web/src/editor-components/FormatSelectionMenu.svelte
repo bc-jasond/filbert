@@ -21,8 +21,12 @@
     SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_H1,
     SELECTION_ACTION_H2,
+  } from '@filbert/selection';
+  import {
     NODE_TYPE_H1,
     NODE_TYPE_H2,
+  } from '@filbert/document';
+  import {
     KEYCODE_ENTER,
     KEYCODE_ESC,
     KEYCODE_UP_ARROW,
@@ -32,7 +36,7 @@
     KEYCODE_SPACE,
     KEYCODE_BACKSPACE,
     KEYCODE_TAB,
-  } from '../common/constants';
+  } from '@filbert/constants';
 
   import { stopAndPrevent, getUrl } from '../common/utils';
   import { focusAndScrollSmooth } from '../common/dom';

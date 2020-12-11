@@ -3,8 +3,8 @@ import { assertValidDomSelectionOrThrow } from '../../common/dom';
 import {
   adjustSelectionOffsetsAndCleanup,
   splitSelectionsAtCaretOffset,
-} from '../selection-helpers';
-import { getLastExecuteIdFromHistory } from '../history-manager';
+} from '@filbert/selection';
+import { getLastInsertedNodeIdFromHistory } from '@filbert/history';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -77,7 +77,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   historyState.push(
     ...documentModel.insert(selectedNode.get('type'), leftNodeId, contentRight)
   );
-  const rightNodeId = getLastExecuteIdFromHistory(historyState);
+  const rightNodeId = getLastInsertedNodeIdFromHistory(historyState);
   // now leftNode has 'next_sibling_id' set to rightNode
   // important: 'content' is now contentLeft
   let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
@@ -119,7 +119,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
       historyState.push(
         ...documentModel.insert(leftNode.get('type'), prevNodeId, currentLine)
       );
-      const nextId = getLastExecuteIdFromHistory(historyState);
+      const nextId = getLastInsertedNodeIdFromHistory(historyState);
       prevNodeId = nextId;
     }
   }

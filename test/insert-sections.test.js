@@ -1,12 +1,12 @@
-const path = require('path');
-const { By, Key, until } = require('selenium-webdriver');
+const path from 'path');
+const { By, Key, until } from 'selenium-webdriver');
 
 const {
   cleanupClient,
   getChromedriverClient,
   getUrl,
   ensureSignedIn,
-} = require('./selenium-utils');
+} from './selenium-utils');
 const {
   EDITOR_CONTAINER_ID,
   INSERT_SECTION_MENU_ID,
@@ -16,7 +16,7 @@ const {
   EDIT_IMAGE_MENU_CAPTION_INPUT_ID,
   EDIT_IMAGE_HIDDEN_FILE_INPUT_ID,
   EDIT_QUOTE_MENU_ID,
-} = require('./constants');
+} from './constants');
 
 let driver;
 let actions;

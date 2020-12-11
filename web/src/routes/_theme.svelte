@@ -22,7 +22,7 @@
     font-size: 21px;
     line-height: 1.58;
     letter-spacing: -0.01em;
-    margin-bottom: 52px;
+    /*margin-bottom: 52px;*/
   }
 
   :global(.bold-text) {

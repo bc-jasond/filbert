@@ -1,5 +1,5 @@
-import {Map} from 'immutable'
-import { KEYCODE_BACKSPACE } from '../../common/constants';
+import { Map } from 'immutable';
+import { KEYCODE_BACKSPACE } from '@filbert/constants';
 import { stopAndPrevent } from '../../common/utils';
 import { doDelete, doDeleteMetaType, doMerge } from '../editor-commands/delete';
 
@@ -9,7 +9,7 @@ export async function handleBackspace({
   documentModel,
   historyManager,
   commitUpdates,
-    setEditSectionNode,
+  setEditSectionNode,
 }) {
   // if the caret is collapsed, only let the "backspace" key through...
   // otherwise, if there are any other key strokes that aren't control keys - delete the selection!
@@ -42,7 +42,7 @@ export async function handleBackspace({
       historyState,
     });
     // call this setter before commitUpdates or it could unset a neighboring meta node highlight!
-    setEditSectionNode(Map())
+    setEditSectionNode(Map());
     await commitUpdates(executeSelectionOffsets);
     return true;
   }

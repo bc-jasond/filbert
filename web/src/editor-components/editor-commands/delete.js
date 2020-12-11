@@ -1,9 +1,9 @@
 /* eslint-disable import/prefer-default-export */
 import { assertValidDomSelectionOrThrow } from '../../common/dom';
 import { deleteContentRange } from '../../common/utils';
-import { getFirstNode } from '../document-model';
-import { adjustSelectionOffsetsAndCleanup } from '../selection-helpers';
-import { getLastExecuteIdFromHistory } from '../history-manager';
+import { getFirstNode } from '@filbert/document';
+import { adjustSelectionOffsetsAndCleanup } from '@filbert/selection';
+import { getLastInsertedNodeIdFromHistory } from '@filbert/history';
 
 // returns a nodeId for node deleted, false for node updated
 function updateNode(documentModel, diffLength, nodeId, startIdx) {
@@ -30,6 +30,7 @@ function buildDeleteHistory(
   { startNodeId, caretStart, endNodeId, caretEnd }
 ) {
   const historyState = [];
+  // TODO: make this step last, aka orphan these nodes first
   // if there are completely highlighted nodes in the middle of the selection - just delete them
   if (endNodeId) {
     const middle = documentModel.getNodesBetween(startNodeId, endNodeId);
@@ -53,7 +54,7 @@ function buildDeleteHistory(
     // end diff length is caretEnd - 0 (implied caretStart for the end node)
     if (caretEnd > 0) {
       historyState.push(...updateNode(documentModel, caretEnd, endNodeId, 0));
-      selectedNodeId = getLastExecuteIdFromHistory(historyState);
+      selectedNodeId = getLastInsertedNodeIdFromHistory(historyState);
     }
     didDeleteEndNode = selectedNodeId !== endNodeId;
   }
@@ -99,7 +100,8 @@ export function doDeleteMetaType(documentModel, selectionOffsets) {
     historyState,
     executeSelectionOffsets: {
       startNodeId: prevNodeId,
-      caretStart: wasFirstNodeInDocument || documentModel.isMetaType(prevNodeId) ? 0 : -1,
+      caretStart:
+        wasFirstNodeInDocument || documentModel.isMetaType(prevNodeId) ? 0 : -1,
     },
   };
 }
@@ -157,7 +159,7 @@ export function doDelete(documentModel, selectionOffsets) {
     ...updateNode(documentModel, startDiffLength, startNodeId, caretStart)
   );
   // getLastExecuteId == undefined means user selected and deleted all text in the node
-  selectedNodeId = getLastExecuteIdFromHistory(historyState);
+  selectedNodeId = getLastInsertedNodeIdFromHistory(historyState);
 
   // if we deleted the first node in the document, use the node that documentModel.deleteNode() returns
   if (selectedNodeId !== startNodeId) {

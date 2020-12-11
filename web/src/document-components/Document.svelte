@@ -17,8 +17,9 @@
     NODE_TYPE_CONTENT,
     NODE_TYPE_CODE,
     NODE_TYPE_OL,
-  } from '../common/constants';
-  import { cleanText, getFirstNode } from '../common/utils';
+    getFirstNode,
+  } from '@filbert/document';
+  import { cleanText } from '@filbert/util';
   import H1 from './H1.svelte';
   import H2 from './H2.svelte';
   import Li from './Li.svelte';

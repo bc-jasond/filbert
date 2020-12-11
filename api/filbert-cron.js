@@ -1,25 +1,22 @@
-// ESM - remove after ECMAScript Module support is past Experimental node v14 ?
-require = require('esm')(module /*, options*/);
+import { performance } from 'perf_hooks';
+import cron from 'node-cron';
 
-const { performance } = require('perf_hooks');
-const cron = require('node-cron');
-
-const { saneEnvironmentOrExit } = require('@filbert/util');
-const {
+import { saneEnvironmentOrExit } from '@filbert/util';
+import {
   assertBucket,
   uploadFileToBucket,
   listKeysForBucket,
   copyKeyFromBucketToBucket,
   deleteKeysForBucket,
-} = require('./lib/s3');
-const { makeMysqlDump } = require('./lib/mysql');
-const {
+} from './lib/s3';
+import { makeMysqlDump } from './lib/mysql';
+import {
   fileUploadStagingDirectory,
   monthlyBucketName,
   dailyBucketName,
   hourlyBucketName,
-} = require('./lib/constants');
-const { assertDir, rmFile } = require('./lib/util');
+} from './lib/constants';
+import { assertDir, rmFile } from './lib/util';
 
 /**
  * runs once every hour at 0 minutes (add a * to the end (5 stars total) to test in seconds)

@@ -1,5 +1,6 @@
 import { Map } from 'immutable';
-import { KEYCODE_ENTER } from '../../common/constants';
+import { KEYCODE_ENTER } from '@filbert/constants';
+
 import { stopAndPrevent } from '../../common/utils';
 import { doSplit } from '../editor-commands/split';
 

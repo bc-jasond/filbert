@@ -1,7 +1,4 @@
 import {
-  DOM_ELEMENT_NODE_TYPE_ID,
-  DOM_INPUT_TAG_NAME,
-  DOM_TEXT_NODE_TYPE_ID,
   KEYCODE_ALT,
   KEYCODE_CAPS_LOCK,
   KEYCODE_COMMAND_RIGHT,
@@ -34,11 +31,17 @@ import {
   KEYCODE_SPACE_NBSP,
   KEYCODE_TAB,
   KEYCODE_UP_ARROW,
+} from '@filbert/constants';
+import {
   NODE_TYPE_H1,
   NODE_TYPE_LI,
   NODE_TYPE_P,
-} from './constants';
-import { cleanText } from './utils';
+} from '@filbert/document';
+import { cleanText } from '@filbert/util';
+
+const DOM_ELEMENT_NODE_TYPE_ID = 1;
+const DOM_TEXT_NODE_TYPE_ID = 3;
+const DOM_INPUT_TAG_NAME = 'INPUT';
 
 export function removeAllRanges() {
   const sel = window.getSelection();

@@ -1,6 +1,7 @@
+import { KEYCODE_X } from '@filbert/constants';
+
 import { getHighlightedSelectionOffsets } from '../../common/dom';
 import { stopAndPrevent } from '../../common/utils';
-import { KEYCODE_X } from '../../common/constants';
 import { doDelete } from '../editor-commands/delete';
 
 export function isCutEvent(evt) {

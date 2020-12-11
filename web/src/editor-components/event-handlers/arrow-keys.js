@@ -3,7 +3,7 @@ import {
   KEYCODE_LEFT_ARROW,
   KEYCODE_RIGHT_ARROW,
   KEYCODE_UP_ARROW,
-} from '../../common/constants';
+} from '@filbert/constants';
 import {
   caretIsOnEdgeOfParagraphText,
   getRange,
