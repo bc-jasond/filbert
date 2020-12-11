@@ -14,7 +14,7 @@
     KEYCODE_ESC,
     KEYCODE_TAB,
     KEYCODE_BACKSPACE,
-  } from '../common/constants';
+  } from '@filbert/constants';
   import {
     caretIsAtBeginningOfInput,
     caretIsAtEndOfInput,

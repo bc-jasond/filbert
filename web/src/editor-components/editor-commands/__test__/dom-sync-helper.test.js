@@ -2,7 +2,7 @@ import { overrideConsole } from '../../../common/test-helpers';
 import * as utils from '../../../common/utils';
 
 import DocumentModel from '@filbert/document/document-model';
-import * as selectionHelpers from '../../../../../lib/selection/selection-helpers';
+import * as selectionHelpers from '@filbert/selection';
 import { syncToDom, syncFromDom } from '../dom-sync';
 
 import {

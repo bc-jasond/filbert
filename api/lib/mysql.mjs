@@ -1,7 +1,7 @@
-const knex = require('knex');
+import knex from 'knex';
 
-const { wrapExec } = require('./util');
-const { mysqlConnectionConfig } = require('@filbert/mysql');
+import { wrapExec } from './util.mjs';
+import { mysqlConnectionConfig } from '@filbert/mysql';
 
 let knexConnection;
 export async function getKnex() {
@@ -15,27 +15,6 @@ export async function getKnex() {
     });
   }
   return knexConnection;
-}
-
-export function getMysqlDatetime(date = null) {
-  if (date && !(date instanceof Date)) {
-    throw new Error(`getMysqlDatetime: ${date} isn't a built-in JS Date()`);
-  }
-  const dateInstance = date || new Date();
-  // dirty! https://stackoverflow.com/a/15103764/1991322
-  return (
-    dateInstance.getFullYear() +
-    '-' +
-    ('0' + (dateInstance.getMonth() + 1)).slice(-2) +
-    '-' +
-    ('0' + dateInstance.getDate()).slice(-2) +
-    ' ' +
-    ('0' + dateInstance.getHours()).slice(-2) +
-    ':' +
-    ('0' + dateInstance.getMinutes()).slice(-2) +
-    ':' +
-    ('0' + dateInstance.getSeconds()).slice(-2)
-  );
 }
 
 export async function getNodesFlat(postId, currentUndoHistoryId) {
@@ -52,6 +31,7 @@ export async function getNodesFlat(postId, currentUndoHistoryId) {
 
   const historyEntries = await builder;
   const contentNodes = {};
+  const seen = new Set();
   let executeSelectionOffsets = {};
   historyEntries.forEach(
     ({
@@ -63,6 +43,11 @@ export async function getNodesFlat(postId, currentUndoHistoryId) {
         if (typeof node === 'string') {
           delete contentNodes[nodeId];
         } else {
+          if (node.next_sibling_id && seen.has(node.next_sibling_id)) {
+            console.warn('getNodesFlat - cycle detected, unsetting next_sibling_id', node)
+            node.next_sibling_id = null;
+          }
+          seen.add(node.next_sibling_id);
           contentNodes[nodeId] = node;
         }
       });

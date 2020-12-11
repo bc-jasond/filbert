@@ -6,8 +6,8 @@ import {
 } from '../../../common/constants';
 import { overrideConsole } from '../../../common/test-helpers';
 import DocumentModel from '@filbert/document/document-model';
-import { getLastExecuteIdFromHistory } from '@filbert/document/history-manager';
-import * as selectionHelpers from '../../../../../lib/selection/selection-helpers';
+import { getLastInsertedNodeIdFromHistory } from '@filbert/document/history-manager';
+import * as selectionHelpers from '@filbert/selection';
 import { doSplit } from '../split';
 import {
   testPostWithAllTypesJS,
@@ -73,7 +73,7 @@ describe('Document Model -> split node helper doSplit()', () => {
   });
   test('user hits enter on empty PRE or LI to terminate a PRE ("code") or LI section', () => {
     let history = doc.insert(NODE_TYPE_PRE, pre2Id);
-    const newLastPreId = getLastExecuteIdFromHistory(history);
+    const newLastPreId = getLastInsertedNodeIdFromHistory(history);
     let {
       // historyState,
       executeSelectionOffsets: { startNodeId, caretStart },
@@ -81,7 +81,7 @@ describe('Document Model -> split node helper doSplit()', () => {
     expect(startNodeId).toEqual(newLastPreId);
     expect(doc.getNode(newLastPreId).get('type')).toBe(NODE_TYPE_P);
     history = doc.insert(NODE_TYPE_LI, formattedLiId);
-    const newLastLiId = getLastExecuteIdFromHistory(history);
+    const newLastLiId = getLastInsertedNodeIdFromHistory(history);
     ({
       // historyState,
       executeSelectionOffsets: { startNodeId, caretStart },

@@ -48,9 +48,9 @@
   $: nextPostMap = fromJS(nextPost);
 
   import { fromJS, Map } from 'immutable';
+  import { reviver } from '@filbert/selection';
 
   import { currentPost } from '../../stores';
-  import { reviver } from '../../common/utils';
   import PostNext from '../../post-components/PostNext.svelte';
   import PostDetailsSection from '../../post-components/PostDetails.svelte';
   import PostAvatar from '../../post-components/PostAvatar.svelte';

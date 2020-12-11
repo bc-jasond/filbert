@@ -1,4 +1,4 @@
-import { KEYCODE_V } from '../../common/constants';
+import { KEYCODE_V } from '@filbert/constants';
 import { getHighlightedSelectionOffsets } from '../../common/dom';
 import { stopAndPrevent } from '../../common/utils';
 import { doDelete } from '../editor-commands/delete';

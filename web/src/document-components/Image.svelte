@@ -10,7 +10,7 @@
   import { beforeUpdate } from 'svelte';
   import { Map } from 'immutable';
 
-  import { NODE_TYPE_IMAGE } from '../common/constants';
+  import { NODE_TYPE_IMAGE } from '@filbert/document';
 
   $: isEditMode = !!setEditNodeId;
 

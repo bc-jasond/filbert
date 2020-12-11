@@ -5,8 +5,8 @@ import {
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_STRIKETHROUGH,
-} from './constants';
-import { makeSelections } from './test-helpers';
+  makeSelections,
+} from '@filbert/selection';
 
 export const testPostId = 175;
 export const firstNodeIdH1 = '8e34';

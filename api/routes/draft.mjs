@@ -1,9 +1,10 @@
-const { getKnex, getMysqlDatetime } = require('../lib/mysql');
-const { addFirstPhotoTitleAndAbstractToPosts } = require('../lib/post-util');
+import { getMysqlDatetime } from '@filbert/mysql';
+import { getKnex } from '../lib/mysql.mjs';
+import { addFirstPhotoTitleAndAbstractToPosts } from '../lib/post-util.mjs';
 /**
  * creates a new draft for logged in user
  */
-async function postDraft(req, res) {
+export async function postDraft(req, res) {
   const user_id = req.session.user.userId;
   const { title, canonical, meta } = req.body;
   const insertValues = { user_id, title, canonical };
@@ -17,7 +18,7 @@ async function postDraft(req, res) {
 /**
  * list drafts for logged in user
  */
-async function getDrafts(req, res, next) {
+export async function getDrafts(req, res, next) {
   try {
     const {
       query: { contains, oldest, random },
@@ -84,7 +85,7 @@ async function getDrafts(req, res, next) {
 /**
  * publish a draft - this is a one-time operation
  */
-async function publishDraft(req, res) {
+export async function publishDraft(req, res) {
   const { currentPost } = req;
   if (currentPost.published) {
     res.status(404).send({});
@@ -108,7 +109,7 @@ async function publishDraft(req, res) {
  *
  * delete a draft (and content nodes) for logged in user
  */
-async function deleteDraftAndContentNodes(req, res) {
+export async function deleteDraftAndContentNodes(req, res) {
   const { id } = req.currentPost;
   const knex = await getKnex();
   /**
@@ -124,10 +125,3 @@ async function deleteDraftAndContentNodes(req, res) {
     res.status(204).send({});
   });
 }
-
-module.exports = {
-  postDraft,
-  getDrafts,
-  publishDraft,
-  deleteDraftAndContentNodes,
-};

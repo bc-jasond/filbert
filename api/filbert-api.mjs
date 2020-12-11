@@ -1,60 +1,52 @@
-// ESM - remove after ECMAScript Module support is past Experimental - node v14 ?
-require = require('esm')(module /*, options*/);
+import express from 'express';
+import session from 'express-session';
+import mysqlSession from 'express-mysql-session';
+import cors from 'cors';
+import multer from 'multer';
 
-const express = require('express');
-const session = require('express-session');
-const MysqlStore = require('express-mysql-session')(session);
-const cors = require('cors');
-const multer = require('multer');
-const chalk = require('chalk');
-
-const {
+import {
   FILBERT_SESSION_COOKIE_NAME,
   ENCRYPTION_KEY,
-} = require('@filbert/constants');
-const { assertLoggedInUser } = require('@filbert/auth');
-const { mysqlConnectionConfig } = require('@filbert/mysql');
-const {
+} from '@filbert/constants';
+import { assertLoggedInUser } from '@filbert/auth';
+import { mysqlConnectionConfig } from '@filbert/mysql';
+import {
   log,
   info,
   error,
   success,
   saneEnvironmentOrExit,
-} = require('@filbert/util');
+} from '@filbert/util';
 
-const { assertUserHasPost } = require('./lib/post-util');
-
-const {
-  postSignin,
-  postSigninGoogle,
-  postSignout,
-} = require('./routes/signin');
-const {
+import { assertUserHasPost } from './lib/post-util.mjs';
+import { postSignin, postSigninGoogle, postSignout } from './routes/signin.mjs';
+import {
   getUser,
   patchProfile,
   getStats,
   patchPreferences,
-} = require('./routes/user');
-const {
+} from './routes/user.mjs';
+import {
   getPosts,
   getPostByCanonical,
   getPostById,
   patchPost,
   deletePublishedPost,
   getSummaryAndPhotoFromContent,
-} = require('./routes/post');
-const {
+} from './routes/post.mjs';
+import {
   postDraft,
   getDrafts,
   publishDraft,
   deleteDraftAndContentNodes,
-} = require('./routes/draft');
-const { uploadImage } = require('./routes/image');
-const { getPostForEdit } = require('./routes/edit');
-const { postContentNodes } = require('./routes/content-nodes');
-const { undo, redo } = require('./routes/content-node-history');
-const { duplicatePost } = require('./routes/duplicate');
+} from './routes/draft.mjs';
+import { uploadImage } from './routes/image.mjs';
+import { getPostForEdit } from './routes/edit.mjs';
+import { postContentNodes } from './routes/content-nodes.mjs';
+import { undo, redo } from './routes/content-node-history.mjs';
+import { duplicatePost } from './routes/duplicate.mjs';
 
+const MysqlStore = mysqlSession(session);
 const isProduction = process.env.NODE_ENV === 'production';
 
 async function main() {

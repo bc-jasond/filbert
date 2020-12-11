@@ -13,6 +13,8 @@
     KEYCODE_LEFT_ARROW,
     KEYCODE_RIGHT_ARROW,
     KEYCODE_SPACE,
+  } from '@filbert/constants';
+  import {
     NODE_TYPE_H1,
     NODE_TYPE_H2,
     NODE_TYPE_IMAGE,
@@ -20,7 +22,7 @@
     NODE_TYPE_PRE,
     NODE_TYPE_QUOTE,
     NODE_TYPE_SPACER,
-  } from '../common/constants';
+  } from '@filbert/document';
   import { removeAllRanges, setCaret } from '../common/dom';
   import { stopAndPrevent } from '../common/utils';
 

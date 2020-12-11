@@ -1,8 +1,8 @@
 <script>
   import { Map } from 'immutable';
 
-  import { NODE_TYPE_H1 } from '../common/constants';
-  import { cleanTextOrZeroLengthPlaceholder } from '../common/utils';
+  import { NODE_TYPE_H1 } from '@filbert/document';
+  import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 
   export let node = Map();
   export let shouldShowPlaceholder = false;

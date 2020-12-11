@@ -4,7 +4,7 @@
   export let isEditing = false;
   export let setEditNodeId = undefined;
 
-  import { NODE_TYPE_SPACER } from '../common/constants';
+  import { NODE_TYPE_SPACER } from '@filbert/document';
 
   // assume we're editing if there's a setEditNodeId callback
   $: isEditMode = !!setEditNodeId;

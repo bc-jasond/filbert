@@ -1,8 +1,8 @@
-const { performance } = require('perf_hooks');
-const { getKnex } = require('../lib/mysql');
+import { performance } from 'perf_hooks';
+import { getKnex } from '../lib/mysql.mjs';
 
 // for "is username taken?" - add ?forSignup
-async function getUser(req, res) {
+export async function getUser(req, res) {
   const {
     query: { forSignup },
     params: { username },
@@ -62,7 +62,7 @@ async function getUser(req, res) {
   res.send(user);
 }
 
-async function patchProfile(req, res) {
+export async function patchProfile(req, res) {
   const {
     body: { profileIsPublic, statsArePublic } = {},
     session: {
@@ -88,7 +88,7 @@ async function patchProfile(req, res) {
   res.send({});
 }
 
-async function getStats(req, res, next) {
+export async function getStats(req, res, next) {
   try {
     const {
       params: { username },
@@ -270,7 +270,7 @@ async function getStats(req, res, next) {
   }
 }
 
-async function patchPreferences(req, res) {
+export async function patchPreferences(req, res) {
   const {
     body: { theme, font },
     session: { user: { userId: id } = {}, preferences = {} },
@@ -297,10 +297,3 @@ async function patchPreferences(req, res) {
   }
   res.send({});
 }
-
-module.exports = {
-  getUser,
-  patchProfile,
-  getStats,
-  patchPreferences,
-};

@@ -3,7 +3,7 @@ import {
   findFirstDifferentWordFromDom,
 } from '../../common/dom';
 import { getCharFromEvent } from '../../common/utils';
-import { adjustSelectionOffsetsAndCleanup } from '../../../../lib/selection/selection-helpers';
+import { adjustSelectionOffsetsAndCleanup } from '@filbert/selection';
 
 export function syncToDom(documentModel, selectionOffsets, evt) {
   assertValidDomSelectionOrThrow(selectionOffsets);

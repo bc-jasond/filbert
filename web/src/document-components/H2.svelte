@@ -3,8 +3,8 @@
   export let node = Map();
   export let noMargin = false;
 
-  import { NODE_TYPE_H2 } from '../common/constants';
-  import { cleanTextOrZeroLengthPlaceholder } from '../common/utils';
+  import { NODE_TYPE_H2 } from '@filbert/document';
+  import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 </script>
 
 <style>

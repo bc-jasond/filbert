@@ -1,7 +1,7 @@
-const { OAuth2Client } = require('google-auth-library');
+import { OAuth2Client } from 'google-auth-library';
 
-const { getKnex } = require('../lib/mysql');
-const { checkPassword } = require('../lib/admin');
+import { getKnex } from '../lib/mysql.mjs';
+import { checkPassword } from '../lib/admin.mjs';
 
 function sendLoggedInUser(req, res, user) {
   const loggedInUser = {
@@ -18,7 +18,7 @@ function sendLoggedInUser(req, res, user) {
   res.send(loggedInUser);
 }
 
-async function postSignin(req, res) {
+export async function postSignin(req, res) {
   try {
     const knex = await getKnex();
     const { username, password } = req.body;
@@ -44,7 +44,7 @@ async function postSignin(req, res) {
   }
 }
 
-async function postSigninGoogle(req, res) {
+export async function postSigninGoogle(req, res) {
   try {
     const {
       body: { googleUser: { idToken } = {}, filbertUsername } = {},
@@ -118,15 +118,9 @@ async function postSigninGoogle(req, res) {
   }
 }
 
-async function postSignout(req, res) {
+export async function postSignout(req, res) {
   console.log('signout', req.session.id, req.session);
   req.session.destroy(() => {
     res.send({});
   });
 }
-
-module.exports = {
-  postSignin,
-  postSigninGoogle,
-  postSignout,
-};

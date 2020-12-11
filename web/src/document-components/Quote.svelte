@@ -3,7 +3,7 @@
   export let isEditing = false;
   export let setEditNodeId = undefined;
 
-  import { NODE_TYPE_QUOTE } from '../common/constants';
+  import { NODE_TYPE_QUOTE } from '@filbert/document';
 
   $: isEditMode = !!setEditNodeId;
 

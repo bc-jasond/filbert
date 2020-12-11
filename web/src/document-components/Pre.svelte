@@ -1,8 +1,8 @@
 <script>
   export let node;
 
-  import { NODE_TYPE_PRE } from '../common/constants';
-  import { cleanTextOrZeroLengthPlaceholder } from '../common/utils';
+  import { NODE_TYPE_PRE } from '@filbert/document';
+  import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 </script>
 
 <style>

@@ -1,16 +1,19 @@
-const { getKnex, getMysqlDatetime } = require('../lib/mysql');
+import { getKnex } from '../lib/mysql.mjs';
+import { getMysqlDatetime } from '@filbert/mysql';
 
 /**
  * adds to document's revision history
  */
-async function postContentNodeHistory(currentPost, history, trxArg) {
+export async function postContentNodeHistory(currentPost, history, trxArg) {
   const {
     meta: { currentUndoHistoryId = -1 },
     id,
   } = currentPost;
   const knex = await getKnex();
   // use current transaction or create a new one
-  const transaction = trxArg.transaction || knex.transaction;
+  const transaction = trxArg
+    ? trxArg.transaction.bind(trxArg)
+    : knex.transaction.bind(knex);
 
   return transaction(async (trx) => {
     if (currentUndoHistoryId !== -1) {
@@ -133,7 +136,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
   });
 }
 
-async function undo(req, res, next) {
+export async function undo(req, res, next) {
   try {
     const { currentPost } = req;
     res.send(await undoRedoHelper({ currentPost }));
@@ -141,7 +144,7 @@ async function undo(req, res, next) {
     next(err);
   }
 }
-async function redo(req, res, next) {
+export async function redo(req, res, next) {
   try {
     const { currentPost } = req;
     res.send(await undoRedoHelper({ currentPost, isUndo: false }));
@@ -149,9 +152,3 @@ async function redo(req, res, next) {
     next(err);
   }
 }
-
-module.exports = {
-  postContentNodeHistory,
-  undo,
-  redo,
-};

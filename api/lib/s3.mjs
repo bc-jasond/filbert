@@ -1,15 +1,15 @@
-const { promisify } = require('util');
-const fs = require('fs');
-const path = require('path');
-const AWS = require('aws-sdk');
-const {
+import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
+import AWS from 'aws-sdk';
+import {
   objectStorageRegion,
   objectStorageApiVersion,
   objectStorageBaseUrl,
   objectStorageACLPublic,
   objectStorageACLPrivate,
   fileUploadStagingDirectory,
-} = require('./constants');
+} from './constants.mjs';
 
 const s3Client = new AWS.S3({
   region: objectStorageRegion,
@@ -21,20 +21,20 @@ const s3Client = new AWS.S3({
   }),
 });
 
-const listBuckets = promisify(s3Client.listBuckets).bind(s3Client);
-const headBucket = promisify(s3Client.headBucket).bind(s3Client);
-const createBucket = promisify(s3Client.createBucket).bind(s3Client);
-const upload = promisify(s3Client.upload).bind(s3Client);
-const listObjects = promisify(s3Client.listObjectsV2).bind(s3Client);
-const getObject = promisify(s3Client.getObject).bind(s3Client);
-const headObject = promisify(s3Client.headObject).bind(s3Client);
-const deleteObjects = promisify(s3Client.deleteObjects).bind(s3Client);
-const copyObject = promisify(s3Client.copyObject).bind(s3Client);
+export const listBuckets = promisify(s3Client.listBuckets).bind(s3Client);
+export const headBucket = promisify(s3Client.headBucket).bind(s3Client);
+export const createBucket = promisify(s3Client.createBucket).bind(s3Client);
+export const upload = promisify(s3Client.upload).bind(s3Client);
+export const listObjects = promisify(s3Client.listObjectsV2).bind(s3Client);
+export const getObject = promisify(s3Client.getObject).bind(s3Client);
+export const headObject = promisify(s3Client.headObject).bind(s3Client);
+export const deleteObjects = promisify(s3Client.deleteObjects).bind(s3Client);
+export const copyObject = promisify(s3Client.copyObject).bind(s3Client);
 
 /**
  * creates a bucket if it doesn't exist
  */
-async function assertBucket(name) {
+export async function assertBucket(name) {
   try {
     await headBucket({ Bucket: name });
     return true;
@@ -45,7 +45,7 @@ async function assertBucket(name) {
   return createBucket({ Bucket: name });
 }
 
-async function downloadFileFromBucket(bucket, filename) {
+export async function downloadFileFromBucket(bucket, filename) {
   const { Body } = await getObject({ Bucket: bucket, Key: filename });
   return new Promise((resolve, reject) =>
     fs.writeFile(
@@ -62,7 +62,7 @@ async function downloadFileFromBucket(bucket, filename) {
   );
 }
 
-async function uploadFileToBucket(bucket, fileNameWithAbsolutePath) {
+export async function uploadFileToBucket(bucket, fileNameWithAbsolutePath) {
   const fileStream = fs.createReadStream(fileNameWithAbsolutePath);
   fileStream.on('error', (err) => {
     console.log('uploadFileToBucket - File Error', err);
@@ -75,7 +75,7 @@ async function uploadFileToBucket(bucket, fileNameWithAbsolutePath) {
   });
 }
 
-async function uploadImageToBucket(
+export async function uploadImageToBucket(
   bucket,
   key,
   buffer,
@@ -91,7 +91,7 @@ async function uploadImageToBucket(
   });
 }
 
-async function listKeysForBucket(
+export async function listKeysForBucket(
   bucket,
   { sortOrder } = { sortOrder: 'desc' }
 ) {
@@ -113,11 +113,11 @@ async function listKeysForBucket(
   return response.Contents.map(({ Key }) => Key).sort(comparisonFn);
 }
 
-async function bucketHasKey(bucket, key) {
+export async function bucketHasKey(bucket, key) {
   return headObject({ Bucket: bucket, Key: key });
 }
 
-async function copyKeyFromBucketToBucket(bucketSrc, bucketDest, key) {
+export async function copyKeyFromBucketToBucket(bucketSrc, bucketDest, key) {
   return copyObject({
     Bucket: bucketDest,
     CopySource: `/${bucketSrc}/${key}`,
@@ -125,7 +125,7 @@ async function copyKeyFromBucketToBucket(bucketSrc, bucketDest, key) {
   });
 }
 
-async function deleteKeysForBucket(bucket, keys) {
+export async function deleteKeysForBucket(bucket, keys) {
   const formattedKeys = keys.map((k) => ({ Key: k }));
   const params = {
     Bucket: bucket,
@@ -136,18 +136,6 @@ async function deleteKeysForBucket(bucket, keys) {
   };
   return deleteObjects(params);
 }
-
-module.exports = {
-  listBuckets,
-  assertBucket,
-  uploadImageToBucket,
-  uploadFileToBucket,
-  downloadFileFromBucket,
-  listKeysForBucket,
-  bucketHasKey,
-  copyKeyFromBucketToBucket,
-  deleteKeysForBucket,
-};
 
 /*
 async function test() {

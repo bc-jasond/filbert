@@ -1,29 +1,27 @@
-// ESM - remove after ECMAScript Module support is past Experimental - node v14 ?
-require = require('esm')(module /*, options*/);
-
 import * as sapper from '@sapper/server';
 import compression from 'compression';
 import polka from 'polka';
 import sirv from 'sirv';
 
-const session = require('express-session');
-const MysqlStore = require('express-mysql-session')(session);
+import session from 'express-session';
+import mysqlSession from 'express-mysql-session';
 
-const {
+import {
   saneEnvironmentOrExit,
   success,
   info,
   error,
   log,
-} = require('@filbert/util');
-const {
+} from '@filbert/util';
+import {
   FILBERT_SESSION_COOKIE_NAME,
   ENCRYPTION_KEY,
-} = require('@filbert/constants');
-const { mysqlConnectionConfig } = require('@filbert/mysql');
+} from '@filbert/constants';
+import { mysqlConnectionConfig } from '@filbert/mysql';
 
 saneEnvironmentOrExit('NODE_ENV', 'MYSQL_ROOT_PASSWORD', 'ENCRYPTION_KEY');
 
+const MysqlStore = mysqlSession(session);
 const sessionStore = new MysqlStore(mysqlConnectionConfig);
 
 const { PORT, NODE_ENV } = process.env;

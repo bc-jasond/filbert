@@ -1,13 +1,10 @@
-// ESM - remove after ECMAScript Module support is past Experimental node v14 ?
-require = require('esm')(module /*, options*/);
+import { performance } from 'perf_hooks';
+import { assertBucket, uploadFileToBucket } from './s3';
+import { makeMysqlDump } from './mysql.mjs';
+import { assertDir, rmFile } from './util.mjs';
+import { fileUploadStagingDirectory, adhocBucketName } from './constants.mjs';
 
-const { performance } = require('perf_hooks');
-const { assertBucket, uploadFileToBucket } = require('./s3');
-const { makeMysqlDump } = require('./mysql');
-const { assertDir, rmFile } = require('./util');
-const { fileUploadStagingDirectory, adhocBucketName } = require('./constants');
-
-async function filbertMysqldumpToS3Adhoc() {
+export async function filbertMysqldumpToS3Adhoc() {
   try {
     const startTime = performance.now();
     console.log('starting filbertMysqldumpToS3Adhoc()');
@@ -40,5 +37,3 @@ async function filbertMysqldumpToS3Adhoc() {
     throw err;
   }
 }
-
-module.exports = { filbertMysqldumpToS3Adhoc };

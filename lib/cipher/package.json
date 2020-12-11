@@ -2,6 +2,6 @@
   "name": "@filbert/cipher",
   "version": "1.0.0",
   "description": "shared JS packages for API, web, et al.",
-  "main": "index.js",
+  "main": "index.mjs",
   "license": "MIT"
 }

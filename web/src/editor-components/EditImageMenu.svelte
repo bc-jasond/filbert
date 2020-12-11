@@ -18,7 +18,7 @@
     KEYCODE_TAB,
     KEYCODE_ENTER,
     KEYCODE_ESC,
-  } from '../common/constants';
+  } from '@filbert/constants';
   import { getApiClientInstance } from '../common/api-client';
   import {
     caretIsAtBeginningOfInput,

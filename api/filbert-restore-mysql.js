@@ -1,25 +1,25 @@
 #!/usr/bin/env node
-// ESM - remove after ECMAScript Module support is past Experimental node v14 ?
-require = require('esm')(module /*, options*/);
-const inquirer = require('inquirer');
-const { textSync } = require('figlet');
-const chalk = require('chalk');
-const ora = require('ora');
+import inquirer from 'inquirer';
+import figlet from 'figlet';
+import chalk from 'chalk';
+import ora from 'ora';
 
-const {
+import {
   error,
   info,
   warn,
   success,
   saneEnvironmentOrExit,
-} = require('@filbert/util');
-const {
+} from '@filbert/util';
+import {
   listBuckets,
   listKeysForBucket,
   downloadFileFromBucket,
-} = require('./lib/s3');
-const { restoreMysqlFromFile } = require('./lib/mysql');
-const { filbertMysqldumpToS3Adhoc } = require('./lib/mysqldump-adhoc');
+} from './lib/s3';
+import { restoreMysqlFromFile } from './lib/mysql';
+import { filbertMysqldumpToS3Adhoc } from './lib/mysqldump-adhoc';
+
+const { textSync } = figlet;
 
 async function main() {
   let spinner = new ora();

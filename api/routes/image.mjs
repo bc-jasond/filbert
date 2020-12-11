@@ -1,7 +1,7 @@
-const sharp = require('sharp');
-const { getChecksum } = require('@filbert/cipher');
-const { bucketHasKey, uploadImageToBucket } = require('../lib/s3');
-const { imageBucketName, objectStorageBaseUrl } = require('../lib/constants');
+import sharp from 'sharp';
+import { getChecksum } from '@filbert/cipher';
+import { bucketHasKey, uploadImageToBucket } from '../lib/s3.mjs';
+import { imageBucketName, objectStorageBaseUrl } from '../lib/constants.mjs';
 
 async function getImageKey(buffer, userId, imgMeta) {
   const checksum = await getChecksum(buffer);
@@ -10,7 +10,7 @@ async function getImageKey(buffer, userId, imgMeta) {
   }`;
 }
 
-async function uploadImage(req, res, next) {
+export async function uploadImage(req, res, next) {
   try {
     const { body, file } = req;
 
@@ -67,7 +67,3 @@ async function uploadImage(req, res, next) {
     next(err);
   }
 }
-
-module.exports = {
-  uploadImage,
-};

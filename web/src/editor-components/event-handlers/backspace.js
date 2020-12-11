@@ -1,5 +1,5 @@
 import { Map } from 'immutable';
-import { KEYCODE_BACKSPACE } from '../../common/constants';
+import { KEYCODE_BACKSPACE } from '@filbert/constants';
 import { stopAndPrevent } from '../../common/utils';
 import { doDelete, doDeleteMetaType, doMerge } from '../editor-commands/delete';
 

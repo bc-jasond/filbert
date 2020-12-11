@@ -1,18 +1,24 @@
-const { getKnex, getNodesFlat } = require('./mysql');
-const { getFirstNode } = require('./util');
+import immutable from 'immutable';
+import { getKnex, getNodesFlat } from './mysql.mjs';
+import { getFirstNode } from '@filbert/document';
+
+const {fromJS} = immutable;
+
+export function ensureNoOrphanedNodes(contentNodes, postId) {}
 
 /**
  * Populates Post Image, Post Title, and Post Abstract from its content
  *
  * @param contentNodes - a hash of content nodes keyed by id
  */
-function getFirstPhotoAndAbstractFromContent(contentNodes, postId) {
+export function getFirstPhotoAndAbstractFromContent(contentNodes, postId) {
   const responseData = {};
   const titleMinLength = 2;
   const titleMaxLength = 75;
   const abstractMinLength = 100;
   const abstractMaxLength = 200;
-  const queue = [getFirstNode(contentNodes, postId)];
+  const firstNode = getFirstNode(fromJS(contentNodes), postId).toJS();
+  const queue = [firstNode];
   while (
     queue.length &&
     (!responseData.abstract || !responseData.imageNode || !responseData.title)
@@ -67,7 +73,7 @@ function getFirstPhotoAndAbstractFromContent(contentNodes, postId) {
   return responseData;
 }
 
-async function addFirstPhotoTitleAndAbstractToPosts(posts) {
+export async function addFirstPhotoTitleAndAbstractToPosts(posts) {
   const draftsModified = [];
   for (let i = 0; i < posts.length; i++) {
     const draft = posts[i];
@@ -92,7 +98,7 @@ async function addFirstPhotoTitleAndAbstractToPosts(posts) {
   return draftsModified;
 }
 
-async function assertUserHasPost(req, res, next) {
+export async function assertUserHasPost(req, res, next) {
   try {
     const {
       params: { postId },
@@ -115,9 +121,3 @@ async function assertUserHasPost(req, res, next) {
     res.status(500).send({});
   }
 }
-
-module.exports = {
-  getFirstPhotoAndAbstractFromContent,
-  addFirstPhotoTitleAndAbstractToPosts,
-  assertUserHasPost,
-};

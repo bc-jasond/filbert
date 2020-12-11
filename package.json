@@ -19,10 +19,9 @@
     "sapper-start": "yarn --cwd web start",
     "api-watch": "yarn --cwd api watch",
     "api-start": "yarn --cwd api start",
-    "pretty-svelte": "prettier --write --plugin-search-dir=. './web/src/**/*.{html,svelte,js}'",
-    "pretty-api": "prettier --parser=babel --single-quote --write './api/**/*.js'",
+    "pretty-svelte": "prettier --write --plugin-search-dir=. './web/src/**/*.{html,svelte,mjs,js}'",
+    "pretty-api": "prettier --parser=babel --single-quote --write './api/**/*.{mjs,js}'",
     "pretty-lib": "prettier --parser=babel --single-quote --write './lib/**/*.{mjs,js}'",
-    "pretty-test": "prettier --parser=babel --single-quote --write './test/**/*.js'",
-    "pretty-react": "prettier --parser=babel --single-quote --write './frontend/src/**/*.{js,jsx}'"
+    "pretty-test": "prettier --parser=babel --single-quote --write './test/**/*.{mjs,js}'"
   }
 }

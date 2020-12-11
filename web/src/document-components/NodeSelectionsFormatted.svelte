@@ -3,22 +3,21 @@
 
   import he from 'he';
   import {
+      SELECTION_ACTION_BOLD,
+      SELECTION_ACTION_CODE,
+      SELECTION_ACTION_ITALIC,
+      SELECTION_ACTION_LINK,
+      SELECTION_LINK_URL,
+      SELECTION_ACTION_MINI,
+      SELECTION_ACTION_SITEINFO,
+      SELECTION_ACTION_STRIKETHROUGH,
+      SELECTION_NEXT,
+  Selection,
     getContentBySelections,
     getSelectionAtIdx,
-  } from '../common/selection-helpers';
-  import {
-    SELECTION_ACTION_BOLD,
-    SELECTION_ACTION_CODE,
-    SELECTION_ACTION_ITALIC,
-    SELECTION_ACTION_LINK,
-    SELECTION_LINK_URL,
-    SELECTION_ACTION_MINI,
-    SELECTION_ACTION_SITEINFO,
-    SELECTION_ACTION_STRIKETHROUGH,
-  } from '../common/constants';
-  import { Selection } from '../common/utils';
-  import { SELECTION_NEXT } from '../common/constants';
-  import { cleanTextOrZeroLengthPlaceholder } from '../common/utils';
+  } from '@filbert/selection';
+
+  import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 
   $: selectionHead = node.getIn(['meta', 'selections'], Selection());
   $: contentPiecesBySelectionLength = getContentBySelections(node);

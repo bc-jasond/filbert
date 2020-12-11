@@ -5,6 +5,8 @@
   import { afterUpdate, onMount } from 'svelte';
   import { goto, stores } from '@sapper/app';
 
+  import {NEW_POST_URL_ID} from '@filbert/constants';
+
   import { currentPost } from '../stores';
 
   import HeaderLogo from './HeaderLogo.svelte';
@@ -16,7 +18,6 @@
     MIXED_FONT_THEME,
     LIGHT_MODE_THEME,
     DARK_MODE_THEME,
-    NEW_POST_URL_ID,
   } from '../common/constants';
   import { getApiClientInstance } from '../common/api-client';
 

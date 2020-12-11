@@ -1,7 +1,7 @@
 import { getChecksum } from '@filbert/cipher';
-import { getKnex } from '../lib/mysql';
+import { getKnex } from '../lib/mysql.mjs';
 
-async function duplicatePost(req, res, next) {
+export async function duplicatePost(req, res, next) {
   try {
     const { currentPost } = req;
     const knex = await getKnex();
@@ -56,7 +56,3 @@ async function duplicatePost(req, res, next) {
     next(err);
   }
 }
-
-module.exports = {
-  duplicatePost,
-};

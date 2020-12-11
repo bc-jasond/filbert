@@ -1,5 +1,5 @@
 import { Map } from 'immutable';
-import { KEYCODE_Z } from '../../common/constants';
+import { KEYCODE_Z } from '@filbert/constants';
 import { stopAndPrevent } from '../../common/utils';
 
 export function isUndoEvent(evt) {

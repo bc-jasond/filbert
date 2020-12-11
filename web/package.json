@@ -15,8 +15,6 @@
     "jestcov": "jest --coverage"
   },
   "dependencies": {
-    "@filbert/constants": "1.0.0",
-    "@filbert/mysql": "1.0.0",
     "@rollup/plugin-url": "^5.0.1",
     "compression": "^1.7.1",
     "esm": "^3.2.25",

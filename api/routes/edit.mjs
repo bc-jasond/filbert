@@ -1,8 +1,8 @@
-const { getNodesFlat } = require('../lib/mysql');
+import { getNodesFlat } from '../lib/mysql.mjs';
 /**
  * get post for editing - signed-in user only
  */
-async function getPostForEdit(req, res) {
+export async function getPostForEdit(req, res) {
   const { currentPost } = req;
   const {
     meta: { currentUndoHistoryId, lastActionWasUndo },
@@ -28,7 +28,3 @@ async function getPostForEdit(req, res) {
     //   : executeSelectionOffsets,
   });
 }
-
-module.exports = {
-  getPostForEdit,
-};

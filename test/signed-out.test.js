@@ -1,10 +1,10 @@
-const { By } = require('selenium-webdriver');
+const { By } from 'selenium-webdriver');
 
 const {
   cleanupClient,
   getChromedriverClient,
   getUrl,
-} = require('./selenium-utils');
+} from './selenium-utils');
 
 let driver;
 

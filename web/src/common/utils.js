@@ -1,35 +1,5 @@
-import { isKeyed, Map, Record } from 'immutable';
-
-import {
-  HISTORY_MIN_NUM_CHARS,
-  SELECTION_ACTION_BOLD,
-  SELECTION_ACTION_CODE,
-  SELECTION_ACTION_ITALIC,
-  SELECTION_ACTION_LINK,
-  SELECTION_ACTION_MINI,
-  SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_LENGTH,
-  SELECTION_LINK_URL,
-  SELECTION_NEXT,
-  ZERO_LENGTH_CHAR,
-} from '@filbert/selection';
-import {
-  HISTORY_MIN_NUM_CHARS,
-  KEYCODE_SPACE,
-  KEYCODE_SPACE_NBSP,
-  SELECTION_ACTION_BOLD,
-  SELECTION_ACTION_CODE,
-  SELECTION_ACTION_ITALIC,
-  SELECTION_ACTION_LINK,
-  SELECTION_ACTION_MINI,
-  SELECTION_ACTION_SITEINFO,
-  SELECTION_ACTION_STRIKETHROUGH,
-  SELECTION_LENGTH,
-  SELECTION_LINK_URL,
-  SELECTION_NEXT,
-  ZERO_LENGTH_CHAR,
-} from './constants';
+import { Map } from 'immutable';
+import {s4} from '@filbert/util'
 
 export function confirmPromise(msg) {
   return new Promise((resolve) => {
@@ -69,17 +39,6 @@ export function formatStreakDate(dateInt) {
 
 export function formatNumber(number) {
   return new Intl.NumberFormat().format(number);
-}
-
-export function s4() {
-  return Math.floor((1 + Math.random()) * 0x10000)
-    .toString(16)
-    .substring(1);
-}
-
-export function getMapWithId(obj) {
-  const { id } = obj;
-  return Map({ ...obj, id: id || s4() });
 }
 
 export function getCharFromEvent(evt) {
@@ -138,26 +97,6 @@ export function idIsValid(maybeId) {
 
 export function nodeIsValid(node) {
   return Map.isMap(node) && idIsValid(node.get('id'));
-}
-
-export function getFirstNode(nodesById) {
-  const idSeen = new Set();
-  const nextSeen = new Set();
-  nodesById.forEach((node) => {
-    idSeen.add(node.get('id'));
-    if (node.get('next_sibling_id')) {
-      nextSeen.add(node.get('next_sibling_id'));
-    }
-  });
-  const difference = new Set([...idSeen].filter((id) => !nextSeen.has(id)));
-  if (difference.size !== 1) {
-    console.error(
-      "DocumentError.getFirstNode() - more than one node isn't pointed to by another node!",
-      difference
-    );
-  }
-  const [firstId] = [...difference];
-  return nodesById.get(firstId);
 }
 
 export function isBrowser() {

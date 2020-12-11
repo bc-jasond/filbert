@@ -1,12 +1,12 @@
-const { getKnex } = require('../lib/mysql');
-const { postContentNodeHistory } = require('./content-node-history');
+import { getKnex } from '../lib/mysql.mjs';
+import { postContentNodeHistory } from './content-node-history.mjs';
 
 function pruneOrphanedNodesFromUpdates(updates) {}
 
 /**
  * takes a list of 1 or more content nodes to update or delete for a post during edit
  */
-async function postContentNodes(req, res) {
+export async function postContentNodes(req, res) {
   try {
     // validate post
     const {
@@ -55,7 +55,3 @@ async function postContentNodes(req, res) {
     res.status(500).send({});
   }
 }
-
-module.exports = {
-  postContentNodes,
-};

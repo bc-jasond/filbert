@@ -1,16 +1,16 @@
-import { getMysqlDatetime } from '../lib/mysql';
+import { getMysqlDatetime } from '@filbert/mysql';
 
-const {
+import {
   getKnex,
   getNodesFlat,
   getPostByCanonicalHelper,
-} = require('../lib/mysql');
-const {
+} from '../lib/mysql.mjs';
+import {
   getFirstPhotoAndAbstractFromContent,
   addFirstPhotoTitleAndAbstractToPosts,
-} = require('../lib/post-util');
+} from '../lib/post-util.mjs';
 
-async function getPosts(req, res) {
+export async function getPosts(req, res) {
   const {
     session: { user: loggedInUser },
     query: { username, oldest, random },
@@ -82,7 +82,7 @@ async function getPosts(req, res) {
 }
 
 // returns both post and content
-async function getPostByCanonical(req, res) {
+export async function getPostByCanonical(req, res) {
   const {
     session: { user: loggedInUser },
   } = req;
@@ -132,7 +132,7 @@ async function getPostByCanonical(req, res) {
 }
 
 // returns only post
-async function getPostById(req, res) {
+export async function getPostById(req, res) {
   const { currentPost } = req;
   // remove user_id...
   res.send({ post: { ...currentPost, user_id: undefined } });
@@ -141,7 +141,7 @@ async function getPostById(req, res) {
 /**
  * save post fields - like title, canonical & abstract
  */
-async function patchPost(req, res, next) {
+export async function patchPost(req, res, next) {
   try {
     const { user: { userId: loggedInUserId } = {} } = req.session;
     const { id } = req.currentPost;
@@ -176,7 +176,7 @@ async function patchPost(req, res, next) {
   }
 }
 
-async function getSummaryAndPhotoFromContent(req, res) {
+export async function getSummaryAndPhotoFromContent(req, res) {
   const { id } = req.currentPost;
   const responseData = {};
   const { contentNodes } = await getNodesFlat(id);
@@ -190,7 +190,7 @@ async function getSummaryAndPhotoFromContent(req, res) {
 /**
  * delete a PUBLISHED post
  */
-async function deletePublishedPost(req, res) {
+export async function deletePublishedPost(req, res) {
   const { id } = req.currentPost;
   const knex = await getKnex();
   /**
@@ -202,12 +202,3 @@ async function deletePublishedPost(req, res) {
   await knex('post').update({ deleted }).where('id', id);
   res.status(204).send({});
 }
-
-module.exports = {
-  getPosts,
-  getPostByCanonical,
-  getPostById,
-  patchPost,
-  deletePublishedPost,
-  getSummaryAndPhotoFromContent,
-};

@@ -1,4 +1,4 @@
-const { By, until } = require('selenium-webdriver');
+const { By, until } from 'selenium-webdriver');
 
 const {
   cleanupClient,
@@ -6,11 +6,11 @@ const {
   getUrl,
   ensureSignedIn,
   selectRangeOfText,
-} = require('./selenium-utils');
+} from './selenium-utils');
 const {
   EDITOR_CONTAINER_ID,
   FORMAT_SELECTION_MENU_ID,
-} = require('./constants');
+} from './constants');
 
 let driver;
 let actions;

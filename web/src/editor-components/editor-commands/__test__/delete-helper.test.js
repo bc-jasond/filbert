@@ -1,5 +1,5 @@
 import { overrideConsole } from '../../../common/test-helpers';
-import * as selectionHelpers from '../../../../../lib/selection/selection-helpers';
+import * as selectionHelpers from '@filbert/selection';
 import DocumentModel from '@filbert/document/document-model';
 import {
   firstNodeContent,

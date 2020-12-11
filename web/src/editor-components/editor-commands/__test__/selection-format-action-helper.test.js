@@ -11,7 +11,7 @@ import { Selection } from '../../../common/utils';
 import DocumentModel from '@filbert/document/document-model';
 import { doFormatSelection } from '../format-selection';
 
-import * as selectionHelpers from '../../../../../lib/selection/selection-helpers';
+import * as selectionHelpers from '@filbert/selection';
 import {
   formattedPId,
   testPostWithAllTypesJS,
