@@ -35,7 +35,7 @@ export async function handleCut({
     // save these to pass to commitUpdates for undo history
     unexecuteSelectionOffsets = selectionOffsets;
     if (caretStart !== caretEnd) {
-      const { historyState, executeSelectionOffsets } = doDelete(
+      const { historyState, selectionOffsets } = doDelete(
         documentModel,
         selectionOffsets
       );
@@ -50,8 +50,7 @@ export async function handleCut({
   evt.clipboardData.setData('text/plain', selectionString);
 
   historyManager.appendToHistoryLog({
-    executeSelectionOffsets: executeSelectionOffsetsInternal,
-    unexecuteSelectionOffsets,
+    selectionOffsets: executeSelectionOffsetsInternal,
     historyState: cutHistoryState,
   });
   // NOTE: if we stopPropagation and preventDefault on the 'keydown' event, they'll cancel the 'cut' event too

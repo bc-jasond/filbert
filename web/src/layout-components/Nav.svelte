@@ -5,7 +5,7 @@
   import { afterUpdate, onMount } from 'svelte';
   import { goto, stores } from '@sapper/app';
 
-  import {NEW_POST_URL_ID} from '@filbert/constants';
+  import { NEW_POST_URL_ID } from '@filbert/constants';
 
   import { currentPost } from '../stores';
 

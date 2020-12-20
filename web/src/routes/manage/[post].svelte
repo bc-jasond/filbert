@@ -42,12 +42,8 @@
 
   import { currentPost } from '../../stores';
 
-  import {
-    getMapWithId,
-  } from '@filbert/util';
-  import {
-    NODE_TYPE_IMAGE,
-  } from '@filbert/document';
+  import { getMapWithId } from '@filbert/util';
+  import { NODE_TYPE_IMAGE } from '@filbert/document';
   import {
     nodeIsValid,
     formatPostDate,

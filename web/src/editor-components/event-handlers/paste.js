@@ -47,7 +47,7 @@ export async function handlePaste({
   // NOTE: if these get called on the 'keydown' event, they'll cancel the 'paste' event
   stopAndPrevent(evt);
 
-  const { executeSelectionOffsets, historyState } = doPaste(
+  const { selectionOffsets: executeSelectionOffsets, historyState } = doPaste(
     documentModel,
     selectionOffsets,
     evt.clipboardData
@@ -60,8 +60,7 @@ export async function handlePaste({
   }
   // add history entry
   historyManager.appendToHistoryLog({
-    executeSelectionOffsets,
-    unexecuteSelectionOffsets,
+    selectionOffsets: executeSelectionOffsets,
     historyState: pasteHistoryState,
   });
 

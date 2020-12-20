@@ -4,7 +4,6 @@ import {
   adjustSelectionOffsetsAndCleanup,
   splitSelectionsAtCaretOffset,
 } from '@filbert/selection';
-import { getLastInsertedNodeIdFromHistory } from '@filbert/history';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -27,8 +26,8 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   }
 
   const historyState = [];
-  const getReturnPayload = (executeSelectionOffsets) => {
-    return { executeSelectionOffsets, historyState };
+  const getReturnPayload = (selectionOffsets) => {
+    return { selectionOffsets, historyState };
   };
 
   // TODO: preserve format of copied text
@@ -77,7 +76,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   historyState.push(
     ...documentModel.insert(selectedNode.get('type'), leftNodeId, contentRight)
   );
-  const rightNodeId = getLastInsertedNodeIdFromHistory(historyState);
+  const rightNodeId = documentModel.getLastInsertId();
   // now leftNode has 'next_sibling_id' set to rightNode
   // important: 'content' is now contentLeft
   let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
@@ -119,7 +118,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
       historyState.push(
         ...documentModel.insert(leftNode.get('type'), prevNodeId, currentLine)
       );
-      const nextId = getLastInsertedNodeIdFromHistory(historyState);
+      const nextId = documentModel.getLastInsertId();
       prevNodeId = nextId;
     }
   }

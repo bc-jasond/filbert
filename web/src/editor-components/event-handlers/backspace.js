@@ -31,14 +31,13 @@ export async function handleBackspace({
   if (documentModel.isMetaType(startNodeId)) {
     const {
       historyState: historyStateDeleteMetaType,
-      executeSelectionOffsets: executeSelectionOffsetsDeleteMetaType,
+      selectionOffsets: executeSelectionOffsetsDeleteMetaType,
     } = doDeleteMetaType(documentModel, selectionOffsets);
     historyState.push(...historyStateDeleteMetaType);
     executeSelectionOffsets = executeSelectionOffsetsDeleteMetaType;
 
     historyManager.appendToHistoryLog({
-      executeSelectionOffsets,
-      unexecuteSelectionOffsets: selectionOffsets,
+      selectionOffsets: executeSelectionOffsets,
       historyState,
     });
     // call this setter before commitUpdates or it could unset a neighboring meta node highlight!
@@ -53,7 +52,7 @@ export async function handleBackspace({
   if (hasContentToDelete) {
     const {
       historyState: historyStateDelete,
-      executeSelectionOffsets: executeSelectionOffsetsDelete,
+      selectionOffsets: executeSelectionOffsetsDelete,
     } = doDelete(documentModel, selectionOffsets);
     historyState.push(...historyStateDelete);
     executeSelectionOffsets = executeSelectionOffsetsDelete;
@@ -67,7 +66,7 @@ export async function handleBackspace({
 
   if (needsMergeWithOtherNode) {
     const {
-      executeSelectionOffsets: executeSelectionOffsetsMerge,
+      selectionOffsets: executeSelectionOffsetsMerge,
       historyState: historyStateMerge,
     } = doMerge(documentModel, executeSelectionOffsets);
     historyState.push(...historyStateMerge);
@@ -79,15 +78,13 @@ export async function handleBackspace({
 
   if (didDeleteContentInOneNode) {
     historyManager.appendToHistoryLogWhenNCharsAreDifferent({
-      executeSelectionOffsets,
-      unexecuteSelectionOffsets: selectionOffsets,
+      selectionOffsets: executeSelectionOffsets,
       historyState,
       comparisonPath: ['content'],
     });
   } else {
     historyManager.appendToHistoryLog({
-      executeSelectionOffsets,
-      unexecuteSelectionOffsets: selectionOffsets,
+      selectionOffsets: executeSelectionOffsets,
       historyState,
     });
   }

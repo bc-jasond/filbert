@@ -3,7 +3,6 @@ import { assertValidDomSelectionOrThrow } from '../../common/dom';
 import { deleteContentRange } from '../../common/utils';
 import { getFirstNode } from '@filbert/document';
 import { adjustSelectionOffsetsAndCleanup } from '@filbert/selection';
-import { getLastInsertedNodeIdFromHistory } from '@filbert/history';
 
 // returns a nodeId for node deleted, false for node updated
 function updateNode(documentModel, diffLength, nodeId, startIdx) {
@@ -54,7 +53,7 @@ function buildDeleteHistory(
     // end diff length is caretEnd - 0 (implied caretStart for the end node)
     if (caretEnd > 0) {
       historyState.push(...updateNode(documentModel, caretEnd, endNodeId, 0));
-      selectedNodeId = getLastInsertedNodeIdFromHistory(historyState);
+      selectedNodeId = documentModel.getLastInsertId();
     }
     didDeleteEndNode = selectedNodeId !== endNodeId;
   }
@@ -98,7 +97,7 @@ export function doDeleteMetaType(documentModel, selectionOffsets) {
 
   return {
     historyState,
-    executeSelectionOffsets: {
+    selectionOffsets: {
       startNodeId: prevNodeId,
       caretStart:
         wasFirstNodeInDocument || documentModel.isMetaType(prevNodeId) ? 0 : -1,
@@ -141,8 +140,8 @@ export function doDelete(documentModel, selectionOffsets) {
   const { didDeleteEndNode, startDiffLength, historyState } = buildDeleteResult;
   let { selectedNodeId } = buildDeleteResult;
 
-  const getReturnPayload = (executeSelectionOffsets) => {
-    return { executeSelectionOffsets, historyState };
+  const getReturnPayload = (selectionOffsets) => {
+    return { selectionOffsets, historyState };
   };
 
   // edge case where user selects from end of line (no selected chars in first line) through a following line (didDeleteEndNode)
@@ -159,7 +158,7 @@ export function doDelete(documentModel, selectionOffsets) {
     ...updateNode(documentModel, startDiffLength, startNodeId, caretStart)
   );
   // getLastExecuteId == undefined means user selected and deleted all text in the node
-  selectedNodeId = getLastInsertedNodeIdFromHistory(historyState);
+  selectedNodeId = documentModel.getLastInsertId() || startNodeId;
 
   // if we deleted the first node in the document, use the node that documentModel.deleteNode() returns
   if (selectedNodeId !== startNodeId) {
@@ -201,8 +200,8 @@ export function doMerge(documentModel, selectionOffsets) {
   let { caretStart, startNodeId } = selectionOffsets;
   const selectedNodeId = startNodeId;
   const historyState = [];
-  const getReturnPayload = (executeSelectionOffsets) => {
-    return { executeSelectionOffsets, historyState };
+  const getReturnPayload = (selectionOffsets) => {
+    return { selectionOffsets, historyState };
   };
 
   if (documentModel.isMetaType(selectedNodeId)) {

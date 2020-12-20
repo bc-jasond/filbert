@@ -22,10 +22,7 @@
     SELECTION_ACTION_H1,
     SELECTION_ACTION_H2,
   } from '@filbert/selection';
-  import {
-    NODE_TYPE_H1,
-    NODE_TYPE_H2,
-  } from '@filbert/document';
+  import { NODE_TYPE_H1, NODE_TYPE_H2 } from '@filbert/document';
   import {
     KEYCODE_ENTER,
     KEYCODE_ESC,

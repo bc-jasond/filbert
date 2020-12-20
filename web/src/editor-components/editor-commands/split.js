@@ -7,16 +7,12 @@ import {
   NODE_TYPE_P,
   NODE_TYPE_PRE,
 } from '@filbert/document';
-import {
-  cleanText,
-  cleanTextOrZeroLengthPlaceholder,
-} from '@filbert/util';
+import { cleanText, cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 import { getFirstNode } from '@filbert/document';
 import {
   formatSelections,
   splitSelectionsAtCaretOffset,
 } from '@filbert/selection';
-import { getLastInsertedNodeIdFromHistory } from '@filbert/history';
 import { assertValidDomSelectionOrThrow } from '../../common/dom';
 
 function handleEnterTextType(
@@ -65,7 +61,7 @@ function handleEnterTextType(
   historyState.push(
     ...documentModel.insert(newNodeType, leftNodeId, contentRight)
   );
-  const rightNodeId = getLastInsertedNodeIdFromHistory(historyState);
+  const rightNodeId = documentModel.getLastInsertId();
   let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
   let rightNode = documentModel.getNode(rightNodeId);
   // if the original selected node can have Selections - move them to the right node if needed
@@ -93,7 +89,7 @@ function handleEnterTextType(
   return historyState;
 }
 /**
- * @returns {executeSelectionOffsets:{}, historyState}
+ * @returns {selectionOffsets:{}, historyState}
  */
 export function doSplit(documentModel, selectionOffsets) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -130,9 +126,9 @@ export function doSplit(documentModel, selectionOffsets) {
     );
   }
 
-  const focusNodeId = getLastInsertedNodeIdFromHistory(historyState);
+  const focusNodeId = documentModel.getLastInsertId();
   return {
-    executeSelectionOffsets: { startNodeId: focusNodeId, caretStart: 0 },
+    selectionOffsets: { startNodeId: focusNodeId, caretStart: 0 },
     historyState,
   };
 }
