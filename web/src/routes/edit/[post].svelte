@@ -106,19 +106,10 @@
     Selection,
     SELECTION_ACTION_LINK,
     SELECTION_LINK_URL,
-  } from '@filbert/selection'
-  import {
-    DocumentModel,
-    getFirstNode,
-  } from '@filbert/document';
-  import {
-    HistoryManager,
-    getLastInsertedNodeIdFromHistory,
-  } from '@filbert/history';
-  import {
-    getCanonicalFromTitle,
-    stopAndPrevent,
-  } from '../../common/utils';
+  } from '@filbert/selection';
+  import { DocumentModel, getFirstNode } from '@filbert/document';
+  import { HistoryManager } from '@filbert/history';
+  import { getCanonicalFromTitle, stopAndPrevent } from '../../common/utils';
   import Document from '../../document-components/Document.svelte';
 
   import { syncFromDom } from '../../editor-components/editor-commands/dom-sync';
@@ -199,11 +190,11 @@
   }
 
   $: if (post.id !== postMap.get('id')) {
-      reinstantiatePost();
-    }
+    reinstantiatePost();
+  }
   $: if (isBrowser()) {
-      apiClient = getApiClientInstance();
-    }
+    apiClient = getApiClientInstance();
+  }
   $: insertMenuNodeId = insertMenuNode.get('id');
 
   onMount(async () => {
@@ -258,10 +249,10 @@
     historyManager = HistoryManager(post.id, apiClient);
     nodesByIdMapInternal = documentModel.getNodes();
     if (isUnsavedPost) {
-      console.log("UNSAVED")
+      console.log('UNSAVED');
       clearInterval(batchSaveIntervalId);
     } else if (!batchSaveIntervalId) {
-      console.log("HEY SAVED")
+      console.log('HEY SAVED');
       batchSaveIntervalId = setInterval(batchSave, 3000);
     }
     await tick();
@@ -536,14 +527,12 @@
     }
     console.debug('INPUT (aka: sync back from DOM)', evt);
     // for emoji keyboard insert & spellcheck correct
-    const { executeSelectionOffsets, historyState } = syncFromDom(
-      documentModel,
-      selectionOffsets,
-      evt
-    );
+    const {
+      selectionOffsets: executeSelectionOffsets,
+      historyState,
+    } = syncFromDom(documentModel, selectionOffsets, evt);
     historyManager.appendToHistoryLog({
-      executeSelectionOffsets,
-      unexecuteSelectionOffsets: selectionOffsets,
+      selectionOffsets,
       historyState,
     });
 
@@ -580,17 +569,13 @@
     const historyState = documentModel.update(
       insertMenuNode.set('type', sectionType).set('meta', meta)
     );
-    const newSectionId = getLastInsertedNodeIdFromHistory(historyState);
-    const executeSelectionOffsets = { startNodeId: newSectionId };
+    const newSectionId = documentModel.getLastInsertId();
+    const selectionOffsets = { startNodeId: newSectionId };
     historyManager.appendToHistoryLog({
-      executeSelectionOffsets,
-      unexecuteSelectionOffsets: {
-        startNodeId: insertMenuNode.get('id'),
-        caretStart: 0,
-      },
+      selectionOffsets,
       historyState,
     });
-    await commitUpdates(executeSelectionOffsets);
+    await commitUpdates(selectionOffsets);
     if (
       [NODE_TYPE_IMAGE, NODE_TYPE_QUOTE, NODE_TYPE_SPACER].includes(sectionType)
     ) {
@@ -628,20 +613,18 @@
 
   async function updateEditSectionNode(updatedNode, comparisonPath) {
     const historyState = documentModel.update(updatedNode);
-    const offsets = { startNodeId: updatedNode.get('id') };
+    const selectionOffsets = { startNodeId: updatedNode.get('id') };
     // some text fields are stored in the node.meta object like image caption, link url, quote fields
     // these text fields will pass a path to differentiate themselves from other actions like image rotate, zoom, etc
     if (comparisonPath) {
       historyManager.appendToHistoryLogWhenNCharsAreDifferent({
-        executeSelectionOffsets: offsets,
-        unexecuteSelectionOffsets: offsets,
+        selectionOffsets,
         historyState,
         comparisonPath,
       });
     } else {
       historyManager.appendToHistoryLog({
-        executeSelectionOffsets: offsets,
-        unexecuteSelectionOffsets: offsets,
+        selectionOffsets,
         historyState,
       });
     }
@@ -679,8 +662,7 @@
     const historyState = documentModel.update(updatedNode);
     // TODO: when NCharsAreDifferent - current linked list representation doesn't lend itself well to comparisonPath
     historyManager.appendToHistoryLog({
-      executeSelectionOffsets: selectionOffsetsManageFormatSelectionMenu,
-      unexecuteSelectionOffsets: selectionOffsetsManageFormatSelectionMenu,
+      selectionOffsets: selectionOffsetsManageFormatSelectionMenu,
       historyState,
     });
     await commitUpdates(selectionOffsetsManageFormatSelectionMenu);
@@ -772,15 +754,12 @@
     // formatting doesn't change the SelectionOffsets
     // seems like it could conditionally collapse the selection only when moving from P -> H1 or H2 but, idk???
     historyManager.appendToHistoryLog({
-      executeSelectionOffsets: selectionOffsetsManageFormatSelectionMenu,
-      unexecuteSelectionOffsets: selectionOffsetsManageFormatSelectionMenu,
+      selectionOffsets: selectionOffsetsManageFormatSelectionMenu,
       historyState,
     });
     await commitUpdates(selectionOffsetsManageFormatSelectionMenu);
 
-    const updatedNode = documentModel.getNode(
-      getLastInsertedNodeIdFromHistory(historyState)
-    );
+    const updatedNode = documentModel.getNode(documentModel.getLastInsertId());
     // need to refresh the selection after update, as a merge might have occured
     // between neighboring selections that now have identical formats
     const { selections } = getSelectionByContentOffset(

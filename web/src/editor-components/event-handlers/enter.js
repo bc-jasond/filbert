@@ -19,14 +19,13 @@ export async function handleEnter({
   stopAndPrevent(evt);
 
   // perform editor commands
-  const { executeSelectionOffsets, historyState } = doSplit(
+  const { selectionOffsets: executeSelectionOffsets, historyState } = doSplit(
     documentModel,
     selectionOffsets
   );
   // create history log entry
   historyManager.appendToHistoryLog({
-    executeSelectionOffsets,
-    unexecuteSelectionOffsets: selectionOffsets,
+    selectionOffsets: executeSelectionOffsets,
     historyState,
   });
 

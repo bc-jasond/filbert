@@ -1,9 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import {
-  NODE_TYPE_H1,
-  NODE_TYPE_H2,
-  NODE_TYPE_P,
-} from '@filbert/document';
+import { NODE_TYPE_H1, NODE_TYPE_H2, NODE_TYPE_P } from '@filbert/document';
 import {
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2,

@@ -1,5 +1,5 @@
 import { Map } from 'immutable';
-import {s4} from '@filbert/util'
+import { s4 } from '@filbert/util';
 
 export function confirmPromise(msg) {
   return new Promise((resolve) => {

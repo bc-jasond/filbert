@@ -39,18 +39,16 @@ export async function handleSyncToDom({
     historyState.push(...historyStateDelete);
   }
   // sync keystroke to DOM
-  const { historyState: historyStateSync, executeSelectionOffsets } = syncToDom(
-    documentModel,
-    selectionOffsets,
-    evt
-  );
+  const {
+    historyState: historyStateSync,
+    selectionOffsets: executeSelectionOffsets,
+  } = syncToDom(documentModel, selectionOffsets, evt);
   historyState.push(...historyStateSync);
 
   // assumes content update (of one char) on a single node, only create an entry every so often
   if (historyState.length === 1) {
     historyManager.appendToHistoryLogWhenNCharsAreDifferent({
-      unexecuteSelectionOffsets: selectionOffsets,
-      executeSelectionOffsets,
+      selectionOffsets: executeSelectionOffsets,
       historyState,
       comparisonPath: ['content'],
     });
@@ -58,8 +56,7 @@ export async function handleSyncToDom({
     // we did more than a simple content update to one node, save an entry
     historyManager.flushPendingHistoryLogEntry();
     historyManager.appendToHistoryLog({
-      unexecuteSelectionOffsets: selectionOffsets,
-      executeSelectionOffsets,
+      selectionOffsets: executeSelectionOffsets,
       historyState,
     });
   }

@@ -36,11 +36,12 @@ export async function getNodesFlat(postId, currentUndoHistoryId) {
   historyEntries.forEach(
     ({
       meta: {
-        execute: { historyState, selectionOffsets },
+        historyState, selectionOffsets,
       },
     }) => {
       Object.entries(historyState).forEach(([nodeId, node]) => {
         if (typeof node === 'string') {
+          // should these be filtered and applied second after all update states?
           delete contentNodes[nodeId];
         } else {
           if (node.next_sibling_id && seen.has(node.next_sibling_id)) {

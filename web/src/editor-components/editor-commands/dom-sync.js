@@ -51,7 +51,7 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
   };
   const historyState = documentModel.update(selectedNodeMap);
 
-  return { executeSelectionOffsets, historyState };
+  return { selectionOffsets: executeSelectionOffsets, historyState };
 }
 
 function replaceWordFromSpellcheck(
@@ -81,12 +81,12 @@ function replaceWordFromSpellcheck(
     domWord.length - beforeWord.length
   );
   // place caret at end of new word
-  const executeSelectionOffsets = {
+  const selectionOffsets = {
     startNodeId,
     caretStart: diffStart + domWord.length,
   };
   const historyState = documentModel.update(selectedNodeMap);
-  return { executeSelectionOffsets, historyState };
+  return { selectionOffsets, historyState };
 }
 
 export function syncFromDom(documentModel, selectionOffsets, evt) {
@@ -142,5 +142,5 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   const historyState = documentModel.update(selectedNodeMap);
 
   // return original caretStart for correct setCaret() positioning
-  return { executeSelectionOffsets, historyState };
+  return { selectionOffsets: executeSelectionOffsets, historyState };
 }

@@ -32,11 +32,7 @@ import {
   KEYCODE_TAB,
   KEYCODE_UP_ARROW,
 } from '@filbert/constants';
-import {
-  NODE_TYPE_H1,
-  NODE_TYPE_LI,
-  NODE_TYPE_P,
-} from '@filbert/document';
+import { NODE_TYPE_H1, NODE_TYPE_LI, NODE_TYPE_P } from '@filbert/document';
 import { cleanText } from '@filbert/util';
 
 const DOM_ELEMENT_NODE_TYPE_ID = 1;

@@ -10,7 +10,6 @@ import { HistoryManager, historyStateIsValid } from '@filbert/history';
 import immutable from 'immutable';
 
 const { Map, fromJS, List } = immutable;
-console.info = () => {};
 
 async function main() {
   const knex = await getKnex();
@@ -53,8 +52,7 @@ async function main() {
           seen.add(currentNode.get('id'))
           const historyState = document.update(currentNode);
           historyManager.appendToHistoryLog({
-            executeSelectionOffsets: currentOffsets,
-            unexecuteSelectionOffsets: prevOffsets,
+            selectionOffsets: currentOffsets,
             historyState,
           });
           prevNode = currentNode;
@@ -79,9 +77,9 @@ async function main() {
         ); //, historyManager.getLocalHistoryLog().map(entry => entry.toJS()))
       }
     } else if (postHistoryEntries[0].meta.execute) {
-      // current - nothing to do
+      // almost current - remove 'unexecute' portion
       console.log(
-        `${postId} - current history, ${contentNodes.length} content nodes`
+        `${postId} - *almost* current history, ${contentNodes.length} content nodes`
       );
     } else {
       // old history - just delete it!
