@@ -32,8 +32,9 @@ async function main() {
         // create one history entry per node
         // add all nodes to document model first to pass integrity checks for next_sibling_id
         let nodesById = contentNodes.reduce(
-            (acc, node) => acc.set(node.id, Map(node)),
-            Map());
+          (acc, node) => acc.set(node.id, Map(node)),
+          Map()
+        );
         nodesById = fixOrphanedNodes(nodesById);
 
         const document = DocumentModel(postId, nodesById.toJS());
@@ -49,7 +50,7 @@ async function main() {
         let prevOffsets = {};
         const seen = new Set();
         while (currentNode && !seen.has(currentNode.get('id'))) {
-          seen.add(currentNode.get('id'))
+          seen.add(currentNode.get('id'));
           const historyState = document.update(currentNode);
           historyManager.appendToHistoryLog({
             selectionOffsets: currentOffsets,
@@ -83,10 +84,11 @@ async function main() {
       );
     } else {
       // old history - just delete it!
-      await knex('content_node_history').where({post_id: postId}).del()
+      await knex('content_node_history').where({ post_id: postId }).del();
 
       console.log(
-        `${postId} - old history, ${contentNodes.length} content nodes`, postHistoryEntries.length,
+        `${postId} - old history, ${contentNodes.length} content nodes`,
+        postHistoryEntries.length
       );
     }
   }

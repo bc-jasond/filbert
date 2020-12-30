@@ -12,11 +12,10 @@
     }
 
     if (params.post === NEW_POST_URL_ID) {
-      const placeHolderTitle = getMapWithId({ type: NODE_TYPE_H1 }).toJS();
       return {
         post: { id: NEW_POST_URL_ID },
-        nodesById: { [placeHolderTitle.id]: placeHolderTitle },
-        selectionOffsetsPreload: { startNodeId: placeHolderTitle.id },
+        nodesById: { },
+        selectionOffsetsPreload: { },
       };
     }
 
@@ -251,7 +250,18 @@
     if (isUnsavedPost) {
       console.log('UNSAVED');
       clearInterval(batchSaveIntervalId);
-    } else if (!batchSaveIntervalId) {
+      const historyState = documentModel.insert(NODE_TYPE_H1)
+      const newSectionId = documentModel.getLastInsertId();
+      const selectionOffsets = { startNodeId: newSectionId };
+      historyManager.appendToHistoryLog({
+        selectionOffsets,
+        historyState,
+      });
+      await commitUpdates(selectionOffsets);
+      return;
+    }
+
+    if (!batchSaveIntervalId) {
       console.log('HEY SAVED');
       batchSaveIntervalId = setInterval(batchSave, 3000);
     }

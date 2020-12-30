@@ -2,7 +2,7 @@ import immutable from 'immutable';
 import { getKnex, getNodesFlat } from './mysql.mjs';
 import { getFirstNode } from '@filbert/document';
 
-const {fromJS} = immutable;
+const { fromJS } = immutable;
 
 export function ensureNoOrphanedNodes(contentNodes, postId) {}
 
