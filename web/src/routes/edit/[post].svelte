@@ -1,62 +1,18 @@
 <script context="module">
-  import { getApiClientInstance } from '../../common/api-client';
-  import { isBrowser } from '../../common/utils';
-  import { getMapWithId } from '@filbert/util';
-  import { NEW_POST_URL_ID } from '@filbert/constants';
-  import { NODE_TYPE_H1 } from '@filbert/document';
-
-  export async function preload({ path, params, query }, session) {
+  export async function preload({ params }, session) {
     if (!session.user) {
       this.error(404, 'Not found');
       return;
     }
 
-    if (params.post === NEW_POST_URL_ID) {
-      return {
-        post: { id: NEW_POST_URL_ID },
-        nodesById: { },
-        selectionOffsetsPreload: { },
-      };
-    }
-
-    const {
-      error,
-      data: { post, contentNodes: nodesById, selectionOffsets = {} } = {},
-    } = await getApiClientInstance(this.fetch).get(`/edit/${params.post}`);
-
-    if (error) {
-      this.error(error);
-      return;
-    }
-
     return {
-      post,
-      nodesById,
-      selectionOffsetsPreload: selectionOffsets,
+      postId: params.post,
     };
   }
 </script>
 
 <script>
-  export let post;
-  export let nodesById;
-  export let selectionOffsetsPreload;
-
-  let apiClient;
-
-  // onMount start
-  let caretIsOnEdgeOfParagraphText;
-  let getFirstHeadingContent;
-  let getHighlightedSelectionOffsets;
-  let getImageFileFormData;
-  let getNodeById;
-  let getRange;
-  let isControlKey;
-  let isValidDomSelection;
-  let removeAllRanges;
-  let replaceRange;
-  let setCaret;
-  // onMount end
+  export let postId;
 
   let insertMenuNode = Map();
   let insertMenuTopOffset = 0;
@@ -72,9 +28,8 @@
   let selectionOffsetsManageFormatSelectionMenu;
   let batchSaveIntervalId;
   let shouldSkipKeyUp;
+  let apiClient;
 
-  let postMap = Map();
-  let isUnsavedPost;
   let documentModel;
   let historyManager;
   let nodesByIdMapInternal = Map();
@@ -83,6 +38,25 @@
   import { goto } from '@sapper/app';
   import { tick, onMount, onDestroy } from 'svelte';
 
+  import { getMapWithId } from '@filbert/util';
+  import { NEW_POST_URL_ID } from '@filbert/constants';
+  import { NODE_TYPE_H1 } from '@filbert/document';
+
+  import {
+    caretIsOnEdgeOfParagraphText,
+    getFirstHeadingContent,
+    getHighlightedSelectionOffsets,
+    getImageFileFormData,
+    getNodeById,
+    getRange,
+    isControlKey,
+    isValidDomSelection,
+    removeAllRanges,
+    replaceRange,
+    setCaret,
+  } from '../../common/dom';
+
+  import { getApiClientInstance } from '../../common/api-client';
   import { currentPost } from '../../stores';
 
   import {
@@ -108,7 +82,11 @@
   } from '@filbert/selection';
   import { DocumentModel, getFirstNode } from '@filbert/document';
   import { HistoryManager } from '@filbert/history';
-  import { getCanonicalFromTitle, stopAndPrevent } from '../../common/utils';
+  import {
+    getCanonicalFromTitle,
+    stopAndPrevent,
+    isBrowser,
+  } from '../../common/utils';
   import Document from '../../document-components/Document.svelte';
 
   import { syncFromDom } from '../../editor-components/editor-commands/dom-sync';
@@ -188,46 +166,58 @@
     window.removeEventListener('mouseup', handleMouseUp);
   }
 
-  $: if (post.id !== postMap.get('id')) {
-    reinstantiatePost();
-  }
-  $: if (isBrowser()) {
-    apiClient = getApiClientInstance();
-  }
   $: insertMenuNodeId = insertMenuNode.get('id');
-
-  onMount(async () => {
-    ({
-      caretIsOnEdgeOfParagraphText,
-      getFirstHeadingContent,
-      getHighlightedSelectionOffsets,
-      getImageFileFormData,
-      getNodeById,
-      getRange,
-      isControlKey,
-      isValidDomSelection,
-      removeAllRanges,
-      replaceRange,
-      setCaret,
-    } = await import('../../common/dom'));
-
-    console.log('EDIT onMount()');
-
-    if (isUnsavedPost) {
-      clearInterval(batchSaveIntervalId);
-    } else {
-      batchSaveIntervalId = setInterval(batchSave, 3000);
+  $: apiClient = isBrowser() && getApiClientInstance();
+  $: (async function instantiatePost(postIdInternal) {
+    if (!isBrowser()) {
+      return;
     }
 
-    tick().then(() => {
-      if (documentModel.isMetaType(selectionOffsetsPreload.startNodeId)) {
-        sectionEdit(selectionOffsetsPreload.startNodeId);
-      } else {
-        setCaret(selectionOffsetsPreload);
-        manageInsertMenu();
-      }
-    });
+    if (postIdInternal === NEW_POST_URL_ID) {
+      console.log('UNSAVED Placeholder Post');
+      clearInterval(batchSaveIntervalId);
+      $currentPost = Map();
+      documentModel = DocumentModel(postIdInternal, Map());
+      historyManager = HistoryManager(postIdInternal, apiClient);
+      const historyState = documentModel.insert(NODE_TYPE_H1);
+      const newSectionId = documentModel.getLastInsertId();
+      const selectionOffsets = { startNodeId: newSectionId, caretStart: 0 };
+      historyManager.appendToHistoryLog({
+        selectionOffsets,
+        historyState,
+      });
+      // Sapper calls document.activeElement.blur() on navigation for some reason...
+      tick().then(() => {
+        commitUpdates(selectionOffsets)
+      });
+      return;
+    }
 
+    if (parseInt(postIdInternal) === $currentPost.get('id')) {
+      return;
+    }
+
+    const {
+      error,
+      data: { post, contentNodes, selectionOffsets = {} } = {},
+    } = await apiClient.get(`/edit/${postIdInternal}`);
+
+    if (error) {
+      console.error('Error Loading Post id: ', postIdInternal);
+      return;
+    }
+
+    console.info('RE-INSTANTIATE POST', post);
+    $currentPost = fromJS(post);
+    documentModel = DocumentModel(post.id, contentNodes);
+    historyManager = HistoryManager(post.id, apiClient);
+    nodesByIdMapInternal = documentModel.getNodes();
+    clearInterval(batchSaveIntervalId);
+    batchSaveIntervalId = setInterval(batchSave, 3000);
+    await commitUpdates(selectionOffsets);
+  })(postId);
+
+  onMount(() => {
     registerTopLevelEventHandlers();
   });
 
@@ -235,46 +225,6 @@
     deregisterTopLevelEventHandlers();
     clearInterval(batchSaveIntervalId);
   });
-
-  async function reinstantiatePost() {
-    if (!isBrowser()) {
-      return;
-    }
-    postMap = fromJS(post);
-    $currentPost = postMap;
-    isUnsavedPost = postMap.get('id') === NEW_POST_URL_ID;
-    console.info('RE-INSTANTIATE POST', postMap, post);
-    documentModel = DocumentModel(post.id, nodesById);
-    historyManager = HistoryManager(post.id, apiClient);
-    nodesByIdMapInternal = documentModel.getNodes();
-    if (isUnsavedPost) {
-      console.log('UNSAVED');
-      clearInterval(batchSaveIntervalId);
-      const historyState = documentModel.insert(NODE_TYPE_H1)
-      const newSectionId = documentModel.getLastInsertId();
-      const selectionOffsets = { startNodeId: newSectionId };
-      historyManager.appendToHistoryLog({
-        selectionOffsets,
-        historyState,
-      });
-      await commitUpdates(selectionOffsets);
-      return;
-    }
-
-    if (!batchSaveIntervalId) {
-      console.log('HEY SAVED');
-      batchSaveIntervalId = setInterval(batchSave, 3000);
-    }
-    await tick();
-    if (!setCaret) {
-      return;
-    }
-    if (documentModel.isMetaType(selectionOffsetsPreload.startNodeId)) {
-      sectionEdit(selectionOffsetsPreload.startNodeId);
-    } else {
-      setCaret(selectionOffsetsPreload);
-    }
-  }
 
   async function createNewPost() {
     const title = getFirstHeadingContent();
@@ -312,9 +262,8 @@
   async function batchSave() {
     const { updatedPost } = await historyManager.saveAndClearLocalHistoryLog();
     if (updatedPost) {
-      // trigger reactivity defined in onMount()
       // the last cursor position and current history position are among things that could have changed
-      post = updatedPost;
+      $currentPost = updatedPost;
     }
   }
 
@@ -469,9 +418,6 @@
         setEditSectionNode: (value) => {
           editSectionNode = value;
         },
-        setPost: (value) => {
-          postMap = value;
-        },
       }
     );
 
@@ -490,7 +436,7 @@
     // special case for creating a new document on "Enter"
     if (
       evt.keyCode === KEYCODE_ENTER &&
-      (!postMap.get('id') || postMap.get('id') === NEW_POST_URL_ID)
+      (!$currentPost.get('id') || $currentPost.get('id') === NEW_POST_URL_ID)
     ) {
       await createNewPost();
     }
@@ -568,7 +514,7 @@
     if (sectionType === NODE_TYPE_IMAGE) {
       // TODO: add a loading indicator while uploading
       const { error, data: imageMeta } = await apiClient.uploadImage(
-        getImageFileFormData(firstFile, postMap)
+        getImageFileFormData(firstFile, $currentPost)
       );
       if (error) {
         console.error('Image Upload Error: ', error);
@@ -825,7 +771,6 @@
 {#if editSectionNode.get('type') === NODE_TYPE_IMAGE && shouldShowEditSectionMenu}
   <EditImageMenu
     offsetTop="{editSectionMetaFormTopOffset}"
-    {postMap}
     nodeModel="{editSectionNode}"
     update="{updateEditSectionNode}"
     closeMenu="{() => {

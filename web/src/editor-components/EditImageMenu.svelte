@@ -4,7 +4,6 @@
   export let nodeModel;
   export let shouldHideCaption = false;
   export let update;
-  export let postMap;
   export let closeMenu;
 
   import { beforeUpdate, onMount } from 'svelte';
@@ -27,6 +26,7 @@
     focusAndScrollSmooth,
   } from '../common/dom';
   import { stopAndPrevent } from '../common/utils';
+  import {currentPost } from "../stores";
 
   import IconButton from '../form-components/IconButton.svelte';
   import Cursor from '../form-components/Cursor.svelte';
@@ -217,7 +217,7 @@
     }
     // TODO: add a loading indicator while uploading
     const { error, data: imageMeta } = await getApiClientInstance().uploadImage(
-      getImageFileFormData(firstFile, postMap)
+      getImageFileFormData(firstFile, $currentPost)
     );
     if (error) {
       console.error('Image Upload Error: ', error);

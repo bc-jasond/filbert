@@ -19,7 +19,7 @@ async function historyDiff(postId, leftHistoryId, rightHistoryId, trxArg) {
 
     let diff = Map();
     // visit each node from the earlier (left) document snapshot
-    // if it's not present or different in the later (right) document snapshot, add to diff state
+    // if it's not present or different in the later (right) document snapshot, add the whole node to diff state
     nodesLeft.forEach((left, leftNodeId) => {
       const right = nodesRight.get(leftNodeId, Map());
       if (!right.size || !right.equals(left)) {
@@ -195,7 +195,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
 
     return {
       selectionOffsets,
-      nodeUpdatesById: contentNodes,
+      nodesById: contentNodes,
       updatedPost: currentPost,
     };
   });
