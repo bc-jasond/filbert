@@ -42,8 +42,11 @@ import {
 } from './routes/draft.mjs';
 import { uploadImage } from './routes/image.mjs';
 import { getPostForEdit } from './routes/edit.mjs';
-import { postContentNodes } from './routes/content-nodes.mjs';
-import { undo, redo } from './routes/content-node-history.mjs';
+import {
+  postHistoryLogEntries,
+  undo,
+  redo,
+} from './routes/content-node-history.mjs';
 import { duplicatePost } from './routes/duplicate.mjs';
 
 const MysqlStore = mysqlSession(session);
@@ -100,13 +103,13 @@ async function main() {
       })
     );
 
-    app.use((req, res, next) => {
-      const setCookieValue = res.get('Set-Cookie')
-        ? `\nres.get('Set-Cookie') ${res.get('Set-Cookie')}`
-        : '';
-      log('API', req.session.id, req.session, setCookieValue);
-      next();
-    });
+    // app.use((req, res, next) => {
+    //   const setCookieValue = res.get('Set-Cookie')
+    //     ? `\nres.get('Set-Cookie') ${res.get('Set-Cookie')}`
+    //     : '';
+    //   log('API', req.session.id, req.session, setCookieValue);
+    //   next();
+    // });
 
     /**
      * PUBLIC routes - be careful...
@@ -131,7 +134,7 @@ async function main() {
     app.get('/draft', getDrafts);
 
     // the following routes need to assert user has permission to CRUD post
-    app.post('/content/:postId', [assertUserHasPost, postContentNodes]);
+    app.post('/content/:postId', [assertUserHasPost, postHistoryLogEntries]);
     app.patch('/post/:postId', [assertUserHasPost, patchPost]);
     app.delete('/post/:postId', [assertUserHasPost, deletePublishedPost]);
     app.get('/manage/:postId', [assertUserHasPost, getPostById]);

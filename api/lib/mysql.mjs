@@ -17,9 +17,9 @@ export async function getKnex() {
   return knexConnection;
 }
 
-export async function getNodesFlat(postId, currentUndoHistoryId) {
+export async function getNodesFlat(postId, currentUndoHistoryId, trx) {
   // TODO: naive approach - get every history entry and build document from the beginning up to currentUndoHistoryId
-  const knex = await getKnex();
+  const knex = trx || (await getKnex());
   const builder = knex('content_node_history')
     // if not in an undo/redo state, get most recent history
     .where({ post_id: postId, deleted: null })
@@ -33,28 +33,24 @@ export async function getNodesFlat(postId, currentUndoHistoryId) {
   const contentNodes = {};
   const seen = new Set();
   let executeSelectionOffsets = {};
-  historyEntries.forEach(
-    ({
-      meta: {
-        historyState, selectionOffsets,
-      },
-    }) => {
-      Object.entries(historyState).forEach(([nodeId, node]) => {
-        if (typeof node === 'string') {
-          // should these be filtered and applied second after all update states?
-          delete contentNodes[nodeId];
-        } else {
-          if (node.next_sibling_id && seen.has(node.next_sibling_id)) {
-            console.warn('getNodesFlat - cycle detected, unsetting next_sibling_id', node)
-            node.next_sibling_id = null;
-          }
-          seen.add(node.next_sibling_id);
-          contentNodes[nodeId] = node;
+  historyEntries.forEach(({ meta: { historyState, selectionOffsets } }) => {
+    Object.entries(historyState).forEach(([nodeId, node]) => {
+      if (typeof node === 'string') {
+        // should these be filtered and applied second after all update states?
+        delete contentNodes[nodeId];
+      } else {
+        if (node.next_sibling_id && seen.has(node.next_sibling_id)) {
+          console.warn(
+            'getNodesFlat - cycle detected',
+            node
+          );
         }
-      });
-      executeSelectionOffsets = selectionOffsets;
-    }
-  );
+        seen.add(node.next_sibling_id);
+        contentNodes[nodeId] = node;
+      }
+    });
+    executeSelectionOffsets = selectionOffsets;
+  });
   return { contentNodes, selectionOffsets: executeSelectionOffsets };
 }
 

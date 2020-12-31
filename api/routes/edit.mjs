@@ -5,7 +5,7 @@ import { getNodesFlat } from '../lib/mysql.mjs';
 export async function getPostForEdit(req, res) {
   const { currentPost } = req;
   const {
-    meta: { currentUndoHistoryId, lastActionWasUndo },
+    meta: { currentUndoHistoryId },
     id,
   } = currentPost;
   // can't edit a deleted post!
@@ -23,8 +23,5 @@ export async function getPostForEdit(req, res) {
     post: { ...currentPost, canEdit: true },
     contentNodes,
     selectionOffsets,
-    // currentUndoHistoryId !== -1 && lastActionWasUndo
-    //   ? unexecuteSelectionOffsets
-    //   : executeSelectionOffsets,
   });
 }

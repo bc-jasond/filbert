@@ -1,6 +1,7 @@
 import { Map } from 'immutable';
 import { KEYCODE_Z } from '@filbert/constants';
 import { stopAndPrevent } from '../../common/utils';
+import { currentPost } from "../../stores";
 
 export function isRedoEvent(evt) {
   return (
@@ -15,7 +16,6 @@ export async function handleRedo({
   commitUpdates,
   editSectionNode,
   setEditSectionNode,
-  setPost,
 }) {
   if (!isRedoEvent(evt)) {
     return false;
@@ -23,20 +23,20 @@ export async function handleRedo({
 
   stopAndPrevent(evt);
 
-  const redoResult = await historyManager.redo(documentModel.getNodes(), false);
+  const redoResult = await historyManager.redo(false);
   // already at end of history?
-  const updatedNodesById = redoResult.get('nodesById', Map());
+  const nodesById = redoResult.get('nodesById', Map());
   const historyOffsets = redoResult.get('selectionOffsets', Map());
   const updatedPost = redoResult.get('updatedPost', Map());
-  if (updatedNodesById.size === 0) {
+  if (nodesById.size === 0) {
     return true;
   }
 
   console.info('REDO!', redoResult.toJS());
-  documentModel.setNodes(updatedNodesById);
+  documentModel.setNodes(nodesById);
   // Right now, nothing depends on changes to the "post" object but, seems like bad form to
   // not update it given the meta data will have changed (currentUndoHistoryId)
-  setPost(updatedPost);
+  currentPost.set(updatedPost);
   if (editSectionNode) {
     // update this or undo/redo changes won't be reflected in the open menus while editing meta sections!
     setEditSectionNode(documentModel.getNode(editSectionNode.get('id')));

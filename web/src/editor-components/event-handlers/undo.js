@@ -1,6 +1,7 @@
 import { Map } from 'immutable';
 import { KEYCODE_Z } from '@filbert/constants';
 import { stopAndPrevent } from '../../common/utils';
+import { currentPost } from "../../stores";
 
 export function isUndoEvent(evt) {
   return evt.keyCode === KEYCODE_Z && (evt.metaKey || evt.ctrlKey);
@@ -19,7 +20,6 @@ export async function handleUndo({
   commitUpdates,
   editSectionNode,
   setEditSectionNode,
-  setPost,
 }) {
   if (!isUndoEvent(evt)) {
     return false;
@@ -27,20 +27,20 @@ export async function handleUndo({
 
   stopAndPrevent(evt);
 
-  const undoResult = await historyManager.undo(documentModel.getNodes());
+  const undoResult = await historyManager.undo();
   // already at beginning of history? or error?
-  const updatedNodesById = undoResult.get('nodesById', Map());
+  const nodesById = undoResult.get('nodesById', Map());
   const historyOffsets = undoResult.get('selectionOffsets', Map());
   const updatedPost = undoResult.get('updatedPost', Map());
-  if (updatedNodesById.size === 0) {
+  if (nodesById.size === 0) {
     return true;
   }
 
   console.info('UNDO!', undoResult.toJS());
-  documentModel.setNodes(updatedNodesById);
+  documentModel.setNodes(nodesById);
   // Right now, nothing depends on changes to the "post" object but, seems like bad form to
   // not update it given the meta data will have changed (currentUndoHistoryId)
-  setPost(updatedPost);
+  currentPost.set(updatedPost);
   if (editSectionNode) {
     // update this or undo/redo changes won't be reflected in the open menus while editing meta sections!
     setEditSectionNode(documentModel.getNode(editSectionNode.get('id')));

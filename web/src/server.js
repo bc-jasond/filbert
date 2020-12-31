@@ -80,13 +80,13 @@ polka() // You can also use Express
     },
     sapper.middleware({
       session: (req, res) => {
-        log(
-          'SAPPER server middleware',
-          req.session.id,
-          `TTL in seconds: ${Math.floor(req.session.cookie.maxAge / 1000)}`,
-          req.session,
-          req.headers.cookie
-        );
+        // log(
+        //   'SAPPER server middleware',
+        //   req.session.id,
+        //   `TTL in seconds: ${Math.floor(req.session.cookie.maxAge / 1000)}`,
+        //   req.session,
+        //   req.headers.cookie
+        // );
         // devalue doesn't like Session(), so stripping it before serialization
         return JSON.parse(JSON.stringify(req.session || {}));
       },
