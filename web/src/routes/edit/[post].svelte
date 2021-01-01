@@ -246,15 +246,8 @@
       return;
     }
     console.info('CREATE NEW POST');
-    // copy placeholder history
-    const pendingHistory = historyManager.getLocalHistoryLog();
-    // re-instantiate HistoryManager with pendingHistory for saveAndClearLocalHistoryLog()
-    // will save current document state from history
-    await HistoryManager(
-      postId,
-      apiClient,
-      pendingHistory
-    ).saveAndClearLocalHistoryLog();
+    // will save current document state from history with the newly created postId
+    await historyManager.saveAndClearLocalHistoryLog(postId);
     // huh, aren't we on /edit? - this is for going from /edit/new -> /edit/123...
     await goto(`/edit/${postId}`, { replaceState: true });
   }

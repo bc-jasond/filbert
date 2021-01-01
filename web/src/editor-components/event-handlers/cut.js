@@ -12,8 +12,7 @@ export function isCutEvent(evt) {
 }
 
 let cutHistoryState = [];
-let unexecuteSelectionOffsets;
-let executeSelectionOffsetsInternal;
+let selectionOffsetsInternal;
 
 export async function handleCut({
   evt,
@@ -32,14 +31,12 @@ export async function handleCut({
   // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
   // we'll come back through from "cut" with clipboard data...
   if (evt.type !== 'cut') {
-    // save these to pass to commitUpdates for undo history
-    unexecuteSelectionOffsets = selectionOffsets;
     if (caretStart !== caretEnd) {
-      const { historyState, selectionOffsets } = doDelete(
+      const { historyState, selectionOffsets: executeSelectionOffsets } = doDelete(
         documentModel,
         selectionOffsets
       );
-      executeSelectionOffsetsInternal = executeSelectionOffsets;
+      selectionOffsetsInternal = executeSelectionOffsets;
       cutHistoryState.push(...historyState);
     }
     return true;
@@ -50,7 +47,7 @@ export async function handleCut({
   evt.clipboardData.setData('text/plain', selectionString);
 
   historyManager.appendToHistoryLog({
-    selectionOffsets: executeSelectionOffsetsInternal,
+    selectionOffsets: selectionOffsetsInternal,
     historyState: cutHistoryState,
   });
   // NOTE: if we stopPropagation and preventDefault on the 'keydown' event, they'll cancel the 'cut' event too
@@ -60,6 +57,6 @@ export async function handleCut({
 
   // for commitUpdates() -> setCaret()
   await closeAllEditContentMenus();
-  await commitUpdates(executeSelectionOffsetsInternal);
+  await commitUpdates(selectionOffsetsInternal);
   return true;
 }
