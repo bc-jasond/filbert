@@ -532,20 +532,8 @@ export function getImageFileFormData(file, post) {
   return formData;
 }
 
-export function selectionOffsetsAreEqual(left = {}, right = {}) {
-  let areEqual = true;
-  if (Object.keys(left).length === 0 || Object.keys(right).length === 0) {
-    return false;
-  }
-  const shorter =
-    Object.keys(left).length > Object.keys(right).length ? right : left;
-  const other = left === shorter ? right : left;
-  Object.entries(shorter).forEach(([key, value]) => {
-    if (other[key] !== value) {
-      areEqual = false;
-    }
-  });
-  return areEqual;
+export function isCollapsed({ caretStart, caretEnd, endNodeId }) {
+  return !endNodeId && (!caretEnd || caretStart === caretEnd);
 }
 
 export function isValidDomSelection({ startNodeId }) {

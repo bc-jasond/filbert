@@ -1,12 +1,16 @@
 import { KEYCODE_V } from '@filbert/constants';
-import { getHighlightedSelectionOffsets } from '../../common/dom';
+import { getHighlightedSelectionOffsets, isCollapsed } from '../../common/dom';
 import { stopAndPrevent } from '../../common/utils';
-import { doDelete } from '../editor-commands/delete';
+import {
+  doDeleteMultiNode,
+  doDeleteSingleNode,
+} from '../editor-commands/delete';
 import { doPaste } from '../editor-commands/paste';
 
-let unexecuteSelectionOffsets;
 // for a highlight-and-paste, this stores both the delete and paste history into one atomic unit
 let pasteHistoryState = [];
+// update caret offsets after delete, use those for paste
+let selectionOffsetsDelete;
 
 // handle both the "paste" event and keyboard shortcut
 export function isPasteEvent(evt) {
@@ -22,7 +26,6 @@ export async function handlePaste({
   documentModel,
   historyManager,
   commitUpdates,
-  closeAllEditContentMenus,
 }) {
   // NOTE: this handler needs to pass through twice on a "paste" event
   // 1st: on "keydown" - this is to handle deleting selected text TODO: why? let the keydown noop
@@ -33,14 +36,31 @@ export async function handlePaste({
 
   const selectionOffsets =
     selectionOffsetsArg || getHighlightedSelectionOffsets();
+  selectionOffsetsDelete = selectionOffsets;
+  const { endNodeId } = selectionOffsets;
+  const caretIsCollapsed = isCollapsed(selectionOffsets);
   // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
   // we'll come back through from "paste" with clipboard data...
   if (evt.type !== 'paste') {
-    // for undo (unexecute) history - need to store the "first" selections, aka before the delete operation
-    unexecuteSelectionOffsets = selectionOffsets;
-    if (selectionOffsets.caretStart !== selectionOffsets.caretEnd) {
-      const { historyState } = doDelete(documentModel, selectionOffsets);
+    if (!caretIsCollapsed) {
+      let historyState;
+      if (endNodeId) {
+        ({
+          historyState,
+          selectionOffsets: selectionOffsetsDelete,
+        } = doDeleteMultiNode(documentModel, historyManager, selectionOffsets));
+      } else {
+        ({
+          historyState,
+          selectionOffsets: selectionOffsetsDelete,
+        } = doDeleteSingleNode(
+          documentModel,
+          historyManager,
+          selectionOffsets
+        ));
+      }
       pasteHistoryState.push(...historyState);
+      await commitUpdates(selectionOffsetsDelete);
     }
     return true;
   }
@@ -49,7 +69,7 @@ export async function handlePaste({
 
   const { selectionOffsets: executeSelectionOffsets, historyState } = doPaste(
     documentModel,
-    selectionOffsets,
+    selectionOffsetsDelete,
     evt.clipboardData
   );
   pasteHistoryState.push(...historyState);
@@ -66,7 +86,6 @@ export async function handlePaste({
 
   pasteHistoryState = [];
   // for commitUpdates() -> setCaret()
-  //await closeAllEditContentMenus();
   await commitUpdates(executeSelectionOffsets);
   return true;
 }

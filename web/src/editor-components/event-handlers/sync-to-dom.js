@@ -1,6 +1,9 @@
 import { stopAndPrevent } from '../../common/utils';
-import { isControlKey } from '../../common/dom';
-import { doDelete } from '../editor-commands/delete';
+import { isCollapsed, isControlKey } from '../../common/dom';
+import {
+  doDeleteMultiNode,
+  doDeleteSingleNode,
+} from '../editor-commands/delete';
 import { syncToDom } from '../editor-commands/dom-sync';
 
 export async function handleSyncToDom({
@@ -16,14 +19,7 @@ export async function handleSyncToDom({
     // stopped by another handler like Backspace or Enter
     evt.defaultPrevented ||
     // contentEditable is not the srcTarget
-    evt.target.id !== 'filbert-edit-container' //||
-    // These should be handled by the consumer...
-    // // ignore "paste" - propagation hasn't been stopped because it would cancel the respective "paste", "cut" events
-    // pasteHistoryState ||
-    // // ignore "cut"
-    // cutHistoryState ||
-    // // invalid selection
-    // !isValidDomSelection(selectionOffsets)
+    evt.target.id !== 'filbert-edit-container'
   ) {
     return false;
   }
@@ -31,11 +27,23 @@ export async function handleSyncToDom({
 
   const historyState = [];
   // select-and-type ?? delete selection first
-  if (selectionOffsets.caretStart !== selectionOffsets.caretEnd) {
-    const { historyState: historyStateDelete } = doDelete(
-      documentModel,
-      selectionOffsets
-    );
+  const { endNodeId } = selectionOffsets;
+  const caretIsCollapsed = isCollapsed(selectionOffsets);
+  if (!caretIsCollapsed) {
+    let historyStateDelete;
+    if (endNodeId) {
+      ({ historyStateDelete } = doDeleteMultiNode(
+        documentModel,
+        historyManager,
+        selectionOffsets
+      ));
+    } else {
+      ({ historyStateDelete } = doDeleteSingleNode(
+        documentModel,
+        historyManager,
+        selectionOffsets
+      ));
+    }
     historyState.push(...historyStateDelete);
   }
   // sync keystroke to DOM
@@ -54,7 +62,6 @@ export async function handleSyncToDom({
     });
   } else {
     // we did more than a simple content update to one node, save an entry
-    historyManager.flushPendingHistoryLogEntry();
     historyManager.appendToHistoryLog({
       selectionOffsets: executeSelectionOffsets,
       historyState,

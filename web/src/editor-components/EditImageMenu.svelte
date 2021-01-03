@@ -26,7 +26,7 @@
     focusAndScrollSmooth,
   } from '../common/dom';
   import { stopAndPrevent } from '../common/utils';
-  import {currentPost } from "../stores";
+  import { currentPost } from '../stores';
 
   import IconButton from '../form-components/IconButton.svelte';
   import Cursor from '../form-components/Cursor.svelte';
