@@ -188,7 +188,7 @@
       });
       // Sapper calls document.activeElement.blur() on navigation for some reason...
       tick().then(() => {
-        commitUpdates(selectionOffsets)
+        commitUpdates(selectionOffsets);
       });
       return;
     }
@@ -471,6 +471,9 @@
         documentModel,
         historyManager,
         commitUpdates,
+        setEditSectionNode: (value) => {
+          editSectionNode = value;
+        },
       });
       return;
     }
@@ -620,7 +623,13 @@
   // TODO: show/hide logic for this menu is split up and difficult to understand.
   //  It should be split up based on type of event instead of trying to overload the handlers with too much logic
   async function manageFormatSelectionMenu(evt, selectionOffsets) {
+    // allow user to hold shift and use arrow keys to adjust selection range
     if (evt.shiftKey) {
+      return;
+    }
+    // FormatSelectionMenu has event handlers that interfere with cut / paste
+    if (isCutEvent(evt) || isPasteEvent(evt)) {
+      closeFormatSelectionMenu();
       return;
     }
     const { caretStart, caretEnd, startNodeId, endNodeId } = selectionOffsets;
@@ -645,17 +654,13 @@
         '// TODO: format selection across nodes: ',
         selectionOffsets
       );
+      // NOTE: unset this selectionOffsets cache - another issue is you can't select across multiple nodes for cut/paste - this value will setCaret() to a stale value
+      selectionOffsetsManageFormatSelectionMenu = undefined;
       closeFormatSelectionMenu();
       return;
     }
 
-    // allow user to hold shift and use arrow keys to adjust selection range
-    if (
-      !evt.shiftKey &&
-      !(evt.metaKey && [KEYCODE_X, KEYCODE_V].includes(evt.keyCode))
-    ) {
-      stopAndPrevent(evt);
-    }
+    stopAndPrevent(evt);
 
     const range = getRange();
     const rect = range.getBoundingClientRect();

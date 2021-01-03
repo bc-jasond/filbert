@@ -1,7 +1,7 @@
 import { Map } from 'immutable';
 import { KEYCODE_Z } from '@filbert/constants';
 import { stopAndPrevent } from '../../common/utils';
-import { currentPost } from "../../stores";
+import { currentPost } from '../../stores';
 
 export function isRedoEvent(evt) {
   return (
