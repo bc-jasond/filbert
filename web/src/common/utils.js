@@ -70,16 +70,6 @@ export function getCanonicalFromTitle(title) {
   return canonical.replace(/-+/g, '-');
 }
 
-export function deleteContentRange(content, startIdx, length) {
-  if (length === 0 && startIdx > 0) {
-    // delete the char behind the caret - assumes "Backspace"
-    // TODO: handle "Del"
-    return `${content.slice(0, startIdx - 1)}${content.slice(startIdx)}`;
-  }
-  // delete all highlighted chars in front of the caret
-  return `${content.slice(0, startIdx)}${content.slice(startIdx + length)}`;
-}
-
 export function stopAndPrevent(evt) {
   if (evt && evt.stopPropagation && evt.preventDefault) {
     evt.stopPropagation();
