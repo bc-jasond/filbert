@@ -147,6 +147,8 @@
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('resize', manageInsertMenu);
     window.addEventListener('keyup', handleKeyUp);
+    // TODO: use beforeinput even when Firefox enables it by default
+    //window.addEventListener('beforeinput', handleBeforeInput);
     window.addEventListener('input', handleInput);
     window.addEventListener('paste', handlePasteWrapper);
     window.addEventListener('cut', handleCutWrapper);
@@ -160,6 +162,7 @@
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('resize', manageInsertMenu);
     window.removeEventListener('keyup', handleKeyUp);
+    //window.removeEventListener('beforeinput', handleBeforeInput);
     window.removeEventListener('input', handleInput);
     window.removeEventListener('paste', handlePasteWrapper);
     window.removeEventListener('cut', handleCutWrapper);
@@ -315,7 +318,7 @@
     } else {
       replaceRange(selectionOffsets);
     }
-    //manageInsertMenu({}, selectionOffsets);
+    await manageInsertMenu({}, selectionOffsets);
     await manageFormatSelectionMenu({}, selectionOffsets);
   }
 
@@ -447,6 +450,8 @@
     await manageFormatSelectionMenu(evt, selectionOffsets);
   }
 
+  //async function handleBeforeInput(evt) {}
+
   async function handleInput(evt) {
     // any control keys being held down?
     if (evt.metaKey) {
@@ -461,23 +466,9 @@
     if (!selectionOffsets.startNodeId) {
       return;
     }
-    // hitting backspace with a Selection is an input event but, not when the caret is collapsed?
-    if (evt.inputType === 'deleteContentBackward') {
-      console.debug('INPUT (Backspace with Selection)', evt);
-      await handleBackspace({
-        evt,
-        // selectionOffsets will be collapsed here, use the last saved offsets during manageFormatSelectionMenu()
-        selectionOffsets: selectionOffsetsManageFormatSelectionMenu,
-        documentModel,
-        historyManager,
-        commitUpdates,
-        setEditSectionNode: (value) => {
-          editSectionNode = value;
-        },
-      });
-      return;
-    }
+
     console.debug('INPUT (aka: sync back from DOM)', evt);
+    // TODO: this can go away with the beforeinput event - it can use syncToDom() like normal typing
     // for emoji keyboard insert & spellcheck correct
     const {
       selectionOffsets: executeSelectionOffsets,

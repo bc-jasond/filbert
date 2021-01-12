@@ -118,6 +118,7 @@
     // only allow 'enter' and 'esc' through to close the menu and 'left' and 'right' to toggle through
     // menu items
     if (
+      selectionModel.get(SELECTION_ACTION_LINK) &&
       [
         KEYCODE_ENTER,
         KEYCODE_ESC,
