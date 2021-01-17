@@ -15,7 +15,6 @@ export function doFormatSelection(
   documentModel,
   nodeArg,
   selection,
-  selectionIdx,
   action
 ) {
   const previousActionValue = selection.get(action);
@@ -43,7 +42,7 @@ export function doFormatSelection(
   if (!node.equals(nodeArg)) {
     return {
       historyState: documentModel.update(node),
-      updatedSelection: Selection(),
+      updatedSelection: new Selection(),
     };
   }
 
@@ -75,7 +74,6 @@ export function doFormatSelection(
   const updatedNode = replaceSelection(
     node,
     updatedSelectionModel,
-    selectionIdx
   );
 
   return {

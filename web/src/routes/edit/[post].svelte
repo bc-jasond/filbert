@@ -21,8 +21,7 @@
   let shouldShowEditSectionMenu = false;
   let editSectionMetaFormTopOffset = 0;
   let formatSelectionNode = Map();
-  let formatSelectionModel = Selection();
-  let formatSelectionModelIdx = -1;
+  let formatSelectionModel = new Selection();
   let formatSelectionMenuTopOffset = 0;
   let formatSelectionMenuLeftOffset = 0;
   let selectionOffsetsManageFormatSelectionMenu;
@@ -76,6 +75,7 @@
     NODE_TYPE_SPACER,
   } from '@filbert/document';
   import {
+    getSelections,
     Selection,
     SELECTION_ACTION_LINK,
     SELECTION_LINK_URL,
@@ -546,8 +546,7 @@
     insertMenuNode = Map();
     // format selection menu
     formatSelectionNode = Map();
-    formatSelectionModel = Selection();
-    formatSelectionModelIdx = -1;
+    formatSelectionModel = new Selection();
     // hide edit section menu by default
     editSectionNode = section;
     shouldShowEditSectionMenu = section.get('type') !== NODE_TYPE_SPACER;
@@ -580,8 +579,7 @@
   function closeFormatSelectionMenu() {
     shouldSkipKeyUp = true;
     formatSelectionNode = Map();
-    formatSelectionModel = Selection();
-    formatSelectionModelIdx = -1;
+    formatSelectionModel = new Selection();
     formatSelectionMenuTopOffset = 0;
     formatSelectionMenuLeftOffset = 0;
     if (selectionOffsetsManageFormatSelectionMenu) {
@@ -597,7 +595,6 @@
     const updatedNode = replaceSelection(
       formatSelectionNode,
       updatedSelectionModel,
-      formatSelectionModelIdx
     );
     formatSelectionNode = updatedNode;
     formatSelectionModel = updatedSelectionModel;
@@ -659,7 +656,7 @@
     // save range offsets because if the selection is marked as a "link" the url input will be focused
     // and the range will be lost
     selectionOffsetsManageFormatSelectionMenu = selectionOffsets;
-    const { selections, idx } = getSelectionByContentOffset(
+    const { updatedNodeModel, id } = getSelectionByContentOffset(
       selectedNodeModel,
       caretStart,
       caretEnd
@@ -670,18 +667,14 @@
       caretStart,
       caretEnd,
       endNodeId,
-      selections.toJS(),
-      idx,
+      getSelections(updatedNodeModel).toJS(),
+      id,
       range,
       range.getBoundingClientRect()
     );
 
-    formatSelectionNode = selectedNodeModel.setIn(
-      ['meta', 'selections'],
-      selections
-    );
-    formatSelectionModel = getSelectionAtIdx(selections, idx);
-    formatSelectionModelIdx = idx;
+    formatSelectionNode = updatedNodeModel;
+    formatSelectionModel = getSelections(updatedNodeModel).get(id);
     // NOTE: need to add current vertical scroll position of the window to the
     // rect position to get offset relative to the whole document
     formatSelectionMenuTopOffset = rect.top + window.scrollY;
@@ -693,7 +686,6 @@
       documentModel,
       formatSelectionNode,
       formatSelectionModel,
-      formatSelectionModelIdx,
       action
     );
     // formatting doesn't change the SelectionOffsets
@@ -716,7 +708,7 @@
     // note: this selection index shouldn't have changed.
     formatSelectionModel = getSelectionAtIdx(
       selections,
-      formatSelectionModelIdx
+      formatSelectionModelId
     );
     if (updatedSelection.get(SELECTION_ACTION_LINK)) {
       return;

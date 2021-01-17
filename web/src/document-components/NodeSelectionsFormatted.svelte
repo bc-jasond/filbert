@@ -3,23 +3,23 @@
 
   import he from 'he';
   import {
-    SELECTION_ACTION_BOLD,
-    SELECTION_ACTION_CODE,
-    SELECTION_ACTION_ITALIC,
-    SELECTION_ACTION_LINK,
-    SELECTION_LINK_URL,
-    SELECTION_ACTION_MINI,
-    SELECTION_ACTION_SITEINFO,
-    SELECTION_ACTION_STRIKETHROUGH,
-    SELECTION_NEXT,
-    Selection,
-    getContentBySelections,
-    getSelectionAtIdx,
+      SELECTION_ACTION_BOLD,
+      SELECTION_ACTION_CODE,
+      SELECTION_ACTION_ITALIC,
+      SELECTION_ACTION_LINK,
+      SELECTION_LINK_URL,
+      SELECTION_ACTION_MINI,
+      SELECTION_ACTION_SITEINFO,
+      SELECTION_ACTION_STRIKETHROUGH,
+      SELECTION_NEXT,
+      Selection,
+      getContentBySelections,
+      getSelectionAtIdx, getSelections,
   } from '@filbert/selection';
 
   import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 
-  $: selectionHead = node.getIn(['meta', 'selections'], Selection());
+  $: selectionHead = getSelections(node);
   $: contentPiecesBySelectionLength = getContentBySelections(node);
   $: contentAndSelections = contentPiecesBySelectionLength.map((text, idx) => ({
     text,
