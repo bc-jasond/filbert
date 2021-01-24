@@ -1,0 +1,16 @@
+{
+  "name": "@filbert/linked-list",
+  "version": "1.0.0",
+  "description": "shared JS packages for API, web, et al.",
+  "type": "module",
+  "main": "linked-list.mjs",
+  "license": "MIT",
+  "scripts": {
+    "jest": "NODE_OPTIONS=--experimental-vm-modules jest --collectCoverage=false",
+    "jestcov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
+  },
+  "dependencies": {
+    "immutable": "^4.0.0-rc.12",
+    "jest": "^26.6.3"
+  }
+}
