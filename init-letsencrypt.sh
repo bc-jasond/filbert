@@ -11,6 +11,7 @@ rsa_key_size=4096
 data_path="./data/certbot"
 # NOTE: cert files will be stored in a directory named by the first string in the $domains{@} array
 # NOTE: $container_path is the directory referenced in nginx.conf
+# NOTE: /etc/letsencrypt is a symlink to ${data_path}/conf - destroy and recreate here?
 container_path="/etc/letsencrypt/live/${domains[0]}"
 email="jason@dubaniewi.cz" # Adding a valid address is strongly recommended
 staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits

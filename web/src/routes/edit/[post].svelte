@@ -112,7 +112,6 @@
   } from '../../editor-components/event-handlers/redo';
 
   import {
-    getSelectionAtIdx,
     getSelectionByContentOffset,
     replaceSelection,
   } from '@filbert/selection';
@@ -594,7 +593,7 @@
     );
     const updatedNode = replaceSelection(
       formatSelectionNode,
-      updatedSelectionModel,
+      updatedSelectionModel
     );
     formatSelectionNode = updatedNode;
     formatSelectionModel = updatedSelectionModel;
@@ -667,14 +666,14 @@
       caretStart,
       caretEnd,
       endNodeId,
-      getSelections(updatedNodeModel).toJS(),
+      getSelections(updatedNodeModel).selections.toJS(),
       id,
       range,
       range.getBoundingClientRect()
     );
 
     formatSelectionNode = updatedNodeModel;
-    formatSelectionModel = getSelections(updatedNodeModel).get(id);
+    formatSelectionModel = getSelections(updatedNodeModel).selections.get(id);
     // NOTE: need to add current vertical scroll position of the window to the
     // rect position to get offset relative to the whole document
     formatSelectionMenuTopOffset = rect.top + window.scrollY;
@@ -696,19 +695,20 @@
     });
     await commitUpdates(selectionOffsetsManageFormatSelectionMenu);
 
-    const updatedNode = documentModel.getNode(documentModel.getLastInsertId());
     // need to refresh the selection after update, as a merge might have occured
     // between neighboring selections that now have identical formats
-    const { selections } = getSelectionByContentOffset(
-      updatedNode,
+    let {
+      updatedNodeModel,
+      id: updatedSelectionId,
+    } = getSelectionByContentOffset(
+      documentModel.getNode(formatSelectionNode.get('id')),
       selectionOffsetsManageFormatSelectionMenu.caretStart,
       selectionOffsetsManageFormatSelectionMenu.caretEnd
     );
-    formatSelectionNode = updatedNode.setIn(['meta', 'selections'], selections);
+    formatSelectionNode = updatedNodeModel;
     // note: this selection index shouldn't have changed.
-    formatSelectionModel = getSelectionAtIdx(
-      selections,
-      formatSelectionModelId
+    formatSelectionModel = getSelections(updatedNodeModel).selections.get(
+      updatedSelectionId
     );
     if (updatedSelection.get(SELECTION_ACTION_LINK)) {
       return;

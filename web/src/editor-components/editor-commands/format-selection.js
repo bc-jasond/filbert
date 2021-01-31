@@ -10,13 +10,9 @@ import {
   Selection,
   replaceSelection,
 } from '@filbert/selection';
+import {LinkedList} from "@filbert/linked-list";
 
-export function doFormatSelection(
-  documentModel,
-  nodeArg,
-  selection,
-  action
-) {
+export function doFormatSelection(documentModel, nodeArg, selection, action) {
   const previousActionValue = selection.get(action);
 
   console.info('HANDLE SELECTION ACTION: ', action, selection.toJS());
@@ -71,10 +67,7 @@ export function doFormatSelection(
   ) {
     updatedSelectionModel = updatedSelectionModel.remove(SELECTION_LINK_URL);
   }
-  const updatedNode = replaceSelection(
-    node,
-    updatedSelectionModel,
-  );
+  const updatedNode = replaceSelection(node, updatedSelectionModel);
 
   return {
     historyState: documentModel.update(updatedNode),

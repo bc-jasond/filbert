@@ -11,6 +11,7 @@ import { cleanText, cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 import { getFirstNode } from '@filbert/document';
 import {
   formatSelections,
+  getSelections,
   splitSelectionsAtCaretOffset,
 } from '@filbert/selection';
 import { assertValidDomSelectionOrThrow } from '../../common/dom';
@@ -78,9 +79,9 @@ function handleEnterTextType(
     'content right: ',
     contentRight,
     'left selections: ',
-    formatSelections(leftNode),
+    formatSelections(leftNode.getIn(['meta', 'selections'])),
     'right selections: ',
-    formatSelections(rightNode)
+    formatSelections(rightNode.getIn(['meta', 'selections']))
   );
   // NOTE: "focus node" will be the last history entry
   historyState.push(...documentModel.update(leftNode));

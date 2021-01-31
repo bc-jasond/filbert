@@ -3,28 +3,21 @@
 
   import he from 'he';
   import {
-      SELECTION_ACTION_BOLD,
-      SELECTION_ACTION_CODE,
-      SELECTION_ACTION_ITALIC,
-      SELECTION_ACTION_LINK,
-      SELECTION_LINK_URL,
-      SELECTION_ACTION_MINI,
-      SELECTION_ACTION_SITEINFO,
-      SELECTION_ACTION_STRIKETHROUGH,
-      SELECTION_NEXT,
-      Selection,
-      getContentBySelections,
-      getSelectionAtIdx, getSelections,
+    SELECTION_ACTION_BOLD,
+    SELECTION_ACTION_CODE,
+    SELECTION_ACTION_ITALIC,
+    SELECTION_ACTION_LINK,
+    SELECTION_LINK_URL,
+    SELECTION_ACTION_MINI,
+    SELECTION_ACTION_SITEINFO,
+    SELECTION_ACTION_STRIKETHROUGH,
+    SELECTION_NEXT,
+    getContentBySelections,
+    getSelections,
   } from '@filbert/selection';
 
   import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 
-  $: selectionHead = getSelections(node);
-  $: contentPiecesBySelectionLength = getContentBySelections(node);
-  $: contentAndSelections = contentPiecesBySelectionLength.map((text, idx) => ({
-    text,
-    selection: getSelectionAtIdx(selectionHead, idx),
-  }));
   let formattedMarkup = he.escape(
     cleanTextOrZeroLengthPlaceholder(node.get('content'))
   );
@@ -32,7 +25,8 @@
     //console.debug('FORMATTED SELECTIONS render()', node);
     formattedMarkup = '';
     let didError = false;
-    let selection = node.getIn(['meta', 'selections'], Selection());
+    let { head, selections } = getSelections(node);
+    let selection = head;
     const contentPiecesBySelectionLength = getContentBySelections(node);
     let idx = 0;
     try {
@@ -67,14 +61,16 @@
         }
         if (selection.get(SELECTION_ACTION_LINK)) {
           openingTags.push(
-            `<a class="filbert-link" href="${selection.get('linkUrl')}">`
+            `<a class="filbert-link" href="${selection.get(
+              SELECTION_LINK_URL
+            )}">`
           );
           closingTags.unshift('</a>');
         }
         formattedMarkup = `${formattedMarkup}${openingTags.join('')}${he.escape(
           contentPiecesBySelectionLength[idx]
         )}${closingTags.join('')}`;
-        selection = selection.get(SELECTION_NEXT);
+        selection = selections.get(selection.get(SELECTION_NEXT));
         idx += 1;
       }
     } catch (err) {
