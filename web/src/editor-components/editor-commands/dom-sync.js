@@ -3,7 +3,6 @@ import {
   findFirstDifferentWordFromDom,
 } from '../../common/dom';
 import { getCharFromEvent } from '../../common/utils';
-import { adjustSelectionOffsetsAndCleanup } from '@filbert/selection';
 
 export function syncToDom(documentModel, selectionOffsets, evt) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -38,10 +37,11 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
     updatedContentMap.length
   );
   selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
+  const formatSelections = selectedNodeMap.formatSelections
   // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-  selectedNodeMap = adjustSelectionOffsetsAndCleanup(
-    selectedNodeMap,
-    contentBeforeUpdate,
+  selectedNodeMap = formatSelections.adjustSelectionOffsetsAndCleanup(
+    updatedContentMap.length,
+    contentBeforeUpdate.length,
     caretStart,
     newChar.length
   );

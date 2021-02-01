@@ -12,11 +12,9 @@
     NODE_TYPE_P,
     NODE_TYPE_PRE,
     NODE_TYPE_QUOTE,
-    NODE_TYPE_ROOT,
     NODE_TYPE_SPACER,
     NODE_TYPE_CONTENT,
     NODE_TYPE_CODE,
-    NODE_TYPE_OL,
     getFirstNode,
   } from '@filbert/document';
   import { cleanText } from '@filbert/util';

@@ -5,7 +5,7 @@ import {
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
   SELECTION_ACTION_STRIKETHROUGH,
-  makeSelections,
+  FormatSelections,
 } from '@filbert/selection';
 
 export const testPostId = 175;

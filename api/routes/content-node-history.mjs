@@ -1,6 +1,5 @@
 import immutable from 'immutable';
 import { getKnex, getNodesFlat } from '../lib/mysql.mjs';
-import { reviver } from '@filbert/selection';
 
 const {fromJS, Map} = immutable;
 
@@ -13,9 +12,9 @@ async function historyDiff(postId, leftHistoryId, rightHistoryId, trxArg) {
 
   return transaction(async (trx) => {
     const {contentNodes: contentNodesLeft, selectionOffsets} = await getNodesFlat(postId, leftHistoryId, trx)
-    const nodesLeft = fromJS(contentNodesLeft, reviver);
+    const nodesLeft = fromJS(contentNodesLeft);
     const {contentNodes: contentNodesRight} = await getNodesFlat(postId, rightHistoryId, trx);
-    const nodesRight = fromJS(contentNodesRight, reviver);
+    const nodesRight = fromJS(contentNodesRight);
 
     let diff = Map();
     // visit each node from the earlier (left) document snapshot

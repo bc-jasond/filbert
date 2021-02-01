@@ -1,6 +1,54 @@
 /* eslint-disable import/prefer-default-export */
-import { cleanText } from '@filbert/util';
+import {cleanText, deleteContentRange} from '@filbert/util';
 import { isCollapsed } from '../../common/dom';
+
+// returns a nodeId for node deleted, false for node updated
+function deleteNodeContentRangeAndUpdateSelections(
+  diffLength,
+  nodeId,
+  startIdx
+) {
+  let node = getNode(nodeId);
+  const content = node.get('content', '');
+  /* TODO: delete node under if all content has been highlighted
+  if (startIdx === 0 && diffLength >= content.length) {
+    return documentModel.deleteNode(node);
+  } */
+  // only some of endNode's content has been selected, delete that content
+  node = node.set(
+    'content',
+    deleteContentRange(content, startIdx, diffLength)
+  );
+  node = adjustSelectionOffsetsAndCleanup(
+    node,
+    content,
+    startIdx + diffLength,
+    // -1 for "regular" backspace to delete 1 char
+    diffLength === 0 ? -1 : -diffLength
+  );
+  return update(node);
+}
+
+function mergeParagraphs(leftId, rightId) {
+  if (!(isTextType(leftId) && isTextType(rightId))) {
+    console.error('mergeParagraphs - can`t do it!', leftId, rightId);
+    throw new Error('mergeParagraphs - invalid paragraphs');
+  }
+  const history = [];
+  let left = getNode(leftId);
+  const right = getNode(rightId);
+  // do selections before concatenating content!
+  if (canHaveSelections(leftId)) {
+    left = concatSelections(left, right);
+  }
+  left = left.set(
+    'content',
+    `${left.get('content', '')}${right.get('content', '')}`
+  );
+  history.push(...update(left));
+  history.push(...deleteNode(right));
+  return history;
+}
 
 export function doDeleteSingleNode(
   documentModel,

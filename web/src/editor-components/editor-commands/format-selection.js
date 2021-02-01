@@ -6,16 +6,13 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
-  SELECTION_LINK_URL,
-  Selection,
-  replaceSelection,
+  FormatSelectionNode,
 } from '@filbert/selection';
-import {LinkedList} from "@filbert/linked-list";
 
-export function doFormatSelection(documentModel, nodeArg, selection, action) {
-  const previousActionValue = selection.get(action);
+export function doFormatSelection(documentModel, nodeArg, formatSelectionNode, action) {
+  const previousActionValue = formatSelectionNode.get(action);
 
-  console.info('HANDLE SELECTION ACTION: ', action, selection.toJS());
+  console.info('HANDLE SELECTION ACTION: ', action, formatSelectionNode);
 
   let node = nodeArg;
   // these first 2 actions change the node type
@@ -38,39 +35,36 @@ export function doFormatSelection(documentModel, nodeArg, selection, action) {
   if (!node.equals(nodeArg)) {
     return {
       historyState: documentModel.update(node),
-      updatedSelection: new Selection(),
+      updatedSelection: new FormatSelectionNode(),
     };
   }
 
-  let updatedSelectionModel = selection.set(action, !previousActionValue);
-  // selection can be either italic or siteinfo, not both
+  formatSelectionNode[action] = !previousActionValue;
+  // formatSelectionNode can be either italic or siteinfo, not both
   if (
     action === SELECTION_ACTION_ITALIC &&
-    updatedSelectionModel.get(SELECTION_ACTION_ITALIC)
+    formatSelectionNode.italic
   ) {
-    updatedSelectionModel = updatedSelectionModel.remove(
-      SELECTION_ACTION_SITEINFO
-    );
+    formatSelectionNode.siteinfo = false;
   }
   if (
     action === SELECTION_ACTION_SITEINFO &&
-    updatedSelectionModel.get(SELECTION_ACTION_SITEINFO)
+    formatSelectionNode.siteinfo
   ) {
-    updatedSelectionModel = updatedSelectionModel.remove(
-      SELECTION_ACTION_ITALIC
-    );
+    formatSelectionNode.italic = false;
   }
   // clear URL text if not link anymore
   if (
     action === SELECTION_ACTION_LINK &&
-    !updatedSelectionModel.get(SELECTION_ACTION_LINK)
+    !formatSelectionNode.link
   ) {
-    updatedSelectionModel = updatedSelectionModel.remove(SELECTION_LINK_URL);
+    formatSelectionNode.linkUrl = undefined;
   }
-  const updatedNode = replaceSelection(node, updatedSelectionModel);
+  const updatedFormatSelections = node.formatSelections.replaceSelection(formatSelectionNode);
+  node.formatSelections = updatedFormatSelections;
 
   return {
-    historyState: documentModel.update(updatedNode),
-    updatedSelection: updatedSelectionModel,
+    historyState: documentModel.update(node),
+    updatedSelection: formatSelectionNode,
   };
 }

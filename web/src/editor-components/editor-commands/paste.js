@@ -1,9 +1,5 @@
 /* eslint-disable import/prefer-default-export */
 import { assertValidDomSelectionOrThrow } from '../../common/dom';
-import {
-  adjustSelectionOffsetsAndCleanup,
-  splitSelectionsAtCaretOffset,
-} from '@filbert/selection';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -48,9 +44,9 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
     const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
     const { length: diffLength } = clipboardText;
     selectedNode = selectedNode.set('content', updatedContent);
-    selectedNode = adjustSelectionOffsetsAndCleanup(
-      selectedNode,
-      content,
+    selectedNode.formatSelections.adjustSelectionOffsetsAndCleanup(
+      updatedContent.length,
+      content.length,
       caretStart,
       diffLength
     );
@@ -84,26 +80,24 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
 
   // 2) if the original selected node can have Selections - move them to the right node if needed
   // NOTE: do this with BEFORE content
-  ({ leftNode, rightNode } = splitSelectionsAtCaretOffset(
-    leftNode,
-    rightNode,
-    caretStart
-  ));
+  const {left, right} = leftNode.formatSelections.splitSelectionsAtCaretOffset(caretStart);
+  leftNode.formatSelections = left;
+  rightNode.formatSelections = right;
 
   // 3) update content with firstLine & lastLine
   leftNode = leftNode.set('content', updatedLeftNodeContent);
   rightNode = rightNode.set('content', updatedRightNodeContent);
 
   // 4) adjust offsets with updated content
-  leftNode = adjustSelectionOffsetsAndCleanup(
-    leftNode,
-    contentLeft, // this is before content! takes this as an argument for comparison with now updated content in leftNode
+  leftNode.formatSelections.adjustSelectionOffsetsAndCleanup(
+    updatedLeftNodeContent.length,
+    contentLeft.length, // this is before content! takes this as an argument for comparison with now updated content in leftNode
     caretStart,
     firstLine.length
   );
-  rightNode = adjustSelectionOffsetsAndCleanup(
-    rightNode,
-    contentRight, // before content!
+  rightNode.formatSelections.adjustSelectionOffsetsAndCleanup(
+    updatedRightNodeContent.length,
+    contentRight.length, // before content!
     0,
     lastLine.length
   );

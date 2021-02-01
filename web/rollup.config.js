@@ -7,7 +7,6 @@ import svelte from 'rollup-plugin-svelte';
 import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 
-
 import config from 'sapper/config/rollup.js';
 import pkg from './package.json';
 
@@ -52,6 +51,7 @@ const babelConfig = {
 		}]
 	],
 	plugins: [
+		"@babel/plugin-proposal-class-properties",
 		"@babel/plugin-proposal-optional-chaining",
 		'@babel/plugin-syntax-dynamic-import',
 		['@babel/plugin-transform-runtime', {

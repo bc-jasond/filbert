@@ -1,6 +1,5 @@
 import { fromJS, isImmutable, Map } from 'immutable';
 import { FILBERT_LOCALSTORAGE_NAMESPACE } from './constants';
-import { reviver } from '@filbert/selection';
 
 // reading & parsing JSON from localStorage is too slow.
 // take a dual-write approach - one sync to memory and one optimistic async to localStorage
@@ -21,7 +20,7 @@ export function set(key, value, debounce = true) {
   if (!value) {
     inMemoryCache = inMemoryCache.delete(key);
   } else {
-    inMemoryCache = inMemoryCache.set(key, fromJS(value, reviver));
+    inMemoryCache = inMemoryCache.set(key, fromJS(value));
   }
 
   if (writeTimeout[key]) {
@@ -68,7 +67,7 @@ export function get(key, defaultValue) {
         currentLocal !== 'null'
       ) {
         const jsValue = JSON.parse(currentLocal);
-        const woke = fromJS(jsValue, reviver);
+        const woke = fromJS(jsValue);
         inMemoryCache = inMemoryCache.set(key, woke);
       }
     }

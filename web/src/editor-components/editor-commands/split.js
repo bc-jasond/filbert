@@ -9,11 +9,6 @@ import {
 } from '@filbert/document';
 import { cleanText, cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 import { getFirstNode } from '@filbert/document';
-import {
-  formatSelections,
-  getSelections,
-  splitSelectionsAtCaretOffset,
-} from '@filbert/selection';
 import { assertValidDomSelectionOrThrow } from '../../common/dom';
 
 function handleEnterTextType(
@@ -67,7 +62,7 @@ function handleEnterTextType(
   let rightNode = documentModel.getNode(rightNodeId);
   // if the original selected node can have Selections - move them to the right node if needed
   if (documentModel.canHaveSelections(leftNodeId)) {
-    ({ leftNode, rightNode } = splitSelectionsAtCaretOffset(
+    ({ left: leftNode.formatSelections, right: rightNode.formatSelections } = leftNode.formatSelections.splitSelectionsAtCaretOffset(
       leftNode,
       rightNode,
       caretPosition
@@ -79,9 +74,9 @@ function handleEnterTextType(
     'content right: ',
     contentRight,
     'left selections: ',
-    formatSelections(leftNode.getIn(['meta', 'selections'])),
+    leftNode.formatSelections,
     'right selections: ',
-    formatSelections(rightNode.getIn(['meta', 'selections']))
+    rightNode.formatSelections,
   );
   // NOTE: "focus node" will be the last history entry
   historyState.push(...documentModel.update(leftNode));
