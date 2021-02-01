@@ -2,29 +2,9 @@
   export let node;
 
   import he from 'he';
-  import {
-    SELECTION_ACTION_BOLD,
-    SELECTION_ACTION_CODE,
-    SELECTION_ACTION_ITALIC,
-    SELECTION_ACTION_LINK,
-    SELECTION_LINK_URL,
-    SELECTION_ACTION_MINI,
-    SELECTION_ACTION_SITEINFO,
-    SELECTION_ACTION_STRIKETHROUGH,
-    SELECTION_NEXT,
-    Selection,
-    getContentBySelections,
-    getSelectionAtIdx,
-  } from '@filbert/selection';
 
   import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 
-  $: selectionHead = node.getIn(['meta', 'selections'], Selection());
-  $: contentPiecesBySelectionLength = getContentBySelections(node);
-  $: contentAndSelections = contentPiecesBySelectionLength.map((text, idx) => ({
-    text,
-    selection: getSelectionAtIdx(selectionHead, idx),
-  }));
   let formattedMarkup = he.escape(
     cleanTextOrZeroLengthPlaceholder(node.get('content'))
   );
@@ -32,8 +12,8 @@
     //console.debug('FORMATTED SELECTIONS render()', node);
     formattedMarkup = '';
     let didError = false;
-    let selection = node.getIn(['meta', 'selections'], Selection());
-    const contentPiecesBySelectionLength = getContentBySelections(node);
+    let selection = node.formatSelections.head;
+    const contentPiecesBySelectionLength = node.formatSelections.getContentBySelections(node.get('content'));
     let idx = 0;
     try {
       while (selection) {
@@ -41,40 +21,40 @@
         let closingTags = [];
         // re-render all selections if any one changes
         //const key = selection.hashCode();
-        if (selection.get(SELECTION_ACTION_STRIKETHROUGH)) {
+        if (selection.strikethrough) {
           openingTags.push('<span class="strikethrough-text">');
           closingTags.unshift('</span>');
         }
-        if (selection.get(SELECTION_ACTION_SITEINFO)) {
+        if (selection.siteinfo) {
           openingTags.push('<span class="siteinfo-text">');
           closingTags.unshift('</span>');
         }
-        if (selection.get(SELECTION_ACTION_MINI)) {
+        if (selection.mini) {
           openingTags.push('<span class="mini-text">');
           closingTags.unshift('</span>');
         }
-        if (selection.get(SELECTION_ACTION_ITALIC)) {
+        if (selection.italic) {
           openingTags.push('<em class="italic-text">');
           closingTags.unshift('</em>');
         }
-        if (selection.get(SELECTION_ACTION_CODE)) {
+        if (selection.code) {
           openingTags.push('<code class="code-text">');
           closingTags.unshift('</code>');
         }
-        if (selection.get(SELECTION_ACTION_BOLD)) {
+        if (selection.bold) {
           openingTags.push('<strong class="bold-text">');
           closingTags.unshift('</strong>');
         }
-        if (selection.get(SELECTION_ACTION_LINK)) {
+        if (selection.link) {
           openingTags.push(
-            `<a class="filbert-link" href="${selection.get('linkUrl')}">`
+            `<a class="filbert-link" href="${selection.linkUrl}">`
           );
           closingTags.unshift('</a>');
         }
         formattedMarkup = `${formattedMarkup}${openingTags.join('')}${he.escape(
           contentPiecesBySelectionLength[idx]
         )}${closingTags.join('')}`;
-        selection = selection.get(SELECTION_NEXT);
+        selection = node.formatSelections.getNext(selection);
         idx += 1;
       }
     } catch (err) {

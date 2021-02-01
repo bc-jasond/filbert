@@ -1,6 +1,6 @@
 <script>
   export let nodeModel = Map();
-  export let selectionModel = Map();
+  export let formatSelectionNode = Map();
   export let selectionAction;
   export let offsetTop;
   export let offsetLeft;
@@ -50,15 +50,13 @@
   import IconH2 from '../icons/h2.svelte';
   import IconMini from '../icons/mini.svelte';
 
-  $: boldIsEnabled = selectionModel.get(SELECTION_ACTION_BOLD);
-  $: italicIsEnabled = selectionModel.get(SELECTION_ACTION_ITALIC);
-  $: codeIsEnabled = selectionModel.get(SELECTION_ACTION_CODE);
-  $: siteinfoIsEnabled = selectionModel.get(SELECTION_ACTION_SITEINFO);
-  $: miniIsEnabled = selectionModel.get(SELECTION_ACTION_MINI);
-  $: strikethroughIsEnabled = selectionModel.get(
-    SELECTION_ACTION_STRIKETHROUGH
-  );
-  $: linkIsEnabled = selectionModel.get(SELECTION_ACTION_LINK);
+  $: boldIsEnabled = formatSelectionNode.bold
+  $: italicIsEnabled = formatSelectionNode.italic
+  $: codeIsEnabled = formatSelectionNode.code
+  $: siteinfoIsEnabled = formatSelectionNode.siteinfo
+  $: miniIsEnabled = formatSelectionNode.mini
+  $: strikethroughIsEnabled = formatSelectionNode.strikethrough
+  $: linkIsEnabled = formatSelectionNode.link
   $: {
     tick().then(() => {
       if (shouldShowLinkInput && linkUrlInputDomNode) {
@@ -83,10 +81,10 @@
 
   let formatSelectionMenuDomNode;
   let linkUrlInputDomNode;
-  let shouldShowLinkInput = selectionModel.get(SELECTION_ACTION_LINK);
+  let shouldShowLinkInput = formatSelectionNode.link;
   let linkUrlHasError;
   const linkMenuItemIdx = 6;
-  let currentIdx = selectionModel.get(SELECTION_ACTION_LINK)
+  let currentIdx = formatSelectionNode.link
     ? linkMenuItemIdx
     : 0;
 
@@ -94,7 +92,7 @@
     if (formatSelectionMenuDomNode) {
       // 44 is the height of menu, 10 is the height of arrow point
       formatSelectionMenuDomNode.style.top = `${
-        offsetTop - 120 - (selectionModel.get(SELECTION_ACTION_LINK) ? 30 : 0)
+        offsetTop - 120 - (formatSelectionNode.link ? 30 : 0)
       }px`;
       // 203 is half the width of the menu
       formatSelectionMenuDomNode.style.left = `${offsetLeft - 203}px`;
@@ -118,7 +116,7 @@
     // only allow 'enter' and 'esc' through to close the menu and 'left' and 'right' to toggle through
     // menu items
     if (
-      selectionModel.get(SELECTION_ACTION_LINK) &&
+      formatSelectionNode.link &&
       [
         KEYCODE_ENTER,
         KEYCODE_ESC,
@@ -138,7 +136,7 @@
       case KEYCODE_UP_ARROW: {
         if (
           currentIdx === linkMenuItemIdx &&
-          selectionModel.get(SELECTION_ACTION_LINK)
+          formatSelectionNode.link
         ) {
           stopAndPrevent(evt);
           shouldShowLinkInput = false;
@@ -148,7 +146,7 @@
       case KEYCODE_DOWN_ARROW: {
         if (
           currentIdx === linkMenuItemIdx &&
-          selectionModel.get(SELECTION_ACTION_LINK)
+          formatSelectionNode.link
         ) {
           stopAndPrevent(evt);
           shouldShowLinkInput = true;
@@ -183,7 +181,7 @@
           shouldShowLinkInput = false;
         } else if (
           nextIdx === linkMenuItemIdx &&
-          selectionModel.get(SELECTION_ACTION_LINK)
+          formatSelectionNode.link
         ) {
           shouldShowLinkInput = true;
         }
@@ -201,7 +199,7 @@
         }
         evt.preventDefault();
         if (currentIdx === linkMenuItemIdx) {
-          shouldShowLinkInput = !selectionModel.get(currentMenuItemType);
+          shouldShowLinkInput = !formatSelectionNode[currentMenuItemType];
         }
         selectionAction(currentMenuItemType);
         return;
@@ -209,7 +207,7 @@
       case KEYCODE_ENTER: {
         evt.preventDefault();
         closeMenu();
-        if (selectionModel.get(currentMenuItemType)) {
+        if (formatSelectionNode[currentMenuItemType]) {
           // this value is currently selected, don't unselect it. just close the menu
           return;
         }
@@ -223,7 +221,7 @@
   onMount(() => {
     function focusOrBlurCaptionInput(shouldFocusEnd) {
       if (!linkUrlInputDomNode) return;
-      if (selectionModel.get(SELECTION_ACTION_LINK)) {
+      if (formatSelectionNode.link) {
         focusAndScrollSmooth(
           nodeModel.get('id'),
           linkUrlInputDomNode,
@@ -272,7 +270,7 @@
       return;
     }
     linkUrlHasError = true;
-    selectionModel = selectionModel.set(SELECTION_LINK_URL, e.target.value);
+    formatSelectionNode.linkUrl = e.target.value;
   }
 </script>
 
@@ -383,7 +381,7 @@
   <IconButton
     id="{`format-selection-menu-${SELECTION_ACTION_LINK}`}"
     on:click="{() => {
-      shouldShowLinkInput = !selectionModel.get(SELECTION_ACTION_LINK);
+      shouldShowLinkInput = !formatSelectionNode.link;
       selectionAction(SELECTION_ACTION_LINK);
     }}"
   >
@@ -425,7 +423,7 @@
     bind:this="{linkUrlInputDomNode}"
     class:enabled="{shouldShowLinkInput}"
     on:input="{maybeUpdateLinkUrl}"
-    value="{selectionModel.get(SELECTION_LINK_URL, '')}"
+    value="{formatSelectionNode.linkUrl}"
   />
   <div class="point-clip">
     <div class="arrow"></div>

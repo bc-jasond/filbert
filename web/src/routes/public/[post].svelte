@@ -43,12 +43,11 @@
     postMap = fromJS(post);
     $currentPost = postMap;
   }
-  $: nodesByIdMap = fromJS(nodesById, reviver);
+  $: nodesByIdMap = fromJS(nodesById);
   $: prevPostMap = fromJS(prevPost);
   $: nextPostMap = fromJS(nextPost);
 
   import { fromJS, Map } from 'immutable';
-  import { reviver } from '@filbert/selection';
 
   import { currentPost } from '../../stores';
   import PostNext from '../../post-components/PostNext.svelte';
