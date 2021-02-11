@@ -17,7 +17,7 @@ import {
   preId,
   spacerId,
   testPostWithAllTypesJS,
-} from '../../../common/test-post-with-all-types';
+} from '@filbert/util/test-post-with-all-types';
 import { doDelete, doDeleteMetaType, doMerge } from '../delete';
 
 overrideConsole();

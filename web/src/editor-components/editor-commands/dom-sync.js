@@ -74,9 +74,9 @@ function replaceWordFromSpellcheck(
     .getNode(startNodeId)
     .set('content', updatedContent);
   // adjust paragraph selections, if necessary
-  selectedNodeMap = adjustSelectionOffsetsAndCleanup(
-    selectedNodeMap,
-    contentBeforeUpdate,
+  selectedNodeMap.formatSelections.adjustSelectionOffsetsAndCleanup(
+    updatedContent.length,
+    contentBeforeUpdate.length,
     diffStart,
     domWord.length - beforeWord.length
   );
@@ -132,9 +132,9 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
   );
   selectedNodeMap = selectedNodeMap.set('content', updatedContentMap);
   // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-  selectedNodeMap = adjustSelectionOffsetsAndCleanup(
-    selectedNodeMap,
-    contentBeforeUpdate,
+  selectedNodeMap.formatSelections.adjustSelectionOffsetsAndCleanup(
+    updatedContentMap.length,
+    contentBeforeUpdate.length,
     beforeUpdateCaretStart,
     emoji.length
   );

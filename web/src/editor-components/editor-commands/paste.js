@@ -1,5 +1,5 @@
-/* eslint-disable import/prefer-default-export */
 import { assertValidDomSelectionOrThrow } from '../../common/dom';
+import {NODE_CONTENT, NODE_TYPE} from "@filbert/document";
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -50,7 +50,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
       caretStart,
       diffLength
     );
-    historyState.push(...documentModel.update(selectedNode));
+    historyState.push(documentModel.update(selectedNode));
     return getReturnPayload({
       startNodeId,
       caretStart: contentLeft.length + diffLength,
@@ -70,12 +70,12 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   // NOTE: rightNode insert (last before first) so that leftNode gets updated with a next_sibling_id
   // 1) insert a new node (rightNode) for 'lastLine' - using BEFORE content
   historyState.push(
-    ...documentModel.insert(selectedNode.get('type'), leftNodeId, contentRight)
+    documentModel.insertAfter({[NODE_TYPE]: selectedNode.type, [NODE_CONTENT]: content}, leftNodeId)
   );
-  const rightNodeId = documentModel.getLastInsertId();
+  const rightNodeId = documentModel.lastInsertId;
   // now leftNode has 'next_sibling_id' set to rightNode
   // important: 'content' is now contentLeft
-  let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
+  let leftNode = documentModel.getNode(leftNodeId).content = contentLeft;
   let rightNode = documentModel.getNode(rightNodeId);
 
   // 2) if the original selected node can have Selections - move them to the right node if needed
@@ -101,7 +101,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
     0,
     lastLine.length
   );
-  historyState.push(...documentModel.update(leftNode));
+  historyState.push(documentModel.update(leftNode));
 
   // there are middle lines, insert Paragraphs after "left"
   let prevNodeId = startNodeId;
@@ -110,14 +110,14 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
     // skip whitespace only lines TODO: allow in Code sections?
     if (currentLine.trim().length > 0) {
       historyState.push(
-        ...documentModel.insert(leftNode.get('type'), prevNodeId, currentLine)
+        documentModel.insertAfter({[NODE_TYPE]: leftNode.type, [NODE_CONTENT]:currentLine}, prevNodeId)
       );
-      const nextId = documentModel.getLastInsertId();
+      const nextId = documentModel.lastInsertId;
       prevNodeId = nextId;
     }
   }
 
-  historyState.push(...documentModel.update(rightNode));
+  historyState.push(documentModel.update(rightNode));
   return getReturnPayload({
     startNodeId: rightNodeId,
     caretStart: lastLine.length,

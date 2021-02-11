@@ -19,7 +19,7 @@ import {
   h2Id,
   h2Content,
   formattedLiContent,
-} from '../../../common/test-post-with-all-types';
+} from '@filbert/util/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();

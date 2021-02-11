@@ -9,7 +9,7 @@ import {
   testPostWithAllTypesJS,
   h2Id,
   h2Content,
-} from '../../../common/test-post-with-all-types';
+} from '@filbert/util/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
 let doc;

@@ -1,6 +1,8 @@
 /* eslint-disable import/prefer-default-export */
 import { Map } from 'immutable';
 import {
+  NODE_CONTENT,
+  NODE_TYPE,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_LI,
@@ -41,7 +43,7 @@ function handleEnterTextType(
     cleanText(contentLeft).length === 0
   ) {
     historyState.push(
-      ...documentModel.update(
+      documentModel.update(
         documentModel.getNode(leftNodeId).set('type', NODE_TYPE_P)
       )
     );
@@ -55,9 +57,9 @@ function handleEnterTextType(
   }
 
   historyState.push(
-    ...documentModel.insert(newNodeType, leftNodeId, contentRight)
+    documentModel.insertAfter({[NODE_TYPE]: newNodeType, [NODE_CONTENT]: contentRight}, leftNodeId)
   );
-  const rightNodeId = documentModel.getLastInsertId();
+  const rightNodeId = documentModel.lastInsertId;
   let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
   let rightNode = documentModel.getNode(rightNodeId);
   // if the original selected node can have Selections - move them to the right node if needed
@@ -79,8 +81,8 @@ function handleEnterTextType(
     rightNode.formatSelections,
   );
   // NOTE: "focus node" will be the last history entry
-  historyState.push(...documentModel.update(leftNode));
-  historyState.push(...documentModel.update(rightNode));
+  historyState.push(documentModel.update(leftNode));
+  historyState.push(documentModel.update(rightNode));
 
   return historyState;
 }
@@ -95,16 +97,10 @@ export function doSplit(documentModel, selectionOffsets) {
   if (documentModel.isMetaType(startNodeId)) {
     console.debug('doSplit() MetaType');
     // if this meta node is first section in document put the P in front
-    const shouldInsertAfter =
-      getFirstNode(documentModel.getNodes()).get('id') !== startNodeId;
+    const shouldInsertAfter = documentModel.head.id !== startNodeId;
+    const data = {[NODE_TYPE]: NODE_TYPE_P, [NODE_CONTENT]:''};
     historyState.push(
-      ...documentModel.insert(
-        NODE_TYPE_P,
-        startNodeId,
-        '',
-        Map(),
-        shouldInsertAfter
-      )
+      shouldInsertAfter ? documentModel.insertAfter(data, startNodeId) : documentModel.insertBefore(data, startNodeId)
     );
   } else {
     console.debug('doSplit() TextType', startNodeId, caretStart);
@@ -122,7 +118,7 @@ export function doSplit(documentModel, selectionOffsets) {
     );
   }
 
-  const focusNodeId = documentModel.getLastInsertId();
+  const focusNodeId = documentModel.lastInsertId;
   return {
     selectionOffsets: { startNodeId: focusNodeId, caretStart: 0 },
     historyState,
