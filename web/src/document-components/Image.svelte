@@ -1,5 +1,5 @@
 <script>
-  export let node;
+  export let node = Map();
   export let hideBorder = true;
   export let hideCaption = false;
   export let postListOverride = false;
@@ -10,12 +10,13 @@
   import { beforeUpdate } from 'svelte';
   import { Map } from 'immutable';
 
-  import { NODE_TYPE_IMAGE } from '@filbert/document';
+  import { LINKED_LIST_NODE_ID } from '@filbert/linked-list';
+  import { NODE_TYPE_IMAGE, NODE_META } from '@filbert/document';
 
   $: isEditMode = !!setEditNodeId;
 
-  $: id = node.get('id');
-  $: meta = node.get('meta', Map());
+  $: id = node.get(LINKED_LIST_NODE_ID);
+  $: meta = node.get(NODE_META, Map());
   $: w = meta.get('resizeWidth', meta.get('width'));
   $: h = meta.get('resizeHeight', meta.get('height'));
   $: rotationDegrees = meta.get('rotationDegrees', 0);
@@ -130,6 +131,7 @@
 >
   <!--  https://css-tricks.com/what-i-like-about-writing-styles-with-svelte/#dynamic-values-without-a-runtime -->
   <!--  This is slick: using a style="" attribute to override CSS Custom Properties with JS vars in markup is quite choice, thx-->
+  <!--  Update: this isn't slick.  Just use bind:this and set the DOM node styles directly with JS -->
   <figure
     class:figure-height-override="{figureHeightOverride}"
     style="{figureHeightOverrideStyle}"
@@ -145,7 +147,7 @@
         class:rotate-90="{rotationDegrees === 90}"
         class:rotate-180="{rotationDegrees === 180}"
         class:rotate-270="{rotationDegrees === 270}"
-        on:click="{() => setEditNodeId && setEditNodeId(id)}"
+        on:click="{() => setEditNodeId?.(id)}"
         src="{url}"
         alt="{meta.get('caption')}"
       />

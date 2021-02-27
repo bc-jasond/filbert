@@ -1,9 +1,10 @@
 <script>
-  import { Map } from 'immutable';
   export let node = Map();
   export let noMargin = false;
 
-  import { NODE_TYPE_H2 } from '@filbert/document';
+  import { Map } from 'immutable';
+  import { LINKED_LIST_NODE_ID } from '@filbert/linked-list';
+  import { NODE_TYPE_H2, NODE_CONTENT } from '@filbert/document';
   import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 </script>
 
@@ -24,10 +25,10 @@
 {#if node.size}
   <h2
     data-type="{NODE_TYPE_H2}"
-    name="{node.get('id')}"
+    name="{node.get(LINKED_LIST_NODE_ID)}"
     class:filbert-section="{!noMargin}"
   >
-    {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
+    {cleanTextOrZeroLengthPlaceholder(node.get(NODE_CONTENT))}
   </h2>
 {:else}
   <h2 class:filbert-section="{!noMargin}">

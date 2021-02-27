@@ -19,7 +19,7 @@
     caretIsAtBeginningOfInput,
     caretIsAtEndOfInput,
     focusAndScrollSmooth,
-  } from '../common/dom';
+  } from '../common/dom.mjs';
   import { getUrl } from '../common/utils';
 
   $: nodeId = nodeModel.get('id');

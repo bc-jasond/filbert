@@ -9,30 +9,28 @@ import {
   FormatSelectionNode,
 } from '@filbert/selection';
 
-export function doFormatSelection(documentModel, nodeArg, formatSelectionNode, action) {
-  const previousActionValue = formatSelectionNode.get(action);
+export function doFormatSelection(
+  documentModel,
+  node,
+  formatSelectionNode,
+  action
+) {
+  const previousActionValue = formatSelectionNode[action];
 
   console.info('HANDLE SELECTION ACTION: ', action, formatSelectionNode);
 
-  let node = nodeArg;
   // these first 2 actions change the node type
   if (action === SELECTION_ACTION_H1) {
-    node = node
-      .set(
-        'type',
-        node.get('type') === NODE_TYPE_H1 ? NODE_TYPE_P : NODE_TYPE_H1
-      )
-      .deleteIn(['meta', 'selections']);
-  } else if (action === SELECTION_ACTION_H2) {
-    node = node
-      .set(
-        'type',
-        node.get('type') === NODE_TYPE_H2 ? NODE_TYPE_P : NODE_TYPE_H2
-      )
-      .deleteIn(['meta', 'selections']);
+    node.type = node.type === NODE_TYPE_H1 ? NODE_TYPE_P : NODE_TYPE_H1;
+    node.formatSelections = undefined;
+    return {
+      historyState: documentModel.update(node),
+      updatedSelection: new FormatSelectionNode(),
+    };
   }
-  // if we changed the node type (to an H1 or H2 or back to a P) - we're done
-  if (!node.equals(nodeArg)) {
+  if (action === SELECTION_ACTION_H2) {
+    node.type = node.type === NODE_TYPE_H2 ? NODE_TYPE_P : NODE_TYPE_H2;
+    node.formatSelections = undefined;
     return {
       historyState: documentModel.update(node),
       updatedSelection: new FormatSelectionNode(),
@@ -41,26 +39,19 @@ export function doFormatSelection(documentModel, nodeArg, formatSelectionNode, a
 
   formatSelectionNode[action] = !previousActionValue;
   // formatSelectionNode can be either italic or siteinfo, not both
-  if (
-    action === SELECTION_ACTION_ITALIC &&
-    formatSelectionNode.italic
-  ) {
+  if (action === SELECTION_ACTION_ITALIC && formatSelectionNode.italic) {
     formatSelectionNode.siteinfo = false;
   }
-  if (
-    action === SELECTION_ACTION_SITEINFO &&
-    formatSelectionNode.siteinfo
-  ) {
+  if (action === SELECTION_ACTION_SITEINFO && formatSelectionNode.siteinfo) {
     formatSelectionNode.italic = false;
   }
   // clear URL text if not link anymore
-  if (
-    action === SELECTION_ACTION_LINK &&
-    !formatSelectionNode.link
-  ) {
+  if (action === SELECTION_ACTION_LINK && !formatSelectionNode.link) {
     formatSelectionNode.linkUrl = undefined;
   }
-  const updatedFormatSelections = node.formatSelections.replaceSelection(formatSelectionNode);
+  const updatedFormatSelections = node.formatSelections.replaceSelection(
+    formatSelectionNode
+  );
   node.formatSelections = updatedFormatSelections;
 
   return {

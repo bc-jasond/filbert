@@ -1,4 +1,3 @@
-import { Map } from 'immutable';
 import { KEYCODE_ENTER } from '@filbert/constants';
 
 import { stopAndPrevent } from '../../common/utils';
@@ -30,7 +29,7 @@ export async function handleEnter({
   });
 
   // clear current edit section node if coming from a Meta Type or caret position will be stale
-  setEditSectionNode(Map());
+  setEditSectionNode();
   await commitUpdates(executeSelectionOffsets);
 
   return true;

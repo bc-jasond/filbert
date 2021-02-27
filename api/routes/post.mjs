@@ -2,7 +2,7 @@ import { getMysqlDatetime } from '@filbert/mysql';
 
 import {
   getKnex,
-  getNodesFlat,
+  getDocumentModel,
   getPostByCanonicalHelper,
 } from '../lib/mysql.mjs';
 import {
@@ -126,9 +126,9 @@ export async function getPostByCanonical(req, res) {
     nextPostCanonical,
     loggedInUser
   );
-  const { contentNodes } = await getNodesFlat(post.id);
+  const {documentModel} = await getDocumentModel(post.id);
 
-  res.send({ prevPost, nextPost, post, contentNodes });
+  res.send({ prevPost, nextPost, post, head: documentModel.head, contentNodes: documentModel.nodes });
 }
 
 // returns only post
@@ -179,12 +179,12 @@ export async function patchPost(req, res, next) {
 export async function getSummaryAndPhotoFromContent(req, res) {
   const { id } = req.currentPost;
   const responseData = {};
-  const { contentNodes } = await getNodesFlat(id);
+  const {documentModel} = await getDocumentModel(id);
 
-  if (!contentNodes) {
+  if (!documentModel.size) {
     res.send(responseData);
   }
-  res.send(getFirstPhotoAndAbstractFromContent(contentNodes));
+  res.send(getFirstPhotoAndAbstractFromContent(documentModel));
 }
 
 /**

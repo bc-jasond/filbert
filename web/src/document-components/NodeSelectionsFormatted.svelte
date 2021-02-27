@@ -1,19 +1,26 @@
 <script>
-  export let node;
+  export let node = Map();
 
   import he from 'he';
+  import { Map } from 'immutable';
 
   import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
+  import { NODE_FORMAT_SELECTIONS, NODE_CONTENT } from '@filbert/document';
 
-  let formattedMarkup = he.escape(
-    cleanTextOrZeroLengthPlaceholder(node.get('content'))
-  );
-  $: {
+  let formattedMarkup;
+  $: if (!node.get(NODE_FORMAT_SELECTIONS)) {
+    formattedMarkup = he.escape(
+      cleanTextOrZeroLengthPlaceholder(node.get(NODE_CONTENT))
+    );
+  } else {
     //console.debug('FORMATTED SELECTIONS render()', node);
+    const formatSelections = node.get(NODE_FORMAT_SELECTIONS);
+    let selection = formatSelections.head;
     formattedMarkup = '';
     let didError = false;
-    let selection = node.formatSelections.head;
-    const contentPiecesBySelectionLength = node.formatSelections.getContentBySelections(node.get('content'));
+    const contentPiecesBySelectionLength = formatSelections.getContentBySelections(
+      node.get(NODE_CONTENT)
+    );
     let idx = 0;
     try {
       while (selection) {
@@ -54,7 +61,7 @@
         formattedMarkup = `${formattedMarkup}${openingTags.join('')}${he.escape(
           contentPiecesBySelectionLength[idx]
         )}${closingTags.join('')}`;
-        selection = node.formatSelections.getNext(selection);
+        selection = formatSelections.getNext(selection);
         idx += 1;
       }
     } catch (err) {
@@ -65,7 +72,7 @@
     // if there's an error, show unformatted content
     if (didError) {
       formattedMarkup = he.escape(
-        cleanTextOrZeroLengthPlaceholder(node.get('content'))
+        cleanTextOrZeroLengthPlaceholder(node.get(NODE_CONTENT))
       );
     }
   }

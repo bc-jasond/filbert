@@ -1,8 +1,4 @@
-import immutable from 'immutable';
-import { getKnex, getNodesFlat } from './mysql.mjs';
-import { getFirstNode } from '@filbert/document';
-
-const { fromJS } = immutable;
+import { getKnex, getDocumentModel } from './mysql.mjs';
 
 export function ensureNoOrphanedNodes(contentNodes, postId) {}
 
@@ -11,14 +7,13 @@ export function ensureNoOrphanedNodes(contentNodes, postId) {}
  *
  * @param contentNodes - a hash of content nodes keyed by id
  */
-export function getFirstPhotoAndAbstractFromContent(contentNodes, postId) {
+export function getFirstPhotoAndAbstractFromContent(documentModel) {
   const responseData = {};
   const titleMinLength = 2;
   const titleMaxLength = 75;
   const abstractMinLength = 100;
   const abstractMaxLength = 200;
-  const firstNode = getFirstNode(fromJS(contentNodes), postId).toJS();
-  const queue = [firstNode];
+  const queue = [documentModel.head];
   while (
     queue.length &&
     (!responseData.abstract || !responseData.imageNode || !responseData.title)
@@ -65,7 +60,7 @@ export function getFirstPhotoAndAbstractFromContent(contentNodes, postId) {
         }
       }
     }
-    const next = contentNodes[current.next_sibling_id];
+    const next = documentModel.getNext(current);
     if (next) {
       queue.push(next);
     }
@@ -80,10 +75,9 @@ export async function addFirstPhotoTitleAndAbstractToPosts(posts) {
     let title, abstract, imageNode;
     const { syncTopPhoto, syncTitleAndAbstract } = draft.meta;
     if (syncTopPhoto || syncTitleAndAbstract) {
-      const { contentNodes } = await getNodesFlat(draft.id);
+      const {documentModel} = await getDocumentModel(draft.id);
       ({ title, abstract, imageNode } = getFirstPhotoAndAbstractFromContent(
-        contentNodes,
-        draft.id
+documentModel
       ));
     }
     if (syncTitleAndAbstract) {

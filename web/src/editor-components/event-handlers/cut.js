@@ -1,11 +1,14 @@
 import { KEYCODE_X } from '@filbert/constants';
 
-import { getHighlightedSelectionOffsets, isCollapsed } from '../../common/dom';
+import {
+  getHighlightedSelectionOffsets,
+  isCollapsed,
+} from '../../common/dom.mjs';
 import { stopAndPrevent } from '../../common/utils';
 import {
   doDeleteSingleNode,
   doDeleteMultiNode,
-} from '../editor-commands/delete';
+} from '../editor-commands/delete.mjs';
 
 export function isCutEvent(evt) {
   return (

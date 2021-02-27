@@ -24,7 +24,7 @@
     caretIsAtEndOfInput,
     getImageFileFormData,
     focusAndScrollSmooth,
-  } from '../common/dom';
+  } from '../common/dom.mjs';
   import { stopAndPrevent } from '../common/utils';
   import { currentPost } from '../stores';
 
@@ -208,7 +208,8 @@
     _resize(false);
   }
   function updateCaption({ target: { value } }) {
-    update(nodeModel.setIn(['meta', 'caption'], value), ['meta', 'caption']);
+    nodeModel.caption = value;
+    update(nodeModel, 'caption');
   }
   async function replaceImageFile([firstFile]) {
     if (!firstFile) {

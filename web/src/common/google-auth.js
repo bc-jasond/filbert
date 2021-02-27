@@ -1,5 +1,5 @@
 // also refreshes the Oauth2 token
-import { loadScript } from './dom';
+import { loadScript } from './dom.mjs';
 
 export async function googleAuth() {
   if (!window.gapi) {

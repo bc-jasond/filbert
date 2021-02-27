@@ -1,10 +1,13 @@
 import { KEYCODE_V } from '@filbert/constants';
-import { getHighlightedSelectionOffsets, isCollapsed } from '../../common/dom';
+import {
+  getHighlightedSelectionOffsets,
+  isCollapsed,
+} from '../../common/dom.mjs';
 import { stopAndPrevent } from '../../common/utils';
 import {
   doDeleteMultiNode,
   doDeleteSingleNode,
-} from '../editor-commands/delete';
+} from '../editor-commands/delete.mjs';
 import { doPaste } from '../editor-commands/paste';
 
 // for a highlight-and-paste, this stores both the delete and paste history into one atomic unit

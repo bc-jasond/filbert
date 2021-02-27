@@ -1,10 +1,11 @@
 import { stopAndPrevent } from '../../common/utils';
-import { isCollapsed, isControlKey } from '../../common/dom';
+import { isCollapsed, isControlKey } from '../../common/dom.mjs';
 import {
   doDeleteMultiNode,
   doDeleteSingleNode,
-} from '../editor-commands/delete';
+} from '../editor-commands/delete.mjs';
 import { syncToDom } from '../editor-commands/dom-sync';
+import { NODE_CONTENT } from '@filbert/document';
 
 export async function handleSyncToDom({
   evt,
@@ -58,7 +59,7 @@ export async function handleSyncToDom({
     historyManager.appendToHistoryLogWhenNCharsAreDifferent({
       selectionOffsets: executeSelectionOffsets,
       historyState,
-      comparisonPath: ['content'],
+      comparisonKey: NODE_CONTENT,
     });
   } else {
     // we did more than a simple content update to one node, save an entry

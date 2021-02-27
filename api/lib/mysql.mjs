@@ -2,6 +2,8 @@ import knex from 'knex';
 
 import { wrapExec } from './util.mjs';
 import { mysqlConnectionConfig } from '@filbert/mysql';
+import {DocumentModel} from "@filbert/document";
+import {LINKED_LIST_NODE_ID, LINKED_LIST_NODE_NEXT} from '@filbert/linked-list';
 
 let knexConnection;
 export async function getKnex() {
@@ -17,7 +19,11 @@ export async function getKnex() {
   return knexConnection;
 }
 
-export async function getNodesFlat(postId, currentUndoHistoryId, trx) {
+function getCycleDetectionKey(node) {
+  return `${node[LINKED_LIST_NODE_ID]}:${node[LINKED_LIST_NODE_NEXT]}`;
+}
+
+export async function getDocumentModel(postId, currentUndoHistoryId, trx) {
   // TODO: naive approach - get every history entry and build document from the beginning up to currentUndoHistoryId
   const knex = trx || (await getKnex());
   const builder = knex('content_node_history')
@@ -30,28 +36,37 @@ export async function getNodesFlat(postId, currentUndoHistoryId, trx) {
   }
 
   const historyEntries = await builder;
-  const contentNodes = {};
-  const seen = new Set();
+  const nodesReturn = {};
+  const seen = {};
   let executeSelectionOffsets = {};
-  historyEntries.forEach(({ meta: { historyState, selectionOffsets } }) => {
-    Object.entries(historyState).forEach(([nodeId, node]) => {
+  let headReturn;
+  historyEntries.forEach(({ meta: { historyState: {head, nodes}, selectionOffsets } }) => {
+    // head will be falsy if it didn't change
+    if (head) {
+      headReturn = head;
+    }
+    Object.entries(nodes).forEach(([nodeId, node]) => {
       if (typeof node === 'string') {
         // should these be filtered and applied second after all update states?
-        delete contentNodes[nodeId];
+        delete nodesReturn[nodeId];
       } else {
-        if (node.next_sibling_id && seen.has(node.next_sibling_id)) {
-          console.warn(
-            'getNodesFlat - cycle detected',
+        // ensure that only one node points to next, ignore dupes since a node can have multiple history entries
+        if (node[LINKED_LIST_NODE_NEXT] && seen[LINKED_LIST_NODE_NEXT] && seen[LINKED_LIST_NODE_NEXT] !== node[LINKED_LIST_NODE_ID]) {
+          console.error(
+            'cycle detected',
             node
           );
+          throw new Error('getDocumentModel')
         }
-        seen.add(node.next_sibling_id);
-        contentNodes[nodeId] = node;
+        if (node[LINKED_LIST_NODE_NEXT]) {
+          seen[node[LINKED_LIST_NODE_NEXT]] = node[LINKED_LIST_NODE_ID];
+        }
+        nodesReturn[nodeId] = node;
       }
     });
     executeSelectionOffsets = selectionOffsets;
   });
-  return { contentNodes, selectionOffsets: executeSelectionOffsets };
+  return {documentModel: DocumentModel.fromJS(postId, headReturn, nodesReturn), selectionOffsets: executeSelectionOffsets};
 }
 
 export async function makeMysqlDump(now, stagingDirectory) {

@@ -50,7 +50,7 @@
     confirmPromise,
   } from '../../common/utils';
 
-  import { getNextFromUrl } from '../../common/dom';
+  import { getNextFromUrl } from '../../common/dom.mjs';
 
   import H1 from '../../document-components/H1.svelte';
   import H2 from '../../document-components/H2.svelte';
@@ -78,7 +78,7 @@
 
   onMount(async () => {
     const { focusAndScrollSmooth, getNextFromUrl } = await import(
-      '../../common/dom'
+      '../../common/dom.mjs'
     );
     nextUrl = getNextFromUrl();
     focusAndScroll = focusAndScrollSmooth;

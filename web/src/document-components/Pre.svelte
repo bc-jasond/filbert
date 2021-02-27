@@ -1,7 +1,10 @@
 <script>
-  export let node;
+  export let node = Map();
 
-  import { NODE_TYPE_PRE } from '@filbert/document';
+  import { Map } from 'immutable';
+
+  import { LINKED_LIST_NODE_ID } from '@filbert/linked-list';
+  import { NODE_TYPE_PRE, NODE_CONTENT } from '@filbert/document';
   import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
 </script>
 
@@ -22,6 +25,6 @@
 </style>
 
 <svelte:options immutable />
-<pre data-type="{NODE_TYPE_PRE}" name="{node.get('id')}">
-  {cleanTextOrZeroLengthPlaceholder(node.get('content'))}
+<pre data-type="{NODE_TYPE_PRE}" name="{node.get(LINKED_LIST_NODE_ID)}">
+  {cleanTextOrZeroLengthPlaceholder(node.get(NODE_CONTENT))}
 </pre>

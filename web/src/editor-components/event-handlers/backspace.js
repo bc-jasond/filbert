@@ -1,10 +1,10 @@
-import { Map } from 'immutable';
 import { KEYCODE_BACKSPACE } from '@filbert/constants';
 import { stopAndPrevent } from '../../common/utils';
 import {
   doDeleteSingleNodeBackspace,
   doDeleteMultiNodeBackspace,
-} from '../../editor-components/editor-commands/delete';
+} from '../editor-commands/delete.mjs';
+import { DocumentModelNode } from '@filbert/document';
 
 export async function handleBackspace({
   evt,
@@ -37,7 +37,7 @@ export async function handleBackspace({
       historyManager,
       selectionOffsets
     );
-    setEditSectionNode(Map());
+    setEditSectionNode();
     await commitUpdates(executeSelectionOffsets);
     return true;
   }

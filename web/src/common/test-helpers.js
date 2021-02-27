@@ -1,5 +1,3 @@
-
-
 function mockLocalStorage() {
   global.localStorageStorage = {};
   global.localStorage = {
@@ -37,7 +35,6 @@ function makeHistoryLogEntries(values) {
 }
 
 module.exports = {
-  overrideConsole,
   mockLocalStorage,
   makeHistoryLogEntries,
 };

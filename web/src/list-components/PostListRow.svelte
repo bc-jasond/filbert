@@ -17,7 +17,7 @@
 
   let nextUrl;
   onMount(async () => {
-    const { createNextUrl } = await import('../common/dom');
+    const { createNextUrl } = await import('../common/dom.mjs');
     nextUrl = createNextUrl(`/manage/${postMap.get('id')}`);
   });
 </script>

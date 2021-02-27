@@ -1,17 +1,20 @@
 <script>
-  export let node;
+  export let node = Map();
   export let isEditing = false;
   export let setEditNodeId = undefined;
 
-  import { NODE_TYPE_QUOTE } from '@filbert/document';
+  import { Map } from 'immutable';
+
+  import { LINKED_LIST_NODE_ID } from '@filbert/linked-list';
+  import { NODE_TYPE_QUOTE, NODE_META } from '@filbert/document';
 
   $: isEditMode = !!setEditNodeId;
 
-  $: id = node.get('id');
-  $: quote = node.getIn(['meta', 'quote'], '');
-  $: url = node.getIn(['meta', 'url'], '');
-  $: author = node.getIn(['meta', 'author'], '');
-  $: context = node.getIn(['meta', 'context'], '');
+  $: id = node.get(LINKED_LIST_NODE_ID);
+  $: quote = node.getIn([NODE_META, 'quote'], '');
+  $: url = node.getIn([NODE_META, 'url'], '');
+  $: author = node.getIn([NODE_META, 'author'], '');
+  $: context = node.getIn([NODE_META, 'context'], '');
 </script>
 
 <style>
@@ -48,7 +51,7 @@
     class="wrapper"
     class:edit-section-border="{isEditing}"
     class:edit-hover-border="{isEditMode}"
-    on:click="{() => setEditNodeId && setEditNodeId(id)}"
+    on:click="{() => setEditNodeId?.(id)}"
   >
     <span class="drop-cap">{'💡'}</span>
     <em class="italic-text">{quote && `"${quote}"`}</em>
