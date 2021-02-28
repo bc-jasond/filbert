@@ -1,14 +1,17 @@
 <script>
-  export let node;
+  export let node = Map();
   // TODO use a store() ?
   export let isEditing = false;
   export let setEditNodeId = undefined;
 
+  import { Map } from 'immutable';
+
+  import { LINKED_LIST_NODE_ID } from '@filbert/linked-list';
   import { NODE_TYPE_SPACER } from '@filbert/document';
 
   // assume we're editing if there's a setEditNodeId callback
   $: isEditMode = !!setEditNodeId;
-  $: id = node.get('id');
+  $: id = node.get(LINKED_LIST_NODE_ID);
 </script>
 
 <style>
@@ -35,5 +38,5 @@
   class:edit-hover-border="{isEditMode}"
   data-type="{NODE_TYPE_SPACER}"
   name="{id}"
-  on:click="{() => setEditNodeId && setEditNodeId(id)}"
+  on:click="{() => setEditNodeId?.(id)}"
 ></section>

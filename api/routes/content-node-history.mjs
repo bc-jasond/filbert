@@ -1,7 +1,7 @@
 import immutable from 'immutable';
-import { getKnex, getNodesFlat } from '../lib/mysql.mjs';
+import { getKnex, getDocumentModel } from '../lib/mysql.mjs';
 
-const {fromJS, Map} = immutable;
+const {Map} = immutable;
 
 async function historyDiff(postId, leftHistoryId, rightHistoryId, trxArg) {
   const knex = await getKnex();
@@ -11,25 +11,23 @@ async function historyDiff(postId, leftHistoryId, rightHistoryId, trxArg) {
       : knex.transaction.bind(knex);
 
   return transaction(async (trx) => {
-    const {contentNodes: contentNodesLeft, selectionOffsets} = await getNodesFlat(postId, leftHistoryId, trx)
-    const nodesLeft = fromJS(contentNodesLeft);
-    const {contentNodes: contentNodesRight} = await getNodesFlat(postId, rightHistoryId, trx);
-    const nodesRight = fromJS(contentNodesRight);
+    const {documentModel: documentModelLeft, selectionOffsets} = await getDocumentModel(postId, leftHistoryId, trx)
+    const {documentModel: documentModelRight} = await getDocumentModel(postId, rightHistoryId, trx);
 
     let diff = Map();
     // visit each node from the earlier (left) document snapshot
     // if it's not present or different in the later (right) document snapshot, add the whole node to diff state
-    nodesLeft.forEach((left, leftNodeId) => {
-      const right = nodesRight.get(leftNodeId, Map());
-      if (!right.size || !right.equals(left)) {
+    documentModelLeft.nodes.forEach((left, leftNodeId) => {
+      const right = documentModelRight.getNode(leftNodeId);
+      if (!left.equals(right)) {
         diff = diff.set(leftNodeId, left);
       }
     })
     // visit each node from the later (right) document snapshot
     // if it's not in the earlier (left), mark it deleted by adding the nodeId as a string
-    nodesRight.forEach((right, rightNodeId) => {
-      const left = nodesLeft.get(rightNodeId, Map());
-      if (!left.size) {
+    documentModelRight.nodes.forEach((right, rightNodeId) => {
+      const left = documentModelLeft.getNode(rightNodeId);
+      if (!left) {
         diff = diff.set(rightNodeId, rightNodeId);
       }
     })
@@ -186,15 +184,16 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
     currentPost.meta.currentUndoHistoryId = history.content_node_history_id;
 
     // get all nodes for this point in history to send to the frontend - nice 'n dumb
-    const { contentNodes, selectionOffsets } = await getNodesFlat(
+    const documentModel = await getDocumentModel(
       id,
       history.content_node_history_id,
       trx
     );
 
     return {
-      selectionOffsets,
-      nodesById: contentNodes,
+      selectionOffsets: documentModel.selectionOffsets,
+      head: documentModel.head,
+      nodesById: documentModel.nodes,
       updatedPost: currentPost,
     };
   });

@@ -1,52 +1,46 @@
-/* eslint-disable import/prefer-default-export */
-import {cleanText, deleteContentRange} from '@filbert/util';
-import { isCollapsed } from '../../common/dom';
+import { cleanText, deleteContentRange } from '@filbert/util';
+import { isCollapsed } from '../../common/dom.mjs';
+import { NODE_CONTENT } from '@filbert/document';
 
 // returns a nodeId for node deleted, false for node updated
 function deleteNodeContentRangeAndUpdateSelections(
+  documentModel,
   diffLength,
   nodeId,
   startIdx
 ) {
-  let node = getNode(nodeId);
-  const content = node.get('content', '');
+  let node = documentModel.getNode(nodeId);
   /* TODO: delete node under if all content has been highlighted
   if (startIdx === 0 && diffLength >= content.length) {
     return documentModel.deleteNode(node);
   } */
   // only some of endNode's content has been selected, delete that content
-  node = node.set(
-    'content',
-    deleteContentRange(content, startIdx, diffLength)
-  );
-  node = adjustSelectionOffsetsAndCleanup(
-    node,
-    content,
+  const beforeContent = node.content;
+  node.content = deleteContentRange(node.content, startIdx, diffLength);
+  node.formatSelections.adjustSelectionOffsetsAndCleanup(
+    node.content.length,
+    beforeContent.length,
     startIdx + diffLength,
     // -1 for "regular" backspace to delete 1 char
     diffLength === 0 ? -1 : -diffLength
   );
-  return update(node);
+  return documentModel.update(node);
 }
 
-function mergeParagraphs(leftId, rightId) {
-  if (!(isTextType(leftId) && isTextType(rightId))) {
-    console.error('mergeParagraphs - can`t do it!', leftId, rightId);
+function mergeParagraphs(documentModel, left, right) {
+  if (!(left.isTextType() && right.isTextType())) {
+    console.error('mergeParagraphs - can`t do it!', left, right);
     throw new Error('mergeParagraphs - invalid paragraphs');
   }
   const history = [];
-  let left = getNode(leftId);
-  const right = getNode(rightId);
+
   // do selections before concatenating content!
-  if (canHaveSelections(leftId)) {
-    left = concatSelections(left, right);
+  if (left.canHaveSelections()) {
+    left.formatSelections.concatSelections(right);
   }
-  left = left.set(
-    'content',
-    `${left.get('content', '')}${right.get('content', '')}`
-  );
-  history.push(...update(left));
-  history.push(...deleteNode(right));
+  left.content = `${left.content}${right.content}`;
+  history.push(documentModel.update(left));
+  history.push(documentModel.deleteNode(right));
   return history;
 }
 
@@ -61,7 +55,6 @@ export function doDeleteSingleNode(
     selectionOffsets
   );
 
-  // ignore for select-and-type, cut & paste replace actions
   if (caretIsCollapsed) {
     return;
   }
@@ -74,16 +67,18 @@ export function doDeleteSingleNode(
     startNodeId,
     caretStart,
   };
-
+  const startNode = documentModel.getNode(startNodeId);
   // TODO: handle replacing MetaType node
   // NOTE: this is unexpected for select-and-type or paste, better to just "clear" the node of all text
-  if (willDeleteStartNode && documentModel.isMetaType(startNodeId)) {
+  if (willDeleteStartNode && startNode.isMetaType()) {
+    return;
   }
   // delete one or more chars in TextType select-and-type, cut or paste
   const diffLength = caretEnd - caretStart;
   const historyState = [];
   historyState.push(
-    ...documentModel.deleteNodeContentRangeAndUpdateSelections(
+    deleteNodeContentRangeAndUpdateSelections(
+      documentModel,
       diffLength,
       startNodeId,
       caretStart
@@ -92,6 +87,9 @@ export function doDeleteSingleNode(
   return { historyState, selectionOffsets: executeSelectionOffsets };
 }
 
+/**
+ * performs a merge after delete
+ */
 export function doDeleteSingleNodeBackspace(
   documentModel,
   historyManager,
@@ -103,8 +101,8 @@ export function doDeleteSingleNodeBackspace(
     selectionOffsets
   );
   const startNode = documentModel.getNode(startNodeId);
-  const startPrevNode = documentModel.getPrevNode(startNodeId);
-  const startNodeWasFirstNode = startPrevNode.isEmpty();
+  const startPrevNode = documentModel.getPrev(startNodeId);
+  const startNodeWasFirstNode = startNode === documentModel.head;
   let executeSelectionOffsets;
 
   console.debug('Delete - SINGLE NODE');
@@ -112,12 +110,12 @@ export function doDeleteSingleNodeBackspace(
   // decide where to place the caret before altering the document state
   if (caretIsCollapsed && caretStart === 0 && !startNodeWasFirstNode) {
     // delete or merge previous node, if not first node
-    const caretStartPrev = documentModel.isMetaType(startPrevNode.get('id'))
+    const caretStartPrev = startPrevNode.isMetaType()
       ? 0
-      : cleanText(startPrevNode.get('content')).length;
+      : cleanText(startPrevNode.content).length;
     // focus prev MetaType or prev TextType content length (before merge)
     executeSelectionOffsets = {
-      startNodeId: startPrevNode.get('id'),
+      startNodeId: startPrevNode.id,
       caretStart: caretStartPrev,
     };
   } else {
@@ -148,13 +146,13 @@ export function doDeleteSingleNodeBackspace(
       // first node in the document - ignore
       return { historyState, selectionOffsets: executeSelectionOffsets };
     }
-    if (documentModel.isMetaType(startPrevNode.get('id'))) {
+    if (startPrevNode.isMetaType()) {
       // delete the previous MetaType node
-      historyState.push(...documentModel.deleteNode(startPrevNode));
+      historyState.push(documentModel.deleteNode(startPrevNode));
     } else {
       // merge with the previous TextType node
       historyState.push(
-        ...documentModel.mergeParagraphs(startPrevNode.get('id'), startNodeId)
+        ...mergeParagraphs(documentModel, startPrevNode, startNode)
       );
     }
     historyManager.appendToHistoryLog({
@@ -168,7 +166,8 @@ export function doDeleteSingleNodeBackspace(
   const diffLength = caretEnd - caretStart;
   const historyState = [];
   historyState.push(
-    ...documentModel.deleteNodeContentRangeAndUpdateSelections(
+    deleteNodeContentRangeAndUpdateSelections(
+      documentModel,
       diffLength,
       startNodeId,
       caretStart
@@ -177,7 +176,7 @@ export function doDeleteSingleNodeBackspace(
   historyManager.appendToHistoryLogWhenNCharsAreDifferent({
     historyState,
     selectionOffsets: executeSelectionOffsets,
-    comparisonPath: ['content'],
+    comparisonKey: NODE_CONTENT,
   });
   return { historyState, selectionOffsets: executeSelectionOffsets };
 }
@@ -203,13 +202,14 @@ export function doDeleteMultiNode(
   // delete any middle nodes
   documentModel.getNodesBetween(startNodeId, endNodeId).forEach((node) => {
     console.info('delete middle node', node.toJS());
-    historyState.push(...documentModel.deleteNode(node));
+    historyState.push(documentModel.deleteNode(node));
   });
 
   // delete startNode
   historyState.push(
-    ...documentModel.deleteNodeContentRangeAndUpdateSelections(
-      startNode.get('content').length - caretStart,
+    deleteNodeContentRangeAndUpdateSelections(
+      documentModel,
+      startNode.content.length - caretStart,
       startNodeId,
       caretStart
     )
@@ -218,12 +218,13 @@ export function doDeleteMultiNode(
   // delete endNode
   const endNode = documentModel.getNode(endNodeId);
   if (willDeleteEndNode) {
-    historyState.push(...documentModel.deleteNode(endNode));
+    historyState.push(documentModel.deleteNode(endNode));
   } else if (caretEnd > 0) {
     // TODO: since functions called later on expect a diffLength === 0 to mean "delete one char in front of the caret"
-    //  we need to make sure not to call this for select-and-type or paste operations...
+    //  we need to make sure not to call this for select-and-type or paste operations
     historyState.push(
-      ...documentModel.deleteNodeContentRangeAndUpdateSelections(
+      deleteNodeContentRangeAndUpdateSelections(
+        documentModel,
         caretEnd,
         endNodeId,
         0
@@ -232,19 +233,20 @@ export function doDeleteMultiNode(
   }
 
   // merge? the only merge scenario is when both are text and both weren't deleted
-  const startNodeAndEndNodeAreTextType =
-    documentModel.isTextType(startNodeId) &&
-    documentModel.isTextType(endNodeId);
   if (
     !(willDeleteStartNode && willDeleteEndNode) &&
-    startNodeAndEndNodeAreTextType
+    startNode.isTextType() &&
+    endNode.isTextType()
   ) {
-    historyState.push(...documentModel.mergeParagraphs(startNodeId, endNodeId));
+    historyState.push(...mergeParagraphs(documentModel, startNode, endNode));
   }
 
   return { historyState, selectionOffsets: executeSelectionOffsets };
 }
 
+/**
+ * performs a merge after delete
+ */
 export function doDeleteMultiNodeBackspace(
   documentModel,
   historyManager,
@@ -256,33 +258,32 @@ export function doDeleteMultiNodeBackspace(
     willDeleteEndNode,
   } = documentModel.willDeleteStartAndEnd(selectionOffsets);
   const startNode = documentModel.getNode(startNodeId);
-  const startPrevNode = documentModel.getPrevNode(startNodeId);
-  const startNodeWasFirstNode = startPrevNode.isEmpty();
+  const startPrevNode = documentModel.getPrev(startNodeId);
+  const startNodeWasFirstNode = startNode === documentModel.head;
   let executeSelectionOffsets;
   const historyState = [];
 
   console.debug('Delete - MULTI NODE');
 
   // decide where to place the caret before altering the document state
-  const endNextNode = documentModel.getNextNode(endNodeId);
-  const endNodeWasLastNode = endNextNode.isEmpty();
+  const endNextNode = documentModel.getNext(endNodeId);
   if (willDeleteStartNode) {
     if (willDeleteEndNode) {
       if (startNodeWasFirstNode) {
-        if (endNodeWasLastNode) {
+        if (!endNextNode) {
           // deleted all nodes in the document - startNode will have been transformed into a placeholder title - focus startNode at position 0
           executeSelectionOffsets = { startNodeId, caretStart: 0 };
         } else {
           // deleted through the top of the document - focus node after endNode
           executeSelectionOffsets = {
-            startNodeId: endNextNode.get('id'),
+            startNodeId: endNextNode.id,
             caretStart: 0,
           };
         }
       } else {
         // deleted start and end
         executeSelectionOffsets = {
-          startNodeId: startPrevNode.get('id'),
+          startNodeId: startPrevNode.id,
           caretStart: -1,
         };
       }
@@ -298,16 +299,17 @@ export function doDeleteMultiNodeBackspace(
   // delete any middle nodes
   documentModel.getNodesBetween(startNodeId, endNodeId).forEach((node) => {
     console.info('delete middle node', node.toJS());
-    historyState.push(...documentModel.deleteNode(node));
+    historyState.push(documentModel.deleteNode(node));
   });
 
   // delete startNode
   if (willDeleteStartNode) {
-    historyState.push(...documentModel.deleteNode(startNode));
+    historyState.push(documentModel.deleteNode(startNode));
   } else {
     historyState.push(
-      ...documentModel.deleteNodeContentRangeAndUpdateSelections(
-        startNode.get('content').length - caretStart,
+      deleteNodeContentRangeAndUpdateSelections(
+        documentModel,
+        startNode.content.length - caretStart,
         startNodeId,
         caretStart
       )
@@ -317,10 +319,11 @@ export function doDeleteMultiNodeBackspace(
   // delete endNode
   const endNode = documentModel.getNode(endNodeId);
   if (willDeleteEndNode) {
-    historyState.push(...documentModel.deleteNode(endNode));
+    historyState.push(documentModel.deleteNode(endNode));
   } else {
     historyState.push(
-      ...documentModel.deleteNodeContentRangeAndUpdateSelections(
+      deleteNodeContentRangeAndUpdateSelections(
+        documentModel,
         caretEnd,
         endNodeId,
         0
@@ -329,14 +332,12 @@ export function doDeleteMultiNodeBackspace(
   }
 
   // merge? the only merge scenario is when both are text and both weren't deleted
-  const startNodeAndEndNodeAreTextType =
-    documentModel.isTextType(startNodeId) &&
-    documentModel.isTextType(endNodeId);
   if (
     !(willDeleteStartNode && willDeleteEndNode) &&
-    startNodeAndEndNodeAreTextType
+    startNode.isTextType() &&
+    endNode.isTextType()
   ) {
-    historyState.push(...documentModel.mergeParagraphs(startNodeId, endNodeId));
+    historyState.push(...mergeParagraphs(documentModel, startNode, endNode));
   }
 
   historyManager.appendToHistoryLog({

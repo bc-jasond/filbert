@@ -1,6 +1,6 @@
-/* eslint-disable import/prefer-default-export */
-import { Map } from 'immutable';
 import {
+  NODE_CONTENT,
+  NODE_TYPE,
   NODE_TYPE_H1,
   NODE_TYPE_H2,
   NODE_TYPE_LI,
@@ -8,8 +8,7 @@ import {
   NODE_TYPE_PRE,
 } from '@filbert/document';
 import { cleanText, cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
-import { getFirstNode } from '@filbert/document';
-import { assertValidDomSelectionOrThrow } from '../../common/dom';
+import { assertValidDomSelectionOrThrow } from '../../common/dom.mjs';
 
 function handleEnterTextType(
   documentModel,
@@ -19,19 +18,19 @@ function handleEnterTextType(
 ) {
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
-  let newNodeType = documentModel.getNode(leftNodeId).get('type');
+  const leftNode = documentModel.getNode(leftNodeId);
+  let newNodeType = leftNode.type;
   // user hits enter on empty list or code item, and it's the last of type, always convert to P
   // to break out of a list or code section
   if (
     cleanText(contentLeft).length === 0 &&
     cleanText(contentRight).length === 0 &&
     [NODE_TYPE_PRE, NODE_TYPE_LI].includes(newNodeType) &&
-    documentModel.isLastOfType(leftNodeId)
+    leftNode.isLastOfType()
   ) {
     // convert empty sections to a P on enter
-    return documentModel.update(
-      documentModel.getNode(leftNodeId).set('type', NODE_TYPE_P)
-    );
+    leftNode.type = NODE_TYPE_P;
+    return documentModel.update(leftNode);
   }
 
   const historyState = [];
@@ -40,11 +39,8 @@ function handleEnterTextType(
     [NODE_TYPE_H1, NODE_TYPE_H2].includes(newNodeType) &&
     cleanText(contentLeft).length === 0
   ) {
-    historyState.push(
-      ...documentModel.update(
-        documentModel.getNode(leftNodeId).set('type', NODE_TYPE_P)
-      )
-    );
+    leftNode.type = NODE_TYPE_P;
+    historyState.push(documentModel.update(leftNode));
   }
   // if user hits enter at end of H1 or H2, set "right" type to P
   if (
@@ -55,14 +51,20 @@ function handleEnterTextType(
   }
 
   historyState.push(
-    ...documentModel.insert(newNodeType, leftNodeId, contentRight)
+    documentModel.insertAfter(
+      { [NODE_TYPE]: newNodeType, [NODE_CONTENT]: contentRight },
+      leftNodeId
+    )
   );
-  const rightNodeId = documentModel.getLastInsertId();
-  let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
-  let rightNode = documentModel.getNode(rightNodeId);
+  const rightNodeId = documentModel.lastInsertId;
+  leftNode.content = contentLeft;
+  const rightNode = documentModel.getNode(rightNodeId);
   // if the original selected node can have Selections - move them to the right node if needed
-  if (documentModel.canHaveSelections(leftNodeId)) {
-    ({ left: leftNode.formatSelections, right: rightNode.formatSelections } = leftNode.formatSelections.splitSelectionsAtCaretOffset(
+  if (leftNode.canHaveSelections()) {
+    ({
+      left: leftNode.formatSelections,
+      right: rightNode.formatSelections,
+    } = leftNode.formatSelections.splitSelectionsAtCaretOffset(
       leftNode,
       rightNode,
       caretPosition
@@ -76,11 +78,11 @@ function handleEnterTextType(
     'left selections: ',
     leftNode.formatSelections,
     'right selections: ',
-    rightNode.formatSelections,
+    rightNode.formatSelections
   );
   // NOTE: "focus node" will be the last history entry
-  historyState.push(...documentModel.update(leftNode));
-  historyState.push(...documentModel.update(rightNode));
+  historyState.push(documentModel.update(leftNode));
+  historyState.push(documentModel.update(rightNode));
 
   return historyState;
 }
@@ -92,25 +94,22 @@ export function doSplit(documentModel, selectionOffsets) {
 
   const { caretStart, startNodeId } = selectionOffsets;
   const historyState = [];
-  if (documentModel.isMetaType(startNodeId)) {
+  const startNode = documentModel.getNode(startNodeId);
+  if (startNode.isMetaType()) {
     console.debug('doSplit() MetaType');
     // if this meta node is first section in document put the P in front
-    const shouldInsertAfter =
-      getFirstNode(documentModel.getNodes()).get('id') !== startNodeId;
+    const shouldInsertAfter = documentModel.head !== startNode;
+    const data = { [NODE_TYPE]: NODE_TYPE_P, [NODE_CONTENT]: '' };
     historyState.push(
-      ...documentModel.insert(
-        NODE_TYPE_P,
-        startNodeId,
-        '',
-        Map(),
-        shouldInsertAfter
-      )
+      shouldInsertAfter
+        ? documentModel.insertAfter(data, startNodeId)
+        : documentModel.insertBefore(data, startNodeId)
     );
   } else {
     console.debug('doSplit() TextType', startNodeId, caretStart);
     // split selectedNodeContent at caret
     const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(
-      documentModel.getNode(startNodeId).get('content')
+      startNode.content
     );
     historyState.push(
       ...handleEnterTextType(
@@ -122,7 +121,7 @@ export function doSplit(documentModel, selectionOffsets) {
     );
   }
 
-  const focusNodeId = documentModel.getLastInsertId();
+  const focusNodeId = documentModel.lastInsertId;
   return {
     selectionOffsets: { startNodeId: focusNodeId, caretStart: 0 },
     historyState,

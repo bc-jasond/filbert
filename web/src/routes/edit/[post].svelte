@@ -14,13 +14,13 @@
 <script>
   export let postId;
 
-  let insertMenuNode = Map();
+  let insertMenuNode = new DocumentModelNode();
   let insertMenuTopOffset = 0;
   let insertMenuLeftOffset = 0;
-  let editSectionNode = Map();
+  let editSectionNode = new DocumentModelNode();
   let shouldShowEditSectionMenu = false;
   let editSectionMetaFormTopOffset = 0;
-  let formatSelectionNode = Map();
+  let formatSelectionNode = new DocumentModelNode();
   let formatSelectionModel = new FormatSelectionNode();
   let formatSelectionMenuTopOffset = 0;
   let formatSelectionMenuLeftOffset = 0;
@@ -29,20 +29,18 @@
   let shouldSkipKeyUp;
   let apiClient;
 
-  let documentModel;
+  let documentModel = new DocumentModel();
+  // local copy of document nodes and head for immutable rendering
+  let documentModelInternal;
   let historyManager;
-  let nodesByIdMapInternal = Map();
 
   import { fromJS, Map } from 'immutable';
   import { goto } from '@sapper/app';
   import { tick, onMount, onDestroy } from 'svelte';
 
-  import { getMapWithId } from '@filbert/util';
   import { NEW_POST_URL_ID } from '@filbert/constants';
-  import { NODE_TYPE_H1 } from '@filbert/document';
 
   import {
-    caretIsOnEdgeOfParagraphText,
     getFirstHeadingContent,
     getHighlightedSelectionOffsets,
     getImageFileFormData,
@@ -53,7 +51,7 @@
     removeAllRanges,
     replaceRange,
     setCaret,
-  } from '../../common/dom';
+  } from '../../common/dom.mjs';
 
   import { getApiClientInstance } from '../../common/api-client';
   import { currentPost } from '../../stores';
@@ -69,17 +67,16 @@
     KEYCODE_X,
   } from '@filbert/constants';
   import {
+    DocumentModel,
+    DocumentModelNode,
+    NODE_TYPE,
+    NODE_TYPE_H1,
     NODE_TYPE_IMAGE,
     NODE_TYPE_P,
     NODE_TYPE_QUOTE,
     NODE_TYPE_SPACER,
   } from '@filbert/document';
-  import {
-    FormatSelectionNode,
-    SELECTION_ACTION_LINK,
-    SELECTION_LINK_URL,
-  } from '@filbert/selection';
-  import { DocumentModel } from '@filbert/document';
+  import { FormatSelectionNode } from '@filbert/selection';
   import { HistoryManager } from '@filbert/history';
   import {
     getCanonicalFromTitle,
@@ -137,33 +134,7 @@
     });
   }
 
-  function registerTopLevelEventHandlers() {
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('resize', manageInsertMenu);
-    window.addEventListener('keyup', handleKeyUp);
-    // TODO: use beforeinput even when Firefox enables it by default
-    //window.addEventListener('beforeinput', handleBeforeInput);
-    window.addEventListener('input', handleInput);
-    window.addEventListener('paste', handlePasteWrapper);
-    window.addEventListener('cut', handleCutWrapper);
-    window.addEventListener('mouseup', handleMouseUp);
-  }
-
-  function deregisterTopLevelEventHandlers() {
-    if (!isBrowser()) {
-      return;
-    }
-    window.removeEventListener('keydown', handleKeyDown);
-    window.removeEventListener('resize', manageInsertMenu);
-    window.removeEventListener('keyup', handleKeyUp);
-    //window.removeEventListener('beforeinput', handleBeforeInput);
-    window.removeEventListener('input', handleInput);
-    window.removeEventListener('paste', handlePasteWrapper);
-    window.removeEventListener('cut', handleCutWrapper);
-    window.removeEventListener('mouseup', handleMouseUp);
-  }
-
-  $: insertMenuNodeId = insertMenuNode.get('id');
+  $: insertMenuNodeId = insertMenuNode.id;
   $: apiClient = isBrowser() && getApiClientInstance();
   $: (async function instantiatePost(postIdInternal) {
     if (!isBrowser()) {
@@ -174,11 +145,15 @@
       console.log('UNSAVED Placeholder Post');
       clearInterval(batchSaveIntervalId);
       $currentPost = Map();
-      documentModel = DocumentModel(postIdInternal, Map());
+      documentModel = new DocumentModel(postIdInternal);
       historyManager = HistoryManager(postIdInternal, apiClient);
-      const historyState = documentModel.insert(NODE_TYPE_H1);
-      const newSectionId = documentModel.getLastInsertId();
-      const selectionOffsets = { startNodeId: newSectionId, caretStart: 0 };
+      const titlePlaceholder = documentModel.append();
+      titlePlaceholder.type = NODE_TYPE_H1;
+      const historyState = [documentModel.update(titlePlaceholder)];
+      const selectionOffsets = {
+        startNodeId: titlePlaceholder.id,
+        caretStart: 0,
+      };
       historyManager.appendToHistoryLog({
         selectionOffsets,
         historyState,
@@ -196,7 +171,7 @@
 
     const {
       error,
-      data: { post, contentNodes, selectionOffsets = {} } = {},
+      data: { post, head, contentNodes, selectionOffsets = {} } = {},
     } = await apiClient.get(`/edit/${postIdInternal}`);
 
     if (error) {
@@ -206,20 +181,14 @@
 
     console.info('RE-INSTANTIATE POST', post);
     $currentPost = fromJS(post);
-    documentModel = DocumentModel(post.id, contentNodes);
+    documentModel = DocumentModel.fromJS(post.id, head, contentNodes);
     historyManager = HistoryManager(post.id, apiClient);
-    nodesByIdMapInternal = documentModel.getNodes();
     clearInterval(batchSaveIntervalId);
     batchSaveIntervalId = setInterval(batchSave, 3000);
     await commitUpdates(selectionOffsets);
   })(postId);
 
-  onMount(() => {
-    registerTopLevelEventHandlers();
-  });
-
   onDestroy(() => {
-    deregisterTopLevelEventHandlers();
     clearInterval(batchSaveIntervalId);
   });
 
@@ -265,24 +234,24 @@
     if (!startNodeId) {
       return;
     }
-    const selectedNodeMap = documentModel.getNode(startNodeId);
-    const selectedNode = getNodeById(startNodeId);
+    const selectedNode = documentModel.getNode(startNodeId);
+    const selectedNodeDom = getNodeById(startNodeId);
 
     // Show the menu?
     if (
-      selectedNode &&
+      selectedNodeDom &&
       (!caretEnd || caretStart === caretEnd) &&
-      selectedNodeMap.get('type') === NODE_TYPE_P &&
-      selectedNodeMap.get('content', '').length === 0
+      selectedNode.type === NODE_TYPE_P &&
+      selectedNode.content.length === 0
     ) {
       // save current node because the selection will disappear when the insert menu is shown
       console.debug('INSERT - SHOULD SHOW');
-      insertMenuNode = selectedNodeMap;
-      insertMenuTopOffset = selectedNode.offsetTop;
-      insertMenuLeftOffset = selectedNode.offsetLeft;
+      insertMenuNode = selectedNode;
+      insertMenuTopOffset = selectedNodeDom.offsetTop;
+      insertMenuLeftOffset = selectedNodeDom.offsetLeft;
     } else {
-      console.debug('INSERT - HIDE', selectedNodeMap.toJS());
-      insertMenuNode = Map();
+      console.debug('INSERT - HIDE', selectedNode);
+      insertMenuNode = new DocumentModelNode();
     }
   }
 
@@ -291,12 +260,16 @@
     // TODO: optimistically saving updated nodes with no error handling - look ma, no errors!
 
     // sync internal document state with documentModel state
-    nodesByIdMapInternal = documentModel.getNodes();
+    documentModelInternal = new DocumentModel(
+      postId,
+      documentModel.head,
+      documentModel.nodes
+    );
     await tick();
-    insertMenuNode = Map();
+    insertMenuNode = new DocumentModelNode();
 
     // on insert,set editSectionNode if not already set.
-    if (startNodeId && documentModel.isMetaType(startNodeId)) {
+    if (startNodeId && documentModel.getNode(startNodeId).isMetaType()) {
       sectionEdit(startNodeId);
       // no more caret work necessary for Meta nodes
       return;
@@ -317,15 +290,15 @@
   }
 
   function closeAllEditContentMenus() {
-    formatSelectionNode = Map();
-    editSectionNode = Map();
+    formatSelectionNode = new DocumentModelNode();
+    editSectionNode = new DocumentModelNode();
     shouldShowEditSectionMenu = false;
   }
 
   function getSelectionOffsetsOrEditSectionNode() {
-    if (editSectionNode.size > 0) {
+    if (editSectionNode.id > 0) {
       return {
-        startNodeId: editSectionNode.get('id'),
+        startNodeId: editSectionNode.id,
         caretStart: 0,
         caretEnd: 0,
       };
@@ -406,7 +379,7 @@
         sectionEdit,
         editSectionNode,
         setEditSectionNode: (value) => {
-          editSectionNode = value;
+          editSectionNode = value ? value : new DocumentModelNode();
         },
       }
     );
@@ -424,10 +397,7 @@
 
     // create new post?
     // special case for creating a new document on "Enter"
-    if (
-      evt.keyCode === KEYCODE_ENTER &&
-      (!$currentPost.get('id') || $currentPost.get('id') === NEW_POST_URL_ID)
-    ) {
+    if (evt.keyCode === KEYCODE_ENTER && postId === NEW_POST_URL_ID) {
       await createNewPost();
     }
   }
@@ -452,7 +422,7 @@
       return;
     }
     // if there's a MetaNode selected, bail
-    if (editSectionNode.get('id')) {
+    if (editSectionNode.id) {
       return;
     }
     const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
@@ -503,10 +473,10 @@
       }
       meta = Map(imageMeta);
     }
-    const historyState = documentModel.update(
-      insertMenuNode.set('type', sectionType).set('meta', meta)
-    );
-    const newSectionId = documentModel.getLastInsertId();
+    insertMenuNode.type = sectionType;
+    insertMenuNode.meta = meta;
+    const historyState = documentModel.update(insertMenuNode);
+    const newSectionId = documentModel.lastInsertId;
     const selectionOffsets = { startNodeId: newSectionId };
     historyManager.appendToHistoryLog({
       selectionOffsets,
@@ -522,13 +492,13 @@
 
   function sectionEdit(sectionId) {
     // noop if this section is already selected
-    if (sectionId === editSectionNode.get('id')) {
+    if (sectionId === editSectionNode.id) {
       return;
     }
     const [sectionDomNode] = document.getElementsByName(sectionId);
     const section = documentModel.getNode(sectionId);
     if (!section.size) {
-      console.warn('BAD Section', section.toJS());
+      console.warn('BAD Section', section);
     }
     //if (section.get('type') === NODE_TYPE_SPACER) {
     removeAllRanges();
@@ -537,26 +507,26 @@
 
     // hide all other menus here because this callback fires last
     // insert menu
-    insertMenuNode = Map();
+    insertMenuNode = new DocumentModelNode();
     // format selection menu
-    formatSelectionNode = Map();
+    formatSelectionNode = new DocumentModelNode();
     formatSelectionModel = new FormatSelectionNode();
     // hide edit section menu by default
     editSectionNode = section;
-    shouldShowEditSectionMenu = section.get('type') !== NODE_TYPE_SPACER;
+    shouldShowEditSectionMenu = section.type !== NODE_TYPE_SPACER;
     editSectionMetaFormTopOffset = sectionDomNode.offsetTop;
   }
 
-  async function updateEditSectionNode(updatedNode, comparisonPath) {
+  async function updateEditSectionNode(updatedNode, comparisonKey) {
     const historyState = documentModel.update(updatedNode);
-    const selectionOffsets = { startNodeId: updatedNode.get('id') };
+    const selectionOffsets = { startNodeId: updatedNode.id };
     // some text fields are stored in the node.meta object like image caption, link url, quote fields
     // these text fields will pass a path to differentiate themselves from other actions like image rotate, zoom, etc
-    if (comparisonPath) {
+    if (comparisonKey) {
       historyManager.appendToHistoryLogWhenNCharsAreDifferent({
         selectionOffsets,
         historyState,
-        comparisonPath,
+        comparisonKey,
       });
     } else {
       historyManager.appendToHistoryLog({
@@ -573,7 +543,7 @@
   function closeFormatSelectionMenu() {
     shouldSkipKeyUp = true;
     formatSelectionNode = Map();
-    formatSelectionModel = new FormatSelectionNode()
+    formatSelectionModel = new FormatSelectionNode();
     formatSelectionMenuTopOffset = 0;
     formatSelectionMenuLeftOffset = 0;
     if (selectionOffsetsManageFormatSelectionMenu) {
@@ -582,10 +552,8 @@
   }
 
   async function updateLinkUrl(value) {
-    formatSelectionModel.linkUrl = value
-    formatSelectionNode.formatSelections.replaceSelection(
-      formatSelectionModel
-    );
+    formatSelectionModel.linkUrl = value;
+    formatSelectionNode.formatSelections.replaceSelection(formatSelectionModel);
 
     const historyState = documentModel.update(formatSelectionNode);
     // TODO: when NCharsAreDifferent - current linked list representation doesn't lend itself well to comparisonPath
@@ -644,8 +612,11 @@
     // save range offsets because if the selection is marked as a "link" the url input will be focused
     // and the range will be lost
     selectionOffsetsManageFormatSelectionMenu = selectionOffsets;
-    const { formatSelections, id } = selectedNodeModel.formatSelections.getSelectionByContentOffset(
-      selectedNodeModel.get('content','').length,
+    const {
+      formatSelections,
+      id,
+    } = selectedNodeModel.formatSelections.getSelectionByContentOffset(
+      selectedNodeModel.content.length,
       caretStart,
       caretEnd
     );
@@ -687,21 +658,19 @@
 
     // need to refresh the selection after update, as a merge might have occured
     // between neighboring selections that now have identical formats
-    let selectedNodeModel = documentModel.getNode(formatSelectionNode.get('id'));
+    let selectedNodeModel = documentModel.getNode(formatSelectionNode.id);
     let {
       formatSelections,
       id: updatedSelectionId,
     } = selectedNodeModel.formatSelections.getSelectionByContentOffset(
-      selectedNodeModel.get('content').length,
+      selectedNodeModel.content.length,
       selectionOffsetsManageFormatSelectionMenu.caretStart,
       selectionOffsetsManageFormatSelectionMenu.caretEnd
     );
-    selectedNodeModel.formatSelections
-    formatSelectionNode = formatSelections
+    selectedNodeModel.formatSelections;
+    formatSelectionNode = formatSelections;
     // note: this selection index shouldn't have changed.
-    formatSelectionModel = formatSelections.getNode(
-      updatedSelectionId
-    );
+    formatSelectionModel = formatSelections.getNode(updatedSelectionId);
     if (updatedSelection.link) {
       return;
     }
@@ -724,10 +693,22 @@
   }
 </style>
 
-{#if nodesByIdMapInternal.size}
+<!--TODO: use beforeinput even when Firefox enables it by default-->
+<!-- on:beforeinput={handleBeforeInput} -->
+<svelte:window
+  on:keydown="{handleKeyDown}"
+  on:resize="{manageInsertMenu}"
+  on:keyup="{handleKeyUp}"
+  on:input="{handleInput}"
+  on:paste="{handlePasteWrapper}"
+  on:cut="{handleCutWrapper}"
+  on:mouseup="{handleMouseUp}"
+/>
+
+{#if documentModelInternal}
   <div id="filbert-edit-container" contenteditable>
     <Document
-      nodesById="{nodesByIdMapInternal}"
+      documentModel="{documentModelInternal}"
       currentEditNode="{editSectionNode}"
       setEditNodeId="{sectionEdit}"
     />
@@ -741,7 +722,7 @@
     {insertSection}
   />
 {/if}
-{#if editSectionNode.get('type') === NODE_TYPE_IMAGE && shouldShowEditSectionMenu}
+{#if editSectionNode.type === NODE_TYPE_IMAGE && shouldShowEditSectionMenu}
   <EditImageMenu
     offsetTop="{editSectionMetaFormTopOffset}"
     nodeModel="{editSectionNode}"
@@ -751,7 +732,7 @@
     }}"
   />
 {/if}
-{#if editSectionNode.get('type') === NODE_TYPE_QUOTE && shouldShowEditSectionMenu}
+{#if editSectionNode.type === NODE_TYPE_QUOTE && shouldShowEditSectionMenu}
   <EditQuoteForm
     offsetTop="{editSectionMetaFormTopOffset}"
     nodeModel="{editSectionNode}"
@@ -761,7 +742,7 @@
     }}"
   />
 {/if}
-{#if formatSelectionNode.get('id')}
+{#if formatSelectionNode.id}
   <FormatSelectionMenu
     offsetTop="{formatSelectionMenuTopOffset}"
     offsetLeft="{formatSelectionMenuLeftOffset}"

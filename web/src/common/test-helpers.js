@@ -1,13 +1,3 @@
-function overrideConsole() {
-  global.console = {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    log: jest.fn(),
-  };
-}
-
 function mockLocalStorage() {
   global.localStorageStorage = {};
   global.localStorage = {
@@ -45,8 +35,6 @@ function makeHistoryLogEntries(values) {
 }
 
 module.exports = {
-  overrideConsole,
   mockLocalStorage,
-  makeSelections,
   makeHistoryLogEntries,
 };

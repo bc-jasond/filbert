@@ -36,7 +36,7 @@
   } from '@filbert/constants';
 
   import { stopAndPrevent, getUrl } from '../common/utils';
-  import { focusAndScrollSmooth } from '../common/dom';
+  import { focusAndScrollSmooth } from '../common/dom.mjs';
 
   import Cursor from '../form-components/Cursor.svelte';
   import IconButton from '../form-components/IconButton.svelte';
@@ -50,13 +50,13 @@
   import IconH2 from '../icons/h2.svelte';
   import IconMini from '../icons/mini.svelte';
 
-  $: boldIsEnabled = formatSelectionNode.bold
-  $: italicIsEnabled = formatSelectionNode.italic
-  $: codeIsEnabled = formatSelectionNode.code
-  $: siteinfoIsEnabled = formatSelectionNode.siteinfo
-  $: miniIsEnabled = formatSelectionNode.mini
-  $: strikethroughIsEnabled = formatSelectionNode.strikethrough
-  $: linkIsEnabled = formatSelectionNode.link
+  $: boldIsEnabled = formatSelectionNode.bold;
+  $: italicIsEnabled = formatSelectionNode.italic;
+  $: codeIsEnabled = formatSelectionNode.code;
+  $: siteinfoIsEnabled = formatSelectionNode.siteinfo;
+  $: miniIsEnabled = formatSelectionNode.mini;
+  $: strikethroughIsEnabled = formatSelectionNode.strikethrough;
+  $: linkIsEnabled = formatSelectionNode.link;
   $: {
     tick().then(() => {
       if (shouldShowLinkInput && linkUrlInputDomNode) {
@@ -84,9 +84,7 @@
   let shouldShowLinkInput = formatSelectionNode.link;
   let linkUrlHasError;
   const linkMenuItemIdx = 6;
-  let currentIdx = formatSelectionNode.link
-    ? linkMenuItemIdx
-    : 0;
+  let currentIdx = formatSelectionNode.link ? linkMenuItemIdx : 0;
 
   beforeUpdate(() => {
     if (formatSelectionMenuDomNode) {
@@ -134,20 +132,14 @@
 
     switch (evt.keyCode) {
       case KEYCODE_UP_ARROW: {
-        if (
-          currentIdx === linkMenuItemIdx &&
-          formatSelectionNode.link
-        ) {
+        if (currentIdx === linkMenuItemIdx && formatSelectionNode.link) {
           stopAndPrevent(evt);
           shouldShowLinkInput = false;
           return;
         }
       }
       case KEYCODE_DOWN_ARROW: {
-        if (
-          currentIdx === linkMenuItemIdx &&
-          formatSelectionNode.link
-        ) {
+        if (currentIdx === linkMenuItemIdx && formatSelectionNode.link) {
           stopAndPrevent(evt);
           shouldShowLinkInput = true;
           return;
@@ -179,10 +171,7 @@
           currentIdx === menuItemTypes.length - 1 ? 0 : currentIdx + 1;
         if (currentIdx === linkMenuItemIdx) {
           shouldShowLinkInput = false;
-        } else if (
-          nextIdx === linkMenuItemIdx &&
-          formatSelectionNode.link
-        ) {
+        } else if (nextIdx === linkMenuItemIdx && formatSelectionNode.link) {
           shouldShowLinkInput = true;
         }
         currentIdx = nextIdx;

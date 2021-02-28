@@ -23,7 +23,7 @@
     NODE_TYPE_QUOTE,
     NODE_TYPE_SPACER,
   } from '@filbert/document';
-  import { removeAllRanges, setCaret } from '../common/dom';
+  import { removeAllRanges, setCaret } from '../common/dom.mjs';
   import { stopAndPrevent } from '../common/utils';
 
   const sectionCallbacks = [

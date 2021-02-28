@@ -1,6 +1,4 @@
-import { overrideConsole } from '../../../common/test-helpers';
-import * as selectionHelpers from '@filbert/selection';
-import DocumentModel from '@filbert/document/document-model';
+import { jest } from '@jest/globals';
 import {
   firstNodeContent,
   firstNodeIdH1,
@@ -17,74 +15,74 @@ import {
   preId,
   spacerId,
   testPostWithAllTypesJS,
-} from '../../../common/test-post-with-all-types';
-import { doDelete, doDeleteMetaType, doMerge } from '../delete';
+} from '@filbert/selection';
+import { DocumentModel } from '@filbert/document';
+import { HistoryManager } from '@filbert/history';
+import {
+  doDeleteSingleNode,
+  doDeleteSingleNodeBackspace,
+  doDeleteMultiNode,
+  doDeleteMultiNodeBackspace,
+} from '../delete.mjs';
 
-overrideConsole();
-const { post, contentNodes } = testPostWithAllTypesJS;
-let doc = DocumentModel();
+const { post, head, nodes } = testPostWithAllTypesJS;
+let doc;
+let hist;
+const mockApiClient = { post: jest.fn() };
 
 let originalNodeCount;
 let spyAdjust;
 
-beforeEach(() => {
-  spyAdjust = jest
-    .spyOn(selectionHelpers, 'adjustSelectionOffsetsAndCleanup')
-    .mockImplementation((...args) => args[0]);
-  doc = DocumentModel(post.id, contentNodes);
-  originalNodeCount = doc.getNodes().size;
+beforeAll(() => {
+  console.debug = () => {};
+  console.info = () => {};
+  console.log = () => {};
 });
 
-describe('doDeleteMetaType', () => {
-  test('will throw on text type', () => {
-    expect(() => {
-      doDeleteMetaType(doc, { startNodeId: preId, caretStart: 5 });
-    }).toThrow();
+beforeEach(() => {
+  doc = DocumentModel.fromJS(post.id, head, nodes);
+  hist = HistoryManager(post.id, mockApiClient);
+  originalNodeCount = doc.size;
+});
+
+describe('doDeleteSingleNode', () => {
+  test('returns undefined on a collapsed caret', () => {
+    expect(
+      doDeleteSingleNode(doc, hist, { startNodeId: preId, caretStart: 5 })
+    ).toBe(undefined);
   });
   test('deletes a Meta Type node', () => {
-    const {
-      historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
-    } = doDeleteMetaType(doc, {
-      startNodeId: imgId,
-      caretStart: 0,
-      caretEnd: 0,
-    });
-    expect(startNodeId).toBe(pre2Id);
-    expect(caretStart).toBe(-1);
-    expect(historyState).toMatchSnapshot();
+    expect(
+      doDeleteSingleNode(doc, hist, {
+        startNodeId: imgId,
+        caretStart: 0,
+        caretEnd: 0,
+      })
+    ).toBe(undefined);
   });
 });
 
-describe('Document Model -> Delete helper - single node', () => {
-  test('doDelete - validates minimum input of startNodeId', () => {
-    expect(() => {
-      doDelete(doc, { startNodeId: null });
-    }).toThrow();
-    expect(() => {
-      doDelete(doc, {});
-    }).toThrow();
-  });
+describe('doDeleteSingleNodeBackspace', () => {
   test('doDelete - deletes one character somewhere in middle - caret collapsed', () => {
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
-    } = doDelete(doc, {
+      selectionOffsets: { startNodeId, caretStart },
+    } = doDeleteSingleNodeBackspace(doc, hist, {
       startNodeId: firstNodeIdH1,
       caretStart: 5,
       caretEnd: 5,
     });
     expect(startNodeId).toBe(firstNodeIdH1);
     expect(caretStart).toBe(4);
-    expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(firstNodeIdH1).get('content')).toEqual(
+    expect(historyState).toEqual();
+    expect(doc.getNode(firstNodeIdH1).content).toEqual(
       `${firstNodeContent.slice(0, 4)}${firstNodeContent.slice(5)}`
     );
   });
   test('doDelete - deletes one character - selection', () => {
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doDelete(doc, {
       startNodeId: firstNodeIdH1,
       caretStart: 5,
@@ -93,7 +91,7 @@ describe('Document Model -> Delete helper - single node', () => {
     expect(startNodeId).toBe(firstNodeIdH1);
     expect(caretStart).toBe(5);
     expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(firstNodeIdH1).get('content')).toEqual(
+    expect(doc.getNode(firstNodeIdH1).content).toEqual(
       `${firstNodeContent.slice(0, 5)}${firstNodeContent.slice(6)}`
     );
   });
@@ -102,7 +100,7 @@ describe('Document Model -> Delete helper - single node', () => {
     const contentAfterDelete = formattedPContent.slice(15);
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doDelete(doc, {
       startNodeId: formattedPId,
       caretStart: 0,
@@ -111,9 +109,7 @@ describe('Document Model -> Delete helper - single node', () => {
     expect(startNodeId).toBe(formattedPId);
     expect(caretStart).toBe(0);
     expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(formattedPId).get('content')).toEqual(
-      contentAfterDelete
-    );
+    expect(doc.getNode(formattedPId).content).toEqual(contentAfterDelete);
     expect(spyAdjust).toHaveBeenCalledWith(
       originalNode.set('content', contentAfterDelete),
       formattedPContent,
@@ -126,7 +122,7 @@ describe('Document Model -> Delete helper - single node', () => {
     const contentAfterDelete = formattedPContent.slice(0, 16);
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doDelete(doc, {
       startNodeId: formattedPId,
       caretStart: 16,
@@ -135,9 +131,7 @@ describe('Document Model -> Delete helper - single node', () => {
     expect(startNodeId).toBe(formattedPId);
     expect(caretStart).toBe(16);
     expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(formattedPId).get('content')).toEqual(
-      contentAfterDelete
-    );
+    expect(doc.getNode(formattedPId).content).toEqual(contentAfterDelete);
     expect(spyAdjust).toHaveBeenCalledWith(
       originalNode.set('content', contentAfterDelete),
       formattedPContent,
@@ -150,7 +144,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
   test('doDelete - deletes across nodes', () => {
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doDelete(doc, {
       startNodeId: h2Id,
       caretStart: 6,
@@ -171,7 +165,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
   test('doDelete - deletes across nodes - from end of one TextType through end of another TextType', () => {
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doDelete(doc, {
       startNodeId: firstNodeIdH1,
       caretStart: firstNodeContent.length,
@@ -190,7 +184,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
   test('doDelete - deletes across nodes - all Nodes in document', () => {
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doDelete(doc, {
       startNodeId: firstNodeIdH1,
       endNodeId: lastNodeIdP,
@@ -208,7 +202,7 @@ describe('Document Model -> Delete helper - across nodes', () => {
   test('noop if selectedNodeId is first node in document', () => {
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doDelete(doc, { startNodeId: firstNodeIdH1, caretStart: 0 });
     expect(startNodeId).toBe(firstNodeIdH1);
     expect(caretStart).toBe(0);
@@ -220,7 +214,7 @@ describe('doMerge', () => {
   test('merges LI -> LI', () => {
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doMerge(doc, {
       startNodeId: formattedLiId,
       caretStart: 0,
@@ -235,20 +229,18 @@ describe('doMerge', () => {
     const spy = jest.spyOn(doc, 'mergeParagraphs').mockImplementation(() => []);
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doMerge(doc, { startNodeId: preId, caretStart: 0 });
     expect(spy).toHaveBeenCalledWith(formattedLiId, preId);
     expect(startNodeId).toBe(formattedLiId);
-    expect(caretStart).toEqual(
-      doc.getNode(formattedLiId).get('content').length
-    );
+    expect(caretStart).toEqual(doc.getNode(formattedLiId).content.length);
     expect(historyState).toEqual([]); // from mock
   });
   test('deletes an empty Text Type node if previous node is a Meta Type', () => {
     doc.update(doc.getNode(h2Id).set('content', ''));
     const {
       historyState,
-      executeSelectionOffsets: { startNodeId, caretStart },
+      selectionOffsets: { startNodeId, caretStart },
     } = doMerge(doc, { startNodeId: h2Id, caretStart: 0 });
     expect(startNodeId).toBe(spacerId);
     expect(caretStart).toBe(0);

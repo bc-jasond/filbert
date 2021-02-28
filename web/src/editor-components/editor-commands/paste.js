@@ -1,5 +1,5 @@
-/* eslint-disable import/prefer-default-export */
-import { assertValidDomSelectionOrThrow } from '../../common/dom';
+import { assertValidDomSelectionOrThrow } from '../../common/dom.mjs';
+import { NODE_CONTENT, NODE_TYPE } from '@filbert/document';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -9,28 +9,21 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   const clipboardText = clipboardData.getData('text/plain');
   // TODO: convert HTML => filbert documentModel
   // const clipboardHtml = clipboardData.getData('text/html');
-
-  if (!documentModel.isTextType(startNodeId)) {
+  const startNode = documentModel.getNode(startNodeId);
+  if (!startNode.isTextType()) {
     console.warn(
-      `doPaste() - trying to paste into a "${documentModel
-        .getNode(startNodeId)
-        .get('type')}" node is not supported`,
+      `doPaste() - trying to paste into a "${startNode.type}" node is not supported`,
       selectionOffsets,
       clipboardData
     );
     return {};
   }
-
   const historyState = [];
-  const getReturnPayload = (selectionOffsets) => {
-    return { selectionOffsets, historyState };
-  };
 
   // TODO: preserve format of copied text
-  let selectedNode = documentModel.getNode(startNodeId);
-  const content = selectedNode.get('content') || '';
-  const contentLeft = content.substring(0, caretStart);
-  const contentRight = content.substring(caretStart);
+  const beforeContent = startNode.content;
+  const contentLeft = startNode.content.substring(0, caretStart);
+  const contentRight = startNode.content.substring(caretStart);
   console.info(
     'PASTE - paragraph content: ',
     contentLeft,
@@ -43,18 +36,21 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   if (clipboardLines.length === 1) {
     const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
     const { length: diffLength } = clipboardText;
-    selectedNode = selectedNode.set('content', updatedContent);
-    selectedNode.formatSelections.adjustSelectionOffsetsAndCleanup(
+    startNode.content = updatedContent;
+    startNode.formatSelections.adjustSelectionOffsetsAndCleanup(
       updatedContent.length,
-      content.length,
+      beforeContent.length,
       caretStart,
       diffLength
     );
-    historyState.push(...documentModel.update(selectedNode));
-    return getReturnPayload({
-      startNodeId,
-      caretStart: contentLeft.length + diffLength,
-    });
+    historyState.push(documentModel.update(startNode));
+    return {
+      selectionOffsets: {
+        startNodeId,
+        caretStart: contentLeft.length + diffLength,
+      },
+      historyState,
+    };
   }
   // MULTI LINE PASTE
   // NOTE: the order of operations is important here
@@ -70,23 +66,30 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
   // NOTE: rightNode insert (last before first) so that leftNode gets updated with a next_sibling_id
   // 1) insert a new node (rightNode) for 'lastLine' - using BEFORE content
   historyState.push(
-    ...documentModel.insert(selectedNode.get('type'), leftNodeId, contentRight)
+    documentModel.insertAfter(
+      { [NODE_TYPE]: startNode.type, [NODE_CONTENT]: beforeContent },
+      leftNodeId
+    )
   );
-  const rightNodeId = documentModel.getLastInsertId();
+  const rightNodeId = documentModel.lastInsertId;
   // now leftNode has 'next_sibling_id' set to rightNode
   // important: 'content' is now contentLeft
-  let leftNode = documentModel.getNode(leftNodeId).set('content', contentLeft);
-  let rightNode = documentModel.getNode(rightNodeId);
+  const leftNode = documentModel.getNode(leftNodeId);
+  leftNode.content = contentLeft;
+  const rightNode = documentModel.getNode(rightNodeId);
 
   // 2) if the original selected node can have Selections - move them to the right node if needed
   // NOTE: do this with BEFORE content
-  const {left, right} = leftNode.formatSelections.splitSelectionsAtCaretOffset(caretStart);
+  const {
+    left,
+    right,
+  } = leftNode.formatSelections.splitSelectionsAtCaretOffset(caretStart);
   leftNode.formatSelections = left;
   rightNode.formatSelections = right;
 
   // 3) update content with firstLine & lastLine
-  leftNode = leftNode.set('content', updatedLeftNodeContent);
-  rightNode = rightNode.set('content', updatedRightNodeContent);
+  leftNode.content = updatedLeftNodeContent;
+  rightNode.content = updatedRightNodeContent;
 
   // 4) adjust offsets with updated content
   leftNode.formatSelections.adjustSelectionOffsetsAndCleanup(
@@ -101,7 +104,7 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
     0,
     lastLine.length
   );
-  historyState.push(...documentModel.update(leftNode));
+  historyState.push(documentModel.update(leftNode));
 
   // there are middle lines, insert Paragraphs after "left"
   let prevNodeId = startNodeId;
@@ -110,16 +113,22 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
     // skip whitespace only lines TODO: allow in Code sections?
     if (currentLine.trim().length > 0) {
       historyState.push(
-        ...documentModel.insert(leftNode.get('type'), prevNodeId, currentLine)
+        documentModel.insertAfter(
+          { [NODE_TYPE]: leftNode.type, [NODE_CONTENT]: currentLine },
+          prevNodeId
+        )
       );
-      const nextId = documentModel.getLastInsertId();
+      const nextId = documentModel.lastInsertId;
       prevNodeId = nextId;
     }
   }
 
-  historyState.push(...documentModel.update(rightNode));
-  return getReturnPayload({
-    startNodeId: rightNodeId,
-    caretStart: lastLine.length,
-  });
+  historyState.push(documentModel.update(rightNode));
+  return {
+    selectionOffsets: {
+      startNodeId: rightNodeId,
+      caretStart: lastLine.length,
+    },
+    historyState,
+  };
 }

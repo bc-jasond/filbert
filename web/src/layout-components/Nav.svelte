@@ -31,7 +31,7 @@
     userIsMe = window.location.href.includes($session?.user?.username);
   });
   onMount(async () => {
-    ({ createNextUrl } = await import('../common/dom.js'));
+    ({ createNextUrl } = await import('../common/dom.mjs'));
   });
 
   // TODO: this isn't wired up lol - use a store?

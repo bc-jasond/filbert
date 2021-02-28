@@ -8,7 +8,7 @@ import {
   caretIsOnEdgeOfParagraphText,
   getRange,
   setCaret,
-} from '../../common/dom';
+} from '../../common/dom.mjs';
 import { stopAndPrevent } from '../../common/utils';
 import { Map } from 'immutable';
 
@@ -27,7 +27,7 @@ export async function handleArrows({
   function getNeighborOnArrowNavigation() {
     const { startNodeId } = selectionOffsets;
     const currentNode = documentModel.getNode(startNodeId);
-    let neighborNode = Map();
+    let neighborNode;
     const [
       isAtTop,
       isAtEnd,
@@ -39,15 +39,15 @@ export async function handleArrows({
       (evt.keyCode === KEYCODE_LEFT_ARROW &&
         // NOTE: if the content is empty, there will be a ZERO_LENGTH char and user would
         // have to hit left twice without this code
-        (isAtStart || currentNode.get('content', '').length === 0))
+        (isAtStart || currentNode.content.length === 0))
     ) {
-      neighborNode = documentModel.getPrevNode(startNodeId);
+      neighborNode = documentModel.getPrev(startNodeId);
     } else if (
       (evt.keyCode === KEYCODE_DOWN_ARROW && isAtBottom) ||
       (evt.keyCode === KEYCODE_RIGHT_ARROW &&
-        (isAtEnd || currentNode.get('content', '').length === 0))
+        (isAtEnd || currentNode.content.length === 0))
     ) {
-      neighborNode = documentModel.getNextNode(startNodeId);
+      neighborNode = documentModel.getNext(startNodeId);
     }
     return neighborNode;
   }
@@ -81,17 +81,17 @@ export async function handleArrows({
   }
 
   // if there's no currently selected MetaType node
-  if (!editSectionNode.get('id')) {
+  if (!editSectionNode.id) {
     // see if we've entered one
     const neighborNode = getNeighborOnArrowNavigation(evt, selectionOffsets);
-    if (!neighborNode.get('id')) {
+    if (!neighborNode) {
       // we won't be leaving the current node, let contenteditable handle the caret
       console.log('ARROW - not leaving current node');
       return true;
     }
     stopAndPrevent(evt);
-    if (documentModel.isMetaType(neighborNode.get('id'))) {
-      await sectionEdit(neighborNode.get('id'));
+    if (neighborNode.isMetaType()) {
+      await sectionEdit(neighborNode);
       return true;
     }
     /* NOTE: unset insertMenuNode here or arrow navigation breaks
@@ -104,7 +104,7 @@ export async function handleArrows({
               });
           }*/
     setCaret({
-      startNodeId: neighborNode.get('id'),
+      startNodeId: neighborNode.id,
       caretStart: [KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)
         ? -1
         : 0,
@@ -125,12 +125,12 @@ export async function handleArrows({
   // }
   stopAndPrevent(evt);
   if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
-    const prevNode = documentModel.getPrevNode(editSectionNode.get('id'));
-    if (!prevNode.get('id')) {
+    const prevNode = documentModel.getPrev(editSectionNode);
+    if (prevNode) {
       return;
     }
-    if (documentModel.isMetaType(prevNode.get('id'))) {
-      await sectionEdit(prevNode.get('id'));
+    if (prevNode.isMetaType()) {
+      await sectionEdit(prevNode);
       return;
     }
     await closeAllEditContentMenus();
@@ -138,15 +138,15 @@ export async function handleArrows({
     return;
   }
   // down or right arrows
-  const nextNode = documentModel.getNextNode(editSectionNode.get('id'));
-  if (!nextNode.get('id')) {
+  const nextNode = documentModel.getNext(editSectionNode);
+  if (!nextNode) {
     return;
   }
-  if (documentModel.isMetaType(nextNode.get('id'))) {
-    await sectionEdit(nextNode.get('id'));
+  if (nextNode.isMetaType()) {
+    await sectionEdit(nextNode);
     return;
   }
   await closeAllEditContentMenus();
-  setCaret({ startNodeId: nextNode.get('id'), caretStart: 0 });
+  setCaret({ startNodeId: nextNode.id, caretStart: 0 });
   return true;
 }

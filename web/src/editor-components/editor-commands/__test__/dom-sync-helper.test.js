@@ -9,7 +9,7 @@ import {
   testPostWithAllTypesJS,
   h2Id,
   h2Content,
-} from '../../../common/test-post-with-all-types';
+} from '@filbert/util/test-post-with-all-types';
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
 let doc;
@@ -35,7 +35,7 @@ describe('Document Model -> DOM sync helper', () => {
   test('syncToDom - adds a new letter to content at caretStart', () => {
     const offset = 6;
     const newChar = 'Z';
-    const contentBeforeUpdate = doc.getNode(h2Id).get('content');
+    const contentBeforeUpdate = doc.getNode(h2Id).content;
     const {
       historyState,
       executeSelectionOffsets: { startNodeId, caretStart },
@@ -50,7 +50,7 @@ describe('Document Model -> DOM sync helper', () => {
     expect(startNodeId).toBe(h2Id);
     expect(caretStart).toBe(offset + newChar.length);
     expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(h2Id).get('content')).toBe(
+    expect(doc.getNode(h2Id).content).toBe(
       `${h2Content.slice(0, offset)}${newChar}${h2Content.slice(offset)}`
     );
   });
@@ -59,7 +59,7 @@ describe('Document Model -> DOM sync helper', () => {
     const newChar = 'Z';
     // unset content
     doc.update(doc.getNode(h2Id).set('content', ''));
-    const contentBeforeUpdate = doc.getNode(h2Id).get('content');
+    const contentBeforeUpdate = doc.getNode(h2Id).content;
     const {
       historyState,
       executeSelectionOffsets: { startNodeId, caretStart },
@@ -74,7 +74,7 @@ describe('Document Model -> DOM sync helper', () => {
     expect(startNodeId).toBe(h2Id);
     expect(caretStart).toBe(offset + newChar.length);
     expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(h2Id).get('content')).toBe(
+    expect(doc.getNode(h2Id).content).toBe(
       `${contentBeforeUpdate.slice(
         0,
         offset
@@ -86,7 +86,7 @@ describe('Document Model -> DOM sync helper', () => {
     // adding more than one char at a time should work but, we shouldn't
     // arrive here (paste is handled another way)
     const newChar = 'way too much content';
-    const contentBeforeUpdate = doc.getNode(h2Id).get('content');
+    const contentBeforeUpdate = doc.getNode(h2Id).content;
     const {
       historyState,
       executeSelectionOffsets: { startNodeId, caretStart },
@@ -102,7 +102,7 @@ describe('Document Model -> DOM sync helper', () => {
     expect(startNodeId).toBe(h2Id);
     expect(caretStart).toBe(offset + newChar.length);
     expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(h2Id).get('content')).toBe(
+    expect(doc.getNode(h2Id).content).toBe(
       `${h2Content.slice(0, offset)}${newChar}${h2Content.slice(offset)}`
     );
   });
@@ -123,7 +123,7 @@ describe('Document Model -> DOM sync helper', () => {
     const emojiEvent = { data: '🤦🏻‍♂️' };
     // offset will be the position AFTER the emoji that's been inserted
     const offset = 10 + emojiEvent.data.length;
-    const contentBeforeUpdate = doc.getNode(h2Id).get('content');
+    const contentBeforeUpdate = doc.getNode(h2Id).content;
     const {
       historyState,
       executeSelectionOffsets: { startNodeId, caretStart },
@@ -137,7 +137,7 @@ describe('Document Model -> DOM sync helper', () => {
     expect(startNodeId).toBe(h2Id);
     expect(caretStart).toBe(offset);
     expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(h2Id).get('content')).toBe(
+    expect(doc.getNode(h2Id).content).toBe(
       `${h2Content.slice(0, offset - emojiEvent.data.length)}${
         emojiEvent.data
       }${h2Content.slice(offset - emojiEvent.data.length)}`
@@ -148,7 +148,7 @@ describe('Document Model -> DOM sync helper', () => {
     // offset will be the position AFTER the emoji that's been inserted
     const offset = emojiEvent.data.length;
     doc.update(doc.getNode(h2Id).set('content', ''));
-    const contentBeforeUpdate = doc.getNode(h2Id).get('content');
+    const contentBeforeUpdate = doc.getNode(h2Id).content;
     const {
       historyState,
       executeSelectionOffsets: { startNodeId, caretStart },
@@ -162,7 +162,7 @@ describe('Document Model -> DOM sync helper', () => {
     expect(startNodeId).toBe(h2Id);
     expect(caretStart).toBe(offset);
     expect(historyState).toMatchSnapshot();
-    expect(doc.getNode(h2Id).get('content')).toBe(
+    expect(doc.getNode(h2Id).content).toBe(
       `${contentBeforeUpdate.slice(0, offset - emojiEvent.data.length)}${
         emojiEvent.data
       }${contentBeforeUpdate.slice(offset - emojiEvent.data.length)}`

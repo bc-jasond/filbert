@@ -19,7 +19,7 @@ import {
   h2Id,
   h2Content,
   formattedLiContent,
-} from '../../../common/test-post-with-all-types';
+} from '@filbert/util/test-post-with-all-types';
 
 const { post, contentNodes } = testPostWithAllTypesJS;
 overrideConsole();
@@ -65,9 +65,7 @@ describe('Document Model -> split node helper doSplit()', () => {
     } = doSplit(doc, { startNodeId: firstNodeIdH1, caretStart: caretStartArg });
     const rightNode = doc.getNode(startNodeId);
     expect(rightNode.get('type')).toBe(NODE_TYPE_H1);
-    expect(rightNode.get('content')).toBe(
-      firstNodeContent.substring(caretStartArg)
-    );
+    expect(rightNode.content).toBe(firstNodeContent.substring(caretStartArg));
     expect(caretStart).toBe(0);
     expect(spySplit).not.toHaveBeenCalled();
   });
@@ -98,7 +96,7 @@ describe('Document Model -> split node helper doSplit()', () => {
     expect(startNodeId).not.toEqual(firstNodeIdH1);
     expect(doc.getNextNode(firstNodeIdH1).get('type')).toBe(originalType);
     expect(doc.getNode(startNodeId).get('type')).toBe(NODE_TYPE_H1);
-    expect(doc.getNode(startNodeId).get('content')).toEqual(firstNodeContent);
+    expect(doc.getNode(startNodeId).content).toEqual(firstNodeContent);
   });
   test('H1 or H2 - inserts empty P when user hits enter at end', () => {
     const {
@@ -106,10 +104,10 @@ describe('Document Model -> split node helper doSplit()', () => {
       executeSelectionOffsets: { startNodeId, caretStart },
     } = doSplit(doc, { startNodeId: h2Id, caretStart: h2Content.length });
     expect(startNodeId).not.toBe(h2Id);
-    expect(doc.getNode(h2Id).get('content')).toEqual(h2Content);
+    expect(doc.getNode(h2Id).content).toEqual(h2Content);
     expect(doc.getNextNode(h2Id).get('id')).toEqual(startNodeId);
     expect(doc.getNode(startNodeId).get('type')).toBe(NODE_TYPE_P);
-    expect(doc.getNode(startNodeId).get('content')).toEqual('');
+    expect(doc.getNode(startNodeId).content).toEqual('');
   });
   test('LI with Selections - splits correctly in middle', () => {
     const caretStartArg = Math.floor(formattedLiContent / 2);
@@ -119,7 +117,7 @@ describe('Document Model -> split node helper doSplit()', () => {
       executeSelectionOffsets: { startNodeId, caretStart },
     } = doSplit(doc, { startNodeId: formattedLiId, caretStart: caretStartArg });
     expect(spySplit).toHaveBeenCalled();
-    expect(doc.getNode(startNodeId).get('content')).toEqual(
+    expect(doc.getNode(startNodeId).content).toEqual(
       formattedLiContent.substring(caretStartArg)
     );
     expect(doc.getNode(startNodeId).get('type')).toBe(NODE_TYPE_LI);
