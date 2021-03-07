@@ -1,4 +1,5 @@
 import { getMysqlDatetime } from '@filbert/mysql';
+import { isEmpty } from '@filbert/linked-list';
 
 import {
   getKnex,
@@ -132,8 +133,7 @@ export async function getPostByCanonical(req, res) {
     prevPost,
     nextPost,
     post,
-    head: documentModel.head,
-    contentNodes: documentModel.nodes,
+    documentModel: documentModel.toJS(),
   });
 }
 
@@ -187,7 +187,7 @@ export async function getSummaryAndPhotoFromContent(req, res) {
   const responseData = {};
   const { documentModel } = await getDocumentModel(id);
 
-  if (!documentModel.size) {
+  if (isEmpty(documentModel)) {
     res.send(responseData);
   }
   res.send(getFirstPhotoAndAbstractFromContent(documentModel));

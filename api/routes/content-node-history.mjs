@@ -1,4 +1,10 @@
 import immutable from 'immutable';
+import {
+  LINKED_LIST_HEAD_ID,
+  getNode,
+  nodes,
+  LINKED_LIST_NODES_MAP,
+} from '@filbert/linked-list';
 import { getKnex, getDocumentModel } from '../lib/mysql.mjs';
 
 const { Map } = immutable;
@@ -24,21 +30,34 @@ async function historyDiff(postId, leftHistoryId, rightHistoryId, trxArg) {
     let diff = Map();
     // visit each node from the earlier (left) document snapshot
     // if it's not present or different in the later (right) document snapshot, add the whole node to diff state
-    documentModelLeft.nodes.forEach((left, leftNodeId) => {
-      const right = documentModelRight.getNode(leftNodeId);
+    nodes(documentModelLeft).forEach((left, leftNodeId) => {
+      const right = getNode(documentModelRight, leftNodeId);
       if (!left.equals(right)) {
         diff = diff.set(leftNodeId, left);
       }
     });
     // visit each node from the later (right) document snapshot
     // if it's not in the earlier (left), mark it deleted by adding the nodeId as a string
-    documentModelRight.nodes.forEach((right, rightNodeId) => {
-      const left = documentModelLeft.getNode(rightNodeId);
+    nodes(documentModelRight).forEach((right, rightNodeId) => {
+      const left = getNode(documentModelLeft, rightNodeId);
       if (!left) {
         diff = diff.set(rightNodeId, rightNodeId);
       }
     });
-    return { historyLogEntry: diff.toJS(), selectionOffsets };
+    let newHeadId;
+    if (
+      documentModelRight.get(LINKED_LIST_HEAD_ID) !==
+      documentModelLeft.get(LINKED_LIST_HEAD_ID)
+    ) {
+      newHeadId = documentModelLeft.get(LINKED_LIST_HEAD_ID);
+    }
+    return {
+      historyLogEntry: {
+        [LINKED_LIST_HEAD_ID]: newHeadId,
+        [LINKED_LIST_NODES_MAP]: diff.toJS(),
+      },
+      selectionOffsets,
+    };
   });
 }
 
@@ -196,16 +215,15 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
     currentPost.meta.currentUndoHistoryId = history.content_node_history_id;
 
     // get all nodes for this point in history to send to the frontend - nice 'n dumb
-    const documentModel = await getDocumentModel(
+    const { documentModel, selectionOffsets } = await getDocumentModel(
       id,
       history.content_node_history_id,
       trx
     );
 
     return {
-      selectionOffsets: documentModel.selectionOffsets,
-      head: documentModel.head,
-      nodesById: documentModel.nodes,
+      selectionOffsets,
+      documentModel: documentModel.toJS(),
       updatedPost: currentPost,
     };
   });
