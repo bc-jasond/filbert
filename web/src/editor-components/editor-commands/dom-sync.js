@@ -1,3 +1,5 @@
+import { getNode } from '@filbert/linked-list';
+import { contentClean, update, NODE_CONTENT } from '@filbert/document';
 import {
   assertValidDomSelectionOrThrow,
   findFirstDifferentWordFromDom,
@@ -21,8 +23,8 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
     );
   }
 
-  const startNode = documentModel.getNode(startNodeId);
-  const contentBeforeUpdate = startNode.content;
+  let startNode = getNode(documentModel, startNodeId);
+  const contentBeforeUpdate = contentClean(startNode);
   const updatedContentMap = `${contentBeforeUpdate.slice(
     0,
     caretStart
@@ -36,22 +38,24 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
     'length: ',
     updatedContentMap.length
   );
-  startNode.content = updatedContentMap;
-  // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
+  startNode = startNode.set(NODE_CONTENT, updatedContentMap);
+  /* if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
   startNode.formatSelections.adjustSelectionOffsetsAndCleanup(
     updatedContentMap.length,
     contentBeforeUpdate.length,
     caretStart,
     newChar.length
-  );
+  );*/
   const executeSelectionOffsets = {
     startNodeId,
     caretStart: caretStart + newChar.length,
   };
-
+  let historyLogEntry;
+  ({ documentModel, historyLogEntry } = update(documentModel, startNode));
   return {
+    documentModel,
     selectionOffsets: executeSelectionOffsets,
-    historyState: [documentModel.update(startNode)],
+    historyLogEntries: [historyLogEntry],
   };
 }
 
@@ -71,30 +75,35 @@ function replaceWordFromSpellcheck(
     0,
     diffStart
   )}${domWord}${contentBeforeUpdate.slice(diffStart + beforeWord.length)}`;
-  const startNode = documentModel.getNode(startNodeId);
-  startNode.content = updatedContent;
-  // adjust paragraph selections, if necessary
+  let startNode = getNode(documentModel, startNodeId);
+  startNode = startNode.set(NODE_CONTENT, updatedContent);
+  /* adjust paragraph selections, if necessary
   startNode.formatSelections.adjustSelectionOffsetsAndCleanup(
     updatedContent.length,
     contentBeforeUpdate.length,
     diffStart,
     domWord.length - beforeWord.length
-  );
+  );*/
   // place caret at end of new word
   const selectionOffsets = {
     startNodeId,
     caretStart: diffStart + domWord.length,
   };
-  const historyState = documentModel.update(startNode);
-  return { selectionOffsets, historyState };
+  let historyLogEntry;
+  ({ documentModel, historyLogEntry } = update(documentModel, startNode));
+  return {
+    documentModel,
+    selectionOffsets,
+    historyLogEntries: [historyLogEntry],
+  };
 }
 
 export function syncFromDom(documentModel, selectionOffsets, evt) {
   assertValidDomSelectionOrThrow(selectionOffsets);
   const { caretStart, startNodeId } = selectionOffsets;
   console.info('From DOM SYNC', startNodeId, 'offset', caretStart);
-  const startNode = documentModel.getNode(startNodeId);
-  const contentBeforeUpdate = startNode.content || '';
+  let startNode = getNode(documentModel, startNodeId);
+  const contentBeforeUpdate = contentClean(startNode);
 
   // NOTE: following for emojis keyboard insert only...
   const { data: emoji, inputType } = evt;
@@ -130,17 +139,21 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
     'length: ',
     updatedContentMap.length
   );
-  startNode.content = updatedContentMap;
-  // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
+  startNode = startNode.set(NODE_CONTENT, updatedContentMap);
+  /* if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
   startNode.formatSelections.adjustSelectionOffsetsAndCleanup(
     updatedContentMap.length,
     contentBeforeUpdate.length,
     beforeUpdateCaretStart,
     emoji.length
-  );
+  );*/
   const executeSelectionOffsets = { startNodeId, caretStart };
-  const historyState = documentModel.update(startNode);
+  let historyLogEntry;
+  ({ documentModel, historyLogEntry } = update(documentModel, startNode));
 
   // return original caretStart for correct setCaret() positioning
-  return { selectionOffsets: executeSelectionOffsets, historyState };
+  return {
+    selectionOffsets: executeSelectionOffsets,
+    historyLogEntries: [historyLogEntry],
+  };
 }

@@ -2,8 +2,11 @@ import knex from 'knex';
 
 import { wrapExec } from './util.mjs';
 import { mysqlConnectionConfig } from '@filbert/mysql';
-import {DocumentModel} from "@filbert/document";
-import {LINKED_LIST_NODE_ID, LINKED_LIST_NODE_NEXT} from '@filbert/linked-list';
+import { documentModelFromJS, DOCUMENT_POST_ID } from '@filbert/document';
+import {
+  LINKED_LIST_HEAD_ID,
+  LINKED_LIST_NODES_MAP,
+} from '@filbert/linked-list';
 
 let knexConnection;
 export async function getKnex() {
@@ -17,10 +20,6 @@ export async function getKnex() {
     });
   }
   return knexConnection;
-}
-
-function getCycleDetectionKey(node) {
-  return `${node[LINKED_LIST_NODE_ID]}:${node[LINKED_LIST_NODE_NEXT]}`;
 }
 
 export async function getDocumentModel(postId, currentUndoHistoryId, trx) {
@@ -37,36 +36,42 @@ export async function getDocumentModel(postId, currentUndoHistoryId, trx) {
 
   const historyEntries = await builder;
   const nodesReturn = {};
-  const seen = {};
   let executeSelectionOffsets = {};
-  let headReturn;
-  historyEntries.forEach(({ meta: { historyState: {head, nodes}, selectionOffsets } }) => {
-    // head will be falsy if it didn't change
-    if (head) {
-      headReturn = head;
-    }
-    Object.entries(nodes).forEach(([nodeId, node]) => {
-      if (typeof node === 'string') {
-        // should these be filtered and applied second after all update states?
-        delete nodesReturn[nodeId];
-      } else {
-        // ensure that only one node points to next, ignore dupes since a node can have multiple history entries
-        if (node[LINKED_LIST_NODE_NEXT] && seen[LINKED_LIST_NODE_NEXT] && seen[LINKED_LIST_NODE_NEXT] !== node[LINKED_LIST_NODE_ID]) {
-          console.error(
-            'cycle detected',
-            node
-          );
-          throw new Error('getDocumentModel')
-        }
-        if (node[LINKED_LIST_NODE_NEXT]) {
-          seen[node[LINKED_LIST_NODE_NEXT]] = node[LINKED_LIST_NODE_ID];
-        }
-        nodesReturn[nodeId] = node;
+  let headReturnId;
+  historyEntries.forEach(
+    ({
+      meta: {
+        historyLogEntry: {
+          [LINKED_LIST_HEAD_ID]: headId,
+          [LINKED_LIST_NODES_MAP]: nodes,
+        },
+        selectionOffsets,
+      },
+    }) => {
+      // headId will be falsy if it didn't change
+      if (headId) {
+        headReturnId = headId;
       }
-    });
-    executeSelectionOffsets = selectionOffsets;
-  });
-  return {documentModel: DocumentModel.fromJS(postId, headReturn, nodesReturn), selectionOffsets: executeSelectionOffsets};
+      Object.entries(nodes).forEach(([nodeId, node]) => {
+        if (typeof node === 'string') {
+          // should these be filtered and applied second after all update states?
+          delete nodesReturn[nodeId];
+        } else {
+          // ensure that only one node points to next, ignore dupes since a node can have multiple history entries
+          nodesReturn[nodeId] = node;
+        }
+      });
+      executeSelectionOffsets = selectionOffsets;
+    }
+  );
+  return {
+    documentModel: documentModelFromJS({
+      [DOCUMENT_POST_ID]: postId,
+      [LINKED_LIST_HEAD_ID]: headReturnId,
+      [LINKED_LIST_NODES_MAP]: nodesReturn,
+    }),
+    selectionOffsets: executeSelectionOffsets,
+  };
 }
 
 export async function makeMysqlDump(now, stagingDirectory) {

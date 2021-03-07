@@ -22,6 +22,7 @@
     "pretty-svelte": "prettier --write --plugin-search-dir=. './web/src/**/*.{html,svelte,mjs,js}'",
     "pretty-api": "prettier --parser=babel --single-quote --write './api/**/*.{mjs,js}'",
     "pretty-lib": "prettier --parser=babel --single-quote --write './lib/**/*.{mjs,js}'",
-    "pretty-test": "prettier --parser=babel --single-quote --write './test/**/*.{mjs,js}'"
+    "pretty-test": "prettier --parser=babel --single-quote --write './test/**/*.{mjs,js}'",
+    "pretty-all": "yarn pretty-svelte ; yarn pretty-api ; yarn pretty-lib ; yarn pretty-test"
   }
 }

@@ -126,9 +126,15 @@ export async function getPostByCanonical(req, res) {
     nextPostCanonical,
     loggedInUser
   );
-  const {documentModel} = await getDocumentModel(post.id);
+  const { documentModel } = await getDocumentModel(post.id);
 
-  res.send({ prevPost, nextPost, post, head: documentModel.head, contentNodes: documentModel.nodes });
+  res.send({
+    prevPost,
+    nextPost,
+    post,
+    head: documentModel.head,
+    contentNodes: documentModel.nodes,
+  });
 }
 
 // returns only post
@@ -179,7 +185,7 @@ export async function patchPost(req, res, next) {
 export async function getSummaryAndPhotoFromContent(req, res) {
   const { id } = req.currentPost;
   const responseData = {};
-  const {documentModel} = await getDocumentModel(id);
+  const { documentModel } = await getDocumentModel(id);
 
   if (!documentModel.size) {
     res.send(responseData);

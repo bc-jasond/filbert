@@ -1,6 +1,5 @@
 import { Map } from 'immutable';
 import { KEYCODE_Z } from '@filbert/constants';
-import { DocumentModel } from '@filbert/document';
 
 import { stopAndPrevent } from '../../common/utils';
 import { currentPost } from '../../stores';

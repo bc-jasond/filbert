@@ -2,7 +2,6 @@ import { Map } from 'immutable';
 import { KEYCODE_Z } from '@filbert/constants';
 import { stopAndPrevent } from '../../common/utils';
 import { currentPost } from '../../stores';
-import { DocumentModel } from '../../../../lib/document/document-model.mjs';
 
 export function isUndoEvent(evt) {
   return evt.keyCode === KEYCODE_Z && (evt.metaKey || evt.ctrlKey);

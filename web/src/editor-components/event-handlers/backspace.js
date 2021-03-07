@@ -4,7 +4,6 @@ import {
   doDeleteSingleNodeBackspace,
   doDeleteMultiNodeBackspace,
 } from '../editor-commands/delete.mjs';
-import { DocumentModelNode } from '@filbert/document';
 
 export async function handleBackspace({
   evt,
@@ -28,30 +27,33 @@ export async function handleBackspace({
 
   const { endNodeId } = selectionOffsets;
 
+  let executeSelectionOffsets;
   // SINGLE NODE
   if (!endNodeId) {
-    const {
+    ({
+      documentModel,
       selectionOffsets: executeSelectionOffsets,
     } = doDeleteSingleNodeBackspace(
       documentModel,
       historyManager,
       selectionOffsets
-    );
+    ));
     setEditSectionNode();
-    await commitUpdates(executeSelectionOffsets);
+    await commitUpdates(documentModel, executeSelectionOffsets);
     return true;
   }
 
   // MULTI-NODE
-  const {
+  ({
+    documentModel,
     selectionOffsets: executeSelectionOffsets,
   } = doDeleteMultiNodeBackspace(
     documentModel,
     historyManager,
     selectionOffsets
-  );
+  ));
   // clear the selected format node when deleting the highlighted selection
   // NOTE: must wait for state to have been set or setCaret will check stale values
-  await commitUpdates(executeSelectionOffsets);
+  await commitUpdates(documentModel, executeSelectionOffsets);
   return true;
 }

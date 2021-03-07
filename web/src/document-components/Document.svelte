@@ -1,10 +1,23 @@
 <script>
-  export let documentModel = new DocumentModel();
-  export let currentEditNode = new DocumentModelNode();
+  export let documentModel = Map();
+  export let currentEditNode = Map();
   export let setEditNodeId = undefined;
 
-  import { DocumentModel, DocumentModelNode } from '@filbert/document';
-  import { cleanText } from '@filbert/util';
+  import { Map } from 'immutable';
+
+  import { head, getNext, size, getId } from '@filbert/linked-list';
+  import {
+    type,
+    contentClean,
+    NODE_TYPE_P,
+    NODE_TYPE_LI,
+    NODE_TYPE_PRE,
+    NODE_TYPE_H1,
+    NODE_TYPE_H2,
+    NODE_TYPE_SPACER,
+    NODE_TYPE_IMAGE,
+    NODE_TYPE_QUOTE,
+  } from '@filbert/document';
   import H1 from './H1.svelte';
   import H2 from './H2.svelte';
   import Li from './Li.svelte';
@@ -18,29 +31,29 @@
   const NODE_TYPE_CONTENT = 'content';
   const NODE_TYPE_CODE = 'code';
 
-  let current;
-  let nodesInOrder;
+  let current = Map();
+  let nodesInOrder = [];
 
   function getParagraphs() {
-    if (!current?.isParagraph) {
+    if (type(current) !== NODE_TYPE_P) {
       return null;
     }
     const paragraphs = [];
-    while (current?.isParagraph) {
+    while (type(current) === NODE_TYPE_P) {
       paragraphs.push(current);
-      current = documentModel.getNext(current);
+      current = getNext(documentModel, current);
     }
     return paragraphs;
   }
 
   function getOrderedList() {
-    if (!current?.isListItem) {
+    if (type(current) !== NODE_TYPE_LI) {
       return null;
     }
     const listItems = [];
-    while (current?.isListItem) {
+    while (type(current) === NODE_TYPE_LI) {
       listItems.push(current);
-      current = documentModel.getNext(current);
+      current = getNext(documentModel, current);
     }
     return listItems;
   }
@@ -64,34 +77,34 @@
 
   function getCodeSection() {
     const preNodes = [];
-    while (current?.isCode) {
+    while (type(current) === NODE_TYPE_PRE) {
       preNodes.push(current);
-      current = documentModel.getNext(current);
+      current = getNext(documentModel, current);
     }
     return { type: NODE_TYPE_CODE, nodes: preNodes };
   }
 
   $: {
     let infiniteLoopCount = 0;
-    current = documentModel.head;
+    current = head(documentModel);
     nodesInOrder = [];
-    while (current) {
+    while (current.size > 0) {
       if (infiniteLoopCount++ > 100000) {
         console.error('infinite loop');
         break;
       }
       let shouldAdvanceCurrent = true;
-      if (current.isParagraph || current.isListItem) {
+      if (type(current) === NODE_TYPE_P || type(current) === NODE_TYPE_LI) {
         nodesInOrder.push(getContentSection());
         shouldAdvanceCurrent = false;
-      } else if (current.isCode) {
+      } else if (type(current) === NODE_TYPE_PRE) {
         nodesInOrder.push(getCodeSection());
         shouldAdvanceCurrent = false;
       } else {
         nodesInOrder.push(current);
       }
       if (shouldAdvanceCurrent) {
-        current = documentModel.getNext(current);
+        current = getNext(documentModel, current);
       }
     }
   }
@@ -134,48 +147,48 @@
     {#if node.type === NODE_TYPE_CONTENT}
       <section class="filbert-section content-section">
         {#each node.nodes as nodeInner}
-          {#if nodeInner.isParagraph}
-            <P node="{nodeInner.values}" />
-          {:else}
+          {#if Array.isArray(nodeInner)}
             <ol>
               {#each nodeInner as li}
-                <Li node="{li.values}" />
+                <Li node="{li}" />
               {/each}
             </ol>
+          {:else}
+            <P node="{nodeInner}" />
           {/if}
         {/each}
       </section>
     {:else if node.type === NODE_TYPE_CODE}
       <section class="filbert-section code-section">
         {#each node.nodes as pre}
-          <Pre node="{pre.values}" />
+          <Pre node="{pre}" />
         {/each}
       </section>
-    {:else if node.isHeading}
+    {:else if type(node) === NODE_TYPE_H1}
       <H1
-        node="{node.values}"
-        shouldShowPlaceholder="{documentModel.size === 1 && cleanText(node.content).length === 0}"
+        {node}
+        shouldShowPlaceholder="{size(documentModel) === 1 && contentClean(node).length === 0}"
       />
-    {:else if node.isSubHeading}
-      <H2 node="{node.values}" />
-    {:else if node.isSpacer}
+    {:else if type(node) === NODE_TYPE_H2}
+      <H2 {node} />
+    {:else if type(node) === NODE_TYPE_SPACER}
       <Spacer
-        node="{node.values}"
+        {node}
         {setEditNodeId}
-        isEditing="{node.id === currentEditNode.id}"
+        isEditing="{getId(node) === getId(currentEditNode)}"
       />
-    {:else if node.isImage}
+    {:else if type(node) === NODE_TYPE_IMAGE}
       <Image
-        node="{node.values}"
+        {node}
         hideBorder="{false}"
         {setEditNodeId}
-        isEditing="{node.id === currentEditNode.id}"
+        isEditing="{getId(node) === getId(currentEditNode)}"
       />
-    {:else if node.isQuote}
+    {:else if type(node) === NODE_TYPE_QUOTE}
       <Quote
-        node="{node.values}"
+        {node}
         {setEditNodeId}
-        isEditing="{node.id === currentEditNode.id}"
+        isEditing="{getId(node) === getId(currentEditNode)}"
       />
     {/if}
   {/each}

@@ -1,9 +1,7 @@
 import { getKnex, getDocumentModel } from './lib/mysql.mjs';
 import { postContentNodeHistory } from './routes/content-node-history.mjs';
 import { saneEnvironmentOrExit } from '@filbert/util';
-import {
-  DocumentModel,
-} from '@filbert/document';
+import { DocumentModel } from '@filbert/document';
 import { HistoryManager, historyStateIsValid } from '@filbert/history';
 import immutable from 'immutable';
 

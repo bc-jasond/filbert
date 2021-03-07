@@ -1,4 +1,11 @@
+import { getNode, head } from '@filbert/linked-list';
 import {
+  type,
+  isLastOfType,
+  update,
+  insertAfter,
+  insertBefore,
+  contentOrZeroLengthChar,
   NODE_CONTENT,
   NODE_TYPE,
   NODE_TYPE_H1,
@@ -6,8 +13,10 @@ import {
   NODE_TYPE_LI,
   NODE_TYPE_P,
   NODE_TYPE_PRE,
+  getLastInsertId,
+  isMetaType,
 } from '@filbert/document';
-import { cleanText, cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
+import { cleanText } from '@filbert/util';
 import { assertValidDomSelectionOrThrow } from '../../common/dom.mjs';
 
 function handleEnterTextType(
@@ -18,29 +27,33 @@ function handleEnterTextType(
 ) {
   const contentLeft = content.substring(0, caretPosition);
   const contentRight = content.substring(caretPosition);
-  const leftNode = documentModel.getNode(leftNodeId);
-  let newNodeType = leftNode.type;
+  let leftNode = getNode(documentModel, leftNodeId);
+  let newNodeType = type(leftNode);
   // user hits enter on empty list or code item, and it's the last of type, always convert to P
   // to break out of a list or code section
   if (
     cleanText(contentLeft).length === 0 &&
     cleanText(contentRight).length === 0 &&
     [NODE_TYPE_PRE, NODE_TYPE_LI].includes(newNodeType) &&
-    leftNode.isLastOfType()
+    isLastOfType(documentModel, leftNode)
   ) {
     // convert empty sections to a P on enter
-    leftNode.type = NODE_TYPE_P;
-    return documentModel.update(leftNode);
+    leftNode = leftNode.set(NODE_TYPE, NODE_TYPE_P);
+    let historyLogEntry;
+    ({ documentModel, historyLogEntry } = update(documentModel, leftNode));
+    return { documentModel, historyLogEntries: [historyLogEntry] };
   }
 
-  const historyState = [];
+  const historyLogEntries = [];
   // if user hits enter at beginning of H1 or H2, convert "left" to P
   if (
     [NODE_TYPE_H1, NODE_TYPE_H2].includes(newNodeType) &&
     cleanText(contentLeft).length === 0
   ) {
-    leftNode.type = NODE_TYPE_P;
-    historyState.push(documentModel.update(leftNode));
+    leftNode = leftNode.set(NODE_TYPE, NODE_TYPE_P);
+    let historyLogEntry;
+    ({ documentModel, historyLogEntry } = update(documentModel, leftNode));
+    historyLogEntries.push(historyLogEntry);
   }
   // if user hits enter at end of H1 or H2, set "right" type to P
   if (
@@ -50,16 +63,18 @@ function handleEnterTextType(
     newNodeType = NODE_TYPE_P;
   }
 
-  historyState.push(
-    documentModel.insertAfter(
-      { [NODE_TYPE]: newNodeType, [NODE_CONTENT]: contentRight },
-      leftNodeId
-    )
-  );
-  const rightNodeId = documentModel.lastInsertId;
-  leftNode.content = contentLeft;
-  const rightNode = documentModel.getNode(rightNodeId);
-  // if the original selected node can have Selections - move them to the right node if needed
+  let historyLogEntry;
+  ({ documentModel, historyLogEntry } = insertAfter(
+    documentModel,
+    { [NODE_TYPE]: newNodeType, [NODE_CONTENT]: contentRight },
+    leftNodeId
+  ));
+  historyLogEntries.push(historyLogEntry);
+  const rightNodeId = getLastInsertId();
+  // refresh reference after insert...
+  leftNode = getNode(documentModel, leftNodeId).set(NODE_CONTENT, contentLeft);
+  const rightNode = getNode(documentModel, rightNodeId);
+  /* if the original selected node can have Selections - move them to the right node if needed
   if (leftNode.canHaveSelections()) {
     ({
       left: leftNode.formatSelections,
@@ -69,7 +84,7 @@ function handleEnterTextType(
       rightNode,
       caretPosition
     ));
-  }
+  }*/
   console.info(
     'ENTER "TextType" content left: ',
     contentLeft,
@@ -81,49 +96,57 @@ function handleEnterTextType(
     rightNode.formatSelections
   );
   // NOTE: "focus node" will be the last history entry
-  historyState.push(documentModel.update(leftNode));
-  historyState.push(documentModel.update(rightNode));
+  ({ documentModel, historyLogEntry } = update(documentModel, leftNode));
+  historyLogEntries.push(historyLogEntry);
+  ({ documentModel, historyLogEntry } = update(documentModel, rightNode));
+  historyLogEntries.push(historyLogEntry);
 
-  return historyState;
+  return { documentModel, historyLogEntries };
 }
 /**
- * @returns {selectionOffsets:{}, historyState}
+ * @returns {selectionOffsets:{}, historyLogEntries}
  */
 export function doSplit(documentModel, selectionOffsets) {
   assertValidDomSelectionOrThrow(selectionOffsets);
 
   const { caretStart, startNodeId } = selectionOffsets;
-  const historyState = [];
-  const startNode = documentModel.getNode(startNodeId);
-  if (startNode.isMetaType()) {
+  let historyLogEntries = [];
+  const startNode = getNode(documentModel, startNodeId);
+  if (isMetaType(startNode)) {
     console.debug('doSplit() MetaType');
     // if this meta node is first section in document put the P in front
-    const shouldInsertAfter = documentModel.head !== startNode;
+    const shouldInsertAfter = !head(documentModel).equals(startNode);
     const data = { [NODE_TYPE]: NODE_TYPE_P, [NODE_CONTENT]: '' };
-    historyState.push(
-      shouldInsertAfter
-        ? documentModel.insertAfter(data, startNodeId)
-        : documentModel.insertBefore(data, startNodeId)
-    );
+    let historyLogEntry;
+    if (shouldInsertAfter) {
+      ({ documentModel, historyLogEntry } = insertAfter(
+        documentModel,
+        data,
+        startNodeId
+      ));
+    } else {
+      ({ documentModel, historyLogEntry } = insertBefore(
+        documentModel,
+        data,
+        startNodeId
+      ));
+    }
+    historyLogEntries.push(historyLogEntry);
   } else {
     console.debug('doSplit() TextType', startNodeId, caretStart);
     // split selectedNodeContent at caret
-    const selectedNodeContent = cleanTextOrZeroLengthPlaceholder(
-      startNode.content
-    );
-    historyState.push(
-      ...handleEnterTextType(
-        documentModel,
-        startNodeId,
-        caretStart,
-        selectedNodeContent
-      )
-    );
+    const selectedNodeContent = contentOrZeroLengthChar(startNode);
+    ({ documentModel, historyLogEntries } = handleEnterTextType(
+      documentModel,
+      startNodeId,
+      caretStart,
+      selectedNodeContent
+    ));
   }
 
-  const focusNodeId = documentModel.lastInsertId;
   return {
-    selectionOffsets: { startNodeId: focusNodeId, caretStart: 0 },
-    historyState,
+    documentModel,
+    selectionOffsets: { startNodeId: getLastInsertId(), caretStart: 0 },
+    historyLogEntries,
   };
 }

@@ -2,6 +2,7 @@ import { KEYCODE_ENTER } from '@filbert/constants';
 
 import { stopAndPrevent } from '../../common/utils';
 import { doSplit } from '../editor-commands/split';
+import { deleteSelection } from '../editor-commands/delete.mjs';
 
 export async function handleEnter({
   evt,
@@ -16,21 +17,32 @@ export async function handleEnter({
   }
 
   stopAndPrevent(evt);
+  let historyLogEntries;
+  ({ documentModel, historyLogEntries } = deleteSelection({
+    documentModel,
+    historyManager,
+    selectionOffsets,
+  }));
 
   // perform editor commands
-  const { selectionOffsets: executeSelectionOffsets, historyState } = doSplit(
+  let executeSelectionOffsets;
+  let historyLogEntriesSplit;
+  ({
     documentModel,
-    selectionOffsets
-  );
+    selectionOffsets: executeSelectionOffsets,
+    historyLogEntries: historyLogEntriesSplit,
+  } = doSplit(documentModel, selectionOffsets));
+  historyLogEntries.push(...historyLogEntriesSplit);
+
   // create history log entry
   historyManager.appendToHistoryLog({
     selectionOffsets: executeSelectionOffsets,
-    historyState,
+    historyLogEntries,
   });
 
   // clear current edit section node if coming from a Meta Type or caret position will be stale
   setEditSectionNode();
-  await commitUpdates(executeSelectionOffsets);
+  await commitUpdates(documentModel, executeSelectionOffsets);
 
   return true;
 }

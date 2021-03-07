@@ -10,17 +10,17 @@
   import { beforeUpdate } from 'svelte';
   import { Map } from 'immutable';
 
-  import { LINKED_LIST_NODE_ID } from '@filbert/linked-list';
-  import { NODE_TYPE_IMAGE, NODE_META } from '@filbert/document';
+  import { getId } from '@filbert/linked-list';
+  import { NODE_TYPE_IMAGE, meta } from '@filbert/document';
 
   $: isEditMode = !!setEditNodeId;
 
-  $: id = node.get(LINKED_LIST_NODE_ID);
-  $: meta = node.get(NODE_META, Map());
-  $: w = meta.get('resizeWidth', meta.get('width'));
-  $: h = meta.get('resizeHeight', meta.get('height'));
-  $: rotationDegrees = meta.get('rotationDegrees', 0);
-  $: url = meta.get('url');
+  $: id = getId(node);
+  $: metaLocal = meta(node);
+  $: w = metaLocal.get('resizeWidth', metaLocal.get('width'));
+  $: h = metaLocal.get('resizeHeight', metaLocal.get('height'));
+  $: rotationDegrees = metaLocal.get('rotationDegrees', 0);
+  $: url = metaLocal.get('url');
   // if the image is rotated left once or right once change the height of the image container
   // to the width of the image to cover the increased/decreased dimension after CSS transform
   $: figureHeightOverride =
@@ -149,11 +149,11 @@
         class:rotate-270="{rotationDegrees === 270}"
         on:click="{() => setEditNodeId?.(id)}"
         src="{url}"
-        alt="{meta.get('caption')}"
+        alt="{metaLocal.get('caption')}"
       />
     </div>
-    {#if meta.get('caption') && !hideCaption}
-      <figcaption class="mini-text">{meta.get('caption')}</figcaption>
+    {#if metaLocal.get('caption') && !hideCaption}
+      <figcaption class="mini-text">{metaLocal.get('caption')}</figcaption>
     {/if}
   </figure>
 </section>
