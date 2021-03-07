@@ -40,7 +40,7 @@ async function historyDiff(postId, leftHistoryId, rightHistoryId, trxArg) {
     // if it's not in the earlier (left), mark it deleted by adding the nodeId as a string
     nodes(documentModelRight).forEach((right, rightNodeId) => {
       const left = getNode(documentModelLeft, rightNodeId);
-      if (!left) {
+      if (left.size === 0) {
         diff = diff.set(rightNodeId, rightNodeId);
       }
     });
