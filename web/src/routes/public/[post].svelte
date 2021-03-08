@@ -12,7 +12,7 @@
     );
     const {
       error,
-      data: { prevPost, nextPost, post, contentNodes: nodesById } = {},
+      data: { prevPost, nextPost, post, documentModel } = {},
     } = postRes;
 
     if (error) {
@@ -25,7 +25,7 @@
 
     return {
       post,
-      nodesById,
+      documentModelData: documentModel,
       prevPost,
       nextPost,
     };
@@ -34,7 +34,7 @@
 
 <script>
   export let post;
-  export let nodesById;
+  export let documentModelData;
   export let prevPost;
   export let nextPost;
 
@@ -43,11 +43,12 @@
     postMap = fromJS(post);
     $currentPost = postMap;
   }
-  $: nodesByIdMap = fromJS(nodesById);
+  $: documentModel = documentModelFromJS(documentModelData);
   $: prevPostMap = fromJS(prevPost);
   $: nextPostMap = fromJS(nextPost);
 
   import { fromJS, Map } from 'immutable';
+  import { documentModelFromJS } from '@filbert/document';
 
   import { currentPost } from '../../stores';
   import PostNext from '../../post-components/PostNext.svelte';
@@ -80,7 +81,7 @@
 <PostDetailsSection>
   <PostAvatar post="{postMap}" showHandle />
 </PostDetailsSection>
-<Document nodesById="{nodesByIdMap}" />
+<Document {documentModel} />
 <div class="filbert-section prev-next-post-section">
   <span class="siteinfo-text" shouldFormat>
     <div class="thanks-for-reading-container">

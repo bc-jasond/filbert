@@ -1,3 +1,14 @@
+import { head, getNext } from '@filbert/linked-list';
+import {
+  type,
+  contentClean,
+  NODE_TYPE_IMAGE,
+  NODE_TYPE_P,
+  NODE_TYPE_LI,
+  NODE_TYPE_PRE,
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+} from '@filbert/document';
 import { getKnex, getDocumentModel } from './mysql.mjs';
 
 export function ensureNoOrphanedNodes(contentNodes, postId) {}
@@ -13,22 +24,30 @@ export function getFirstPhotoAndAbstractFromContent(documentModel) {
   const titleMaxLength = 75;
   const abstractMinLength = 100;
   const abstractMaxLength = 200;
-  const queue = [documentModel.head];
+  const queue = [head(documentModel)];
   while (
     queue.length &&
     (!responseData.abstract || !responseData.imageNode || !responseData.title)
   ) {
     const current = queue.shift();
-    if (!current) {
+    if (!current.size) {
       console.warn('Falsy node in the queue...');
       continue;
     }
-    if (!responseData.imageNode && current.type === 'image') {
+    if (!responseData.imageNode && type(current) === NODE_TYPE_IMAGE) {
       responseData.imageNode = current;
     }
-    if (['p', 'li', 'pre', 'h1', 'h2'].includes(current.type)) {
+    if (
+      [
+        NODE_TYPE_P,
+        NODE_TYPE_LI,
+        NODE_TYPE_PRE,
+        NODE_TYPE_H1,
+        NODE_TYPE_H2,
+      ].includes(type(current))
+    ) {
       // replace all whitespace chars with a single space
-      const currentContent = current.content.replace(/\s\s+/g, ' ');
+      const currentContent = contentClean(current).replace(/\s\s+/g, ' ');
       if (currentContent) {
         if (!responseData.title || responseData.title.length < titleMinLength) {
           if (!responseData.title) {
@@ -60,8 +79,8 @@ export function getFirstPhotoAndAbstractFromContent(documentModel) {
         }
       }
     }
-    const next = documentModel.getNext(current);
-    if (next) {
+    const next = getNext(documentModel);
+    if (next.size) {
       queue.push(next);
     }
   }
@@ -75,9 +94,9 @@ export async function addFirstPhotoTitleAndAbstractToPosts(posts) {
     let title, abstract, imageNode;
     const { syncTopPhoto, syncTitleAndAbstract } = draft.meta;
     if (syncTopPhoto || syncTitleAndAbstract) {
-      const {documentModel} = await getDocumentModel(draft.id);
+      const { documentModel } = await getDocumentModel(draft.id);
       ({ title, abstract, imageNode } = getFirstPhotoAndAbstractFromContent(
-documentModel
+        documentModel
       ));
     }
     if (syncTitleAndAbstract) {

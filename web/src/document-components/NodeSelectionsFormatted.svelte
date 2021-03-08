@@ -4,23 +4,25 @@
   import he from 'he';
   import { Map } from 'immutable';
 
-  import { cleanTextOrZeroLengthPlaceholder } from '@filbert/util';
-  import { NODE_FORMAT_SELECTIONS, NODE_CONTENT } from '@filbert/document';
+  import {
+    formatSelections,
+    contentOrZeroLengthChar,
+    contentClean,
+  } from '@filbert/document';
+  import { isEmpty, head, getNext } from '@filbert/linked-list';
 
   let formattedMarkup;
-  $: if (!node.get(NODE_FORMAT_SELECTIONS)) {
-    formattedMarkup = he.escape(
-      cleanTextOrZeroLengthPlaceholder(node.get(NODE_CONTENT))
-    );
+  $: if (isEmpty(formatSelections(node))) {
+    formattedMarkup = he.escape(contentOrZeroLengthChar(node));
   } else {
+    // TODO: UNIMPLEMENTED
+    throw new Error('unimplemented');
     //console.debug('FORMATTED SELECTIONS render()', node);
-    const formatSelections = node.get(NODE_FORMAT_SELECTIONS);
-    let selection = formatSelections.head;
+    const formatSelectionsLocal = formatSelections(node);
+    let selection = head(formatSelections);
     formattedMarkup = '';
     let didError = false;
-    const contentPiecesBySelectionLength = formatSelections.getContentBySelections(
-      node.get(NODE_CONTENT)
-    );
+    const contentPiecesBySelectionLength = []; // getContentBySelections(formatSelections, contentClean(node));
     let idx = 0;
     try {
       while (selection) {
@@ -61,7 +63,7 @@
         formattedMarkup = `${formattedMarkup}${openingTags.join('')}${he.escape(
           contentPiecesBySelectionLength[idx]
         )}${closingTags.join('')}`;
-        selection = formatSelections.getNext(selection);
+        selection = getNext(formatSelections, selection);
         idx += 1;
       }
     } catch (err) {
@@ -71,9 +73,7 @@
     }
     // if there's an error, show unformatted content
     if (didError) {
-      formattedMarkup = he.escape(
-        cleanTextOrZeroLengthPlaceholder(node.get(NODE_CONTENT))
-      );
+      formattedMarkup = he.escape(contentOrZeroLengthChar(node));
     }
   }
 </script>

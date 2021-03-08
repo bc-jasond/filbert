@@ -1,4 +1,5 @@
 import { getDocumentModel } from '../lib/mysql.mjs';
+
 /**
  * get post for editing - signed-in user only
  */
@@ -14,15 +15,14 @@ export async function getPostForEdit(req, res) {
     return;
   }
 
-  const {documentModel, selectionOffsets} = await getDocumentModel(
+  const { documentModel, selectionOffsets } = await getDocumentModel(
     id,
     currentUndoHistoryId
   );
 
   res.send({
     post: { ...currentPost, canEdit: true },
-    head: documentModel.head,
-    contentNodes: documentModel.nodes,
-    selectionOffsets
+    documentModel: documentModel.toJS(),
+    selectionOffsets,
   });
 }

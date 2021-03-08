@@ -5,16 +5,16 @@
 
   import { Map } from 'immutable';
 
-  import { LINKED_LIST_NODE_ID } from '@filbert/linked-list';
-  import { NODE_TYPE_QUOTE, NODE_META } from '@filbert/document';
+  import { getId } from '@filbert/linked-list';
+  import { NODE_TYPE_QUOTE, meta } from '@filbert/document';
 
   $: isEditMode = !!setEditNodeId;
 
-  $: id = node.get(LINKED_LIST_NODE_ID);
-  $: quote = node.getIn([NODE_META, 'quote'], '');
-  $: url = node.getIn([NODE_META, 'url'], '');
-  $: author = node.getIn([NODE_META, 'author'], '');
-  $: context = node.getIn([NODE_META, 'context'], '');
+  $: id = getId(node);
+  $: quote = meta(node).get('quote', '');
+  $: url = meta(node).get('url', '');
+  $: author = meta(node).get('author', '');
+  $: context = meta(node).get('context', '');
 </script>
 
 <style>

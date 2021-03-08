@@ -9,6 +9,8 @@
   import { beforeUpdate, onMount } from 'svelte';
   import { Map } from 'immutable';
 
+  import { getId } from '@filbert/linked-list';
+  import { meta, setMeta } from '@filbert/document';
   import {
     KEYCODE_LEFT_ARROW,
     KEYCODE_RIGHT_ARROW,
@@ -50,12 +52,14 @@
   let fileInputDomNode;
   let captionInputDomNode;
 
+  $: metaLocal = meta(nodeModel);
+
   onMount(() => {
     function focusOrBlurCaptionInput(shouldFocusEnd) {
       if (!captionInputDomNode) return;
       if (currentIdx === captionInputIdx) {
         focusAndScrollSmooth(
-          nodeModel.get('id'),
+          getId(nodeModel),
           captionInputDomNode,
           shouldFocusEnd
         );
@@ -144,14 +148,12 @@
   });
 
   function imageRotate() {
-    const currentRotationDegrees = nodeModel.getIn(
-      ['meta', 'rotationDegrees'],
-      0
-    );
+    const currentRotationDegrees = metaLocal.get('rotationDegrees', 0);
     const updatedRotationDegrees =
       currentRotationDegrees === 270 ? 0 : currentRotationDegrees + 90;
-    const updatedNodeModel = nodeModel.setIn(
-      ['meta', 'rotationDegrees'],
+    const updatedNodeModel = setMeta(
+      nodeModel,
+      'rotationDegrees',
       updatedRotationDegrees
     );
     update(updatedNodeModel);
@@ -160,16 +162,10 @@
     const maxSizeAllowedInPixels = 1000;
     const resizeAmountPercentage = 0.1; // +/- by 10% at a time
     // plus/minus buttons resize the image by a fixed amount
-    const originalWidth = nodeModel.getIn(['meta', 'width']);
-    const currentResizeWidth = nodeModel.getIn(
-      ['meta', 'resizeWidth'],
-      originalWidth
-    );
-    const originalHeight = nodeModel.getIn(['meta', 'height']);
-    const currentResizeHeight = nodeModel.getIn(
-      ['meta', 'resizeHeight'],
-      originalHeight
-    );
+    const originalWidth = metaLocal.get('width');
+    const currentResizeWidth = metaLocal.get('resizeWidth', originalWidth);
+    const originalHeight = metaLocal.get('height');
+    const currentResizeHeight = metaLocal.get('resizeHeight', originalHeight);
     const resizeAmountWidth = resizeAmountPercentage * originalWidth;
     const resizeAmountHeight = resizeAmountPercentage * originalHeight;
     // no-op because image is already biggest/smallest allowed?
@@ -186,19 +182,20 @@
       return;
     }
 
-    const updatedNodeModel = nodeModel
-      .setIn(
-        ['meta', 'resizeWidth'],
-        shouldMakeBigger
-          ? currentResizeWidth + resizeAmountWidth
-          : currentResizeWidth - resizeAmountWidth
-      )
-      .setIn(
-        ['meta', 'resizeHeight'],
-        shouldMakeBigger
-          ? currentResizeHeight + resizeAmountHeight
-          : currentResizeHeight - resizeAmountHeight
-      );
+    let updatedNodeModel = setMeta(
+      nodeModel,
+      'resizeWidth',
+      shouldMakeBigger
+        ? currentResizeWidth + resizeAmountWidth
+        : currentResizeWidth - resizeAmountWidth
+    );
+    updatedNodeModel = setMeta(
+      updatedNodeModel,
+      'resizeHeight',
+      shouldMakeBigger
+        ? currentResizeHeight + resizeAmountHeight
+        : currentResizeHeight - resizeAmountHeight
+    );
     update(updatedNodeModel);
   }
   function imageResizeUp() {
@@ -208,7 +205,7 @@
     _resize(false);
   }
   function updateCaption({ target: { value } }) {
-    nodeModel.caption = value;
+    nodeModel = nodeModel.setIn(['meta', 'caption'], value);
     update(nodeModel, 'caption');
   }
   async function replaceImageFile([firstFile]) {

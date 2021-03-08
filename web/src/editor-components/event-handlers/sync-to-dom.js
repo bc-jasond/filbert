@@ -1,6 +1,7 @@
 import { stopAndPrevent } from '../../common/utils';
 import { isCollapsed, isControlKey } from '../../common/dom.mjs';
 import {
+  deleteSelection,
   doDeleteMultiNode,
   doDeleteSingleNode,
 } from '../editor-commands/delete.mjs';
@@ -26,51 +27,40 @@ export async function handleSyncToDom({
   }
   stopAndPrevent(evt);
 
-  const historyState = [];
-  // select-and-type ?? delete selection first
-  const { endNodeId } = selectionOffsets;
-  const caretIsCollapsed = isCollapsed(selectionOffsets);
-  if (!caretIsCollapsed) {
-    let historyStateDelete;
-    if (endNodeId) {
-      ({ historyStateDelete } = doDeleteMultiNode(
-        documentModel,
-        historyManager,
-        selectionOffsets
-      ));
-    } else {
-      ({ historyStateDelete } = doDeleteSingleNode(
-        documentModel,
-        historyManager,
-        selectionOffsets
-      ));
-    }
-    historyState.push(...historyStateDelete);
-  }
+  let historyLogEntries;
+  ({ documentModel, historyLogEntries } = deleteSelection({
+    documentModel,
+    historyManager,
+    selectionOffsets,
+  }));
+
   // sync keystroke to DOM
-  const {
-    historyState: historyStateSync,
+  let historyEntriesSyncToDom;
+  let executeSelectionOffsets;
+  ({
+    documentModel,
+    historyLogEntries: historyEntriesSyncToDom,
     selectionOffsets: executeSelectionOffsets,
-  } = syncToDom(documentModel, selectionOffsets, evt);
-  historyState.push(...historyStateSync);
+  } = syncToDom(documentModel, selectionOffsets, evt));
+  historyLogEntries.push(...historyEntriesSyncToDom);
 
   // assumes content update (of one char) on a single node, only create an entry every so often
-  if (historyState.length === 1) {
+  if (historyLogEntries.length === 1) {
     historyManager.appendToHistoryLogWhenNCharsAreDifferent({
       selectionOffsets: executeSelectionOffsets,
-      historyState,
+      historyLogEntries,
       comparisonKey: NODE_CONTENT,
     });
   } else {
     // we did more than a simple content update to one node, save an entry
     historyManager.appendToHistoryLog({
       selectionOffsets: executeSelectionOffsets,
-      historyState,
+      historyLogEntries,
     });
   }
 
   // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
   //  The browser will then place the caret at the beginning of the textContent??? 😞 so we place it back with JS...
-  await commitUpdates(executeSelectionOffsets);
+  await commitUpdates(documentModel, executeSelectionOffsets);
   return true;
 }

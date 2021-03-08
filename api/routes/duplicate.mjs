@@ -25,7 +25,7 @@ export async function duplicatePost(req, res, next) {
       // MYSQL specific way to get the auto-increment id from the last insert
       const lastInsertId = 'LAST_INSERT_ID()';
       // crazy return value structure:
-      // index 0 is an array of values returned by the query, index 1 is an array of database meta data (column names, table names, etc)
+      // index 0 is an array of values returned by the query, index 1 is an array of database metadata (column names, table names, etc)
       // within array of values is another array of objects keyed off of strings, not sure how that works...
       // in this case it's the custom MySQL function name
       const [[{ [lastInsertId]: newPostId }]] = await trx.raw(

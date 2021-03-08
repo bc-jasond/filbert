@@ -1,4 +1,5 @@
 import { getMysqlDatetime } from '@filbert/mysql';
+import { isEmpty } from '@filbert/linked-list';
 
 import {
   getKnex,
@@ -126,9 +127,14 @@ export async function getPostByCanonical(req, res) {
     nextPostCanonical,
     loggedInUser
   );
-  const {documentModel} = await getDocumentModel(post.id);
+  const { documentModel } = await getDocumentModel(post.id);
 
-  res.send({ prevPost, nextPost, post, head: documentModel.head, contentNodes: documentModel.nodes });
+  res.send({
+    prevPost,
+    nextPost,
+    post,
+    documentModel: documentModel.toJS(),
+  });
 }
 
 // returns only post
@@ -179,9 +185,9 @@ export async function patchPost(req, res, next) {
 export async function getSummaryAndPhotoFromContent(req, res) {
   const { id } = req.currentPost;
   const responseData = {};
-  const {documentModel} = await getDocumentModel(id);
+  const { documentModel } = await getDocumentModel(id);
 
-  if (!documentModel.size) {
+  if (isEmpty(documentModel)) {
     res.send(responseData);
   }
   res.send(getFirstPhotoAndAbstractFromContent(documentModel));

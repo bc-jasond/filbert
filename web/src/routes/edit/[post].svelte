@@ -14,14 +14,14 @@
 <script>
   export let postId;
 
-  let insertMenuNode = new DocumentModelNode();
+  let insertMenuNode = Map();
   let insertMenuTopOffset = 0;
   let insertMenuLeftOffset = 0;
-  let editSectionNode = new DocumentModelNode();
+  let editSectionNode = Map();
   let shouldShowEditSectionMenu = false;
   let editSectionMetaFormTopOffset = 0;
-  let formatSelectionNode = new DocumentModelNode();
-  let formatSelectionModel = new FormatSelectionNode();
+  let formatSelectionNode = Map();
+  let formatSelectionModel = Map();
   let formatSelectionMenuTopOffset = 0;
   let formatSelectionMenuLeftOffset = 0;
   let selectionOffsetsManageFormatSelectionMenu;
@@ -29,16 +29,41 @@
   let shouldSkipKeyUp;
   let apiClient;
 
-  let documentModel = new DocumentModel();
-  // local copy of document nodes and head for immutable rendering
-  let documentModelInternal;
+  let documentModel = Map();
   let historyManager;
 
   import { fromJS, Map } from 'immutable';
   import { goto } from '@sapper/app';
-  import { tick, onMount, onDestroy } from 'svelte';
+  import { tick, onDestroy } from 'svelte';
 
   import { NEW_POST_URL_ID } from '@filbert/constants';
+
+  import {
+    getId,
+    getNode,
+    isEmpty,
+    head,
+    nodes,
+    LINKED_LIST_HEAD_ID,
+    LINKED_LIST_NODES_MAP,
+  } from '@filbert/linked-list';
+  import {
+    documentModelFromJS,
+    insertAfter,
+    getLastInsertId,
+    type,
+    contentClean,
+    update,
+    DOCUMENT_POST_ID,
+    NODE_TYPE,
+    NODE_META,
+    NODE_TYPE_H1,
+    NODE_TYPE_IMAGE,
+    NODE_TYPE_P,
+    NODE_TYPE_QUOTE,
+    NODE_TYPE_SPACER,
+    isMetaType,
+  } from '@filbert/document';
 
   import {
     getFirstHeadingContent,
@@ -63,20 +88,7 @@
     KEYCODE_LEFT_ARROW,
     KEYCODE_RIGHT_ARROW,
     KEYCODE_UP_ARROW,
-    KEYCODE_V,
-    KEYCODE_X,
   } from '@filbert/constants';
-  import {
-    DocumentModel,
-    DocumentModelNode,
-    NODE_TYPE,
-    NODE_TYPE_H1,
-    NODE_TYPE_IMAGE,
-    NODE_TYPE_P,
-    NODE_TYPE_QUOTE,
-    NODE_TYPE_SPACER,
-  } from '@filbert/document';
-  import { FormatSelectionNode } from '@filbert/selection';
   import { HistoryManager } from '@filbert/history';
   import {
     getCanonicalFromTitle,
@@ -134,33 +146,38 @@
     });
   }
 
-  $: insertMenuNodeId = insertMenuNode.id;
   $: apiClient = isBrowser() && getApiClientInstance();
   $: (async function instantiatePost(postIdInternal) {
     if (!isBrowser()) {
       return;
     }
-
+    let documentModelLocal;
     if (postIdInternal === NEW_POST_URL_ID) {
       console.log('UNSAVED Placeholder Post');
       clearInterval(batchSaveIntervalId);
       $currentPost = Map();
-      documentModel = new DocumentModel(postIdInternal);
+      documentModelLocal = documentModelFromJS({
+        [DOCUMENT_POST_ID]: postIdInternal,
+      });
       historyManager = HistoryManager(postIdInternal, apiClient);
-      const titlePlaceholder = documentModel.append();
-      titlePlaceholder.type = NODE_TYPE_H1;
-      const historyState = [documentModel.update(titlePlaceholder)];
+      let historyLogEntry;
+      ({ documentModel: documentModelLocal, historyLogEntry } = insertAfter(
+        documentModelLocal,
+        {
+          [NODE_TYPE]: NODE_TYPE_H1,
+        }
+      ));
       const selectionOffsets = {
-        startNodeId: titlePlaceholder.id,
+        startNodeId: getLastInsertId(),
         caretStart: 0,
       };
       historyManager.appendToHistoryLog({
         selectionOffsets,
-        historyState,
+        historyLogEntries: [historyLogEntry],
       });
       // Sapper calls document.activeElement.blur() on navigation for some reason...
       tick().then(() => {
-        commitUpdates(selectionOffsets);
+        commitUpdates(documentModelLocal, selectionOffsets);
       });
       return;
     }
@@ -171,7 +188,7 @@
 
     const {
       error,
-      data: { post, head, contentNodes, selectionOffsets = {} } = {},
+      data: { post, documentModel, selectionOffsets = {} } = {},
     } = await apiClient.get(`/edit/${postIdInternal}`);
 
     if (error) {
@@ -181,11 +198,15 @@
 
     console.info('RE-INSTANTIATE POST', post);
     $currentPost = fromJS(post);
-    documentModel = DocumentModel.fromJS(post.id, head, contentNodes);
-    historyManager = HistoryManager(post.id, apiClient);
+    documentModelLocal = documentModelFromJS({
+      [DOCUMENT_POST_ID]: postIdInternal,
+      [LINKED_LIST_HEAD_ID]: documentModel[LINKED_LIST_HEAD_ID],
+      [LINKED_LIST_NODES_MAP]: documentModel[LINKED_LIST_NODES_MAP],
+    });
+    historyManager = HistoryManager(postIdInternal, apiClient);
     clearInterval(batchSaveIntervalId);
     batchSaveIntervalId = setInterval(batchSave, 3000);
-    await commitUpdates(selectionOffsets);
+    await commitUpdates(documentModelLocal, selectionOffsets);
   })(postId);
 
   onDestroy(() => {
@@ -234,15 +255,15 @@
     if (!startNodeId) {
       return;
     }
-    const selectedNode = documentModel.getNode(startNodeId);
+    const selectedNode = getNode(documentModel, startNodeId);
     const selectedNodeDom = getNodeById(startNodeId);
 
     // Show the menu?
     if (
       selectedNodeDom &&
       (!caretEnd || caretStart === caretEnd) &&
-      selectedNode.type === NODE_TYPE_P &&
-      selectedNode.content.length === 0
+      type(selectedNode) === NODE_TYPE_P &&
+      contentClean(selectedNode).length === 0
     ) {
       // save current node because the selection will disappear when the insert menu is shown
       console.debug('INSERT - SHOULD SHOW');
@@ -251,33 +272,29 @@
       insertMenuLeftOffset = selectedNodeDom.offsetLeft;
     } else {
       console.debug('INSERT - HIDE', selectedNode);
-      insertMenuNode = new DocumentModelNode();
+      insertMenuNode = Map();
     }
   }
 
-  async function commitUpdates(selectionOffsets) {
+  async function commitUpdates(documentModelArg, selectionOffsets) {
     const { startNodeId, caretStart, caretEnd } = selectionOffsets;
     // TODO: optimistically saving updated nodes with no error handling - look ma, no errors!
 
     // sync internal document state with documentModel state
-    documentModelInternal = new DocumentModel(
-      postId,
-      documentModel.head,
-      documentModel.nodes
-    );
+    documentModel = documentModelArg;
     await tick();
-    insertMenuNode = new DocumentModelNode();
+    insertMenuNode = Map();
 
     // on insert,set editSectionNode if not already set.
-    if (startNodeId && documentModel.getNode(startNodeId).isMetaType()) {
+    if (startNodeId && isMetaType(getNode(documentModel, startNodeId))) {
       sectionEdit(startNodeId);
       // no more caret work necessary for Meta nodes
       return;
     }
-    // no more caret work if we're typing a url in the formatSelection menu
+    /* no more caret work if we're typing a url in the formatSelection menu
     if (formatSelectionModel.link) {
       return;
-    }
+    }*/
 
     // if a menu isn't open, re-place the caret
     if (!caretEnd || caretStart === caretEnd) {
@@ -290,15 +307,15 @@
   }
 
   function closeAllEditContentMenus() {
-    formatSelectionNode = new DocumentModelNode();
-    editSectionNode = new DocumentModelNode();
+    formatSelectionNode = Map();
+    editSectionNode = Map();
     shouldShowEditSectionMenu = false;
   }
 
   function getSelectionOffsetsOrEditSectionNode() {
-    if (editSectionNode.id > 0) {
+    if (getId(editSectionNode)) {
       return {
-        startNodeId: editSectionNode.id,
+        startNodeId: getId(editSectionNode),
         caretStart: 0,
         caretEnd: 0,
       };
@@ -379,7 +396,7 @@
         sectionEdit,
         editSectionNode,
         setEditSectionNode: (value) => {
-          editSectionNode = value ? value : new DocumentModelNode();
+          editSectionNode = value ? value : Map();
         },
       }
     );
@@ -422,7 +439,7 @@
       return;
     }
     // if there's a MetaNode selected, bail
-    if (editSectionNode.id) {
+    if (getId(editSectionNode)) {
       return;
     }
     const selectionOffsets = getSelectionOffsetsOrEditSectionNode();
@@ -434,18 +451,22 @@
     console.debug('INPUT (aka: sync back from DOM)', evt);
     // TODO: this can go away with the beforeinput event - it can use syncToDom() like normal typing
     // for emoji keyboard insert & spellcheck correct
-    const {
+    let documentModelLocal;
+    let executeSelectionOffsets;
+    let historyLogEntries;
+    ({
+      documentModel: documentModelLocal,
       selectionOffsets: executeSelectionOffsets,
-      historyState,
-    } = syncFromDom(documentModel, selectionOffsets, evt);
+      historyLogEntries,
+    } = syncFromDom(documentModel, selectionOffsets, evt));
     historyManager.appendToHistoryLog({
       selectionOffsets,
-      historyState,
+      historyLogEntries,
     });
 
     // NOTE: Calling setState (via commitUpdates) here will force all changed nodes to rerender.
     //  The browser will then place the caret at the beginning of the textContent... 😞 so we replace it with JS
-    await commitUpdates(executeSelectionOffsets);
+    await commitUpdates(documentModelLocal, executeSelectionOffsets);
   }
 
   async function handleMouseUp(evt) {
@@ -473,31 +494,36 @@
       }
       meta = Map(imageMeta);
     }
-    insertMenuNode.type = sectionType;
-    insertMenuNode.meta = meta;
-    const historyState = documentModel.update(insertMenuNode);
-    const newSectionId = documentModel.lastInsertId;
-    const selectionOffsets = { startNodeId: newSectionId };
+    insertMenuNode = insertMenuNode
+      .set(NODE_TYPE, sectionType)
+      .set(NODE_META, meta);
+    let historyLogEntry;
+    let documentModelLocal;
+    ({ documentModel: documentModelLocal, historyLogEntry } = update(
+      documentModel,
+      insertMenuNode
+    ));
+    const selectionOffsets = { startNodeId: getId(insertMenuNode) };
     historyManager.appendToHistoryLog({
       selectionOffsets,
-      historyState,
+      historyLogEntries: [historyLogEntry],
     });
-    await commitUpdates(selectionOffsets);
+    await commitUpdates(documentModelLocal, selectionOffsets);
     if (
       [NODE_TYPE_IMAGE, NODE_TYPE_QUOTE, NODE_TYPE_SPACER].includes(sectionType)
     ) {
-      sectionEdit(newSectionId);
+      sectionEdit(getId(insertMenuNode));
     }
   }
 
   function sectionEdit(sectionId) {
     // noop if this section is already selected
-    if (sectionId === editSectionNode.id) {
+    if (sectionId === getId(editSectionNode)) {
       return;
     }
     const [sectionDomNode] = document.getElementsByName(sectionId);
-    const section = documentModel.getNode(sectionId);
-    if (!section.size) {
+    const section = getNode(documentModel, sectionId);
+    if (section.size === 0) {
       console.warn('BAD Section', section);
     }
     //if (section.get('type') === NODE_TYPE_SPACER) {
@@ -507,35 +533,43 @@
 
     // hide all other menus here because this callback fires last
     // insert menu
-    insertMenuNode = new DocumentModelNode();
+    insertMenuNode = Map();
     // format selection menu
-    formatSelectionNode = new DocumentModelNode();
-    formatSelectionModel = new FormatSelectionNode();
+    formatSelectionNode = Map();
+    formatSelectionModel = Map();
     // hide edit section menu by default
     editSectionNode = section;
-    shouldShowEditSectionMenu = section.type !== NODE_TYPE_SPACER;
+    shouldShowEditSectionMenu = type(section) !== NODE_TYPE_SPACER;
     editSectionMetaFormTopOffset = sectionDomNode.offsetTop;
   }
 
   async function updateEditSectionNode(updatedNode, comparisonKey) {
-    const historyState = documentModel.update(updatedNode);
-    const selectionOffsets = { startNodeId: updatedNode.id };
+    let historyLogEntry;
+    let documentModelLocal;
+    ({ documentModel: documentModelLocal, historyLogEntry } = update(
+      documentModel,
+      updatedNode
+    ));
+    const selectionOffsets = { startNodeId: getId(updatedNode) };
     // some text fields are stored in the node.meta object like image caption, link url, quote fields
     // these text fields will pass a path to differentiate themselves from other actions like image rotate, zoom, etc
     if (comparisonKey) {
       historyManager.appendToHistoryLogWhenNCharsAreDifferent({
         selectionOffsets,
-        historyState,
+        historyLogEntries: [historyLogEntry],
         comparisonKey,
       });
     } else {
       historyManager.appendToHistoryLog({
         selectionOffsets,
-        historyState,
+        historyLogEntries: [historyLogEntry],
       });
     }
     editSectionNode = updatedNode;
-    await commitUpdates(getSelectionOffsetsOrEditSectionNode());
+    await commitUpdates(
+      documentModelLocal,
+      getSelectionOffsetsOrEditSectionNode()
+    );
   }
 
   // FORMAT
@@ -543,7 +577,7 @@
   function closeFormatSelectionMenu() {
     shouldSkipKeyUp = true;
     formatSelectionNode = Map();
-    formatSelectionModel = new FormatSelectionNode();
+    formatSelectionModel = Map();
     formatSelectionMenuTopOffset = 0;
     formatSelectionMenuLeftOffset = 0;
     if (selectionOffsetsManageFormatSelectionMenu) {
@@ -552,6 +586,7 @@
   }
 
   async function updateLinkUrl(value) {
+    throw new Error('UNIMPLEMENTED FormatSelections');
     formatSelectionModel.linkUrl = value;
     formatSelectionNode.formatSelections.replaceSelection(formatSelectionModel);
 
@@ -568,7 +603,8 @@
   //  It should be split up based on type of event instead of trying to overload the handlers with too much logic
   async function manageFormatSelectionMenu(evt, selectionOffsets) {
     // allow user to hold shift and use arrow keys to adjust selection range
-    if (evt.shiftKey) {
+    // TODO UNIMPLEMENTED
+    if (true /*evt.shiftKey*/) {
       return;
     }
     // FormatSelectionMenu has event handlers that interfere with cut / paste
@@ -584,7 +620,7 @@
       // collapsed caret
       caretStart === caretEnd
     ) {
-      if (formatSelectionNode.size > 0) {
+      if (!isEmpty(formatSelectionNode)) {
         // NOTE: unset this selectionOffsets cache - at least one known issue is "select and type" - this value will setCaret() to a stale value
         selectionOffsetsManageFormatSelectionMenu = undefined;
         closeFormatSelectionMenu();
@@ -608,7 +644,7 @@
 
     const range = getRange();
     const rect = range.getBoundingClientRect();
-    const selectedNodeModel = documentModel.getNode(startNodeId);
+    const selectedNodeModel = getNode(documentModel, startNodeId);
     // save range offsets because if the selection is marked as a "link" the url input will be focused
     // and the range will be lost
     selectionOffsetsManageFormatSelectionMenu = selectionOffsets;
@@ -642,6 +678,7 @@
   }
 
   async function handleSelectionAction(action) {
+    // TODO: UNIMPLEMENTED
     const { historyState, updatedSelection } = doFormatSelection(
       documentModel,
       formatSelectionNode,
@@ -705,24 +742,24 @@
   on:mouseup="{handleMouseUp}"
 />
 
-{#if documentModelInternal}
+{#if documentModel.size}
   <div id="filbert-edit-container" contenteditable>
     <Document
-      documentModel="{documentModelInternal}"
+      {documentModel}
       currentEditNode="{editSectionNode}"
       setEditNodeId="{sectionEdit}"
     />
   </div>
 {/if}
-{#if insertMenuNodeId}
+{#if getId(insertMenuNode)}
   <InsertSectionMenu
-    insertNodeId="{insertMenuNodeId}"
+    insertNodeId="{getId(insertMenuNode)}"
     {insertMenuTopOffset}
     {insertMenuLeftOffset}
     {insertSection}
   />
 {/if}
-{#if editSectionNode.type === NODE_TYPE_IMAGE && shouldShowEditSectionMenu}
+{#if type(editSectionNode) === NODE_TYPE_IMAGE && shouldShowEditSectionMenu}
   <EditImageMenu
     offsetTop="{editSectionMetaFormTopOffset}"
     nodeModel="{editSectionNode}"
@@ -732,7 +769,7 @@
     }}"
   />
 {/if}
-{#if editSectionNode.type === NODE_TYPE_QUOTE && shouldShowEditSectionMenu}
+{#if type(editSectionNode) === NODE_TYPE_QUOTE && shouldShowEditSectionMenu}
   <EditQuoteForm
     offsetTop="{editSectionMetaFormTopOffset}"
     nodeModel="{editSectionNode}"
@@ -742,7 +779,7 @@
     }}"
   />
 {/if}
-{#if formatSelectionNode.id}
+{#if getId(formatSelectionNode)}
   <FormatSelectionMenu
     offsetTop="{formatSelectionMenuTopOffset}"
     offsetLeft="{formatSelectionMenuLeftOffset}"

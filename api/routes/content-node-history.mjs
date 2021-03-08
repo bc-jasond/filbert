@@ -1,38 +1,64 @@
 import immutable from 'immutable';
+import {
+  LINKED_LIST_HEAD_ID,
+  getNode,
+  nodes,
+  LINKED_LIST_NODES_MAP,
+} from '@filbert/linked-list';
 import { getKnex, getDocumentModel } from '../lib/mysql.mjs';
 
-const {Map} = immutable;
+const { Map } = immutable;
 
 async function historyDiff(postId, leftHistoryId, rightHistoryId, trxArg) {
   const knex = await getKnex();
   // use current transaction or create a new one
   const transaction = trxArg
-      ? trxArg.transaction.bind(trxArg)
-      : knex.transaction.bind(knex);
+    ? trxArg.transaction.bind(trxArg)
+    : knex.transaction.bind(knex);
 
   return transaction(async (trx) => {
-    const {documentModel: documentModelLeft, selectionOffsets} = await getDocumentModel(postId, leftHistoryId, trx)
-    const {documentModel: documentModelRight} = await getDocumentModel(postId, rightHistoryId, trx);
+    const {
+      documentModel: documentModelLeft,
+      selectionOffsets,
+    } = await getDocumentModel(postId, leftHistoryId, trx);
+    const { documentModel: documentModelRight } = await getDocumentModel(
+      postId,
+      rightHistoryId,
+      trx
+    );
 
     let diff = Map();
     // visit each node from the earlier (left) document snapshot
     // if it's not present or different in the later (right) document snapshot, add the whole node to diff state
-    documentModelLeft.nodes.forEach((left, leftNodeId) => {
-      const right = documentModelRight.getNode(leftNodeId);
+    nodes(documentModelLeft).forEach((left, leftNodeId) => {
+      const right = getNode(documentModelRight, leftNodeId);
       if (!left.equals(right)) {
         diff = diff.set(leftNodeId, left);
       }
-    })
+    });
     // visit each node from the later (right) document snapshot
     // if it's not in the earlier (left), mark it deleted by adding the nodeId as a string
-    documentModelRight.nodes.forEach((right, rightNodeId) => {
-      const left = documentModelLeft.getNode(rightNodeId);
-      if (!left) {
+    nodes(documentModelRight).forEach((right, rightNodeId) => {
+      const left = getNode(documentModelLeft, rightNodeId);
+      if (left.size === 0) {
         diff = diff.set(rightNodeId, rightNodeId);
       }
-    })
-    return {historyState: diff.toJS(), selectionOffsets};
-  })
+    });
+    let newHeadId;
+    if (
+      documentModelRight.get(LINKED_LIST_HEAD_ID) !==
+      documentModelLeft.get(LINKED_LIST_HEAD_ID)
+    ) {
+      newHeadId = documentModelLeft.get(LINKED_LIST_HEAD_ID);
+    }
+    return {
+      historyLogEntry: {
+        [LINKED_LIST_HEAD_ID]: newHeadId,
+        [LINKED_LIST_NODES_MAP]: diff.toJS(),
+      },
+      selectionOffsets,
+    };
+  });
 }
 
 /**
@@ -52,20 +78,25 @@ export async function postContentNodeHistory(currentPost, history, trxArg) {
   return transaction(async (trx) => {
     // get last saved history id as starting point for new history batch
     const [{ lastHistoryId = 0 } = {}] = await trx('content_node_history')
-        .max('content_node_history_id', {
-          as: 'lastHistoryId',
-        })
-        .where({ post_id: id })
-        .groupBy('post_id');
+      .max('content_node_history_id', {
+        as: 'lastHistoryId',
+      })
+      .where({ post_id: id })
+      .groupBy('post_id');
 
     if (currentUndoHistoryId > -1 && currentUndoHistoryId < lastHistoryId) {
       // user has used "Undo" and now starts to edit the document again
       // create a diff of the document state between the current history cursor and the last history
       // add this "undo" history to the front of the new history - this effectively "resets" the document state before
       // applying the new changes
-      const diffHistoryEntry = await historyDiff(id, currentUndoHistoryId, lastHistoryId, trx)
-      console.info("adding UNDO history", diffHistoryEntry)
-      history.unshift(diffHistoryEntry)
+      const diffHistoryEntry = await historyDiff(
+        id,
+        currentUndoHistoryId,
+        lastHistoryId,
+        trx
+      );
+      console.info('adding UNDO history', diffHistoryEntry);
+      history.unshift(diffHistoryEntry);
     }
 
     // add 1 to lastHistoryId since index will start at 0
@@ -161,7 +192,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
     let [history] = historyList;
     if (isUndo && currentUndoHistoryId === -1) {
       // we're already on the "last history" - get second to last history
-      [,history] = historyList;
+      [, history] = historyList;
     }
 
     if (!history) {
@@ -184,16 +215,15 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
     currentPost.meta.currentUndoHistoryId = history.content_node_history_id;
 
     // get all nodes for this point in history to send to the frontend - nice 'n dumb
-    const documentModel = await getDocumentModel(
+    const { documentModel, selectionOffsets } = await getDocumentModel(
       id,
       history.content_node_history_id,
       trx
     );
 
     return {
-      selectionOffsets: documentModel.selectionOffsets,
-      head: documentModel.head,
-      nodesById: documentModel.nodes,
+      selectionOffsets,
+      documentModel: documentModel.toJS(),
       updatedPost: currentPost,
     };
   });
@@ -201,9 +231,7 @@ async function undoRedoHelper({ currentPost, isUndo = true }) {
 
 export async function undo(req, res, next) {
   try {
-    const {
-      currentPost,
-    } = req;
+    const { currentPost } = req;
     res.send(await undoRedoHelper({ currentPost }));
   } catch (err) {
     next(err);
@@ -211,13 +239,9 @@ export async function undo(req, res, next) {
 }
 export async function redo(req, res, next) {
   try {
-    const {
-      currentPost,
-    } = req;
+    const { currentPost } = req;
     res.send(await undoRedoHelper({ currentPost, isUndo: false }));
   } catch (err) {
     next(err);
   }
 }
-
-

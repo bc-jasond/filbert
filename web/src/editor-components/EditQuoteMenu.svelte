@@ -15,6 +15,8 @@
     KEYCODE_TAB,
     KEYCODE_BACKSPACE,
   } from '@filbert/constants';
+  import { getId } from '@filbert/linked-list';
+  import { meta, setMeta } from '@filbert/document';
   import {
     caretIsAtBeginningOfInput,
     caretIsAtEndOfInput,
@@ -22,7 +24,8 @@
   } from '../common/dom.mjs';
   import { getUrl } from '../common/utils';
 
-  $: nodeId = nodeModel.get('id');
+  $: nodeId = getId(nodeModel);
+  $: metaLocal = meta(nodeModel);
 
   const menuInputs = [
     { name: 'quote', domNode: undefined },
@@ -100,13 +103,12 @@
 
   function maybeUpdateLinkUrl(value) {
     const maybeLink = getUrl(value);
-    const path = ['meta', 'url'];
     if (maybeLink) {
       linkUrlHasError = false;
-      update(nodeModel.setIn(path, maybeLink), path);
+      update(setMeta(nodeModel, 'url', maybeLink), 'url');
     } else {
       linkUrlHasError = true;
-      nodeModel = nodeModel.setIn(path, value);
+      nodeModel = setMeta(nodeModel, 'url', value);
     }
   }
 </script>
@@ -157,12 +159,9 @@
             maybeUpdateLinkUrl(e.target.value);
             return;
           }
-          update(nodeModel.setIn(['meta', input.name], e.target.value), [
-            'meta',
-            input.name,
-          ]);
+          update(setMeta(nodeModel, input.name, e.target.value), input.name);
         }}"
-        value="{nodeModel.getIn(['meta', input.name], '')}"
+        value="{metaLocal.get(input.name, '')}"
       />
     </div>
   {/each}

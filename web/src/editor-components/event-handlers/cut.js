@@ -1,14 +1,11 @@
 import { KEYCODE_X } from '@filbert/constants';
+import { deleteSelection } from '../editor-commands/delete.mjs';
 
 import {
   getHighlightedSelectionOffsets,
   isCollapsed,
 } from '../../common/dom.mjs';
 import { stopAndPrevent } from '../../common/utils';
-import {
-  doDeleteSingleNode,
-  doDeleteMultiNode,
-} from '../editor-commands/delete.mjs';
 
 export function isCutEvent(evt) {
   return (
@@ -17,8 +14,9 @@ export function isCutEvent(evt) {
   );
 }
 
+let documentModelLocal;
 let selectionString = '';
-let historyState;
+let historyLogEntries;
 let executeSelectionOffsets;
 
 export async function handleCut({
@@ -34,46 +32,41 @@ export async function handleCut({
 
   const selectionOffsets =
     selectionOffsetsArg || getHighlightedSelectionOffsets();
-  const { endNodeId } = selectionOffsets;
-  const caretIsCollapsed = isCollapsed(selectionOffsets);
+  const { startNodeId, caretStart } = selectionOffsets;
+
+  if (isCollapsed(selectionOffsets)) {
+    stopAndPrevent(evt);
+    return true;
+  }
   // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
-  // we'll come back through from "cut" with clipboard data...
+  // we'll come back around the horn from "cut" with clipboard data...
   if (evt.type !== 'cut') {
-    if (!caretIsCollapsed) {
-      selectionString = document.getSelection().toString();
-      if (endNodeId) {
-        ({
-          historyState,
-          selectionOffsets: executeSelectionOffsets,
-        } = doDeleteMultiNode(documentModel, historyManager, selectionOffsets));
-      } else {
-        ({
-          historyState,
-          selectionOffsets: executeSelectionOffsets,
-        } = doDeleteSingleNode(
-          documentModel,
-          historyManager,
-          selectionOffsets
-        ));
-      }
-    }
+    selectionString = document.getSelection().toString();
+    ({
+      documentModel: documentModelLocal,
+      historyLogEntries,
+    } = deleteSelection({ documentModel, historyManager, selectionOffsets }));
     return true;
   }
   // NOTE: have to manually set selection string into clipboard since we're cancelling the event
   console.debug('CUT selection', selectionString);
   evt.clipboardData.setData('text/plain', selectionString);
-
+  // cut is like delete, just put the caret collapsed at caretStart
+  executeSelectionOffsets = { startNodeId, caretStart };
+  // add delete selection history, if any
   historyManager.appendToHistoryLog({
     selectionOffsets: executeSelectionOffsets,
-    historyState,
+    historyLogEntries,
   });
   // stop and prevent browser default contenteditable behavior - we'll take it from here, thanks!
   // NOTE: if we stopPropagation and preventDefault on the 'keydown' event, they'll cancel the 'cut' event too
   // so don't move this up
   stopAndPrevent(evt);
-  historyState = [];
+  historyLogEntries = [];
 
   // for commitUpdates() -> setCaret()
-  await commitUpdates(executeSelectionOffsets);
+  await commitUpdates(documentModelLocal, executeSelectionOffsets);
+  // dont forget to unset...
+  documentModelLocal = undefined;
   return true;
 }

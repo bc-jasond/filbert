@@ -11,6 +11,7 @@
     "e2e": "jest --config=jest.config.js"
   },
   "dependencies": {
+    "immutable": "^4.0.0-rc.12",
     "jest": "^25.2.3",
     "selenium-webdriver": "^4.0.0-alpha.7"
   }

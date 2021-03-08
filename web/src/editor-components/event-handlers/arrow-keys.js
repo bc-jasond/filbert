@@ -4,6 +4,8 @@ import {
   KEYCODE_RIGHT_ARROW,
   KEYCODE_UP_ARROW,
 } from '@filbert/constants';
+import { getNode, getPrev, getNext, getId } from '@filbert/linked-list';
+import { contentClean, isMetaType } from '@filbert/document';
 import {
   caretIsOnEdgeOfParagraphText,
   getRange,
@@ -26,7 +28,7 @@ export async function handleArrows({
   // and the user hits the corresponding arrow key
   function getNeighborOnArrowNavigation() {
     const { startNodeId } = selectionOffsets;
-    const currentNode = documentModel.getNode(startNodeId);
+    const currentNode = getNode(documentModel, startNodeId);
     let neighborNode;
     const [
       isAtTop,
@@ -39,17 +41,17 @@ export async function handleArrows({
       (evt.keyCode === KEYCODE_LEFT_ARROW &&
         // NOTE: if the content is empty, there will be a ZERO_LENGTH char and user would
         // have to hit left twice without this code
-        (isAtStart || currentNode.content.length === 0))
+        (isAtStart || contentClean(currentNode).length === 0))
     ) {
-      neighborNode = documentModel.getPrev(startNodeId);
+      neighborNode = getPrev(documentModel, startNodeId);
     } else if (
       (evt.keyCode === KEYCODE_DOWN_ARROW && isAtBottom) ||
       (evt.keyCode === KEYCODE_RIGHT_ARROW &&
-        (isAtEnd || currentNode.content.length === 0))
+        (isAtEnd || contentClean(currentNode).length === 0))
     ) {
-      neighborNode = documentModel.getNext(startNodeId);
+      neighborNode = getNext(documentModel, startNodeId);
     }
-    return neighborNode;
+    return Map(neighborNode);
   }
 
   if (
@@ -81,30 +83,21 @@ export async function handleArrows({
   }
 
   // if there's no currently selected MetaType node
-  if (!editSectionNode.id) {
+  if (!getId(editSectionNode)) {
     // see if we've entered one
     const neighborNode = getNeighborOnArrowNavigation(evt, selectionOffsets);
-    if (!neighborNode) {
+    if (neighborNode.size === 0) {
       // we won't be leaving the current node, let contenteditable handle the caret
       console.log('ARROW - not leaving current node');
       return true;
     }
     stopAndPrevent(evt);
-    if (neighborNode.isMetaType()) {
-      await sectionEdit(neighborNode);
+    if (isMetaType(neighborNode)) {
+      await sectionEdit(getId(neighborNode));
       return true;
     }
-    /* NOTE: unset insertMenuNode here or arrow navigation breaks
-          if (
-              insertMenuNode.size > 0 &&
-              neighborNode.get('id') !== insertMenuNode.get('id')
-          ) {
-              await new Promise((resolve) => {
-                  setState({ insertMenuNode: Map() }, resolve);
-              });
-          }*/
     setCaret({
-      startNodeId: neighborNode.id,
+      startNodeId: getId(neighborNode),
       caretStart: [KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)
         ? -1
         : 0,
@@ -125,28 +118,28 @@ export async function handleArrows({
   // }
   stopAndPrevent(evt);
   if ([KEYCODE_UP_ARROW, KEYCODE_LEFT_ARROW].includes(evt.keyCode)) {
-    const prevNode = documentModel.getPrev(editSectionNode);
-    if (prevNode) {
+    const prevNode = getPrev(documentModel, editSectionNode);
+    if (prevNode.size === 0) {
       return;
     }
-    if (prevNode.isMetaType()) {
-      await sectionEdit(prevNode);
+    if (isMetaType(prevNode)) {
+      await sectionEdit(getId(prevNode));
       return;
     }
     await closeAllEditContentMenus();
-    setCaret({ startNodeId: prevNode.get('id') });
+    setCaret({ startNodeId: getId(prevNode) });
     return;
   }
   // down or right arrows
-  const nextNode = documentModel.getNext(editSectionNode);
+  const nextNode = getNext(documentModel, editSectionNode);
   if (!nextNode) {
     return;
   }
-  if (nextNode.isMetaType()) {
-    await sectionEdit(nextNode);
+  if (isMetaType(nextNode)) {
+    await sectionEdit(getId(nextNode));
     return;
   }
   await closeAllEditContentMenus();
-  setCaret({ startNodeId: nextNode.id, caretStart: 0 });
+  setCaret({ startNodeId: getId(nextNode), caretStart: 0 });
   return true;
 }

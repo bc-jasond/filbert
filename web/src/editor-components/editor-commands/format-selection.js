@@ -1,4 +1,4 @@
-/* eslint-disable import/prefer-default-export */
+import { Map } from 'immutable';
 import { NODE_TYPE_H1, NODE_TYPE_H2, NODE_TYPE_P } from '@filbert/document';
 import {
   SELECTION_ACTION_H1,
@@ -6,7 +6,6 @@ import {
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
-  FormatSelectionNode,
 } from '@filbert/selection';
 
 export function doFormatSelection(
@@ -25,7 +24,7 @@ export function doFormatSelection(
     node.formatSelections = undefined;
     return {
       historyState: documentModel.update(node),
-      updatedSelection: new FormatSelectionNode(),
+      updatedSelection: Map(),
     };
   }
   if (action === SELECTION_ACTION_H2) {
@@ -33,7 +32,7 @@ export function doFormatSelection(
     node.formatSelections = undefined;
     return {
       historyState: documentModel.update(node),
-      updatedSelection: new FormatSelectionNode(),
+      updatedSelection: Map(),
     };
   }
 
