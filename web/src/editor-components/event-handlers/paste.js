@@ -4,14 +4,12 @@ import {
   isCollapsed,
 } from '../../common/dom.mjs';
 import { stopAndPrevent } from '../../common/utils';
-import {
-  doDeleteMultiNode,
-  doDeleteSingleNode,
-} from '../editor-commands/delete.mjs';
+import { deleteSelection } from '../editor-commands/delete.mjs';
 import { doPaste } from '../editor-commands/paste';
 
+let documentModelLocal;
 // for a highlight-and-paste, this stores both the delete and paste history into one atomic unit
-let pasteHistoryState = [];
+let historyLogEntriesPaste = [];
 // update caret offsets after delete, use those for paste
 let selectionOffsetsDelete;
 
@@ -39,43 +37,36 @@ export async function handlePaste({
 
   const selectionOffsets =
     selectionOffsetsArg || getHighlightedSelectionOffsets();
-  selectionOffsetsDelete = selectionOffsets;
-  const { endNodeId } = selectionOffsets;
+  //const {startNodeId, caretStart} = selectionOffsets;
   const caretIsCollapsed = isCollapsed(selectionOffsets);
+  let historyLogEntries;
+  let executeSelectionOffsets;
   // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
   // we'll come back through from "paste" with clipboard data...
   if (evt.type !== 'paste') {
     if (!caretIsCollapsed) {
-      let historyState;
-      if (endNodeId) {
-        ({
-          historyState,
-          selectionOffsets: selectionOffsetsDelete,
-        } = doDeleteMultiNode(documentModel, historyManager, selectionOffsets));
-      } else {
-        ({
-          historyState,
-          selectionOffsets: selectionOffsetsDelete,
-        } = doDeleteSingleNode(
-          documentModel,
-          historyManager,
-          selectionOffsets
-        ));
-      }
-      pasteHistoryState.push(...historyState);
-      await commitUpdates(selectionOffsetsDelete);
+      ({
+        documentModel: documentModelLocal,
+        historyLogEntries,
+      } = deleteSelection({ documentModel, historyManager, selectionOffsets }));
+      historyLogEntriesPaste.push(...historyLogEntries);
+      //await commitUpdates(documentModelLocal, {startNodeId, caretStart});
     }
     return true;
   }
   // NOTE: if these get called on the 'keydown' event, they'll cancel the 'paste' event
   stopAndPrevent(evt);
 
-  const { selectionOffsets: executeSelectionOffsets, historyState } = doPaste(
-    documentModel,
-    selectionOffsetsDelete,
+  ({
+    documentModel: documentModelLocal,
+    selectionOffsets: executeSelectionOffsets,
+    historyLogEntries,
+  } = doPaste(
+    documentModelLocal || documentModel,
+    selectionOffsets,
     evt.clipboardData
-  );
-  pasteHistoryState.push(...historyState);
+  ));
+  historyLogEntriesPaste.push(...historyLogEntries);
   // TODO: paste into Meta Type nodes isn't supported
   // TODO: is this a valid state for this code anymore?
   if (!executeSelectionOffsets) {
@@ -84,11 +75,12 @@ export async function handlePaste({
   // add history entry
   historyManager.appendToHistoryLog({
     selectionOffsets: executeSelectionOffsets,
-    historyState: pasteHistoryState,
+    historyLogEntries: historyLogEntriesPaste,
   });
 
-  pasteHistoryState = [];
+  historyLogEntriesPaste = [];
   // for commitUpdates() -> setCaret()
-  await commitUpdates(executeSelectionOffsets);
+  await commitUpdates(documentModelLocal, executeSelectionOffsets);
+  documentModelLocal = undefined;
   return true;
 }

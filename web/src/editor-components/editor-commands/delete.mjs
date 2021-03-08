@@ -60,7 +60,9 @@ function deleteNodeContentRangeAndUpdateSelections(
   return { documentModel, historyLogEntry };
 }
 
-function mergeParagraphs(documentModel, left, right) {
+function mergeParagraphs(documentModel, leftId, rightId) {
+  let left = getNode(documentModel, leftId);
+  let right = getNode(documentModel, rightId);
   if (!(isTextType(left) && isTextType(right))) {
     console.error('mergeParagraphs - can`t do it!', left, right);
     throw new Error('mergeParagraphs - invalid paragraphs');
@@ -71,7 +73,7 @@ function mergeParagraphs(documentModel, left, right) {
   if (left.canHaveSelections()) {
     left.formatSelections.concatSelections(right);
   }*/
-  left = left.set(NODE_CONTENT, `${left.content}${right.content}`);
+  left = left.set(NODE_CONTENT, `${contentClean(left)}${contentClean(right)}`);
   let historyLogEntry;
   ({ documentModel, historyLogEntry } = update(documentModel, left));
   historyLogEntries.push(historyLogEntry);
@@ -204,7 +206,7 @@ export function doDeleteSingleNodeBackspace(
       ({
         documentModel,
         historyLogEntries: historyLogEntriesMergeParagraph,
-      } = mergeParagraphs(documentModel, startPrevNode, startNode));
+      } = mergeParagraphs(documentModel, getId(startPrevNode), startNodeId));
       historyLogEntries.push(...historyLogEntriesMergeParagraph);
     }
     historyManager.appendToHistoryLog({
@@ -244,7 +246,6 @@ export function doDeleteMultiNode(
     documentModel,
     selectionOffsets
   );
-  const startNode = getNode(documentModel, startNodeId);
   const historyLogEntries = [];
 
   console.debug('Delete - MULTI NODE');
@@ -258,18 +259,6 @@ export function doDeleteMultiNode(
     ({ documentModel, historyLogEntry } = deleteNode(documentModel, node));
     historyLogEntries.push(historyLogEntry);
   });
-
-  // delete startNode
-  ({
-    documentModel,
-    historyLogEntry,
-  } = deleteNodeContentRangeAndUpdateSelections(
-    documentModel,
-    contentClean(startNode).length - caretStart,
-    startNodeId,
-    caretStart
-  ));
-  historyLogEntries.push(historyLogEntry);
 
   // delete endNode
   const endNode = getNode(documentModel, endNodeId);
@@ -291,9 +280,23 @@ export function doDeleteMultiNode(
     historyLogEntries.push(historyLogEntry);
   }
 
+  // delete startNode
+  let startNode = getNode(documentModel, startNodeId);
+  ({
+    documentModel,
+    historyLogEntry,
+  } = deleteNodeContentRangeAndUpdateSelections(
+    documentModel,
+    contentClean(startNode).length - caretStart,
+    startNodeId,
+    caretStart
+  ));
+  historyLogEntries.push(historyLogEntry);
+
   // merge? the only merge scenario is when both are text and both weren't deleted
   if (
-    !(willDeleteStartNode && willDeleteEndNode) &&
+    !willDeleteStartNode &&
+    !willDeleteEndNode &&
     isTextType(startNode) &&
     isTextType(endNode)
   ) {
@@ -301,7 +304,7 @@ export function doDeleteMultiNode(
     ({
       documentModel,
       historyLogEntries: historyLogEntriesMergeParagraph,
-    } = mergeParagraphs(documentModel, startNode, endNode));
+    } = mergeParagraphs(documentModel, startNodeId, endNodeId));
     historyLogEntries.push(...historyLogEntriesMergeParagraph);
   }
 
@@ -325,7 +328,7 @@ export function doDeleteMultiNodeBackspace(
     documentModel,
     selectionOffsets
   );
-  const startNode = getNode(documentModel, startNodeId);
+  let startNode = getNode(documentModel, startNodeId);
   const startPrevNode = getPrev(documentModel, startNodeId);
   const startNodeWasFirstNode = isHead(documentModel, startNode);
   let executeSelectionOffsets;
@@ -344,14 +347,14 @@ export function doDeleteMultiNodeBackspace(
         } else {
           // deleted through the top of the document - focus node after endNode
           executeSelectionOffsets = {
-            startNodeId: endNextNode.id,
+            startNodeId: getId(endNextNode),
             caretStart: 0,
           };
         }
       } else {
         // deleted start and end
         executeSelectionOffsets = {
-          startNodeId: startPrevNode.id,
+          startNodeId: getId(startPrevNode),
           caretStart: -1,
         };
       }
@@ -371,23 +374,6 @@ export function doDeleteMultiNodeBackspace(
     historyLogEntries.push(historyLogEntry);
   });
 
-  // delete startNode
-  if (willDeleteStartNode) {
-    ({ documentModel, historyLogEntry } = deleteNode(documentModel, startNode));
-    historyLogEntries.push(historyLogEntry);
-  } else {
-    ({
-      documentModel,
-      historyLogEntry,
-    } = deleteNodeContentRangeAndUpdateSelections(
-      documentModel,
-      contentClean(startNode).length - caretStart,
-      startNodeId,
-      caretStart
-    ));
-    historyLogEntries.push(historyLogEntry);
-  }
-
   // delete endNode
   const endNode = getNode(documentModel, endNodeId);
   if (willDeleteEndNode) {
@@ -406,9 +392,28 @@ export function doDeleteMultiNodeBackspace(
     historyLogEntries.push(historyLogEntry);
   }
 
+  // delete startNode
+  startNode = getNode(documentModel, startNodeId);
+  if (willDeleteStartNode) {
+    ({ documentModel, historyLogEntry } = deleteNode(documentModel, startNode));
+    historyLogEntries.push(historyLogEntry);
+  } else {
+    ({
+      documentModel,
+      historyLogEntry,
+    } = deleteNodeContentRangeAndUpdateSelections(
+      documentModel,
+      contentClean(startNode).length - caretStart,
+      startNodeId,
+      caretStart
+    ));
+    historyLogEntries.push(historyLogEntry);
+  }
+
   // merge? the only merge scenario is when both are text and both weren't deleted
   if (
-    !(willDeleteStartNode && willDeleteEndNode) &&
+    !willDeleteStartNode &&
+    !willDeleteEndNode &&
     isTextType(startNode) &&
     isTextType(endNode)
   ) {
@@ -416,7 +421,7 @@ export function doDeleteMultiNodeBackspace(
     ({
       documentModel,
       historyLogEntries: historyLogEntriesMergeParagraphs,
-    } = mergeParagraphs(documentModel, startNode, endNode));
+    } = mergeParagraphs(documentModel, startNodeId, endNodeId));
     historyLogEntries.push(...historyLogEntriesMergeParagraphs);
   }
 

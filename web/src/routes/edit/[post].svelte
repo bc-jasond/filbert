@@ -146,7 +146,6 @@
     });
   }
 
-  $: insertMenuNodeId = getId(insertMenuNode);
   $: apiClient = isBrowser() && getApiClientInstance();
   $: (async function instantiatePost(postIdInternal) {
     if (!isBrowser()) {
@@ -504,15 +503,7 @@
       documentModel,
       insertMenuNode
     ));
-    let newSectionId;
-    let bailCount = 0;
-    // there's some race condition here where lastInsertId isn't set yet before accessing it here...
-    while (!newSectionId && bailCount < 100) {
-      newSectionId = getLastInsertId();
-      bailCount += 1;
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-    const selectionOffsets = { startNodeId: newSectionId };
+    const selectionOffsets = { startNodeId: getId(insertMenuNode) };
     historyManager.appendToHistoryLog({
       selectionOffsets,
       historyLogEntries: [historyLogEntry],
@@ -521,7 +512,7 @@
     if (
       [NODE_TYPE_IMAGE, NODE_TYPE_QUOTE, NODE_TYPE_SPACER].includes(sectionType)
     ) {
-      sectionEdit(newSectionId);
+      sectionEdit(getId(insertMenuNode));
     }
   }
 
@@ -760,9 +751,9 @@
     />
   </div>
 {/if}
-{#if insertMenuNodeId}
+{#if getId(insertMenuNode)}
   <InsertSectionMenu
-    insertNodeId="{insertMenuNodeId}"
+    insertNodeId="{getId(insertMenuNode)}"
     {insertMenuTopOffset}
     {insertMenuLeftOffset}
     {insertSection}
