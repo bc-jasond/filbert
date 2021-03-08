@@ -5,8 +5,8 @@
 
   import { Map } from 'immutable';
 
-  import { getId } from '@filbert/linked-list';
-  import { NODE_TYPE_QUOTE, meta } from '@filbert/document';
+  import { getId, meta } from '@filbert/linked-list';
+  import { NODE_TYPE_QUOTE } from '@filbert/document';
 
   $: isEditMode = !!setEditNodeId;
 

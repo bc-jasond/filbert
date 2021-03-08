@@ -46,6 +46,7 @@
     nodes,
     LINKED_LIST_HEAD_ID,
     LINKED_LIST_NODES_MAP,
+    NODE_META,
   } from '@filbert/linked-list';
   import {
     documentModelFromJS,
@@ -56,7 +57,6 @@
     update,
     DOCUMENT_POST_ID,
     NODE_TYPE,
-    NODE_META,
     NODE_TYPE_H1,
     NODE_TYPE_IMAGE,
     NODE_TYPE_P,
