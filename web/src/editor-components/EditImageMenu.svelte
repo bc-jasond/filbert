@@ -9,8 +9,7 @@
   import { beforeUpdate, onMount } from 'svelte';
   import { Map } from 'immutable';
 
-  import { getId } from '@filbert/linked-list';
-  import { meta, setMeta } from '@filbert/document';
+  import { getId, meta, setMeta } from '@filbert/linked-list';
   import {
     KEYCODE_LEFT_ARROW,
     KEYCODE_RIGHT_ARROW,

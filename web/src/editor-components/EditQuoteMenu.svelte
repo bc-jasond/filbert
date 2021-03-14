@@ -15,8 +15,7 @@
     KEYCODE_TAB,
     KEYCODE_BACKSPACE,
   } from '@filbert/constants';
-  import { getId } from '@filbert/linked-list';
-  import { meta, setMeta } from '@filbert/document';
+  import { getId, meta, setMeta } from '@filbert/linked-list';
   import {
     caretIsAtBeginningOfInput,
     caretIsAtEndOfInput,

@@ -10,8 +10,8 @@
   import { beforeUpdate } from 'svelte';
   import { Map } from 'immutable';
 
-  import { getId } from '@filbert/linked-list';
-  import { NODE_TYPE_IMAGE, meta } from '@filbert/document';
+  import { getId, meta } from '@filbert/linked-list';
+  import { NODE_TYPE_IMAGE } from '@filbert/document';
 
   $: isEditMode = !!setEditNodeId;
 
