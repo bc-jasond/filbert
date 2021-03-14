@@ -15,6 +15,7 @@ import {
   NODE_TYPE_PRE,
   getLastInsertId,
   isMetaType,
+  setType,
 } from '@filbert/document';
 import { cleanText } from '@filbert/util';
 import { assertValidDomSelectionOrThrow } from '../../common/dom.mjs';
@@ -38,7 +39,7 @@ function handleEnterTextType(
     isLastOfType(documentModel, leftNode)
   ) {
     // convert empty sections to a P on enter
-    leftNode = leftNode.set(NODE_TYPE, NODE_TYPE_P);
+    leftNode = setType(leftNode, NODE_TYPE_P);
     let historyLogEntry;
     ({ documentModel, historyLogEntry } = update(documentModel, leftNode));
     return { documentModel, historyLogEntries: [historyLogEntry] };
@@ -50,7 +51,7 @@ function handleEnterTextType(
     [NODE_TYPE_H1, NODE_TYPE_H2].includes(newNodeType) &&
     cleanText(contentLeft).length === 0
   ) {
-    leftNode = leftNode.set(NODE_TYPE, NODE_TYPE_P);
+    leftNode = setType(leftNode, NODE_TYPE_P);
     let historyLogEntry;
     ({ documentModel, historyLogEntry } = update(documentModel, leftNode));
     historyLogEntries.push(historyLogEntry);

@@ -20,8 +20,8 @@
   let editSectionNode = Map();
   let shouldShowEditSectionMenu = false;
   let editSectionMetaFormTopOffset = 0;
-  let formatSelectionNode = Map();
-  let formatSelectionModel = Map();
+  let formatSelectionDocumentNode = Map();
+  let formatSelectionCurrent = Map();
   let formatSelectionMenuTopOffset = 0;
   let formatSelectionMenuLeftOffset = 0;
   let selectionOffsetsManageFormatSelectionMenu;
@@ -47,6 +47,7 @@
     LINKED_LIST_HEAD_ID,
     LINKED_LIST_NODES_MAP,
     NODE_META,
+    linkedListFromJS,
   } from '@filbert/linked-list';
   import {
     documentModelFromJS,
@@ -63,7 +64,16 @@
     NODE_TYPE_QUOTE,
     NODE_TYPE_SPACER,
     isMetaType,
+    formatSelections,
+    setFormatSelections,
+    setType,
   } from '@filbert/document';
+  import {
+    getSelectionByContentOffset,
+    link,
+    replaceSelection,
+    setLinkUrl,
+  } from '@filbert/selection';
 
   import {
     getFirstHeadingContent,
@@ -292,7 +302,7 @@
       return;
     }
     /* no more caret work if we're typing a url in the formatSelection menu
-    if (formatSelectionModel.link) {
+    if (link(formatSelectionCurrent)) {
       return;
     }*/
 
@@ -307,7 +317,7 @@
   }
 
   function closeAllEditContentMenus() {
-    formatSelectionNode = Map();
+    formatSelectionDocumentNode = Map();
     editSectionNode = Map();
     shouldShowEditSectionMenu = false;
   }
@@ -494,9 +504,7 @@
       }
       meta = Map(imageMeta);
     }
-    insertMenuNode = insertMenuNode
-      .set(NODE_TYPE, sectionType)
-      .set(NODE_META, meta);
+    insertMenuNode = setType(insertMenuNode, sectionType).set(NODE_META, meta);
     let historyLogEntry;
     let documentModelLocal;
     ({ documentModel: documentModelLocal, historyLogEntry } = update(
@@ -535,8 +543,8 @@
     // insert menu
     insertMenuNode = Map();
     // format selection menu
-    formatSelectionNode = Map();
-    formatSelectionModel = Map();
+    formatSelectionDocumentNode = Map();
+    formatSelectionCurrent = Map();
     // hide edit section menu by default
     editSectionNode = section;
     shouldShowEditSectionMenu = type(section) !== NODE_TYPE_SPACER;
@@ -576,8 +584,8 @@
   // TODO: move this out into "format" helper
   function closeFormatSelectionMenu() {
     shouldSkipKeyUp = true;
-    formatSelectionNode = Map();
-    formatSelectionModel = Map();
+    formatSelectionDocumentNode = Map();
+    formatSelectionCurrent = Map();
     formatSelectionMenuTopOffset = 0;
     formatSelectionMenuLeftOffset = 0;
     if (selectionOffsetsManageFormatSelectionMenu) {
@@ -586,25 +594,28 @@
   }
 
   async function updateLinkUrl(value) {
-    throw new Error('UNIMPLEMENTED FormatSelections');
-    formatSelectionModel.linkUrl = value;
-    formatSelectionNode.formatSelections.replaceSelection(formatSelectionModel);
+    formatSelectionCurrent = setLinkUrl(formatSelectionCurrent, value);
+    let formatSelectionsLocal = formatSelections(formatSelectionDocumentNode);
+    formatSelectionDocumentNode = setFormatSelections(
+      formatSelectionDocumentNode,
+      replaceSelection(formatSelectionsLocal, formatSelectionCurrent)
+    );
 
-    const historyState = documentModel.update(formatSelectionNode);
+    let historyLogEntry;
+    ({documentModel, historyLogEntry} = update(documentModel, formatSelectionDocumentNode));
     // TODO: when NCharsAreDifferent - current linked list representation doesn't lend itself well to comparisonPath
     historyManager.appendToHistoryLog({
       selectionOffsets: selectionOffsetsManageFormatSelectionMenu,
-      historyState,
+      historyLogEntries: [historyLogEntry],
     });
-    await commitUpdates(selectionOffsetsManageFormatSelectionMenu);
+    await commitUpdates(documentModel, selectionOffsetsManageFormatSelectionMenu);
   }
 
   // TODO: show/hide logic for this menu is split up and difficult to understand.
   //  It should be split up based on type of event instead of trying to overload the handlers with too much logic
   async function manageFormatSelectionMenu(evt, selectionOffsets) {
     // allow user to hold shift and use arrow keys to adjust selection range
-    // TODO UNIMPLEMENTED
-    if (true /*evt.shiftKey*/) {
+    if (evt.shiftKey) {
       return;
     }
     // FormatSelectionMenu has event handlers that interfere with cut / paste
@@ -620,7 +631,7 @@
       // collapsed caret
       caretStart === caretEnd
     ) {
-      if (!isEmpty(formatSelectionNode)) {
+      if (!isEmpty(formatSelectionDocumentNode)) {
         // NOTE: unset this selectionOffsets cache - at least one known issue is "select and type" - this value will setCaret() to a stale value
         selectionOffsetsManageFormatSelectionMenu = undefined;
         closeFormatSelectionMenu();
@@ -644,33 +655,41 @@
 
     const range = getRange();
     const rect = range.getBoundingClientRect();
-    const selectedNodeModel = getNode(documentModel, startNodeId);
+    formatSelectionDocumentNode = getNode(documentModel, startNodeId);
+    let formatSelectionsLocal = formatSelections(formatSelectionDocumentNode);
     // save range offsets because if the selection is marked as a "link" the url input will be focused
     // and the range will be lost
     selectionOffsetsManageFormatSelectionMenu = selectionOffsets;
-    const {
-      formatSelections,
-      id,
-    } = selectedNodeModel.formatSelections.getSelectionByContentOffset(
-      selectedNodeModel.content.length,
+    let currentFormatSelectionId;
+    ({
+      formatSelections: formatSelectionsLocal,
+      id: currentFormatSelectionId,
+    } = getSelectionByContentOffset(
+      formatSelectionsLocal,
+      contentClean(formatSelectionDocumentNode).length,
       caretStart,
       caretEnd
-    );
-    selectedNodeModel.formatSelections = formatSelections;
+    ));
 
     console.info(
       'manageFormatSelectionMenu: ',
       caretStart,
       caretEnd,
       endNodeId,
-      selectedNodeModel.formatSelections,
-      id,
+      formatSelectionsLocal.toJS(),
+      currentFormatSelectionId,
       range,
       range.getBoundingClientRect()
     );
 
-    formatSelectionNode = selectedNodeModel;
-    formatSelectionModel = selectedNodeModel.formatSelections.getNode(id);
+    formatSelectionDocumentNode = setFormatSelections(
+      formatSelectionDocumentNode,
+      formatSelectionsLocal
+    );
+    formatSelectionCurrent = getNode(
+      formatSelectionsLocal,
+      currentFormatSelectionId
+    );
     // NOTE: need to add current vertical scroll position of the window to the
     // rect position to get offset relative to the whole document
     formatSelectionMenuTopOffset = rect.top + window.scrollY;
@@ -678,37 +697,39 @@
   }
 
   async function handleSelectionAction(action) {
-    // TODO: UNIMPLEMENTED
-    const { historyState, updatedSelection } = doFormatSelection(
+    let historyLogEntry;
+    let updatedSelection;
+    ({ documentModel, historyLogEntry, updatedSelection } = doFormatSelection(
       documentModel,
-      formatSelectionNode,
-      formatSelectionModel,
+      formatSelectionDocumentNode,
+      formatSelectionCurrent,
       action
-    );
+    ));
     // formatting doesn't change the SelectionOffsets
     // seems like it could conditionally collapse the selection only when moving from P -> H1 or H2 but, idk???
     historyManager.appendToHistoryLog({
       selectionOffsets: selectionOffsetsManageFormatSelectionMenu,
-      historyState,
+      historyLogEntries: [historyLogEntry],
     });
-    await commitUpdates(selectionOffsetsManageFormatSelectionMenu);
+    await commitUpdates(documentModel, selectionOffsetsManageFormatSelectionMenu);
 
     // need to refresh the selection after update, as a merge might have occured
     // between neighboring selections that now have identical formats
-    let selectedNodeModel = documentModel.getNode(formatSelectionNode.id);
+    formatSelectionDocumentNode = getNode(documentModel,
+      getId(formatSelectionDocumentNode)
+    );
     let {
-      formatSelections,
+      formatSelections: formatSelectionsLocal,
       id: updatedSelectionId,
-    } = selectedNodeModel.formatSelections.getSelectionByContentOffset(
-      selectedNodeModel.content.length,
+    } = getSelectionByContentOffset(
+      formatSelections(formatSelectionDocumentNode),
+      contentClean(formatSelectionDocumentNode).length,
       selectionOffsetsManageFormatSelectionMenu.caretStart,
       selectionOffsetsManageFormatSelectionMenu.caretEnd
     );
-    selectedNodeModel.formatSelections;
-    formatSelectionNode = formatSelections;
     // note: this selection index shouldn't have changed.
-    formatSelectionModel = formatSelections.getNode(updatedSelectionId);
-    if (updatedSelection.link) {
+    formatSelectionCurrent = getNode(formatSelectionsLocal, updatedSelectionId);
+    if (link(updatedSelection)) {
       return;
     }
     // this replaces the selection after calling setState
@@ -779,12 +800,12 @@
     }}"
   />
 {/if}
-{#if getId(formatSelectionNode)}
+{#if getId(formatSelectionDocumentNode)}
   <FormatSelectionMenu
     offsetTop="{formatSelectionMenuTopOffset}"
     offsetLeft="{formatSelectionMenuLeftOffset}"
-    nodeModel="{formatSelectionNode}"
-    formatSelectionNode="{formatSelectionModel}"
+    nodeModel="{formatSelectionDocumentNode}"
+    formatSelection="{formatSelectionCurrent}"
     selectionAction="{handleSelectionAction}"
     {updateLinkUrl}
     closeMenu="{closeFormatSelectionMenu}"

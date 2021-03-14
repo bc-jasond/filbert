@@ -10,8 +10,8 @@ import { doPaste } from '../editor-commands/paste';
 let documentModelLocal;
 // for a highlight-and-paste, this stores both the delete and paste history into one atomic unit
 let historyLogEntriesPaste = [];
-// update caret offsets after delete, use those for paste
-let selectionOffsetsDelete;
+// use keydown selection, not paste
+let selectionOffsetsKeydown;
 
 // handle both the "paste" event and keyboard shortcut
 export function isPasteEvent(evt) {
@@ -37,20 +37,24 @@ export async function handlePaste({
 
   const selectionOffsets =
     selectionOffsetsArg || getHighlightedSelectionOffsets();
-  //const {startNodeId, caretStart} = selectionOffsets;
+  const {startNodeId, caretStart} = selectionOffsets;
   const caretIsCollapsed = isCollapsed(selectionOffsets);
   let historyLogEntries;
   let executeSelectionOffsets;
   // if we're coming from "keydown" - check for a highlighted selection and delete it, then bail
   // we'll come back through from "paste" with clipboard data...
   if (evt.type !== 'paste') {
+    // there's a bug with window.getSelection() returning a stale Range during the paste event...
+    //  this is the right one from the keydown event
+    selectionOffsetsKeydown = {startNodeId, caretStart};
     if (!caretIsCollapsed) {
       ({
         documentModel: documentModelLocal,
         historyLogEntries,
       } = deleteSelection({ documentModel, historyManager, selectionOffsets }));
       historyLogEntriesPaste.push(...historyLogEntries);
-      //await commitUpdates(documentModelLocal, {startNodeId, caretStart});
+
+      await commitUpdates(documentModelLocal, {startNodeId, caretStart});
     }
     return true;
   }
@@ -63,7 +67,7 @@ export async function handlePaste({
     historyLogEntries,
   } = doPaste(
     documentModelLocal || documentModel,
-    selectionOffsets,
+    selectionOffsetsKeydown,
     evt.clipboardData
   ));
   historyLogEntriesPaste.push(...historyLogEntries);

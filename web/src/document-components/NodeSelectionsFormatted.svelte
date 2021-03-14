@@ -1,4 +1,16 @@
 <script>
+  import {
+    bold,
+    code,
+    getContentBySelections,
+    italic,
+    link,
+    linkUrl,
+    mini,
+    siteinfo,
+    strikethrough,
+  } from '@filbert/selection';
+
   export let node = Map();
 
   import he from 'he';
@@ -15,55 +27,56 @@
   $: if (isEmpty(formatSelections(node))) {
     formattedMarkup = he.escape(contentOrZeroLengthChar(node));
   } else {
-    // TODO: UNIMPLEMENTED
-    throw new Error('unimplemented');
     //console.debug('FORMATTED SELECTIONS render()', node);
     const formatSelectionsLocal = formatSelections(node);
-    let selection = head(formatSelections);
+    let selection = head(formatSelectionsLocal);
     formattedMarkup = '';
     let didError = false;
-    const contentPiecesBySelectionLength = []; // getContentBySelections(formatSelections, contentClean(node));
+    const contentPiecesBySelectionLength = getContentBySelections(
+      formatSelectionsLocal,
+      contentClean(node)
+    );
     let idx = 0;
     try {
-      while (selection) {
+      while (selection.size) {
         let openingTags = [];
         let closingTags = [];
         // re-render all selections if any one changes
         //const key = selection.hashCode();
-        if (selection.strikethrough) {
+        if (strikethrough(selection)) {
           openingTags.push('<span class="strikethrough-text">');
           closingTags.unshift('</span>');
         }
-        if (selection.siteinfo) {
+        if (siteinfo(selection)) {
           openingTags.push('<span class="siteinfo-text">');
           closingTags.unshift('</span>');
         }
-        if (selection.mini) {
+        if (mini(selection)) {
           openingTags.push('<span class="mini-text">');
           closingTags.unshift('</span>');
         }
-        if (selection.italic) {
+        if (italic(selection)) {
           openingTags.push('<em class="italic-text">');
           closingTags.unshift('</em>');
         }
-        if (selection.code) {
+        if (code(selection)) {
           openingTags.push('<code class="code-text">');
           closingTags.unshift('</code>');
         }
-        if (selection.bold) {
+        if (bold(selection)) {
           openingTags.push('<strong class="bold-text">');
           closingTags.unshift('</strong>');
         }
-        if (selection.link) {
+        if (link(selection)) {
           openingTags.push(
-            `<a class="filbert-link" href="${selection.linkUrl}">`
+            `<a class="filbert-link" href="${linkUrl(selection)}">`
           );
           closingTags.unshift('</a>');
         }
         formattedMarkup = `${formattedMarkup}${openingTags.join('')}${he.escape(
           contentPiecesBySelectionLength[idx]
         )}${closingTags.join('')}`;
-        selection = getNext(formatSelections, selection);
+        selection = getNext(formatSelectionsLocal, selection);
         idx += 1;
       }
     } catch (err) {

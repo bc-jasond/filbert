@@ -1,6 +1,6 @@
 <script>
   export let nodeModel = Map();
-  export let formatSelectionNode = Map();
+  export let formatSelection = Map();
   export let selectionAction;
   export let offsetTop;
   export let offsetLeft;
@@ -19,9 +19,10 @@
     SELECTION_ACTION_MINI,
     SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_H1,
-    SELECTION_ACTION_H2,
+    SELECTION_ACTION_H2, bold, italic, code, siteinfo, mini, strikethrough, link, linkUrl, setLinkUrl,
   } from '@filbert/selection';
-  import { NODE_TYPE_H1, NODE_TYPE_H2 } from '@filbert/document';
+  import {getId} from "@filbert/linked-list";
+  import {NODE_TYPE_H1, NODE_TYPE_H2, type} from '@filbert/document';
   import {
     KEYCODE_ENTER,
     KEYCODE_ESC,
@@ -49,13 +50,15 @@
   import IconH2 from '../icons/h2.svelte';
   import IconMini from '../icons/mini.svelte';
 
-  $: boldIsEnabled = formatSelectionNode.bold;
-  $: italicIsEnabled = formatSelectionNode.italic;
-  $: codeIsEnabled = formatSelectionNode.code;
-  $: siteinfoIsEnabled = formatSelectionNode.siteinfo;
-  $: miniIsEnabled = formatSelectionNode.mini;
-  $: strikethroughIsEnabled = formatSelectionNode.strikethrough;
-  $: linkIsEnabled = formatSelectionNode.link;
+  let linkIsEnabled;
+
+  $: boldIsEnabled = bold(formatSelection);
+  $: italicIsEnabled = italic(formatSelection);
+  $: codeIsEnabled = code(formatSelection);
+  $: siteinfoIsEnabled = siteinfo(formatSelection);
+  $: miniIsEnabled = mini(formatSelection);
+  $: strikethroughIsEnabled = strikethrough(formatSelection);
+  $: linkIsEnabled = link(formatSelection);
   $: {
     tick().then(() => {
       if (shouldShowLinkInput && linkUrlInputDomNode) {
@@ -63,8 +66,8 @@
       }
     });
   }
-  $: h1IsEnabled = nodeModel.get('type') === NODE_TYPE_H1;
-  $: h2IsEnabled = nodeModel.get('type') === NODE_TYPE_H2;
+  $: h1IsEnabled = type(nodeModel) === NODE_TYPE_H1;
+  $: h2IsEnabled = type(nodeModel) === NODE_TYPE_H2;
 
   const menuItemTypes = [
     SELECTION_ACTION_BOLD,
@@ -80,16 +83,16 @@
 
   let formatSelectionMenuDomNode;
   let linkUrlInputDomNode;
-  let shouldShowLinkInput = formatSelectionNode.link;
+  let shouldShowLinkInput = linkIsEnabled;
   let linkUrlHasError;
   const linkMenuItemIdx = 6;
-  let currentIdx = formatSelectionNode.link ? linkMenuItemIdx : 0;
+  let currentIdx = linkIsEnabled ? linkMenuItemIdx : 0;
 
   beforeUpdate(() => {
     if (formatSelectionMenuDomNode) {
       // 44 is the height of menu, 10 is the height of arrow point
       formatSelectionMenuDomNode.style.top = `${
-        offsetTop - 120 - (formatSelectionNode.link ? 30 : 0)
+        offsetTop - 120 - (linkIsEnabled ? 30 : 0)
       }px`;
       // 203 is half the width of the menu
       formatSelectionMenuDomNode.style.left = `${offsetLeft - 203}px`;
@@ -113,7 +116,7 @@
     // only allow 'enter' and 'esc' through to close the menu and 'left' and 'right' to toggle through
     // menu items
     if (
-      formatSelectionNode.link &&
+      linkIsEnabled &&
       [
         KEYCODE_ENTER,
         KEYCODE_ESC,
@@ -131,14 +134,14 @@
 
     switch (evt.keyCode) {
       case KEYCODE_UP_ARROW: {
-        if (currentIdx === linkMenuItemIdx && formatSelectionNode.link) {
+        if (currentIdx === linkMenuItemIdx && linkIsEnabled) {
           stopAndPrevent(evt);
           shouldShowLinkInput = false;
           return;
         }
       }
       case KEYCODE_DOWN_ARROW: {
-        if (currentIdx === linkMenuItemIdx && formatSelectionNode.link) {
+        if (currentIdx === linkMenuItemIdx && linkIsEnabled) {
           stopAndPrevent(evt);
           shouldShowLinkInput = true;
           return;
@@ -170,7 +173,7 @@
           currentIdx === menuItemTypes.length - 1 ? 0 : currentIdx + 1;
         if (currentIdx === linkMenuItemIdx) {
           shouldShowLinkInput = false;
-        } else if (nextIdx === linkMenuItemIdx && formatSelectionNode.link) {
+        } else if (nextIdx === linkMenuItemIdx && linkIsEnabled) {
           shouldShowLinkInput = true;
         }
         currentIdx = nextIdx;
@@ -187,7 +190,7 @@
         }
         evt.preventDefault();
         if (currentIdx === linkMenuItemIdx) {
-          shouldShowLinkInput = !formatSelectionNode[currentMenuItemType];
+          shouldShowLinkInput = !formatSelection.get(currentMenuItemType);
         }
         selectionAction(currentMenuItemType);
         return;
@@ -195,7 +198,7 @@
       case KEYCODE_ENTER: {
         evt.preventDefault();
         closeMenu();
-        if (formatSelectionNode[currentMenuItemType]) {
+        if (formatSelection.get(currentMenuItemType)) {
           // this value is currently selected, don't unselect it. just close the menu
           return;
         }
@@ -209,9 +212,9 @@
   onMount(() => {
     function focusOrBlurCaptionInput(shouldFocusEnd) {
       if (!linkUrlInputDomNode) return;
-      if (formatSelectionNode.link) {
+      if (linkIsEnabled) {
         focusAndScrollSmooth(
-          nodeModel.get('id'),
+          getId(nodeModel),
           linkUrlInputDomNode,
           shouldFocusEnd
         );
@@ -258,7 +261,7 @@
       return;
     }
     linkUrlHasError = true;
-    formatSelectionNode.linkUrl = e.target.value;
+    formatSelection = setLinkUrl(formatSelection, e.target.value);
   }
 </script>
 
@@ -369,7 +372,7 @@
   <IconButton
     id="{`format-selection-menu-${SELECTION_ACTION_LINK}`}"
     on:click="{() => {
-      shouldShowLinkInput = !formatSelectionNode.link;
+      shouldShowLinkInput = !shouldShowLinkInput;
       selectionAction(SELECTION_ACTION_LINK);
     }}"
   >
@@ -411,7 +414,7 @@
     bind:this="{linkUrlInputDomNode}"
     class:enabled="{shouldShowLinkInput}"
     on:input="{maybeUpdateLinkUrl}"
-    value="{formatSelectionNode.linkUrl}"
+    value="{linkUrl(formatSelection)}"
   />
   <div class="point-clip">
     <div class="arrow"></div>

@@ -1,60 +1,88 @@
 import { Map } from 'immutable';
-import { NODE_TYPE_H1, NODE_TYPE_H2, NODE_TYPE_P } from '@filbert/document';
 import {
+  NODE_TYPE_H1,
+  NODE_TYPE_H2,
+  NODE_TYPE_P,
+  type,
+  formatSelections,
+  setType,
+  setFormatSelections,
+  update,
+} from '@filbert/document';
+import {
+  italic,
+  link,
+  replaceSelection,
   SELECTION_ACTION_H1,
   SELECTION_ACTION_H2,
   SELECTION_ACTION_ITALIC,
   SELECTION_ACTION_LINK,
   SELECTION_ACTION_SITEINFO,
+  setItalic,
+  setLinkUrl,
+  setSiteinfo,
+  siteinfo,
 } from '@filbert/selection';
 
 export function doFormatSelection(
   documentModel,
-  node,
-  formatSelectionNode,
+  nodeModel,
+  formatSelection,
   action
 ) {
-  const previousActionValue = formatSelectionNode[action];
+  let historyLogEntry;
+  const previousActionValue = formatSelection.get(action);
 
-  console.info('HANDLE SELECTION ACTION: ', action, formatSelectionNode);
+  console.info('HANDLE SELECTION ACTION: ', action, formatSelection.toJS());
 
-  // these first 2 actions change the node type
+  // these first 2 actions change the nodeModel type
   if (action === SELECTION_ACTION_H1) {
-    node.type = node.type === NODE_TYPE_H1 ? NODE_TYPE_P : NODE_TYPE_H1;
-    node.formatSelections = undefined;
+    nodeModel = setType(
+      nodeModel,
+      type(nodeModel) === NODE_TYPE_H1 ? NODE_TYPE_P : NODE_TYPE_H1
+    );
+    nodeModel = setFormatSelections(nodeModel, undefined);
+    ({ documentModel, historyLogEntry } = update(documentModel, nodeModel));
     return {
-      historyState: documentModel.update(node),
+      documentModel,
+      historyLogEntry,
       updatedSelection: Map(),
     };
   }
   if (action === SELECTION_ACTION_H2) {
-    node.type = node.type === NODE_TYPE_H2 ? NODE_TYPE_P : NODE_TYPE_H2;
-    node.formatSelections = undefined;
+    nodeModel = setType(
+      nodeModel,
+      type(nodeModel) === NODE_TYPE_H2 ? NODE_TYPE_P : NODE_TYPE_H2
+    );
+    nodeModel = setFormatSelections(nodeModel, undefined);
+    ({ documentModel, historyLogEntry } = update(documentModel, nodeModel));
     return {
-      historyState: documentModel.update(node),
+      documentModel,
+      historyLogEntry,
       updatedSelection: Map(),
     };
   }
-
-  formatSelectionNode[action] = !previousActionValue;
-  // formatSelectionNode can be either italic or siteinfo, not both
-  if (action === SELECTION_ACTION_ITALIC && formatSelectionNode.italic) {
-    formatSelectionNode.siteinfo = false;
+  // toggle value
+  formatSelection = formatSelection.set(action, !previousActionValue);
+  // formatSelection can be either italic or siteinfo, not both
+  if (action === SELECTION_ACTION_ITALIC && italic(formatSelection)) {
+    formatSelection = setSiteinfo(formatSelection, false);
   }
-  if (action === SELECTION_ACTION_SITEINFO && formatSelectionNode.siteinfo) {
-    formatSelectionNode.italic = false;
+  if (action === SELECTION_ACTION_SITEINFO && siteinfo(formatSelection)) {
+    formatSelection = setItalic(formatSelection, false);
   }
   // clear URL text if not link anymore
-  if (action === SELECTION_ACTION_LINK && !formatSelectionNode.link) {
-    formatSelectionNode.linkUrl = undefined;
+  if (action === SELECTION_ACTION_LINK && !link(formatSelection)) {
+    formatSelection = setLinkUrl(formatSelection, undefined);
   }
-  const updatedFormatSelections = node.formatSelections.replaceSelection(
-    formatSelectionNode
+  nodeModel = setFormatSelections(
+    nodeModel,
+    replaceSelection(formatSelections(nodeModel), formatSelection)
   );
-  node.formatSelections = updatedFormatSelections;
-
+  ({ documentModel, historyLogEntry } = update(documentModel, nodeModel));
   return {
-    historyState: documentModel.update(node),
-    updatedSelection: formatSelectionNode,
+    documentModel,
+    historyLogEntry,
+    updatedSelection: formatSelection,
   };
 }
