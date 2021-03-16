@@ -22,18 +22,6 @@ CREATE TABLE `user` (
   KEY `is_public` (`is_public`),
   KEY `deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-CREATE TABLE `content_node` (
-  `post_id` int(11) NOT NULL,
-  `id` char(4) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `type` varchar(45) COLLATE utf8mb4_unicode_520_ci NOT NULL,
-  `meta` json NOT NULL,
-  `content` text COLLATE utf8mb4_unicode_520_ci,
-  `next_sibling_id` char(4) COLLATE utf8mb4_unicode_520_ci DEFAULT NULL,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted` datetime DEFAULT NULL,
-  PRIMARY KEY (`post_id`,`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 CREATE TABLE `post` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,

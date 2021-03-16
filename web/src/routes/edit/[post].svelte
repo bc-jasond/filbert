@@ -511,7 +511,8 @@
       documentModel,
       insertMenuNode
     ));
-    const selectionOffsets = { startNodeId: getId(insertMenuNode) };
+    const insertMenuNodeId = getId(insertMenuNode);
+    const selectionOffsets = { startNodeId: insertMenuNodeId };
     historyManager.appendToHistoryLog({
       selectionOffsets,
       historyLogEntries: [historyLogEntry],
@@ -520,7 +521,7 @@
     if (
       [NODE_TYPE_IMAGE, NODE_TYPE_QUOTE, NODE_TYPE_SPACER].includes(sectionType)
     ) {
-      sectionEdit(getId(insertMenuNode));
+      sectionEdit(insertMenuNodeId);
     }
   }
 
@@ -602,13 +603,19 @@
     );
 
     let historyLogEntry;
-    ({documentModel, historyLogEntry} = update(documentModel, formatSelectionDocumentNode));
+    ({ documentModel, historyLogEntry } = update(
+      documentModel,
+      formatSelectionDocumentNode
+    ));
     // TODO: when NCharsAreDifferent - current linked list representation doesn't lend itself well to comparisonPath
     historyManager.appendToHistoryLog({
       selectionOffsets: selectionOffsetsManageFormatSelectionMenu,
       historyLogEntries: [historyLogEntry],
     });
-    await commitUpdates(documentModel, selectionOffsetsManageFormatSelectionMenu);
+    await commitUpdates(
+      documentModel,
+      selectionOffsetsManageFormatSelectionMenu
+    );
   }
 
   // TODO: show/hide logic for this menu is split up and difficult to understand.
@@ -711,11 +718,15 @@
       selectionOffsets: selectionOffsetsManageFormatSelectionMenu,
       historyLogEntries: [historyLogEntry],
     });
-    await commitUpdates(documentModel, selectionOffsetsManageFormatSelectionMenu);
+    await commitUpdates(
+      documentModel,
+      selectionOffsetsManageFormatSelectionMenu
+    );
 
     // need to refresh the selection after update, as a merge might have occured
     // between neighboring selections that now have identical formats
-    formatSelectionDocumentNode = getNode(documentModel,
+    formatSelectionDocumentNode = getNode(
+      documentModel,
       getId(formatSelectionDocumentNode)
     );
     let {

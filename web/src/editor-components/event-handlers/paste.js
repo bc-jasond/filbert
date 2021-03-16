@@ -37,7 +37,7 @@ export async function handlePaste({
 
   const selectionOffsets =
     selectionOffsetsArg || getHighlightedSelectionOffsets();
-  const {startNodeId, caretStart} = selectionOffsets;
+  const { startNodeId, caretStart } = selectionOffsets;
   const caretIsCollapsed = isCollapsed(selectionOffsets);
   let historyLogEntries;
   let executeSelectionOffsets;
@@ -46,7 +46,7 @@ export async function handlePaste({
   if (evt.type !== 'paste') {
     // there's a bug with window.getSelection() returning a stale Range during the paste event...
     //  this is the right one from the keydown event
-    selectionOffsetsKeydown = {startNodeId, caretStart};
+    selectionOffsetsKeydown = { startNodeId, caretStart };
     if (!caretIsCollapsed) {
       ({
         documentModel: documentModelLocal,
@@ -54,7 +54,7 @@ export async function handlePaste({
       } = deleteSelection({ documentModel, historyManager, selectionOffsets }));
       historyLogEntriesPaste.push(...historyLogEntries);
 
-      await commitUpdates(documentModelLocal, {startNodeId, caretStart});
+      await commitUpdates(documentModelLocal, { startNodeId, caretStart });
     }
     return true;
   }

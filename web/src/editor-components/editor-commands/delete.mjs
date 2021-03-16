@@ -9,7 +9,14 @@ import {
   contentClean,
   NODE_CONTENT,
   getNodesBetween,
+  setFormatSelections,
+  formatSelections,
+  canHaveSelections,
 } from '@filbert/document';
+import {
+  adjustSelectionOffsetsAndCleanup,
+  concatSelections,
+} from '@filbert/selection';
 
 // given selectionOffsets - return 2 boolean values for {willDeleteStartNode, willDeleteEndNode}
 function willDeleteStartAndEnd(
@@ -47,14 +54,17 @@ function deleteNodeContentRangeAndUpdateSelections(
     NODE_CONTENT,
     deleteContentRange(beforeContent, startIdx, diffLength)
   );
-  /* TODO with FormatSelections
-  node.formatSelections.adjustSelectionOffsetsAndCleanup(
-    node.content.length,
-    beforeContent.length,
-    startIdx + diffLength,
-    // -1 for "regular" backspace to delete 1 char
-    diffLength === 0 ? -1 : -diffLength
-  );*/
+  node = setFormatSelections(
+    node,
+    adjustSelectionOffsetsAndCleanup(
+      formatSelections(node),
+      contentClean(node).length,
+      beforeContent.length,
+      startIdx + diffLength,
+      // -1 for "regular" backspace to delete 1 char
+      diffLength === 0 ? -1 : -diffLength
+    )
+  );
   let historyLogEntry;
   ({ documentModel, historyLogEntry } = update(documentModel, node));
   return { documentModel, historyLogEntry };
@@ -69,10 +79,13 @@ function mergeParagraphs(documentModel, leftId, rightId) {
   }
   const historyLogEntries = [];
 
-  /* TODO: FormatSelections  // do selections before concatenating content!
-  if (left.canHaveSelections()) {
-    left.formatSelections.concatSelections(right);
-  }*/
+  // do selections before concatenating content!
+  if (canHaveSelections(left)) {
+    left = setFormatSelections(
+      left,
+      concatSelections(formatSelections(left), formatSelections(right))
+    );
+  }
   left = left.set(NODE_CONTENT, `${contentClean(left)}${contentClean(right)}`);
   let historyLogEntry;
   ({ documentModel, historyLogEntry } = update(documentModel, left));

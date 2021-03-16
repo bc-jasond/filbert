@@ -16,9 +16,13 @@ import {
   getLastInsertId,
   isMetaType,
   setType,
+  canHaveSelections,
+  formatSelections,
+  setFormatSelections,
 } from '@filbert/document';
 import { cleanText } from '@filbert/util';
 import { assertValidDomSelectionOrThrow } from '../../common/dom.mjs';
+import { splitSelectionsAtCaretOffset } from '@filbert/selection';
 
 function handleEnterTextType(
   documentModel,
@@ -74,28 +78,29 @@ function handleEnterTextType(
   const rightNodeId = getLastInsertId();
   // refresh reference after insert...
   leftNode = getNode(documentModel, leftNodeId).set(NODE_CONTENT, contentLeft);
-  const rightNode = getNode(documentModel, rightNodeId);
-  /* if the original selected node can have Selections - move them to the right node if needed
-  if (leftNode.canHaveSelections()) {
-    ({
-      left: leftNode.formatSelections,
-      right: rightNode.formatSelections,
-    } = leftNode.formatSelections.splitSelectionsAtCaretOffset(
-      leftNode,
-      rightNode,
-      caretPosition
-    ));
-  }*/
+  let rightNode = getNode(documentModel, rightNodeId);
   console.info(
     'ENTER "TextType" content left: ',
     contentLeft,
     'content right: ',
-    contentRight,
-    'left selections: ',
-    leftNode.formatSelections,
-    'right selections: ',
-    rightNode.formatSelections
+    contentRight
   );
+  // if the original selected node can have Selections - move them to the right node if needed
+  if (canHaveSelections(leftNode)) {
+    let { left, right } = splitSelectionsAtCaretOffset(
+      formatSelections(leftNode),
+      caretPosition
+    );
+    leftNode = setFormatSelections(leftNode, left);
+    rightNode = setFormatSelections(rightNode, right);
+    console.info(
+      'ENTER "TextType" content left selections: ',
+      left.toJS(),
+      'right selections: ',
+      right.toJS()
+    );
+  }
+
   // NOTE: "focus node" will be the last history entry
   ({ documentModel, historyLogEntry } = update(documentModel, leftNode));
   historyLogEntries.push(historyLogEntry);

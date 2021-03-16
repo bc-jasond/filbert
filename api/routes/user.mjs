@@ -169,7 +169,8 @@ export async function getStats(req, res, next) {
       splitAndCount(`${title} ${abstract}`, id);
     });
 
-    const allContentNodes = await knex('content_node')
+    const allContentNodes = [] /* TODO: port logic to log state
+    await knex('content_node')
       .column(
         'user_id',
         'post_id',
@@ -180,7 +181,7 @@ export async function getStats(req, res, next) {
         { meta: 'content_node.meta' }
       )
       .innerJoin('post', 'post.id', 'content_node.post_id')
-      .where({ 'post.user_id': userId });
+      .where({ 'post.user_id': userId });*/
 
     allContentNodes.forEach(
       ({

@@ -8,9 +8,14 @@ import {
   type,
   getLastInsertId,
   NODE_CONTENT,
-  NODE_TYPE, setFormatSelections, formatSelections,
+  NODE_TYPE,
+  setFormatSelections,
+  formatSelections,
 } from '@filbert/document';
-import {adjustSelectionOffsetsAndCleanup, splitSelectionsAtCaretOffset} from "@filbert/selection";
+import {
+  adjustSelectionOffsetsAndCleanup,
+  splitSelectionsAtCaretOffset,
+} from '@filbert/selection';
 
 export function doPaste(documentModel, selectionOffsets, clipboardData) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -49,12 +54,16 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
     const updatedContent = `${contentLeft}${clipboardText}${contentRight}`;
     const { length: diffLength } = clipboardText;
     startNode = startNode.set(NODE_CONTENT, updatedContent);
-    startNode = setFormatSelections(startNode, adjustSelectionOffsetsAndCleanup(formatSelections(startNode),
-      updatedContent.length,
-      beforeContent.length,
-      caretStart,
-      diffLength
-    ));
+    startNode = setFormatSelections(
+      startNode,
+      adjustSelectionOffsetsAndCleanup(
+        formatSelections(startNode),
+        updatedContent.length,
+        beforeContent.length,
+        caretStart,
+        diffLength
+      )
+    );
     ({ documentModel, historyLogEntry } = update(documentModel, startNode));
     historyLogEntries.push(historyLogEntry);
     return {
@@ -94,28 +103,36 @@ export function doPaste(documentModel, selectionOffsets, clipboardData) {
 
   // 2) if the original selected node can have Selections - move them to the right node if needed
   // NOTE: do this with BEFORE content
-  const {
-    left,
-    right,
-  } = splitSelectionsAtCaretOffset(formatSelections(leftNode), caretStart);
+  const { left, right } = splitSelectionsAtCaretOffset(
+    formatSelections(leftNode),
+    caretStart
+  );
 
   // 3) update content with firstLine & lastLine
   leftNode = leftNode.set(NODE_CONTENT, updatedLeftNodeContent);
   rightNode = rightNode.set(NODE_CONTENT, updatedRightNodeContent);
 
   // 4) adjust offsets with updated content
-  leftNode = setFormatSelections(leftNode, adjustSelectionOffsetsAndCleanup(left,
-    updatedLeftNodeContent.length,
-    contentLeft.length, // this is before content! takes this as an argument for comparison with now updated content in leftNode
-    caretStart,
-    firstLine.length
-  ));
-  rightNode = setFormatSelections(rightNode, adjustSelectionOffsetsAndCleanup(right,
-    updatedRightNodeContent.length,
-    contentRight.length, // before content!
-    0,
-    lastLine.length
-  ));
+  leftNode = setFormatSelections(
+    leftNode,
+    adjustSelectionOffsetsAndCleanup(
+      left,
+      updatedLeftNodeContent.length,
+      contentLeft.length, // this is before content! takes this as an argument for comparison with now updated content in leftNode
+      caretStart,
+      firstLine.length
+    )
+  );
+  rightNode = setFormatSelections(
+    rightNode,
+    adjustSelectionOffsetsAndCleanup(
+      right,
+      updatedRightNodeContent.length,
+      contentRight.length, // before content!
+      0,
+      lastLine.length
+    )
+  );
   ({ documentModel, historyLogEntry } = update(documentModel, leftNode));
   historyLogEntries.push(historyLogEntry);
 

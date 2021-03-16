@@ -189,6 +189,7 @@ export async function getSummaryAndPhotoFromContent(req, res) {
 
   if (isEmpty(documentModel)) {
     res.send(responseData);
+    return;
   }
   res.send(getFirstPhotoAndAbstractFromContent(documentModel));
 }
@@ -204,7 +205,6 @@ export async function deletePublishedPost(req, res) {
    */
   const deleted = getMysqlDatetime();
   await knex('content_node_history').update({ deleted }).where('post_id', id);
-  await knex('content_node').update({ deleted }).where('post_id', id);
   await knex('post').update({ deleted }).where('id', id);
   res.status(204).send({});
 }

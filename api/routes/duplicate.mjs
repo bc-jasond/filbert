@@ -32,15 +32,6 @@ export async function duplicatePost(req, res, next) {
         `SELECT ${lastInsertId}`
       );
 
-      // content_node table
-      await trx.raw(
-        `INSERT INTO content_node (post_id, id, type, meta, content, next_sibling_id, deleted)
-        SELECT ?, id, type, meta, content, next_sibling_id, deleted
-        FROM content_node
-        WHERE post_id = ?;`,
-        [newPostId, id]
-      );
-
       // content_node_history table
       await trx.raw(
         `INSERT INTO content_node_history (post_id, content_node_history_id, meta, deleted)

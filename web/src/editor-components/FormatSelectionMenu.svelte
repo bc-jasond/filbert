@@ -19,10 +19,19 @@
     SELECTION_ACTION_MINI,
     SELECTION_ACTION_STRIKETHROUGH,
     SELECTION_ACTION_H1,
-    SELECTION_ACTION_H2, bold, italic, code, siteinfo, mini, strikethrough, link, linkUrl, setLinkUrl,
+    SELECTION_ACTION_H2,
+    bold,
+    italic,
+    code,
+    siteinfo,
+    mini,
+    strikethrough,
+    link,
+    linkUrl,
+    setLinkUrl,
   } from '@filbert/selection';
-  import {getId} from "@filbert/linked-list";
-  import {NODE_TYPE_H1, NODE_TYPE_H2, type} from '@filbert/document';
+  import { getId } from '@filbert/linked-list';
+  import { NODE_TYPE_H1, NODE_TYPE_H2, type } from '@filbert/document';
   import {
     KEYCODE_ENTER,
     KEYCODE_ESC,

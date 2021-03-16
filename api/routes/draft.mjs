@@ -119,7 +119,6 @@ export async function deleteDraftAndContentNodes(req, res) {
   const deleted = getMysqlDatetime();
   await knex.transaction(async (trx) => {
     await trx('content_node_history').update({ deleted }).where('post_id', id);
-    await trx('content_node').update({ deleted }).where('post_id', id);
     await trx('post').update({ deleted }).where('id', id);
 
     res.status(204).send({});

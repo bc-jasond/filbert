@@ -1,10 +1,17 @@
 import { getNode } from '@filbert/linked-list';
-import { contentClean, update, NODE_CONTENT } from '@filbert/document';
+import {
+  contentClean,
+  update,
+  NODE_CONTENT,
+  setFormatSelections,
+  formatSelections,
+} from '@filbert/document';
 import {
   assertValidDomSelectionOrThrow,
   findFirstDifferentWordFromDom,
 } from '../../common/dom.mjs';
 import { getCharFromEvent } from '../../common/utils';
+import { adjustSelectionOffsetsAndCleanup } from '@filbert/selection';
 
 export function syncToDom(documentModel, selectionOffsets, evt) {
   assertValidDomSelectionOrThrow(selectionOffsets);
@@ -39,13 +46,17 @@ export function syncToDom(documentModel, selectionOffsets, evt) {
     updatedContentMap.length
   );
   startNode = startNode.set(NODE_CONTENT, updatedContentMap);
-  /* if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-  startNode.formatSelections.adjustSelectionOffsetsAndCleanup(
-    updatedContentMap.length,
-    contentBeforeUpdate.length,
-    caretStart,
-    newChar.length
-  );*/
+  // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
+  startNode = setFormatSelections(
+    startNode,
+    adjustSelectionOffsetsAndCleanup(
+      formatSelections(startNode),
+      updatedContentMap.length,
+      contentBeforeUpdate.length,
+      caretStart,
+      newChar.length
+    )
+  );
   const executeSelectionOffsets = {
     startNodeId,
     caretStart: caretStart + newChar.length,
@@ -77,13 +88,17 @@ function replaceWordFromSpellcheck(
   )}${domWord}${contentBeforeUpdate.slice(diffStart + beforeWord.length)}`;
   let startNode = getNode(documentModel, startNodeId);
   startNode = startNode.set(NODE_CONTENT, updatedContent);
-  /* adjust paragraph selections, if necessary
-  startNode.formatSelections.adjustSelectionOffsetsAndCleanup(
-    updatedContent.length,
-    contentBeforeUpdate.length,
-    diffStart,
-    domWord.length - beforeWord.length
-  );*/
+  // adjust paragraph selections, if necessary
+  startNode = setFormatSelections(
+    startNode,
+    adjustSelectionOffsetsAndCleanup(
+      formatSelections(startNode),
+      updatedContent.length,
+      contentBeforeUpdate.length,
+      diffStart,
+      domWord.length - beforeWord.length
+    )
+  );
   // place caret at end of new word
   const selectionOffsets = {
     startNodeId,
@@ -140,13 +155,14 @@ export function syncFromDom(documentModel, selectionOffsets, evt) {
     updatedContentMap.length
   );
   startNode = startNode.set(NODE_CONTENT, updatedContentMap);
-  /* if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
-  startNode.formatSelections.adjustSelectionOffsetsAndCleanup(
+  // if paragraph has selections, adjust starts and ends of any that fall on or after the current caret position
+  startNode = adjustSelectionOffsetsAndCleanup(
+    formatSelections(startNode),
     updatedContentMap.length,
     contentBeforeUpdate.length,
     beforeUpdateCaretStart,
     emoji.length
-  );*/
+  );
   const executeSelectionOffsets = { startNodeId, caretStart };
   let historyLogEntry;
   ({ documentModel, historyLogEntry } = update(documentModel, startNode));
